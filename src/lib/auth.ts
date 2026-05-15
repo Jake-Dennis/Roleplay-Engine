@@ -1,6 +1,8 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { AUTH_CONFIG } from "./config";
+import fs from "fs";
+import path from "path";
+import { AUTH_CONFIG, APP_CONFIG } from "./config";
 import { getDb } from "./db";
 
 export interface User {
@@ -71,6 +73,28 @@ export function validatePassword(password: string): string | null {
   return null;
 }
 
+export function initializeUserDataDirectory(userId: string): void {
+  const baseDir = path.join(APP_CONFIG.dataDir, userId);
+  const dirs = [
+    "universe",
+    "locations",
+    "npcs",
+    "relationships",
+    "events",
+    "story_arcs",
+    "canon",
+    "generated",
+    "tts_cache",
+  ];
+
+  for (const dir of dirs) {
+    const dirPath = path.join(baseDir, dir);
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+  }
+}
+
 export async function createUser(
   username: string,
   password: string
@@ -90,6 +114,9 @@ export async function createUser(
   db.prepare(
     "INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)"
   ).run(id, username.toLowerCase(), passwordHash);
+
+  // Create user data directories
+  initializeUserDataDirectory(id);
 
   return getUserById(id);
 }
