@@ -1,19 +1,16 @@
-# ADR-[NUMBER]: [Title]
+# ADR-NNN: [Title]
 
 ## Status
-[Proposed | Accepted | Deprecated | Superseded]
+Proposed | Accepted | Deprecated | Superseded
 
 ## Context
-<!-- What is the issue motivating this decision? -->
+What is the issue that we're seeing?
 
 ## Decision
-<!-- What is the change being made? -->
+What is the change that we're proposing?
 
-## Rationale
-<!-- Why was this decision made? What alternatives were considered? -->
+## Consequences
+What becomes easier or more difficult to do because of this change?
 
 ## Tradeoffs
-<!-- What are the consequences of this decision? -->
-
-## Rollback Strategy
-<!-- How to undo this decision if needed -->
+What alternatives were considered and why were they rejected?

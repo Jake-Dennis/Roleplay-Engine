@@ -1,32 +1,34 @@
 # Project Context
 
-## Overview
-<!-- Brief description of the project, its purpose, and goals -->
+## Project Name
+Roleplay-Engine
+
+## Description
+[Add project description here]
 
 ## Tech Stack
-<!-- Languages, frameworks, libraries, tools -->
+- [List primary languages/frameworks]
 
-## Architecture
-<!-- High-level architecture description, key design decisions -->
+## Key Constraints
+- [List domain-specific constraints]
 
-## Directory Structure
-<!-- Mapping of important directories and their purposes -->
-- `src/` - Source code
-- `plans/` - Execution plans and proposals
-- `decisions/` - Architectural Decision Records
-- `logs/` - Execution and review logs
-- `graphify-out/` - Knowledge graph outputs
+## Domain Knowledge
+- [Add domain-specific context]
 
-## Key Systems
-<!-- Core systems/modules and their responsibilities -->
+## Important Conventions
+- [List project-specific conventions]
 
-## Development Workflow
-<!-- How to set up, build, test, and run the project -->
+## Running the Project
+```bash
+# Add commands here
+```
 
-## Agents & Skills
-<!-- Custom agents and skills configured for this project -->
-See `.opencode/agents/` and `.opencode/skills/`
+## Testing
+```bash
+# Add test commands here
+```
 
-## Graph Analysis
-<!-- Graphify knowledge graph entry points -->
-See `graphify-out/GRAPH_REPORT.md`
+## Links
+- Repository: [URL]
+- Documentation: [URL]
+- Issue Tracker: [URL]

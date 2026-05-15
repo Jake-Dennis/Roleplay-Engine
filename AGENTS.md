@@ -167,6 +167,10 @@ When an agent's primary model is unavailable, use this ordered fallback chain. R
 | onboarding | `minimax-m2.5-free` | `hy3-preview-free` | `nemotron-3-super-free` | `big-pickle` |
 | verifier | `minimax-m2.5-free` | `hy3-preview-free` | `nemotron-3-super-free` | `big-pickle` |
 
+**↑** = blast-radius falls back to hy3 before nemotron because impact analysis is fundamentally a graph-traversal problem, closer to Hy3's topology reasoning than generic verification.
+
+> ⚠️ **Manual only**: OpenCode's `model:` frontmatter field only accepts a single model ID — fallbacks are NOT automatic. This table is documentation for you to manually update agent frontmatter when a model becomes unavailable (as happened with `gpt-5-nano`).
+
 ---
 
 ## Dynamic Escalation
