@@ -5,112 +5,38 @@ This plan covers all unbuilt and partially-built features from `spec.md`, organi
 
 ---
 
-## Phase 1: Core Generation Loop (The Biggest Gap)
+## Phase 1: Core Generation Loop ✅ COMPLETE
 
 **Goal:** Wire together retrieval → prompt assembly → LLM generation → response streaming into a single working flow.
 
-### 1.1 Retrieval Pipeline (`src/lib/retrieval-pipeline.ts`)
+**Status:** Already built — fixed type mismatches and added job queuing.
 
-**New file.** Orchestrates the full retrieval chain:
+### 1.1 Retrieval Pipeline ✅
+- **File:** `src/lib/retrieval.ts` (already existed)
+- **Fix:** Changed `sessionId` from `number` to `string` (UUIDs, not integers)
+- **Functions:** `getRetrievedContext()`, `getRetrievedContextWithFallback()`, `getSceneContext()`, `getLoreContext()`, `getRelationshipContext()`, `getRecentMessages()`, `getCanonContext()`
 
-```
-User Input → Intent Analysis → Scene Retrieval → Relationship Retrieval → Narrative Memory Retrieval → Lore Retrieval → Context Compression → Prompt Assembly
-```
+### 1.2 Context Compression ✅
+- **File:** `src/lib/context-compression.ts` (already existed)
+- **Functions:** `compressContext()`, `compressMessages()`, `compressLore()`, `compressRelationships()`, `summarizeText()`
 
-**Functions:**
-- `runRetrievalPipeline(sessionId: string, userInput: string, userId: string): Promise<RetrievalResult>`
-- `retrieveSceneState(sessionId: string): Promise<SceneState>` — fetches active location, NPCs, emotional tone, threads
-- `retrieveRelationships(sessionId: string, userId: string, limit?: number): Promise<Relationship[]>` — active relationships sorted by importance
-- `retrieveNarrativeMemories(sessionId: string, limit?: number): Promise<NarrativeMemory[]>` — recent discoveries, promises, betrayals
-- `retrieveLore(sessionId: string, intent: Intent, limit?: number): Promise<LoreEntry[]>` — location lore, NPC profiles, canon rules filtered by intent
-- `retrieveRecentMessages(sessionId: string, limit?: number): Promise<Message[]>` — last N messages for conversation context
+### 1.3 Prompt Assembly ✅
+- **File:** `src/lib/prompt-builder.ts` (already existed)
+- **Functions:** `assemblePrompt()`, `assemblePromptWithBudget()`, `applyContextBudget()`, `estimateTokens()`, `buildIntentContext()`
 
-**Dependencies:** `intent-analyzer.ts`, `db.ts`, `semantic-intent-fallback.ts`
+### 1.4 Chat Generation API ✅
+- **File:** `src/app/api/generate/[id]/route.ts` (already existed)
+- **Fix:** Removed `parseInt(sessionId)` — session IDs are UUIDs
+- **Added:** Background job queuing after generation (summarize, embed, relationship analysis)
 
-### 1.2 Context Compression (`src/lib/context-compression.ts`)
+### 1.5 Ollama Streaming Client ✅
+- **File:** `src/lib/ollama.ts` (already existed)
+- **Functions:** `generateTextStream()` — streaming with chunk callbacks, retry logic
 
-**New file.** Compresses retrieved context to fit the 8192 token budget.
-
-**Functions:**
-- `compressContext(retrieval: RetrievalResult, budget: number): Promise<CompressedContext>`
-- `estimateTokenCount(text: string): number` — rough estimate (chars / 4 for English)
-- `truncateByPriority(sections: ContextSection[], budget: number): ContextSection[]` — drops lowest-importance sections first
-- `summarizeSection(section: ContextSection, targetTokens: number): Promise<string>` — uses small LLM call to compress if needed
-
-**Budget Table (from spec):**
-| Section | Allocation |
-|---------|-----------|
-| System prompt | 500 |
-| Canon rules | 300 |
-| Scene state | 200 |
-| Active relationships | 400 |
-| Relevant memories | 2000 |
-| Active lore | 1500 |
-| Recent messages | 2000 |
-| User input | 500 |
-| Reserved for output | 792 |
-
-### 1.3 Prompt Assembly (`src/lib/prompt-assembly.ts`)
-
-**New file.** Assembles structured prompt from compressed context.
-
-**Functions:**
-- `assemblePrompt(context: CompressedContext, userInput: string): string`
-- Returns structured text:
-```
-[SCENE STATE]
-...
-[ACTIVE RELATIONSHIPS]
-...
-[RELEVANT MEMORIES]
-...
-[ACTIVE LORE]
-...
-[CANON RULES]
-...
-[NARRATIVE RULES]
-...
-[USER INPUT]
-...
-```
-
-**System prompt template** (from spec):
-```
-You are a narrative AI for a persistent roleplay engine. Generate story responses that:
-- Maintain emotional continuity with established relationships
-- Respect canon constraints (immutable canon cannot be contradicted)
-- Use only the provided context — do not invent facts outside retrieved lore
-- Write in third-person narrative prose
-- Keep responses concise (200-500 words)
-- Advance the story based on user intent
-```
-
-### 1.4 Realtime RP Pipeline (`src/app/api/sessions/[id]/chat/route.ts`)
-
-**New API endpoint.** The main chat generation flow.
-
-**POST `/api/sessions/[id]/chat`**
-1. Authenticate user, verify session access
-2. Store user message in `messages` table
-3. Run retrieval pipeline
-4. Compress context to budget
-5. Assemble prompt
-6. Call Ollama (`qwen3.5:9b`) with streaming
-7. Stream response back via SSE
-8. Store AI response in `messages` table
-9. Queue background jobs (summarize, embed, relationship analysis)
-10. Return immediately
-
-**Streaming:** Use `ReadableStream` to send chunks as they arrive from Ollama.
-
-### 1.5 Ollama Streaming Client (`src/lib/ollama.ts` — extend)
-
-**Extend existing file.** Add streaming generation:
-
-- `generateStream(prompt: string, model?: string): AsyncIterable<string>` — calls Ollama `/api/generate` with `stream: true`
-- Handle connection errors, retry with backoff
-- Timeout after 60 seconds
-
+### Additional: Message API Job Queuing ✅
+- **File:** `src/app/api/sessions/[id]/messages/route.ts`
+- **Added:** Background job queuing for user messages (summarize, embed)
+- **Added:** SSE event emission (`MESSAGE_CREATED`)
 ---
 
 ## Phase 2: Background Processing

@@ -4,6 +4,7 @@ import { verifyToken } from "@/lib/auth";
 import { generateTextStream, isOllamaAvailable, checkOllamaConnection } from "@/lib/ollama";
 import { getRetrievedContext, assemblePromptWithBudget, type RetrievedContext } from "@/lib/retrieval";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
+import { queueJob } from "@/lib/job-processor";
 
 export async function POST(
   request: NextRequest,
@@ -53,7 +54,7 @@ export async function POST(
 
   // Build context using retrieval pipeline
   const ctx: RetrievedContext = await getRetrievedContext(
-    parseInt(sessionId),
+    sessionId,
     session.universe_id || "",
     userMessage
   );
@@ -112,6 +113,30 @@ export async function POST(
           intent: ctx.intent,
           contentLength: fullResponse.length,
         });
+
+        // Queue background jobs for async processing
+        // High priority: summarize the new message
+        queueJob(decoded.sub, "summarize_messages", {
+          sessionId,
+          messageId: aiMessageId,
+          content: fullResponse,
+        }, "high", session.universe_id || undefined);
+
+        // High priority: generate embeddings for the new message
+        queueJob(decoded.sub, "generate_embeddings", {
+          sessionId,
+          messageId: aiMessageId,
+          content: fullResponse,
+          entityType: "message",
+          entityId: aiMessageId,
+        }, "high", session.universe_id || undefined);
+
+        // Medium priority: analyze relationship impacts
+        queueJob(decoded.sub, "analyze_relationships", {
+          sessionId,
+          messageId: aiMessageId,
+          content: fullResponse,
+        }, "medium", session.universe_id || undefined);
 
         // Send completion signal with intent info
         controller.enqueue(

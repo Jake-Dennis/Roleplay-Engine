@@ -349,7 +349,7 @@ async function handleGenerateResponse(jobId: string, payload: JobPayload): Promi
 
   // B2: Use full context retrieval pipeline (scene, lore, relationships, recent messages, intent)
   const ctx = await getRetrievedContext(
-    parseInt(sessionId),
+    sessionId,
     session.universe_id || "",
     content as string
   );

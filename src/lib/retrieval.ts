@@ -52,7 +52,7 @@ export interface RetrievedContext {
 /**
  * Fetch the current scene state for a session
  */
-export function getSceneContext(sessionId: number): SceneContext {
+export function getSceneContext(sessionId: string): SceneContext {
   const db = getDb();
   const result = db.prepare(
     `SELECT active_location_id, current_goal, emotional_tone, active_npcs
@@ -203,7 +203,7 @@ export function getRelationshipContext(universeId: string): RelationshipContext 
  * Fetch the most recent N messages for a session
  */
 export function getRecentMessages(
-  sessionId: number,
+  sessionId: string,
   limit: number = 30
 ): MessageContext {
   const db = getDb();
@@ -261,7 +261,7 @@ export function getCanonContext(universeId: string): string | null {
  * This is the main entry point for the retrieval pipeline.
  */
 export async function getRetrievedContext(
-  sessionId: number,
+  sessionId: string,
   universeId: string,
   userMessage?: string
 ): Promise<RetrievedContext> {
@@ -289,7 +289,7 @@ export async function getRetrievedContext(
  * classification is uncertain.
  */
 export async function getRetrievedContextWithFallback(
-  sessionId: number,
+  sessionId: string,
   universeId: string,
   userId: string,
   userMessage?: string

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
-// import { indexMessageForSearch } from "@/lib/semantic-intent-fallback";
+import { queueJob } from "@/lib/job-processor";
+import { eventBus, SessionEvents } from "@/lib/event-bus";
 
 export async function GET(
   request: NextRequest,
@@ -62,7 +63,7 @@ export async function POST(
       SELECT * FROM sessions WHERE id = ? AND (owner_id = ? OR id IN (
         SELECT session_id FROM session_participants WHERE user_id = ?
       ))
-    `).get(sessionId, decoded.sub, decoded.sub);
+    `).get(sessionId, decoded.sub, decoded.sub) as { id: string; universe_id: string | null } | undefined;
 
     if (!session) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
@@ -94,6 +95,29 @@ export async function POST(
     db.prepare(
       "INSERT INTO messages (id, session_id, sender_id, content, parent_message_id) VALUES (?, ?, ?, ?, ?)"
     ).run(messageId, sessionId, decoded.sub, content, lastMessage?.id || null);
+
+    // Emit message created event for SSE
+    eventBus.emit(`${SessionEvents.MESSAGE_CREATED}:${sessionId}`, {
+      messageId,
+      sessionId,
+      senderId: decoded.sub,
+      content,
+    });
+
+    // Queue background jobs for async processing
+    queueJob(decoded.sub, "summarize_messages", {
+      sessionId,
+      messageId,
+      content,
+    }, "high", session.universe_id || undefined);
+
+    queueJob(decoded.sub, "generate_embeddings", {
+      sessionId,
+      messageId,
+      content,
+      entityType: "message",
+      entityId: messageId,
+    }, "high", session.universe_id || undefined);
 
     // Update session timestamp
     db.prepare("UPDATE sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(sessionId);
