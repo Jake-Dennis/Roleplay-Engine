@@ -1,0 +1,50 @@
+import { NextRequest, NextResponse } from "next/server";
+import { verifyToken } from "@/lib/auth";
+import { TTS_CONFIG } from "@/lib/config";
+
+export async function POST(request: NextRequest) {
+  const token = request.cookies.get("auth-token")?.value;
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const decoded = verifyToken(token);
+  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+  const body = await request.json();
+  const { voiceSpec } = body;
+
+  if (!voiceSpec || typeof voiceSpec !== "string") {
+    return NextResponse.json(
+      { error: "voiceSpec is required (e.g., 'af_bella(2)+af_sky(1)')" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const response = await fetch(`${TTS_CONFIG.baseUrl}/v1/audio/voices/combine`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(voiceSpec),
+      signal: AbortSignal.timeout(TTS_CONFIG.timeout),
+    });
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: `Voice combine failed: ${response.status}` },
+        { status: response.status }
+      );
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    return new Response(buffer, {
+      headers: {
+        "Content-Type": "application/octet-stream",
+        "Content-Disposition": `attachment; filename="combined_voice.pt"`,
+      },
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Failed to combine voices" },
+      { status: 500 }
+    );
+  }
+}

@@ -1,0 +1,293 @@
+/**
+ * Embedding Generation
+ * 
+ * Creates vector embeddings for entities (messages, locations, NPCs, events)
+ * using Ollama's bge-m3 model. Embeddings enable semantic search and similarity
+ * matching for context retrieval.
+ * 
+ * Embedding targets:
+ * - messages: For semantic message retrieval
+ * - locations: For location-based context matching
+ * - npcs: For NPC relevance scoring
+ * - events: For event similarity and pattern matching
+ * - narrative_memories: For memory retrieval
+ */
+
+import { getDb, isVecAvailable } from "@/lib/db";
+import { generateEmbedding } from "@/lib/ollama";
+
+export interface EmbeddingResult {
+  embeddingId: string;
+  vector: number[];
+}
+
+/**
+ * Generate and store an embedding for an entity
+ */
+export async function processEmbeddings(
+  userId: string,
+  entityType: string,
+  entityId: string
+): Promise<EmbeddingResult> {
+  const db = getDb();
+  const textContent = getEntityText(entityType, entityId);
+
+  if (!textContent) {
+    throw new Error(`No text content found for ${entityType}:${entityId}`);
+  }
+
+  // Generate embedding via Ollama
+  const vector = await generateEmbedding(textContent);
+
+  // Store in embedding_index
+  const embeddingId = crypto.randomUUID();
+  db.prepare(`
+    INSERT OR REPLACE INTO embedding_index (id, user_id, universe_id, entity_type, entity_id, text_content, created_at)
+    VALUES (?, ?, (SELECT universe_id FROM sessions WHERE id = (
+      CASE WHEN ? = 'message' THEN (SELECT session_id FROM messages WHERE id = ?)
+           WHEN ? = 'location' THEN (SELECT universe_id FROM locations WHERE id = ?)
+           WHEN ? = 'npc' THEN (SELECT universe_id FROM npcs WHERE id = ?)
+           WHEN ? = 'event' THEN (SELECT universe_id FROM events WHERE id = ?)
+           WHEN ? = 'narrative_memory' THEN (SELECT universe_id FROM narrative_memories WHERE id = ?)
+      END
+    )), ?, ?, ?, CURRENT_TIMESTAMP)
+  `).run(embeddingId, userId, entityType, entityId, entityType, entityId, entityType, entityId, entityType, entityId, entityType, entityId, entityType, entityId, entityType, entityId);
+
+  // Store vector in a separate table (embedding vectors are too large for TEXT column)
+  ensureVectorTable(db);
+  db.prepare(`
+    INSERT OR REPLACE INTO embedding_vectors (embedding_id, vector_data)
+    VALUES (?, ?)
+  `).run(embeddingId, JSON.stringify(vector));
+
+  // Also store in sqlite-vec virtual table if available
+  if (isVecAvailable()) {
+    storeInVecTable(db, entityType, embeddingId, vector, JSON.stringify({
+      entity_type: entityType,
+      entity_id: entityId,
+      user_id: userId,
+    }));
+  }
+
+  return { embeddingId, vector };
+}
+
+/**
+ * Extract text content from an entity for embedding
+ */
+function getEntityText(entityType: string, entityId: string): string | null {
+  const db = getDb();
+
+  switch (entityType) {
+    case "message": {
+      const msg = db.prepare(
+        "SELECT content FROM messages WHERE id = ? AND is_deleted = 0"
+      ).get(entityId) as { content: string } | undefined;
+      return msg?.content || null;
+    }
+    case "location": {
+      const loc = db.prepare(
+        "SELECT name, known_info, hidden_info FROM locations WHERE id = ?"
+      ).get(entityId) as { name: string; known_info: string | null; hidden_info: string | null } | undefined;
+      if (!loc) return null;
+      return `${loc.name} ${loc.known_info || ""} ${loc.hidden_info || ""}`;
+    }
+    case "npc": {
+      const npc = db.prepare(
+        "SELECT name, tags FROM npcs WHERE id = ?"
+      ).get(entityId) as { name: string; tags: string | null } | undefined;
+      if (!npc) return null;
+      return `${npc.name} ${npc.tags || ""}`;
+    }
+    case "event": {
+      const evt = db.prepare(
+        "SELECT title, outcome, consequences FROM events WHERE id = ?"
+      ).get(entityId) as { title: string; outcome: string | null; consequences: string | null } | undefined;
+      if (!evt) return null;
+      return `${evt.title} ${evt.outcome || ""} ${evt.consequences || ""}`;
+    }
+    case "narrative_memory": {
+      const mem = db.prepare(
+        "SELECT content, type FROM narrative_memories WHERE id = ?"
+      ).get(entityId) as { content: string; type: string } | undefined;
+      if (!mem) return null;
+      return `${mem.type}: ${mem.content}`;
+    }
+    default:
+      return null;
+  }
+}
+
+/**
+ * Ensure the embedding_vectors table exists
+ */
+function ensureVectorTable(db: any): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS embedding_vectors (
+      embedding_id TEXT PRIMARY KEY REFERENCES embedding_index(id),
+      vector_data TEXT NOT NULL
+    )
+  `);
+}
+
+/**
+ * Get embedding vector for an entity
+ */
+export function getEmbedding(entityType: string, entityId: string): number[] | null {
+  const db = getDb();
+
+  const result = db.prepare(`
+    SELECT ev.vector_data
+    FROM embedding_index ei
+    JOIN embedding_vectors ev ON ei.id = ev.embedding_id
+    WHERE ei.entity_type = ? AND ei.entity_id = ?
+  `).get(entityType, entityId) as { vector_data: string } | undefined;
+
+  if (!result) return null;
+
+  try {
+    return JSON.parse(result.vector_data);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Check if an entity has an embedding
+ */
+export function hasEmbedding(entityType: string, entityId: string): boolean {
+  const db = getDb();
+  const result = db.prepare(
+    "SELECT COUNT(*) as count FROM embedding_index WHERE entity_type = ? AND entity_id = ?"
+  ).get(entityType, entityId) as { count: number } | undefined;
+  return (result?.count || 0) > 0;
+}
+
+/**
+ * Get entities that need embeddings for a user
+ */
+export function getEntitiesNeedingEmbeddings(userId: string, entityType?: string): { entityType: string; entityId: string }[] {
+  const db = getDb();
+
+  // Find entities without embeddings
+  const missing = db.prepare(`
+    SELECT 'message' as entity_type, m.id as entity_id
+    FROM messages m
+    WHERE m.session_id IN (SELECT id FROM sessions WHERE owner_id = ?)
+      AND m.is_deleted = 0
+      AND m.id NOT IN (SELECT entity_id FROM embedding_index WHERE entity_type = 'message')
+    ${entityType ? "AND 'message' = ?" : ""}
+
+    UNION ALL
+
+    SELECT 'location' as entity_type, l.id as entity_id
+    FROM locations l
+    WHERE l.user_id = ?
+      AND l.id NOT IN (SELECT entity_id FROM embedding_index WHERE entity_type = 'location')
+    ${entityType ? "AND 'location' = ?" : ""}
+
+    UNION ALL
+
+    SELECT 'npc' as entity_type, n.id as entity_id
+    FROM npcs n
+    WHERE n.user_id = ?
+      AND n.id NOT IN (SELECT entity_id FROM embedding_index WHERE entity_type = 'npc')
+    ${entityType ? "AND 'npc' = ?" : ""}
+
+    LIMIT 90
+  `).all(userId, ...(entityType ? [entityType] : []), userId, ...(entityType ? [entityType] : []), userId, ...(entityType ? [entityType] : [])) as { entity_type: string; entity_id: string }[];
+
+  return missing.map((m) => ({ entityType: m.entity_type, entityId: m.entity_id }));
+}
+
+/**
+ * Delete embedding for an entity
+ */
+export function deleteEmbedding(entityType: string, entityId: string): void {
+  const db = getDb();
+  db.prepare(`
+    DELETE FROM embedding_vectors WHERE embedding_id IN (
+      SELECT id FROM embedding_index WHERE entity_type = ? AND entity_id = ?
+    )
+  `).run(entityType, entityId);
+  db.prepare(
+    "DELETE FROM embedding_index WHERE entity_type = ? AND entity_id = ?"
+  ).run(entityType, entityId);
+}
+
+/**
+ * Store embedding vector in sqlite-vec virtual table
+ */
+function storeInVecTable(db: any, entityType: string, embeddingId: string, vector: number[], metadata: string): void {
+  const vecTable = getVecTableName(entityType);
+  if (!vecTable) return;
+
+  try {
+    // Convert vector to the format sqlite-vec expects (packed float32)
+    const packedVector = packVector(vector);
+    db.prepare(`
+      INSERT INTO ${vecTable} (rowid, embedding, metadata)
+      VALUES (?, ?, ?)
+    `).run(embeddingId, packedVector, metadata);
+  } catch {
+    // vec table may not exist or have different schema — skip silently
+  }
+}
+
+/**
+ * Get the vec0 table name for an entity type
+ */
+function getVecTableName(entityType: string): string | null {
+  switch (entityType) {
+    case "message": return "vec_messages";
+    case "location": return "vec_lore";
+    case "npc": return "vec_npcs";
+    case "narrative_memory": return "vec_memories";
+    default: return null;
+  }
+}
+
+/**
+ * Pack a number array into a Float32Array buffer for sqlite-vec
+ */
+function packVector(vector: number[]): Buffer {
+  const float32 = new Float32Array(vector);
+  return Buffer.from(float32.buffer);
+}
+
+/**
+ * Perform vector similarity search using sqlite-vec
+ * Returns entities ranked by cosine similarity to the query vector
+ */
+export function vectorSearch(
+  entityType: string,
+  queryVector: number[],
+  universeId: string,
+  limit: number = 10
+): { entityId: string; similarity: number; metadata: string }[] {
+  const db = getDb();
+
+  // Fall back to empty results if vec not available
+  if (!isVecAvailable()) return [];
+
+  const vecTable = getVecTableName(entityType);
+  if (!vecTable) return [];
+
+  try {
+    const packedVector = packVector(queryVector);
+    const results = db.prepare(`
+      SELECT rowid as entity_id, metadata, distance
+      FROM ${vecTable}
+      WHERE embedding MATCH ? AND k = ?
+    `).all(packedVector, limit) as { entity_id: string; metadata: string; distance: number }[];
+
+    // sqlite-vec returns distance (lower = more similar), convert to similarity
+    return results.map((r) => ({
+      entityId: r.entity_id,
+      similarity: 1 - r.distance,
+      metadata: r.metadata,
+    }));
+  } catch {
+    return [];
+  }
+}

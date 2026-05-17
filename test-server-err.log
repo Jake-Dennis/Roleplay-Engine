@@ -1,0 +1,303 @@
+
+-----
+[1m[31mFATAL[39m[0m: An unexpected Turbopack error occurred. A panic log has been written to C:\Users\JakeP\AppData\Local\Temp\next-panic-a9a5e54c84a2ad27b5e8ccf87f9dd10c.log.
+
+To help make Turbopack better, report this error by clicking here: https://bugs.nextjs.org/search?category=turbopack-error-report&title=Turbopack%20Error%3A%20Failed%20to%20write%20app%20endpoint%20%2F%28app%29%2Flocations%2Fpage&body=Turbopack%20version%3A%20%60ee6e79b1%60%0ANext.js%20version%3A%20%600.0.0%60%0A%0AError%20message%3A%0A%60%60%60%0AFailed%20to%20write%20app%20endpoint%20%2F%28app%29%2Flocations%2Fpage%0A%0ACaused%20by%3A%0A-%20Cell%20CellId%20%7B%20type_id%3A%20ValueTypeId%20%7B%20id%3A%2081%2C%20name%3A%20ValueType%20%7B%20name%3A%20%22next_core%3A%3Aapp_structure%3A%3AAppPageLoaderTree%22%20%7D%20%7D%2C%20index%3A%200%20%7D%20no%20longer%20exists%20in%20task%20TaskId%20%7B%20id%3A%20190913%20%7D%20directory_tree_to_loader_tree%20%28no%20cell%20of%20this%20type%20exists%29%0A%0ADebug%20info%3A%0A-%20Execution%20of%20Project%3A%3Ahmr_version_state%20failed%0A-%20Execution%20of%20hmr_version_operation%20failed%0A-%20Execution%20of%20VersionedContentMap%3A%3Aget%20failed%0A-%20Execution%20of%20VersionedContentMap%3A%3Aget_asset%20failed%0A-%20Execution%20of%20VersionedContentMap%3A%3Acompute_entry%20failed%0A-%20Execution%20of%20%2Aemit_assets%20failed%0A-%20Execution%20of%20all_assets_from_entries_operation%20failed%0A-%20Execution%20of%20%2Aall_assets_from_entries%20failed%0A-%20Execution%20of%20endpoint_output_assets_operation%20failed%0A-%20Execution%20of%20%3CAppEndpoint%20as%20Endpoint%3E%3A%3Aoutput%20failed%0A-%20Failed%20to%20write%20app%20endpoint%20%2F%28app%29%2Flocations%2Fpage%0A-%20Execution%20of%20%2Aall_asset_paths%20failed%0A-%20Execution%20of%20%2AAppEndpointOutput%3A%3Aoutput_assets%20failed%0A-%20Execution%20of%20AppEndpoint%3A%3Aoutput%20failed%0A-%20Execution%20of%20get_app_page_entry%20failed%0A-%20Execution%20of%20parse_segment_config_from_loader_tree%20failed%0A-%20Cell%20CellId%20%7B%20type_id%3A%20ValueTypeId%20%7B%20id%3A%2081%2C%20name%3A%20ValueType%20%7B%20name%3A%20%22next_core%3A%3Aapp_structure%3A%3AAppPageLoaderTree%22%20%7D%20%7D%2C%20index%3A%200%20%7D%20no%20longer%20exists%20in%20task%20TaskId%20%7B%20id%3A%20190913%20%7D%20directory_tree_to_loader_tree%20%28no%20cell%20of%20this%20type%20exists%29%0A%60%60%60&labels=Turbopack,Turbopack%20Panic%20Backtrace
+-----
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+[Server HMR] Subscription error: Error [TurbopackInternalError]: Failed to write app endpoint /(app)/locations/page
+
+Caused by:
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+
+Debug info:
+- Execution of Project::hmr_version_state failed
+- Execution of hmr_version_operation failed
+- Execution of VersionedContentMap::get failed
+- Execution of VersionedContentMap::get_asset failed
+- Execution of VersionedContentMap::compute_entry failed
+- Execution of *emit_assets failed
+- Execution of all_assets_from_entries_operation failed
+- Execution of *all_assets_from_entries failed
+- Execution of endpoint_output_assets_operation failed
+- Execution of <AppEndpoint as Endpoint>::output failed
+- Failed to write app endpoint /(app)/locations/page
+- Execution of *all_asset_paths failed
+- Execution of *AppEndpointOutput::output_assets failed
+- Execution of AppEndpoint::output failed
+- Execution of get_app_page_entry failed
+- Execution of parse_segment_config_from_loader_tree failed
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+    at <unknown> (TurbopackInternalError: Failed to write app endpoint /(app)/locations/page) {
+  location: undefined
+}
+
+-----
+[1m[31mFATAL[39m[0m: An unexpected Turbopack error occurred. A panic log has been written to C:\Users\JakeP\AppData\Local\Temp\next-panic-a9a5e54c84a2ad27b5e8ccf87f9dd10c.log.
+
+To help make Turbopack better, report this error by clicking here: https://bugs.nextjs.org/search?category=turbopack-error-report&title=Turbopack%20Error%3A%20Failed%20to%20write%20app%20endpoint%20%2F%28app%29%2Flocations%2Fpage&body=Turbopack%20version%3A%20%60ee6e79b1%60%0ANext.js%20version%3A%20%600.0.0%60%0A%0AError%20message%3A%0A%60%60%60%0AFailed%20to%20write%20app%20endpoint%20%2F%28app%29%2Flocations%2Fpage%0A%0ACaused%20by%3A%0A-%20Cell%20CellId%20%7B%20type_id%3A%20ValueTypeId%20%7B%20id%3A%2081%2C%20name%3A%20ValueType%20%7B%20name%3A%20%22next_core%3A%3Aapp_structure%3A%3AAppPageLoaderTree%22%20%7D%20%7D%2C%20index%3A%200%20%7D%20no%20longer%20exists%20in%20task%20TaskId%20%7B%20id%3A%20190913%20%7D%20directory_tree_to_loader_tree%20%28no%20cell%20of%20this%20type%20exists%29%0A%0ADebug%20info%3A%0A-%20Execution%20of%20Project%3A%3Ahmr_version_state%20failed%0A-%20Execution%20of%20hmr_version_operation%20failed%0A-%20Execution%20of%20VersionedContentMap%3A%3Aget%20failed%0A-%20Execution%20of%20VersionedContentMap%3A%3Aget_asset%20failed%0A-%20Execution%20of%20VersionedContentMap%3A%3Acompute_entry%20failed%0A-%20Execution%20of%20%2Aemit_assets%20failed%0A-%20Execution%20of%20all_assets_from_entries_operation%20failed%0A-%20Execution%20of%20%2Aall_assets_from_entries%20failed%0A-%20Execution%20of%20endpoint_output_assets_operation%20failed%0A-%20Execution%20of%20%3CAppEndpoint%20as%20Endpoint%3E%3A%3Aoutput%20failed%0A-%20Failed%20to%20write%20app%20endpoint%20%2F%28app%29%2Flocations%2Fpage%0A-%20Execution%20of%20%2Aall_asset_paths%20failed%0A-%20Execution%20of%20%2AAppEndpointOutput%3A%3Aoutput_assets%20failed%0A-%20Execution%20of%20AppEndpoint%3A%3Aoutput%20failed%0A-%20Execution%20of%20get_app_page_entry%20failed%0A-%20Execution%20of%20parse_segment_config_from_loader_tree%20failed%0A-%20Cell%20CellId%20%7B%20type_id%3A%20ValueTypeId%20%7B%20id%3A%2081%2C%20name%3A%20ValueType%20%7B%20name%3A%20%22next_core%3A%3Aapp_structure%3A%3AAppPageLoaderTree%22%20%7D%20%7D%2C%20index%3A%200%20%7D%20no%20longer%20exists%20in%20task%20TaskId%20%7B%20id%3A%20190913%20%7D%20directory_tree_to_loader_tree%20%28no%20cell%20of%20this%20type%20exists%29%0A%60%60%60&labels=Turbopack,Turbopack%20Panic%20Backtrace
+-----
+
+[Server HMR] Subscription error: Error [TurbopackInternalError]: Failed to write app endpoint /(app)/locations/page
+
+Caused by:
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+
+Debug info:
+- Execution of Project::hmr_version_state failed
+- Execution of hmr_version_operation failed
+- Execution of VersionedContentMap::get failed
+- Execution of VersionedContentMap::get_asset failed
+- Execution of VersionedContentMap::compute_entry failed
+- Execution of *emit_assets failed
+- Execution of all_assets_from_entries_operation failed
+- Execution of *all_assets_from_entries failed
+- Execution of endpoint_output_assets_operation failed
+- Execution of <AppEndpoint as Endpoint>::output failed
+- Failed to write app endpoint /(app)/locations/page
+- Execution of *all_asset_paths failed
+- Execution of *AppEndpointOutput::output_assets failed
+- Execution of AppEndpoint::output failed
+- Execution of get_app_page_entry failed
+- Execution of parse_segment_config_from_loader_tree failed
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+    at <unknown> (TurbopackInternalError: Failed to write app endpoint /(app)/locations/page) {
+  location: undefined
+}
+
+-----
+[1m[31mFATAL[39m[0m: An unexpected Turbopack error occurred. A panic log has been written to C:\Users\JakeP\AppData\Local\Temp\next-panic-a9a5e54c84a2ad27b5e8ccf87f9dd10c.log.
+
+To help make Turbopack better, report this error by clicking here: https://bugs.nextjs.org/search?category=turbopack-error-report&title=Turbopack%20Error%3A%20Failed%20to%20write%20app%20endpoint%20%2F%28app%29%2Flocations%2Fpage&body=Turbopack%20version%3A%20%60ee6e79b1%60%0ANext.js%20version%3A%20%600.0.0%60%0A%0AError%20message%3A%0A%60%60%60%0AFailed%20to%20write%20app%20endpoint%20%2F%28app%29%2Flocations%2Fpage%0A%0ACaused%20by%3A%0A-%20Cell%20CellId%20%7B%20type_id%3A%20ValueTypeId%20%7B%20id%3A%2081%2C%20name%3A%20ValueType%20%7B%20name%3A%20%22next_core%3A%3Aapp_structure%3A%3AAppPageLoaderTree%22%20%7D%20%7D%2C%20index%3A%200%20%7D%20no%20longer%20exists%20in%20task%20TaskId%20%7B%20id%3A%20190913%20%7D%20directory_tree_to_loader_tree%20%28no%20cell%20of%20this%20type%20exists%29%0A%0ADebug%20info%3A%0A-%20Execution%20of%20Project%3A%3Ahmr_version_state%20failed%0A-%20Execution%20of%20hmr_version_operation%20failed%0A-%20Execution%20of%20VersionedContentMap%3A%3Aget%20failed%0A-%20Execution%20of%20VersionedContentMap%3A%3Aget_asset%20failed%0A-%20Execution%20of%20VersionedContentMap%3A%3Acompute_entry%20failed%0A-%20Execution%20of%20%2Aemit_assets%20failed%0A-%20Execution%20of%20all_assets_from_entries_operation%20failed%0A-%20Execution%20of%20%2Aall_assets_from_entries%20failed%0A-%20Execution%20of%20endpoint_output_assets_operation%20failed%0A-%20Execution%20of%20%3CAppEndpoint%20as%20Endpoint%3E%3A%3Aoutput%20failed%0A-%20Failed%20to%20write%20app%20endpoint%20%2F%28app%29%2Flocations%2Fpage%0A-%20Execution%20of%20%2Aall_asset_paths%20failed%0A-%20Execution%20of%20%2AAppEndpointOutput%3A%3Aoutput_assets%20failed%0A-%20Execution%20of%20AppEndpoint%3A%3Aoutput%20failed%0A-%20Execution%20of%20get_app_page_entry%20failed%0A-%20Execution%20of%20parse_segment_config_from_loader_tree%20failed%0A-%20Cell%20CellId%20%7B%20type_id%3A%20ValueTypeId%20%7B%20id%3A%2081%2C%20name%3A%20ValueType%20%7B%20name%3A%20%22next_core%3A%3Aapp_structure%3A%3AAppPageLoaderTree%22%20%7D%20%7D%2C%20index%3A%200%20%7D%20no%20longer%20exists%20in%20task%20TaskId%20%7B%20id%3A%20190913%20%7D%20directory_tree_to_loader_tree%20%28no%20cell%20of%20this%20type%20exists%29%0A%60%60%60&labels=Turbopack,Turbopack%20Panic%20Backtrace
+-----
+
+[Server HMR] Subscription error: Error [TurbopackInternalError]: Failed to write app endpoint /(app)/locations/page
+
+Caused by:
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+
+Debug info:
+- Execution of Project::hmr_version_state failed
+- Execution of hmr_version_operation failed
+- Execution of VersionedContentMap::get failed
+- Execution of VersionedContentMap::get_asset failed
+- Execution of VersionedContentMap::compute_entry failed
+- Execution of *emit_assets failed
+- Execution of all_assets_from_entries_operation failed
+- Execution of *all_assets_from_entries failed
+- Execution of endpoint_output_assets_operation failed
+- Execution of <AppEndpoint as Endpoint>::output failed
+- Failed to write app endpoint /(app)/locations/page
+- Execution of *all_asset_paths failed
+- Execution of *AppEndpointOutput::output_assets failed
+- Execution of AppEndpoint::output failed
+- Execution of get_app_page_entry failed
+- Execution of parse_segment_config_from_loader_tree failed
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+    at <unknown> (TurbopackInternalError: Failed to write app endpoint /(app)/locations/page) {
+  location: undefined
+}
+[Server HMR] Subscription error: Error [TurbopackInternalError]: Failed to write app endpoint /(app)/locations/page
+
+Caused by:
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+
+Debug info:
+- Execution of Project::hmr_version_state failed
+- Execution of hmr_version_operation failed
+- Execution of VersionedContentMap::get failed
+- Execution of VersionedContentMap::get_asset failed
+- Execution of VersionedContentMap::compute_entry failed
+- Execution of *emit_assets failed
+- Execution of all_assets_from_entries_operation failed
+- Execution of *all_assets_from_entries failed
+- Execution of endpoint_output_assets_operation failed
+- Execution of <AppEndpoint as Endpoint>::output failed
+- Failed to write app endpoint /(app)/locations/page
+- Execution of *all_asset_paths failed
+- Execution of *AppEndpointOutput::output_assets failed
+- Execution of AppEndpoint::output failed
+- Execution of get_app_page_entry failed
+- Execution of parse_segment_config_from_loader_tree failed
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+    at <unknown> (TurbopackInternalError: Failed to write app endpoint /(app)/locations/page) {
+  location: undefined
+}
+[Server HMR] Subscription error: Error [TurbopackInternalError]: Failed to write app endpoint /(app)/locations/page
+
+Caused by:
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+
+Debug info:
+- Execution of Project::hmr_version_state failed
+- Execution of hmr_version_operation failed
+- Execution of VersionedContentMap::get failed
+- Execution of VersionedContentMap::get_asset failed
+- Execution of VersionedContentMap::compute_entry failed
+- Execution of *emit_assets failed
+- Execution of all_assets_from_entries_operation failed
+- Execution of *all_assets_from_entries failed
+- Execution of endpoint_output_assets_operation failed
+- Execution of <AppEndpoint as Endpoint>::output failed
+- Failed to write app endpoint /(app)/locations/page
+- Execution of *all_asset_paths failed
+- Execution of *AppEndpointOutput::output_assets failed
+- Execution of AppEndpoint::output failed
+- Execution of get_app_page_entry failed
+- Execution of parse_segment_config_from_loader_tree failed
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+    at <unknown> (TurbopackInternalError: Failed to write app endpoint /(app)/locations/page) {
+  location: undefined
+}
+
+-----
+[1m[31mFATAL[39m[0m: An unexpected Turbopack error occurred. A panic log has been written to C:\Users\JakeP\AppData\Local\Temp\next-panic-a9a5e54c84a2ad27b5e8ccf87f9dd10c.log.
+
+To help make Turbopack better, report this error by clicking here: https://bugs.nextjs.org/search?category=turbopack-error-report&title=Turbopack%20Error%3A%20Failed%20to%20write%20app%20endpoint%20%2F%28app%29%2Flocations%2Fpage&body=Turbopack%20version%3A%20%60ee6e79b1%60%0ANext.js%20version%3A%20%600.0.0%60%0A%0AError%20message%3A%0A%60%60%60%0AFailed%20to%20write%20app%20endpoint%20%2F%28app%29%2Flocations%2Fpage%0A%0ACaused%20by%3A%0A-%20Cell%20CellId%20%7B%20type_id%3A%20ValueTypeId%20%7B%20id%3A%2081%2C%20name%3A%20ValueType%20%7B%20name%3A%20%22next_core%3A%3Aapp_structure%3A%3AAppPageLoaderTree%22%20%7D%20%7D%2C%20index%3A%200%20%7D%20no%20longer%20exists%20in%20task%20TaskId%20%7B%20id%3A%20190913%20%7D%20directory_tree_to_loader_tree%20%28no%20cell%20of%20this%20type%20exists%29%0A%0ADebug%20info%3A%0A-%20Execution%20of%20Project%3A%3Ahmr_version_state%20failed%0A-%20Execution%20of%20hmr_version_operation%20failed%0A-%20Execution%20of%20VersionedContentMap%3A%3Aget%20failed%0A-%20Execution%20of%20VersionedContentMap%3A%3Aget_asset%20failed%0A-%20Execution%20of%20VersionedContentMap%3A%3Acompute_entry%20failed%0A-%20Execution%20of%20%2Aemit_assets%20failed%0A-%20Execution%20of%20all_assets_from_entries_operation%20failed%0A-%20Execution%20of%20%2Aall_assets_from_entries%20failed%0A-%20Execution%20of%20endpoint_output_assets_operation%20failed%0A-%20Execution%20of%20%3CAppEndpoint%20as%20Endpoint%3E%3A%3Aoutput%20failed%0A-%20Failed%20to%20write%20app%20endpoint%20%2F%28app%29%2Flocations%2Fpage%0A-%20Execution%20of%20%2Aall_asset_paths%20failed%0A-%20Execution%20of%20%2AAppEndpointOutput%3A%3Aoutput_assets%20failed%0A-%20Execution%20of%20AppEndpoint%3A%3Aoutput%20failed%0A-%20Execution%20of%20get_app_page_entry%20failed%0A-%20Execution%20of%20parse_segment_config_from_loader_tree%20failed%0A-%20Cell%20CellId%20%7B%20type_id%3A%20ValueTypeId%20%7B%20id%3A%2081%2C%20name%3A%20ValueType%20%7B%20name%3A%20%22next_core%3A%3Aapp_structure%3A%3AAppPageLoaderTree%22%20%7D%20%7D%2C%20index%3A%200%20%7D%20no%20longer%20exists%20in%20task%20TaskId%20%7B%20id%3A%20190913%20%7D%20directory_tree_to_loader_tree%20%28no%20cell%20of%20this%20type%20exists%29%0A%60%60%60&labels=Turbopack,Turbopack%20Panic%20Backtrace
+-----
+
+[Server HMR] Subscription error: Error [TurbopackInternalError]: Failed to write app endpoint /(app)/locations/page
+
+Caused by:
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+
+Debug info:
+- Execution of Project::hmr_version_state failed
+- Execution of hmr_version_operation failed
+- Execution of VersionedContentMap::get failed
+- Execution of VersionedContentMap::get_asset failed
+- Execution of VersionedContentMap::compute_entry failed
+- Execution of *emit_assets failed
+- Execution of all_assets_from_entries_operation failed
+- Execution of *all_assets_from_entries failed
+- Execution of endpoint_output_assets_operation failed
+- Execution of <AppEndpoint as Endpoint>::output failed
+- Failed to write app endpoint /(app)/locations/page
+- Execution of *all_asset_paths failed
+- Execution of *AppEndpointOutput::output_assets failed
+- Execution of AppEndpoint::output failed
+- Execution of get_app_page_entry failed
+- Execution of parse_segment_config_from_loader_tree failed
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+    at <unknown> (TurbopackInternalError: Failed to write app endpoint /(app)/locations/page) {
+  location: undefined
+}
+
+-----
+[1m[31mFATAL[39m[0m: An unexpected Turbopack error occurred. A panic log has been written to C:\Users\JakeP\AppData\Local\Temp\next-panic-a9a5e54c84a2ad27b5e8ccf87f9dd10c.log.
+
+To help make Turbopack better, report this error by clicking here: https://bugs.nextjs.org/search?category=turbopack-error-report&title=Turbopack%20Error%3A%20Failed%20to%20write%20app%20endpoint%20%2F%28app%29%2Flocations%2Fpage&body=Turbopack%20version%3A%20%60ee6e79b1%60%0ANext.js%20version%3A%20%600.0.0%60%0A%0AError%20message%3A%0A%60%60%60%0AFailed%20to%20write%20app%20endpoint%20%2F%28app%29%2Flocations%2Fpage%0A%0ACaused%20by%3A%0A-%20Cell%20CellId%20%7B%20type_id%3A%20ValueTypeId%20%7B%20id%3A%2081%2C%20name%3A%20ValueType%20%7B%20name%3A%20%22next_core%3A%3Aapp_structure%3A%3AAppPageLoaderTree%22%20%7D%20%7D%2C%20index%3A%200%20%7D%20no%20longer%20exists%20in%20task%20TaskId%20%7B%20id%3A%20190913%20%7D%20directory_tree_to_loader_tree%20%28no%20cell%20of%20this%20type%20exists%29%0A%0ADebug%20info%3A%0A-%20Execution%20of%20Project%3A%3Ahmr_version_state%20failed%0A-%20Execution%20of%20hmr_version_operation%20failed%0A-%20Execution%20of%20VersionedContentMap%3A%3Aget%20failed%0A-%20Execution%20of%20VersionedContentMap%3A%3Aget_asset%20failed%0A-%20Execution%20of%20VersionedContentMap%3A%3Acompute_entry%20failed%0A-%20Execution%20of%20%2Aemit_assets%20failed%0A-%20Execution%20of%20all_assets_from_entries_operation%20failed%0A-%20Execution%20of%20%2Aall_assets_from_entries%20failed%0A-%20Execution%20of%20endpoint_output_assets_operation%20failed%0A-%20Execution%20of%20%3CAppEndpoint%20as%20Endpoint%3E%3A%3Aoutput%20failed%0A-%20Failed%20to%20write%20app%20endpoint%20%2F%28app%29%2Flocations%2Fpage%0A-%20Execution%20of%20%2Aall_asset_paths%20failed%0A-%20Execution%20of%20%2AAppEndpointOutput%3A%3Aoutput_assets%20failed%0A-%20Execution%20of%20AppEndpoint%3A%3Aoutput%20failed%0A-%20Execution%20of%20get_app_page_entry%20failed%0A-%20Execution%20of%20parse_segment_config_from_loader_tree%20failed%0A-%20Cell%20CellId%20%7B%20type_id%3A%20ValueTypeId%20%7B%20id%3A%2081%2C%20name%3A%20ValueType%20%7B%20name%3A%20%22next_core%3A%3Aapp_structure%3A%3AAppPageLoaderTree%22%20%7D%20%7D%2C%20index%3A%200%20%7D%20no%20longer%20exists%20in%20task%20TaskId%20%7B%20id%3A%20190913%20%7D%20directory_tree_to_loader_tree%20%28no%20cell%20of%20this%20type%20exists%29%0A%60%60%60&labels=Turbopack,Turbopack%20Panic%20Backtrace
+-----
+
+[Server HMR] Subscription error: Error [TurbopackInternalError]: Failed to write app endpoint /(app)/locations/page
+
+Caused by:
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+
+Debug info:
+- Execution of Project::hmr_version_state failed
+- Execution of hmr_version_operation failed
+- Execution of VersionedContentMap::get failed
+- Execution of VersionedContentMap::get_asset failed
+- Execution of VersionedContentMap::compute_entry failed
+- Execution of *emit_assets failed
+- Execution of all_assets_from_entries_operation failed
+- Execution of *all_assets_from_entries failed
+- Execution of endpoint_output_assets_operation failed
+- Execution of <AppEndpoint as Endpoint>::output failed
+- Failed to write app endpoint /(app)/locations/page
+- Execution of *all_asset_paths failed
+- Execution of *AppEndpointOutput::output_assets failed
+- Execution of AppEndpoint::output failed
+- Execution of get_app_page_entry failed
+- Execution of parse_segment_config_from_loader_tree failed
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+    at <unknown> (TurbopackInternalError: Failed to write app endpoint /(app)/locations/page) {
+  location: undefined
+}
+[Server HMR] Subscription error: Error [TurbopackInternalError]: Failed to write app endpoint /(app)/locations/page
+
+Caused by:
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+
+Debug info:
+- Execution of Project::hmr_version_state failed
+- Execution of hmr_version_operation failed
+- Execution of VersionedContentMap::get failed
+- Execution of VersionedContentMap::get_asset failed
+- Execution of VersionedContentMap::compute_entry failed
+- Execution of *emit_assets failed
+- Execution of all_assets_from_entries_operation failed
+- Execution of *all_assets_from_entries failed
+- Execution of endpoint_output_assets_operation failed
+- Execution of <AppEndpoint as Endpoint>::output failed
+- Failed to write app endpoint /(app)/locations/page
+- Execution of *all_asset_paths failed
+- Execution of *AppEndpointOutput::output_assets failed
+- Execution of AppEndpoint::output failed
+- Execution of get_app_page_entry failed
+- Execution of parse_segment_config_from_loader_tree failed
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+    at <unknown> (TurbopackInternalError: Failed to write app endpoint /(app)/locations/page) {
+  location: undefined
+}
+
+-----
+[1m[31mFATAL[39m[0m: An unexpected Turbopack error occurred. A panic log has been written to C:\Users\JakeP\AppData\Local\Temp\next-panic-a9a5e54c84a2ad27b5e8ccf87f9dd10c.log.
+
+To help make Turbopack better, report this error by clicking here: https://bugs.nextjs.org/search?category=turbopack-error-report&title=Turbopack%20Error%3A%20Failed%20to%20write%20app%20endpoint%20%2F%28app%29%2Flocations%2Fpage&body=Turbopack%20version%3A%20%60ee6e79b1%60%0ANext.js%20version%3A%20%600.0.0%60%0A%0AError%20message%3A%0A%60%60%60%0AFailed%20to%20write%20app%20endpoint%20%2F%28app%29%2Flocations%2Fpage%0A%0ACaused%20by%3A%0A-%20Cell%20CellId%20%7B%20type_id%3A%20ValueTypeId%20%7B%20id%3A%2081%2C%20name%3A%20ValueType%20%7B%20name%3A%20%22next_core%3A%3Aapp_structure%3A%3AAppPageLoaderTree%22%20%7D%20%7D%2C%20index%3A%200%20%7D%20no%20longer%20exists%20in%20task%20TaskId%20%7B%20id%3A%20190913%20%7D%20directory_tree_to_loader_tree%20%28no%20cell%20of%20this%20type%20exists%29%0A%0ADebug%20info%3A%0A-%20Execution%20of%20Project%3A%3Ahmr_version_state%20failed%0A-%20Execution%20of%20hmr_version_operation%20failed%0A-%20Execution%20of%20VersionedContentMap%3A%3Aget%20failed%0A-%20Execution%20of%20VersionedContentMap%3A%3Aget_asset%20failed%0A-%20Execution%20of%20VersionedContentMap%3A%3Acompute_entry%20failed%0A-%20Execution%20of%20%2Aemit_assets%20failed%0A-%20Execution%20of%20all_assets_from_entries_operation%20failed%0A-%20Execution%20of%20%2Aall_assets_from_entries%20failed%0A-%20Execution%20of%20endpoint_output_assets_operation%20failed%0A-%20Execution%20of%20%3CAppEndpoint%20as%20Endpoint%3E%3A%3Aoutput%20failed%0A-%20Failed%20to%20write%20app%20endpoint%20%2F%28app%29%2Flocations%2Fpage%0A-%20Execution%20of%20%2Aall_asset_paths%20failed%0A-%20Execution%20of%20%2AAppEndpointOutput%3A%3Aoutput_assets%20failed%0A-%20Execution%20of%20AppEndpoint%3A%3Aoutput%20failed%0A-%20Execution%20of%20get_app_page_entry%20failed%0A-%20Execution%20of%20parse_segment_config_from_loader_tree%20failed%0A-%20Cell%20CellId%20%7B%20type_id%3A%20ValueTypeId%20%7B%20id%3A%2081%2C%20name%3A%20ValueType%20%7B%20name%3A%20%22next_core%3A%3Aapp_structure%3A%3AAppPageLoaderTree%22%20%7D%20%7D%2C%20index%3A%200%20%7D%20no%20longer%20exists%20in%20task%20TaskId%20%7B%20id%3A%20190913%20%7D%20directory_tree_to_loader_tree%20%28no%20cell%20of%20this%20type%20exists%29%0A%60%60%60&labels=Turbopack,Turbopack%20Panic%20Backtrace
+-----
+
+[Server HMR] Subscription error: Error [TurbopackInternalError]: Failed to write app endpoint /(app)/locations/page
+
+Caused by:
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+
+Debug info:
+- Execution of Project::hmr_version_state failed
+- Execution of hmr_version_operation failed
+- Execution of VersionedContentMap::get failed
+- Execution of VersionedContentMap::get_asset failed
+- Execution of VersionedContentMap::compute_entry failed
+- Execution of *emit_assets failed
+- Execution of all_assets_from_entries_operation failed
+- Execution of *all_assets_from_entries failed
+- Execution of endpoint_output_assets_operation failed
+- Execution of <AppEndpoint as Endpoint>::output failed
+- Failed to write app endpoint /(app)/locations/page
+- Execution of *all_asset_paths failed
+- Execution of *AppEndpointOutput::output_assets failed
+- Execution of AppEndpoint::output failed
+- Execution of get_app_page_entry failed
+- Execution of parse_segment_config_from_loader_tree failed
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+    at <unknown> (TurbopackInternalError: Failed to write app endpoint /(app)/locations/page) {
+  location: undefined
+}
+[Server HMR] Subscription error: Error [TurbopackInternalError]: Failed to write app endpoint /(app)/locations/page
+
+Caused by:
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+
+Debug info:
+- Execution of Project::hmr_version_state failed
+- Execution of hmr_version_operation failed
+- Execution of VersionedContentMap::get failed
+- Execution of VersionedContentMap::get_asset failed
+- Execution of VersionedContentMap::compute_entry failed
+- Execution of *emit_assets failed
+- Execution of all_assets_from_entries_operation failed
+- Execution of *all_assets_from_entries failed
+- Execution of endpoint_output_assets_operation failed
+- Execution of <AppEndpoint as Endpoint>::output failed
+- Failed to write app endpoint /(app)/locations/page
+- Execution of *all_asset_paths failed
+- Execution of *AppEndpointOutput::output_assets failed
+- Execution of AppEndpoint::output failed
+- Execution of get_app_page_entry failed
+- Execution of parse_segment_config_from_loader_tree failed
+- Cell CellId { type_id: ValueTypeId { id: 81, name: ValueType { name: "next_core::app_structure::AppPageLoaderTree" } }, index: 0 } no longer exists in task TaskId { id: 190913 } directory_tree_to_loader_tree (no cell of this type exists)
+    at <unknown> (TurbopackInternalError: Failed to write app endpoint /(app)/locations/page) {
+  location: undefined
+}

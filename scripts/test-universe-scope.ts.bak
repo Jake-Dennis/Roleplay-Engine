@@ -1,0 +1,327 @@
+/**
+ * Integration test for universe scoping and job system.
+ * Run with: npx tsx scripts/test-universe-scope.ts
+ */
+
+const BASE = "http://localhost:3000";
+
+let cookie = "";
+
+async function api(method: string, path: string, body?: object, contentType = "application/json") {
+  const res = await fetch(`${BASE}${path}`, {
+    method,
+    headers: {
+      "Content-Type": contentType,
+      ...(cookie ? { Cookie: cookie } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+    redirect: "manual",
+  });
+
+  // Capture set-cookie headers
+  const setCookie = res.headers.get("set-cookie");
+  if (setCookie) {
+    const match = setCookie.match(/auth-token=[^;]+/);
+    if (match) cookie = match[0];
+  }
+
+  let data: any = {};
+  try {
+    data = await res.json();
+  } catch { /* empty */ }
+
+  return { status: res.status, data };
+}
+
+async function test(name: string, fn: () => Promise<boolean>) {
+  try {
+    const ok = await fn();
+    console.log(ok ? `  ✓ ${name}` : `  ✗ ${name}`);
+    return ok;
+  } catch (e: any) {
+    console.log(`  ✗ ${name}: ${e.message}`);
+    return false;
+  }
+}
+
+async function main() {
+  console.log("\n=== Universe Scoping & Job System Tests ===\n");
+
+  let passed = 0;
+  let total = 0;
+
+  // 1. Register user
+  total++;
+  if (await test("Register user", async () => {
+    const r = await api("POST", "/api/auth/register", { username: "testuser", password: "testpass123" });
+    return r.status === 200 && r.data.user;
+  })) passed++;
+
+  // 2. Login
+  total++;
+  if (await test("Login user", async () => {
+    const r = await api("POST", "/api/auth/login", { username: "testuser", password: "testpass123" });
+    return r.status === 200 && r.data.token;
+  })) passed++;
+
+  // 3. Auth me
+  total++;
+  if (await test("Auth /me", async () => {
+    const r = await api("GET", "/api/auth/me");
+    return r.status === 200 && r.data.user?.username === "testuser";
+  })) passed++;
+
+  // 4. Create universe A
+  let universeA: string;
+  total++;
+  if (await test("Create universe A", async () => {
+    const r = await api("POST", "/api/universes", { name: "Universe A", tone: "dark fantasy" });
+    universeA = r.data.universe?.id;
+    return r.status === 200 && universeA;
+  })) passed++;
+
+  // 5. Create universe B
+  let universeB: string;
+  total++;
+  if (await test("Create universe B", async () => {
+    const r = await api("POST", "/api/universes", { name: "Universe B", tone: "sci-fi" });
+    universeB = r.data.universe?.id;
+    return r.status === 200 && universeB;
+  })) passed++;
+
+  // 6. List universes
+  total++;
+  if (await test("List universes (2)", async () => {
+    const r = await api("GET", "/api/universes");
+    return r.status === 200 && r.data.universes?.length === 2;
+  })) passed++;
+
+  // 7. Create location in universe A
+  total++;
+  if (await test("Create location in universe A", async () => {
+    const r = await api("POST", "/api/locations", { name: "Forest A", importance: "high", universe_id: universeA });
+    return r.status === 200 && r.data.location;
+  })) passed++;
+
+  // 8. Create location in universe B
+  total++;
+  if (await test("Create location in universe B", async () => {
+    const r = await api("POST", "/api/locations", { name: "Station B", importance: "medium", universe_id: universeB });
+    return r.status === 200 && r.data.location;
+  })) passed++;
+
+  // 9. Locations scoped to universe A
+  total++;
+  if (await test("Locations scoped to universe A (1)", async () => {
+    const r = await api("GET", `/api/locations?universe_id=${universeA}`);
+    return r.status === 200 && r.data.locations?.length === 1 && r.data.locations[0].name === "Forest A";
+  })) passed++;
+
+  // 10. Locations scoped to universe B
+  total++;
+  if (await test("Locations scoped to universe B (1)", async () => {
+    const r = await api("GET", `/api/locations?universe_id=${universeB}`);
+    return r.status === 200 && r.data.locations?.length === 1 && r.data.locations[0].name === "Station B";
+  })) passed++;
+
+  // 11. Create NPC in universe A
+  total++;
+  if (await test("Create NPC in universe A", async () => {
+    const r = await api("POST", "/api/npcs", { name: "Elf A", importance: "high", universe_id: universeA });
+    return r.status === 200 && r.data.npc;
+  })) passed++;
+
+  // 12. Create NPC in universe B
+  total++;
+  if (await test("Create NPC in universe B", async () => {
+    const r = await api("POST", "/api/npcs", { name: "Robot B", importance: "medium", universe_id: universeB });
+    return r.status === 200 && r.data.npc;
+  })) passed++;
+
+  // 13. NPCs scoped to universe A
+  total++;
+  if (await test("NPCs scoped to universe A (1)", async () => {
+    const r = await api("GET", `/api/npcs?universe_id=${universeA}`);
+    return r.status === 200 && r.data.npcs?.length === 1 && r.data.npcs[0].name === "Elf A";
+  })) passed++;
+
+  // 14. Create event in universe A
+  total++;
+  if (await test("Create event in universe A", async () => {
+    const r = await api("POST", "/api/events", { title: "Battle A", eventType: "combat", universe_id: universeA });
+    return r.status === 200 && r.data.event;
+  })) passed++;
+
+  // 15. Create event in universe B
+  total++;
+  if (await test("Create event in universe B", async () => {
+    const r = await api("POST", "/api/events", { title: "Launch B", eventType: "discovery", universe_id: universeB });
+    return r.status === 200 && r.data.event;
+  })) passed++;
+
+  // 16. Events scoped to universe A
+  total++;
+  if (await test("Events scoped to universe A (1)", async () => {
+    const r = await api("GET", `/api/events?universe_id=${universeA}`);
+    return r.status === 200 && r.data.events?.length === 1 && r.data.events[0].title === "Battle A";
+  })) passed++;
+
+  // 17. Create narrative thread in universe A
+  total++;
+  if (await test("Create narrative thread in universe A", async () => {
+    const r = await api("POST", "/api/narrative-threads", { title: "Quest A", arcType: "thread", universe_id: universeA });
+    return r.status === 200 && r.data.thread;
+  })) passed++;
+
+  // 18. Threads scoped to universe A
+  total++;
+  if (await test("Threads scoped to universe A (1)", async () => {
+    const r = await api("GET", `/api/narrative-threads?universe_id=${universeA}`);
+    return r.status === 200 && r.data.threads?.length === 1 && r.data.threads[0].title === "Quest A";
+  })) passed++;
+
+  // 19. Create relationship in universe A
+  total++;
+  if (await test("Create relationship in universe A", async () => {
+    const r = await api("POST", "/api/relationships", { sourceEntity: "Elf A", targetEntity: "Forest A", relationshipStage: "acquaintance", universe_id: universeA });
+    return r.status === 200 && r.data.relationship;
+  })) passed++;
+
+  // 20. Relationships scoped to universe A
+  total++;
+  if (await test("Relationships scoped to universe A (1)", async () => {
+    const r = await api("GET", `/api/relationships?universe_id=${universeA}`);
+    return r.status === 200 && r.data.relationships?.length === 1;
+  })) passed++;
+
+  // 21. Relationships scoped to universe B (0)
+  total++;
+  if (await test("Relationships scoped to universe B (0)", async () => {
+    const r = await api("GET", `/api/relationships?universe_id=${universeB}`);
+    return r.status === 200 && r.data.relationships?.length === 0;
+  })) passed++;
+
+  // 22. Create session with universe A
+  let sessionA: string;
+  total++;
+  if (await test("Create session with universe A", async () => {
+    const r = await api("POST", "/api/sessions", { name: "Session A", universe_id: universeA, type: "solo" });
+    sessionA = r.data.session?.id;
+    return r.status === 200 && sessionA;
+  })) passed++;
+
+  // 23. Queue a job with universe_id
+  total++;
+  if (await test("Queue job with universe_id", async () => {
+    const r = await api("POST", "/api/jobs", { action: "queue", type: "summarize_messages", payload: { sessionId: sessionA }, priority: "low", universe_id: universeA });
+    return r.status === 200 && r.data.success && r.data.jobId;
+  })) passed++;
+
+  // 24. Get jobs scoped to universe A
+  total++;
+  if (await test("Jobs scoped to universe A (1)", async () => {
+    const r = await api("GET", `/api/jobs?universe_id=${universeA}`);
+    return r.status === 200 && r.data.jobs?.length === 1;
+  })) passed++;
+
+  // 25. Get jobs scoped to universe B (0)
+  total++;
+  if (await test("Jobs scoped to universe B (0)", async () => {
+    const r = await api("GET", `/api/jobs?universe_id=${universeB}`);
+    return r.status === 200 && r.data.jobs?.length === 0;
+  })) passed++;
+
+  // 26. Queue idle jobs
+  total++;
+  if (await test("Queue idle jobs", async () => {
+    const r = await api("POST", "/api/jobs", { action: "queue-idle", universe_id: universeA });
+    return r.status === 200 && r.data.success;
+  })) passed++;
+
+  // 27. Get job stats
+  total++;
+  if (await test("Get job stats", async () => {
+    const r = await api("GET", "/api/jobs");
+    return r.status === 200 && r.data.stats && typeof r.data.stats.queued === "number";
+  })) passed++;
+
+  // 28. Cancel a job
+  total++;
+  if (await test("Cancel job", async () => {
+    const jobs = await api("GET", `/api/jobs?universe_id=${universeA}`);
+    const jobId = jobs.data.jobs?.[0]?.id;
+    if (!jobId) return false;
+    const r = await api("POST", "/api/jobs", { action: "cancel", jobId });
+    return r.status === 200 && r.data.success;
+  })) passed++;
+
+  // 29. Cancel all jobs
+  total++;
+  if (await test("Cancel all jobs", async () => {
+    const r = await api("POST", "/api/jobs", { action: "cancel-all" });
+    return r.status === 200 && r.data.success;
+  })) passed++;
+
+  // 30. Idle heartbeat
+  total++;
+  if (await test("Idle heartbeat", async () => {
+    const r = await api("POST", "/api/idle/heartbeat", { idleTime: 300000, tier: 1, page: "/dashboard", universeId: universeA });
+    return r.status === 200 && r.data.success;
+  })) passed++;
+
+  // 31. Settings CRUD
+  total++;
+  if (await test("Update settings", async () => {
+    const r = await api("PUT", "/api/settings", { llmModel: "qwen3.5:9b", embeddingModel: "bge-m3" });
+    return r.status === 200 && r.data.success;
+  })) passed++;
+
+  // 32. Get settings
+  total++;
+  if (await test("Get settings", async () => {
+    const r = await api("GET", "/api/settings");
+    return r.status === 200 && r.data.settings?.llmModel === "qwen3.5:9b";
+  })) passed++;
+
+  // 33. Universe detail page
+  total++;
+  if (await test("Universe detail", async () => {
+    const r = await api("GET", `/api/universes/${universeA}`);
+    return r.status === 200 && r.data.universe?.name === "Universe A";
+  })) passed++;
+
+  // 34. Update universe
+  total++;
+  if (await test("Update universe", async () => {
+    const r = await api("PUT", `/api/universes/${universeA}`, { name: "Universe A Updated", canon_mode: "loose" });
+    return r.status === 200 && r.data.universe?.name === "Universe A Updated";
+  })) passed++;
+
+  // 35. Delete universe B
+  total++;
+  if (await test("Delete universe B", async () => {
+    const r = await api("DELETE", `/api/universes/${universeB}`);
+    return r.status === 200 && r.data.success;
+  })) passed++;
+
+  // 36. Verify universe B deleted
+  total++;
+  if (await test("Verify universe B deleted", async () => {
+    const r = await api("GET", "/api/universes");
+    return r.status === 200 && r.data.universes?.length === 1;
+  })) passed++;
+
+  console.log(`\n=== Results: ${passed}/${total} passed ===\n`);
+
+  if (passed === total) {
+    console.log("All tests passed!");
+  } else {
+    console.log(`${total - passed} test(s) failed.`);
+    process.exit(1);
+  }
+}
+
+main().catch(e => {
+  console.error("Test runner error:", e);
+  process.exit(1);
+});

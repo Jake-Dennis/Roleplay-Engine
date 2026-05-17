@@ -1,0 +1,2338 @@
+{
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\eslint.config.mjs": {
+    "mtime": 1778587663.2622232,
+    "hash": "dfa1f5f6a7037bf39dc510f30b180002"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\next-env.d.ts": {
+    "mtime": 1779011508.7942045,
+    "hash": "2a74d3909800ca5467fa83b0ab4a4890"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\next.config.ts": {
+    "mtime": 1778587663.3974,
+    "hash": "9b77af189a21a7a64e4bd7a426f64176"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\postcss.config.mjs": {
+    "mtime": 1778587663.2952678,
+    "hash": "239f3ebf717465dc636818a1a619398d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\init-db.js": {
+    "mtime": 1778932677.9183552,
+    "hash": "1d8094c5fde1aec9173e306892cbd8e2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\init-db.ts": {
+    "mtime": 1779008912.584499,
+    "hash": "66368157274ed1ebfc0d3ddd1de92bec"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\migrate-add-last-idle-t.ts": {
+    "mtime": 1778999845.3274982,
+    "hash": "d2119cb5f9175171898e455b49c9d3d5"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\migrate-universe-scope.ts": {
+    "mtime": 1778996534.3727598,
+    "hash": "5ee60a73b705c459bbef37366c77960a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\sync-frontmatter.ts": {
+    "mtime": 1779009807.1954427,
+    "hash": "fdc6f2a5a0b8fc37aed582d500ac3e6c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\test-phase1.js": {
+    "mtime": 1778913478.4141178,
+    "hash": "c3dd418f0fbbf48b83c7c75604c51ff0"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\test-phase2.js": {
+    "mtime": 1778913837.793804,
+    "hash": "81a4a4ca8f918863f24afea64ff5fbc4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\test-phase3.js": {
+    "mtime": 1778940112.0288744,
+    "hash": "6805cd119be9abc4f3132131ca454624"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\test-phase4.js": {
+    "mtime": 1778936130.607261,
+    "hash": "0b98c897de0ef828208238322cdd4125"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\test-phase5.js": {
+    "mtime": 1778920155.527928,
+    "hash": "32cc35941bb602858af449971f3dc3a7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\test-phase6.js": {
+    "mtime": 1778921964.5778873,
+    "hash": "a9ab6d7b4d3af454ea3d14fd277f0d1c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\test-phase7.js": {
+    "mtime": 1778940294.6118908,
+    "hash": "23874e1f30b9fa80f70ec014620b55ab"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\middleware.ts": {
+    "mtime": 1778921918.7363377,
+    "hash": "68b6e259ec873bfb264086d92ccf3247"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\layout.tsx": {
+    "mtime": 1778938492.110197,
+    "hash": "34c973d969b43a223386d712567deed6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\page.tsx": {
+    "mtime": 1778901466.253399,
+    "hash": "5bf9b112a74f68792b16fe37ac73f0e6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\error.tsx": {
+    "mtime": 1778924463.0953958,
+    "hash": "a420039bb050f2925b79f6d1152dce6f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\global-error.tsx": {
+    "mtime": 1778924477.5419705,
+    "hash": "9dfa2aa1173a3da9ac0d4e3c86f51198"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\layout.tsx": {
+    "mtime": 1779002491.1603315,
+    "hash": "bf5bca2e49191d7a578252219d257909"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\loading.tsx": {
+    "mtime": 1778924514.8941915,
+    "hash": "84a8f3ed65561abd4eb0774c172a1b12"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\not-found.tsx": {
+    "mtime": 1778924503.9071894,
+    "hash": "8a723d53e35c4df1604560b0988d878d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\canon\\page.tsx": {
+    "mtime": 1779009304.1906867,
+    "hash": "200d22e51513f9071bc486ef6be02a65"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\characters\\page.tsx": {
+    "mtime": 1778998393.9622786,
+    "hash": "d6782f1a8607a4647435bdeae8beb815"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\dashboard\\page.tsx": {
+    "mtime": 1778909155.6177838,
+    "hash": "193f09a9fc413083811a04823cdd0c34"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\events\\page.tsx": {
+    "mtime": 1778998460.043497,
+    "hash": "07adcb94cefcaa1dd2cf52682947e7b9"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\graph\\page.tsx": {
+    "mtime": 1779010427.401788,
+    "hash": "ea0734d0d75a4cd156357767b108d374"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\jobs\\page.tsx": {
+    "mtime": 1779006632.4033108,
+    "hash": "29155d4aea450dacb036f16ce5a228ae"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\lore\\page.tsx": {
+    "mtime": 1778998352.4653318,
+    "hash": "41511b7900174f1169a66e5d44e4b318"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\lore\\[id]\\edit\\page.tsx": {
+    "mtime": 1779009729.1256793,
+    "hash": "220e1236a9590291ee0e197404c4b4e4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\narrative-threads\\page.tsx": {
+    "mtime": 1778998496.7326765,
+    "hash": "5354a1fcf7297afdcaed0b60701ecdc6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\narrative-threads\\[id]\\page.tsx": {
+    "mtime": 1778928624.4988217,
+    "hash": "c585b8639e1a55e672463eceb0857197"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\relationships\\page.tsx": {
+    "mtime": 1779010211.3221002,
+    "hash": "abe542ea713a33a03e7573832df515a4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\session\\page.tsx": {
+    "mtime": 1778999304.7174463,
+    "hash": "09a4afce7936004391e756b357e32286"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\session\\new\\page.tsx": {
+    "mtime": 1778998688.575865,
+    "hash": "db322ce444c5d2dc6db574369989da07"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\session\\[id]\\page.tsx": {
+    "mtime": 1779005910.730365,
+    "hash": "8b4dbd14843873e03ae7bff57382c041"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\settings\\page.tsx": {
+    "mtime": 1779002681.2681134,
+    "hash": "f78347671df85544d3ca0ba3dbc1e16e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\timeline\\page.tsx": {
+    "mtime": 1778998531.5516481,
+    "hash": "1e4e83ae33fd2d3d70ad4ea11a7874db"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\timeline\\[id]\\page.tsx": {
+    "mtime": 1779008394.8530407,
+    "hash": "00455eda8a18c76bef2cc5f62a0dc2af"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\universe\\page.tsx": {
+    "mtime": 1778995713.782915,
+    "hash": "0e2c06790588a1b45b2c378426909593"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\universe\\[id]\\page.tsx": {
+    "mtime": 1778995794.9210694,
+    "hash": "c3306891be6efb2bf37a8bf0f31be7d4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\validations\\page.tsx": {
+    "mtime": 1778998633.0124626,
+    "hash": "4edcd4d2bfb63b9b19d2cc4ccb0a2ac2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\voice-combiner\\page.tsx": {
+    "mtime": 1778998936.0916617,
+    "hash": "3f36ef2d510a52c2a697655bf947ed8f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\auth\\login\\route.ts": {
+    "mtime": 1778864734.7672803,
+    "hash": "8dd221c8ec3aedd82f36db141afc9f03"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\auth\\logout\\route.ts": {
+    "mtime": 1778868946.1443696,
+    "hash": "88b18f6d51279145fe7b906cfe2317c1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\auth\\me\\route.ts": {
+    "mtime": 1778864772.7209659,
+    "hash": "c8aa28191136658e0d701fb2b4bd8490"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\auth\\password\\route.ts": {
+    "mtime": 1778866083.2940729,
+    "hash": "a28628ff804e34a27e924804b85e03af"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\auth\\register\\route.ts": {
+    "mtime": 1778864753.1691196,
+    "hash": "438f8ac311ba0b1a16f4afccd5ac9174"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\backlinks\\route.ts": {
+    "mtime": 1778997006.9712265,
+    "hash": "0d1c0b5cbe639d15f048ac9f9c19bf10"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\backlinks\\graph\\route.ts": {
+    "mtime": 1778936922.533311,
+    "hash": "79067e2f3efef0f927a64a352e043cd3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\events\\route.ts": {
+    "mtime": 1778996853.6078775,
+    "hash": "51de3ac690cbbbd8d47a4f3af722bcf0"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\events\\[id]\\route.ts": {
+    "mtime": 1778911155.884454,
+    "hash": "5dbf360ac7d5f44e91673cf4876a9bed"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\generate\\[id]\\route.ts": {
+    "mtime": 1779003637.9860585,
+    "hash": "579efcaa96039f4480c76ed6ce4cc416"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\health\\route.ts": {
+    "mtime": 1779002420.399622,
+    "hash": "b10d7231990c4191415b256e77a32b89"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\idle\\heartbeat\\route.ts": {
+    "mtime": 1778999879.8146787,
+    "hash": "b21f9090453ea9becbc9ab6c7dc719dd"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\invitations\\route.ts": {
+    "mtime": 1778912284.0021162,
+    "hash": "bc07567ccc59a575b0bdfda02d4ce2b6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\jobs\\route.ts": {
+    "mtime": 1779000479.1735687,
+    "hash": "d5aff1a88e9be2243c5eeb14f6df6fb5"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\jobs\\stream\\route.ts": {
+    "mtime": 1779006600.4855895,
+    "hash": "7df79031c6c3058b8d5a57637d2afdbb"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\locations\\route.ts": {
+    "mtime": 1779008834.5636368,
+    "hash": "3cfb072763ba35cabef6675d2380c7bd"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\locations\\[id]\\route.ts": {
+    "mtime": 1779008875.441663,
+    "hash": "ae5a3ac6a1f838ecda93bb4105f293b0"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\lore-edits\\route.ts": {
+    "mtime": 1778931573.0657754,
+    "hash": "6ee70ff6bb833447310932dec639e1c3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\lore-files\\route.ts": {
+    "mtime": 1779009767.9951727,
+    "hash": "f73857f163cc4a28e962d750775a10bc"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\lore-validations\\route.ts": {
+    "mtime": 1778997041.9502847,
+    "hash": "2d9459cff557e21e81e4b9b4451862a7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\models\\ollama\\route.ts": {
+    "mtime": 1778929940.2118645,
+    "hash": "1b21c97fa009a0a6896423e545e91bb2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\narrative-memories\\route.ts": {
+    "mtime": 1778911122.5288472,
+    "hash": "cc6921d80c0f1aa3942c04df5c6ac45e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\narrative-memories\\[id]\\route.ts": {
+    "mtime": 1778911148.911243,
+    "hash": "d9b10a28add3981642cb87e4193bba77"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\narrative-threads\\route.ts": {
+    "mtime": 1778996931.7722652,
+    "hash": "51e8ed07d701473ffe93db8c669fb58b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\npcs\\route.ts": {
+    "mtime": 1779008948.0481946,
+    "hash": "275a761be534991c1ebbfa7947143ed8"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\npcs\\[id]\\route.ts": {
+    "mtime": 1779008991.7424872,
+    "hash": "150b11ecf231ad620b14884ace979600"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\ollama\\models\\route.ts": {
+    "mtime": 1778993785.9190304,
+    "hash": "928edd00f24007064ddc25e8680543a1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\relationships\\route.ts": {
+    "mtime": 1778996823.6153471,
+    "hash": "776478e40f3e63168ac97f9080b4eede"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\relationships\\[id]\\route.ts": {
+    "mtime": 1778911114.1845865,
+    "hash": "b85d49ee838d137b18105af1a81de88e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\relationships\\[id]\\decay\\route.ts": {
+    "mtime": 1778936027.7653768,
+    "hash": "87a83a1f4a95fea2a01be8468c26429f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\relationships\\[id]\\evolution\\route.ts": {
+    "mtime": 1778926708.240893,
+    "hash": "1cbcdae86a285ae68539e68b0f15157a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\search\\route.ts": {
+    "mtime": 1778925856.5965834,
+    "hash": "d9aefe663119e492bdb0fedade0303b0"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\route.ts": {
+    "mtime": 1779010840.2939558,
+    "hash": "49755aeaecc2b389197e64db06c9e7d4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\route.ts": {
+    "mtime": 1779002785.164306,
+    "hash": "3978752e71422ce7638f369d02e9bae5"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\invite\\route.ts": {
+    "mtime": 1778919669.6459289,
+    "hash": "d17dc5d48d3cec6c7698325d4d348b07"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\join\\route.ts": {
+    "mtime": 1779002751.0429704,
+    "hash": "1b0fec3e3463ab683841d11b557976f0"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\kick\\route.ts": {
+    "mtime": 1778912707.7552257,
+    "hash": "8a7e73b471af963be400a7e328c0b8dc"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\leave\\route.ts": {
+    "mtime": 1778912737.9406838,
+    "hash": "30eb0e27f96d52a75f7afd9779e847c2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\messages\\route.ts": {
+    "mtime": 1779011477.810615,
+    "hash": "5ba6db409862451f405038ded164a3cc"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\messages\\[messageId]\\route.ts": {
+    "mtime": 1778993176.4780233,
+    "hash": "02d55c6827d8f7fb3bdd89f21a325ca9"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\messages\\[messageId]\\edits\\route.ts": {
+    "mtime": 1778931261.5307972,
+    "hash": "6a72a4149a683a405fc450bc3c256772"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\messages\\[messageId]\\regenerate\\route.ts": {
+    "mtime": 1778993201.8771625,
+    "hash": "26ff4ecd17027323370061f4c08c8de1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\participants\\route.ts": {
+    "mtime": 1779002764.200467,
+    "hash": "dc6e7de85e9ceed2ea14379f75d4f603"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\participants\\role\\route.ts": {
+    "mtime": 1779003154.6877675,
+    "hash": "e61e5c6ab438e387b9c76624ad76f53e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\private-state\\route.ts": {
+    "mtime": 1778912278.140236,
+    "hash": "a4300725b8ad004046182bee06bd0589"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\scene\\route.ts": {
+    "mtime": 1778932163.4924104,
+    "hash": "b67f535483285c29d6bcfe9dba3d4d48"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\stream\\route.ts": {
+    "mtime": 1779006310.6925652,
+    "hash": "c7013a990dd80b562ca7edd0505f3524"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\turn\\route.ts": {
+    "mtime": 1778919703.123465,
+    "hash": "c28962b0afb502b197ac0e9b8d5cd78d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\settings\\route.ts": {
+    "mtime": 1778993651.0336316,
+    "hash": "80aeeebc054cd88d8625ef33044e8826"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\timeline\\route.ts": {
+    "mtime": 1778928886.490277,
+    "hash": "cf769d2b21c18de16bcc63e8d5397cd1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\timelines\\[id]\\layers\\route.ts": {
+    "mtime": 1779008518.4342003,
+    "hash": "0a47dbf72c364cf836dfc720ebd7f35f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\timelines\\[id]\\layers\\[layerId]\\route.ts": {
+    "mtime": 1779008472.3924122,
+    "hash": "0205950c0fffffd4530edac364b63187"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\tts\\cache\\route.ts": {
+    "mtime": 1778933661.802368,
+    "hash": "218b758498b40a2d2429f39db4709d56"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\tts\\generate\\route.ts": {
+    "mtime": 1778866479.7232356,
+    "hash": "d3d8fb2a4502a5750e332af37b84d9a9"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\tts\\stream\\route.ts": {
+    "mtime": 1779003265.9267383,
+    "hash": "24ca863bf3a94b0a84a193fad5eccae4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\tts\\voice\\[entityType]\\[entityId]\\route.ts": {
+    "mtime": 1778935962.09831,
+    "hash": "5ac9641f09ae143a0938c9a088fac9d8"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\tts\\voices\\route.ts": {
+    "mtime": 1778866340.9265175,
+    "hash": "7d395c0bff6c942aeeca7725096feddd"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\tts\\voices\\combine\\route.ts": {
+    "mtime": 1778935919.8551211,
+    "hash": "3627ffe18c7df986ae7aaec7c9e0645f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\tts\\voices\\refresh\\route.ts": {
+    "mtime": 1778935894.6928494,
+    "hash": "7db09e9b013bd79b7f41bc3778f1ff9f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\universes\\route.ts": {
+    "mtime": 1778995853.1593463,
+    "hash": "856a3ce35c42614075a661951889048a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\universes\\[id]\\route.ts": {
+    "mtime": 1779001180.6775765,
+    "hash": "78629962dc8312cf148015642a7d3034"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\voice-assignments\\route.ts": {
+    "mtime": 1778910318.9728322,
+    "hash": "ae9e3bd656e71bda8919898f3d883086"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\login\\page.tsx": {
+    "mtime": 1778909123.7911632,
+    "hash": "502c05d370c324d6db6d2b739b7ba967"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\register\\page.tsx": {
+    "mtime": 1778909130.5758684,
+    "hash": "c3684214819495694e91c07bada34c93"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\backlinks\\backlink-panel.tsx": {
+    "mtime": 1778937265.1916728,
+    "hash": "858cea05c530ad13267cd1fbf1d8e877"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\canon\\canon-layer-selector.tsx": {
+    "mtime": 1778937229.5742764,
+    "hash": "dc0a8016b3487d7a84c5b68abfb74208"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\canon\\layer-viewer.tsx": {
+    "mtime": 1779009029.375886,
+    "hash": "e97558bf357c57683f48054c7baa9298"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\canon\\promotion-dialog.tsx": {
+    "mtime": 1779009062.206964,
+    "hash": "48e557de7b843d8d5abab6b541bc8d20"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\chat\\chat-window.tsx": {
+    "mtime": 1779003071.7921517,
+    "hash": "8299fd02417abf1a6e3a7fbc3c432bf6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\chat\\edit-history.tsx": {
+    "mtime": 1778991868.882968,
+    "hash": "0a6e7d502db0bdfcb28dc57693137b05"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\chat\\message-bubble.tsx": {
+    "mtime": 1778935835.267526,
+    "hash": "1cadc2203bf5bfc60f43414e936d1582"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\chat\\message-input.tsx": {
+    "mtime": 1778935858.2074635,
+    "hash": "af5ed81718f36fb0fc082c88d7e812f7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\chat\\streaming-text.tsx": {
+    "mtime": 1778927341.0974488,
+    "hash": "a466af9bebd0c0162aed150c2e5bdbc7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\chat\\typing-indicator.tsx": {
+    "mtime": 1778935872.0351057,
+    "hash": "b23766ce29f8700f6c5a0a23c99f104f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\jobs\\job-progress.tsx": {
+    "mtime": 1779006532.7434094,
+    "hash": "ee48b5ca14247c2de0b2badf0079a305"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\layout\\page-header.tsx": {
+    "mtime": 1778934354.447133,
+    "hash": "6a9fb7d91aef5a7ce21fc5cfa5eaf82b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\lore\\lore-browser.tsx": {
+    "mtime": 1778939122.692559,
+    "hash": "2ca966b05b443c0729ad6f6c6cc22906"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\lore\\lore-editor.tsx": {
+    "mtime": 1779003816.1577635,
+    "hash": "d73166544994698ae7c00abbb001c66b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\lore\\wikilink-autocomplete.tsx": {
+    "mtime": 1779003843.622818,
+    "hash": "96daabda59841183b0312095324318ae"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\narrative\\event-timeline.tsx": {
+    "mtime": 1778939099.0144417,
+    "hash": "bef23d965e22f785f5cf40daef882706"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\narrative\\importance-meter.tsx": {
+    "mtime": 1778937002.7792642,
+    "hash": "5daa122695935f6c4250a74916b662a7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\narrative\\thread-tracker.tsx": {
+    "mtime": 1778937029.1134274,
+    "hash": "103c3a390f9e0c75a2fec9d15a65ab7f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\relationship\\emotion-bar.tsx": {
+    "mtime": 1778939048.6927855,
+    "hash": "8e302a678395152f6a04e7d1ef021cbe"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\relationship\\relationship-graph.tsx": {
+    "mtime": 1779010434.5459516,
+    "hash": "9248ddc63a1e39f844a21b288fff9bf4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\relationship\\relationship-history.tsx": {
+    "mtime": 1778939069.3002617,
+    "hash": "dbeb9ad8764027be599d5d505920f15c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\relationships\\decay-indicator.tsx": {
+    "mtime": 1778933212.6148753,
+    "hash": "5c4374e76bb0d8612e0e2c13faf4d928"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\relationships\\emotion-graph.tsx": {
+    "mtime": 1779010114.804292,
+    "hash": "fc42f0914bc4ab1948cb61e6c296b4e9"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\relationships\\relationship-web.tsx": {
+    "mtime": 1779010242.94476,
+    "hash": "6f4ebda30b4e6a133e756b3d9a470ab5"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\character-declaration-modal.tsx": {
+    "mtime": 1779002844.9605005,
+    "hash": "485cb89578b88e9edfec655dfbbeeac5"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\individual-memories.tsx": {
+    "mtime": 1779005860.1364212,
+    "hash": "50052764b01983faea8174145073cd82"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\participant-list.tsx": {
+    "mtime": 1779003132.9344683,
+    "hash": "225d948a476f7601d1251d3153b8edf3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\personal-relationships.tsx": {
+    "mtime": 1779005824.3532722,
+    "hash": "ed6f10456806b054983b48807f80e25e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\private-state-panel.tsx": {
+    "mtime": 1779005752.1560812,
+    "hash": "3ea91849cda793360c7bd6095b8fe2b7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\private-thoughts.tsx": {
+    "mtime": 1779005780.0047228,
+    "hash": "f36c54fb3211cf08d0e8d6fbd6332c8a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\scene-state-panel.tsx": {
+    "mtime": 1778992870.483947,
+    "hash": "e0cf18762e42afc993bf2b03c1bb9803"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\session-creator.tsx": {
+    "mtime": 1778939193.3572216,
+    "hash": "f7e0e13827c8d1e56267090fccbcb27f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\session-list.tsx": {
+    "mtime": 1778939150.0240798,
+    "hash": "08dadbc75ceaadc2f914e53a2bbebacf"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\timeline\\character-editor.tsx": {
+    "mtime": 1779008347.4598632,
+    "hash": "1348395b3ee26bbaf874ed6296bbc489"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\timeline\\era-editor.tsx": {
+    "mtime": 1779008254.0843372,
+    "hash": "7d82864365c73dbedd4e997f6e4c6ecd"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\timeline\\faction-editor.tsx": {
+    "mtime": 1779008305.3572037,
+    "hash": "47567d6e8bc8d6896a31864b23f61acd"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\timeline\\layer-manager.tsx": {
+    "mtime": 1779008212.6196299,
+    "hash": "ced6a82b82d61a4d31e3d6b01bd16065"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\tts\\tts-controls.tsx": {
+    "mtime": 1778937149.3672745,
+    "hash": "6af72de6ecf3083f0cd2ad405aff76ed"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\tts\\tts-indicator.tsx": {
+    "mtime": 1778937048.287227,
+    "hash": "8d10f31959ad21b1bb58375b8e805707"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\tts\\voice-picker.tsx": {
+    "mtime": 1778937169.8247237,
+    "hash": "9147c24d7cd579c6fb26b154a2463ab6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\ui\\confirmation-dialog.tsx": {
+    "mtime": 1778992945.8806221,
+    "hash": "ff881386fb7b822095f5846e043c8621"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\ui\\connection-indicator.tsx": {
+    "mtime": 1779002463.8358076,
+    "hash": "ada7effe152f6b489599fcb0b1783a22"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\ui\\empty-state.tsx": {
+    "mtime": 1778934372.9213214,
+    "hash": "7bc6c588d7bc436c447a9538b49c2201"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\ui\\fps-counter.tsx": {
+    "mtime": 1778927312.5839233,
+    "hash": "e4e0da90310dc0a93eecd61b0c164e56"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\ui\\loading-state.tsx": {
+    "mtime": 1778934363.453712,
+    "hash": "c3f4cdc8340b7dd762cf58f76f7858fb"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\ui\\modal.tsx": {
+    "mtime": 1778992945.926968,
+    "hash": "01f7b6d4ee3ba9424bc26f5d12039f29"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\ui\\status-badge.tsx": {
+    "mtime": 1778942765.5150056,
+    "hash": "272e9f5bfbf07135a235dbed0e638056"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\validation\\validation-badge.tsx": {
+    "mtime": 1778937244.38456,
+    "hash": "3a13509c81fbc86e5367d6794c217f69"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\contexts\\active-universe.tsx": {
+    "mtime": 1778998180.0918937,
+    "hash": "6d581ff3a792272fb2e8fbeb72627f2b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-audio-player.ts": {
+    "mtime": 1778934427.9865384,
+    "hash": "3afb2f966543651b87b6beb30f30d758"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-auth.ts": {
+    "mtime": 1778935735.1180506,
+    "hash": "41237b1de873a60c7e0c8b40609374e9"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-connection-status.ts": {
+    "mtime": 1779002436.3378618,
+    "hash": "fe944dfb8522c21658134172a0b7f2f5"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-entity-fetch.ts": {
+    "mtime": 1778938020.8373556,
+    "hash": "c170683f58e05b8ee619d88c6b04f5f1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-idle-tracker.ts": {
+    "mtime": 1778999898.3670537,
+    "hash": "4039736dfbf05a5826b70240b8e07f6e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-local-storage.ts": {
+    "mtime": 1778934411.592065,
+    "hash": "cb318b9533c296b4f13f9b1651f2c931"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-render-loop.ts": {
+    "mtime": 1778927271.6249335,
+    "hash": "1170d3ab2125918e43f2cd04ae72926f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-session.ts": {
+    "mtime": 1779002981.3094378,
+    "hash": "f148fbe4bfca62f68e9b661f08a89de5"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-tts.ts": {
+    "mtime": 1778935774.5988848,
+    "hash": "a2ff7418e43e318bd49c0f323a9a062f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-voices.ts": {
+    "mtime": 1778935795.5516562,
+    "hash": "380eaad04ccebee307945b3992e84e26"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\api-client.ts": {
+    "mtime": 1778934469.6261926,
+    "hash": "1e17eb07deaa3645ead20a41672bc415"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\auth.ts": {
+    "mtime": 1778866065.3243048,
+    "hash": "79c9803fc0af966019c16d70b2ac9c9d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\backlinks.ts": {
+    "mtime": 1778935628.5287995,
+    "hash": "7970e3e2303ac4364193fa7839ad152f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\canon-tiers.ts": {
+    "mtime": 1778932523.5683498,
+    "hash": "62fd615395ddb0f2e826e4735f49ae98"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\config.ts": {
+    "mtime": 1778864994.445781,
+    "hash": "4026b32bdc5a5d346a3b04bd0cbceddf"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\context-compression.ts": {
+    "mtime": 1778924366.839587,
+    "hash": "630b842381074c279d9d1e781431a19e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\contradiction-detector.ts": {
+    "mtime": 1778932818.1356544,
+    "hash": "7f7911185810de9a7a92fbef4ac86ed7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\date-formatter.ts": {
+    "mtime": 1778934447.1201172,
+    "hash": "f9fec15bbedb7492013bf681d67a23ca"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\db.ts": {
+    "mtime": 1779003459.1385803,
+    "hash": "adbfda88d58e48dd9216485c32c8fc52"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\embeddings.ts": {
+    "mtime": 1779003538.3558218,
+    "hash": "a066913530c9ba312903287d1f165878"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\entity-constants.ts": {
+    "mtime": 1778937212.4195316,
+    "hash": "e77806993d933f5e072c7b2ea6d8d24e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\event-bus.ts": {
+    "mtime": 1779006296.8433242,
+    "hash": "b5e110fd68a1d812b142911aaa6b766d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\idle-processing.ts": {
+    "mtime": 1779000510.4669785,
+    "hash": "b37dd7381dd6600dba50dfe71c798158"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\importance.ts": {
+    "mtime": 1778935564.5529938,
+    "hash": "74f2f3e698e7c0b6b42ca3252f4776cf"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\intent-analyzer.ts": {
+    "mtime": 1778910155.185173,
+    "hash": "3bb93459c294173d975490bcea90ab62"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\job-processor.ts": {
+    "mtime": 1779006499.3592706,
+    "hash": "bdca59d2e765799eb5b7e58c65a92683"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\lore-expansion.ts": {
+    "mtime": 1778997312.7917466,
+    "hash": "feda38e2a83953cc17e0127f500ea5aa"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\lore-markdown.ts": {
+    "mtime": 1779009563.3170462,
+    "hash": "588ac8887f31ac8fb8c93ef3372accde"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\markdown-renderer.ts": {
+    "mtime": 1778934305.8557796,
+    "hash": "15b3a77f93d2f6180b02fb6b69f54e68"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\markdown.ts": {
+    "mtime": 1779003914.8379471,
+    "hash": "0eb12f5f16bad22f2fac1569bd6e3629"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\memory-compression.ts": {
+    "mtime": 1778921352.9382799,
+    "hash": "cfd81530eee5b1a2e911a679fa3718af"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\ollama.ts": {
+    "mtime": 1778993559.2215965,
+    "hash": "2542993a3d7c980a70a506b37372c2b7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\prompt-builder.ts": {
+    "mtime": 1778935678.0858178,
+    "hash": "1c8285a5f139ba85a0e09ebf0e103e56"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\relationship-analysis.ts": {
+    "mtime": 1778921187.4651356,
+    "hash": "95e8bdf39bc29a1a8e75b0ae07050043"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\relationship-decay.ts": {
+    "mtime": 1778921643.1246748,
+    "hash": "ab50e08814a3d8f50a33313011751aa6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\relationship-viz.ts": {
+    "mtime": 1779010024.836775,
+    "hash": "b8d328907c8d94465a09657c67072b6d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\render-loop.ts": {
+    "mtime": 1778864586.6272535,
+    "hash": "f4af390d568798dffe8d27e0195f978a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\retrieval.ts": {
+    "mtime": 1779003657.483172,
+    "hash": "295a86ffa5012482108a3d52034e916a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\semantic-intent-fallback.ts": {
+    "mtime": 1778933395.921523,
+    "hash": "57a0690366c4bd8fa2ff24c56a040931"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\summarization.ts": {
+    "mtime": 1778921082.5305114,
+    "hash": "8a93ee8238b59fb505f6f15fce15ffe7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\tts-queue.ts": {
+    "mtime": 1778910329.4319932,
+    "hash": "cbd322e7bbf470eb75d829760bbcff79"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\tts.ts": {
+    "mtime": 1779003243.3752365,
+    "hash": "b5c8d633811774a56bfc1dc187ca5951"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\vector-search.ts": {
+    "mtime": 1778924309.4259026,
+    "hash": "b6f1d1a2d445a1a4ed4057c36a2b2ab3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\voice-discovery.ts": {
+    "mtime": 1778935701.7054365,
+    "hash": "4d35848b91a0a2d88ffa8a13966a81e4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\AGENTS.md": {
+    "mtime": 1778864266.5841382,
+    "hash": "9e09241799026ac05be315a2f0b50055"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\CLAUDE.md": {
+    "mtime": 1778864266.5841382,
+    "hash": "5c27369b226fcf2be8a6cfe52224e767"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\project-context.md": {
+    "mtime": 1778862296.8615055,
+    "hash": "b69fac7afcf45ac8194e6d59b2cd5b1a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\README.md": {
+    "mtime": 1778587663.2361128,
+    "hash": "f15aaa42d5d299d091b1171097ea56ad"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\spec.md": {
+    "mtime": 1778863964.7087648,
+    "hash": "900a8f3c758a83929c8fc404272389df"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\01d27eb7-7a16-4115-abb7-ddf01e1ae3a5\\locations\\Dark_Forest.md": {
+    "mtime": 1778992657.5474138,
+    "hash": "c9a88cfd3a047c03e0476c0dc36ac389"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\01d27eb7-7a16-4115-abb7-ddf01e1ae3a5\\npcs\\Haleth.md": {
+    "mtime": 1778992657.5771527,
+    "hash": "f3446f24b4e206c15b7895a6b78cf7f5"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\01d27eb7-7a16-4115-abb7-ddf01e1ae3a5\\npcs\\test-npc-p7.md": {
+    "mtime": 1778992661.2579687,
+    "hash": "4ddba789c6dd9a3702722b00a650dc14"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\01d27eb7-7a16-4115-abb7-ddf01e1ae3a5\\relationships\\Hero_Villain.md": {
+    "mtime": 1778992657.6262093,
+    "hash": "3cf43132c42918b8aa80a1c8ff6be925"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\029e69d1-afd1-4a0f-a27c-37a2fc9a7a45\\locations\\Dark_Forest.md": {
+    "mtime": 1778933135.2943063,
+    "hash": "e938e7458fa2af2e0569e0b45d90bd3b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\029e69d1-afd1-4a0f-a27c-37a2fc9a7a45\\npcs\\Haleth.md": {
+    "mtime": 1778933135.3026814,
+    "hash": "455a2a314950a6ac064b1e7e51f35bc7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\029e69d1-afd1-4a0f-a27c-37a2fc9a7a45\\npcs\\test-npc-p7.md": {
+    "mtime": 1778933136.080332,
+    "hash": "375799deb2f2377d3aba14529034a3e1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\029e69d1-afd1-4a0f-a27c-37a2fc9a7a45\\relationships\\Hero_Villain.md": {
+    "mtime": 1778933135.3105733,
+    "hash": "d5b171ac7e496df78b76a4cce53e8ab3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\04e7d848-7f73-431e-8443-227e433f70c1\\locations\\Dark_Forest.md": {
+    "mtime": 1778943040.915161,
+    "hash": "3a6d8a399a87c9e186832a389ed25bc1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\04e7d848-7f73-431e-8443-227e433f70c1\\npcs\\Haleth.md": {
+    "mtime": 1778943040.9669914,
+    "hash": "52d45396b71ab711b94acdcbae1b3c4e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\04e7d848-7f73-431e-8443-227e433f70c1\\npcs\\test-npc-p7.md": {
+    "mtime": 1778943044.9333234,
+    "hash": "ea9d1cae9eb63d8f77b0aec5a295b88a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\04e7d848-7f73-431e-8443-227e433f70c1\\relationships\\Hero_Villain.md": {
+    "mtime": 1778943041.0140486,
+    "hash": "c9556672a6af1ab88613bbeec9f4c527"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\08fcff07-9fc6-4b20-974e-cdde055fc10f\\locations\\Dark_Forest.md": {
+    "mtime": 1778938635.0511017,
+    "hash": "99bc13a665512c4006421b8efa6ba638"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\08fcff07-9fc6-4b20-974e-cdde055fc10f\\npcs\\Haleth.md": {
+    "mtime": 1778938635.0796745,
+    "hash": "b65a3b55168808f93b9609e55cb68dd9"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\08fcff07-9fc6-4b20-974e-cdde055fc10f\\npcs\\test-npc-p7.md": {
+    "mtime": 1778938638.7463608,
+    "hash": "b98a4e2c5320aa3b4bdd3a0ac1c4a38a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\08fcff07-9fc6-4b20-974e-cdde055fc10f\\relationships\\Hero_Villain.md": {
+    "mtime": 1778938635.1094587,
+    "hash": "36173cca0f17daba044e1aa3412635be"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\1362e4d1-7b49-42b1-98c1-d8219e91e2f9\\locations\\Dark_Forest.md": {
+    "mtime": 1778991347.6870675,
+    "hash": "4b7b6dd9d94b03a123399247c8f39a67"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\1362e4d1-7b49-42b1-98c1-d8219e91e2f9\\npcs\\Haleth.md": {
+    "mtime": 1778991347.7193606,
+    "hash": "9d8593a41fcee0c648c769c38e41b96b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\1362e4d1-7b49-42b1-98c1-d8219e91e2f9\\npcs\\test-npc-p7.md": {
+    "mtime": 1778991360.8008013,
+    "hash": "2a8bf880cf46ef7db57a4638ccbcb0fb"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\1362e4d1-7b49-42b1-98c1-d8219e91e2f9\\relationships\\Hero_Villain.md": {
+    "mtime": 1778991347.7510362,
+    "hash": "df0ce7c6137c17425baa941cc1ed2ded"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\13d57fd9-7373-4b37-b470-d9f01680eda5\\locations\\Test_Location.md": {
+    "mtime": 1779000894.4643786,
+    "hash": "6a3a01caba1ddec9f65ae039f6c5f0c1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\18c224d8-5f1b-445d-9ebc-219f923260f0\\locations\\Dark_Forest.md": {
+    "mtime": 1778940372.9834738,
+    "hash": "16e07b7f44ef9df36a2605f2996cc39e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\18c224d8-5f1b-445d-9ebc-219f923260f0\\npcs\\Haleth.md": {
+    "mtime": 1778940372.9922426,
+    "hash": "2dad498d715898c58812331b8284632d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\18c224d8-5f1b-445d-9ebc-219f923260f0\\npcs\\test-npc-p7.md": {
+    "mtime": 1778940373.7136817,
+    "hash": "7330ccea51220d82fbb8a1a8e82e1274"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\18c224d8-5f1b-445d-9ebc-219f923260f0\\relationships\\Hero_Villain.md": {
+    "mtime": 1778940373.0021904,
+    "hash": "2f855232d83f4ed6a1e2400724e0300f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\1c14e0fc-8b10-428a-b110-10d2bf6bdab4\\locations\\Test_Location.md": {
+    "mtime": 1778921975.641239,
+    "hash": "851fa12a67f8384d0316096a868a9419"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\1c14e0fc-8b10-428a-b110-10d2bf6bdab4\\npcs\\Test_NPC.md": {
+    "mtime": 1778921975.6494627,
+    "hash": "f994e7a56ef175dbc7f5476a830f3e3e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\204ccc29-1523-4b32-893b-3d3d4e99f16e\\locations\\Dark_Forest.md": {
+    "mtime": 1778941690.802845,
+    "hash": "f748d0113e5d459fb64e0aa909825a68"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\204ccc29-1523-4b32-893b-3d3d4e99f16e\\npcs\\Haleth.md": {
+    "mtime": 1778941690.81576,
+    "hash": "1dc4fbeeed8d9fcafdffb853736598ee"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\204ccc29-1523-4b32-893b-3d3d4e99f16e\\npcs\\test-npc-p7.md": {
+    "mtime": 1778941694.4008572,
+    "hash": "9c7c6e7707d1cb27ba1da8bb8d3ecdf1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\204ccc29-1523-4b32-893b-3d3d4e99f16e\\relationships\\Hero_Villain.md": {
+    "mtime": 1778941690.829228,
+    "hash": "be6567d8e5008aa08bc81dbad96e1e2f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\2937f331-3346-4b06-a923-3a0f621baef1\\locations\\Dark_Forest.md": {
+    "mtime": 1778940211.2312615,
+    "hash": "0e38e740d3fac9c228ca2fd64e015f2c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\2937f331-3346-4b06-a923-3a0f621baef1\\npcs\\Haleth.md": {
+    "mtime": 1778940211.2416244,
+    "hash": "c2474bb0659f2594d600e16ee7155dae"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\2937f331-3346-4b06-a923-3a0f621baef1\\npcs\\test-npc-p7.md": {
+    "mtime": 1778940212.0001698,
+    "hash": "ed9ee24abfad735c82f8bb15c8a9cc5b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\2937f331-3346-4b06-a923-3a0f621baef1\\relationships\\Hero_Villain.md": {
+    "mtime": 1778940211.2500205,
+    "hash": "82c36b3df23a726988591f9bbc29c06d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\2d3135c8-2b41-4e8d-aef9-6baff2c517fc\\locations\\Dark_Forest.md": {
+    "mtime": 1778940227.5475876,
+    "hash": "1f652ec25b2f983869310db7bd740768"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\2d3135c8-2b41-4e8d-aef9-6baff2c517fc\\npcs\\Haleth.md": {
+    "mtime": 1778940227.559768,
+    "hash": "93816da9a95b0a5d952a5d4db40c3961"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\2d3135c8-2b41-4e8d-aef9-6baff2c517fc\\npcs\\test-npc-p7.md": {
+    "mtime": 1778940228.2786713,
+    "hash": "0a4dcf34e717b05a3dcbe9025861ca2f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\2d3135c8-2b41-4e8d-aef9-6baff2c517fc\\relationships\\Hero_Villain.md": {
+    "mtime": 1778940227.5726614,
+    "hash": "fd54d3ce997ae13a678d6cbebc5fe101"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\2f27b1b5-8128-484f-b74f-0a542a51bf19\\locations\\Test_Location.md": {
+    "mtime": 1778922308.6888614,
+    "hash": "c03b40f75fb5c3550f2e3d6e69adfbd7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\2f27b1b5-8128-484f-b74f-0a542a51bf19\\npcs\\Test_NPC.md": {
+    "mtime": 1778922308.6984413,
+    "hash": "ab85245f6aa04c6b84ba0e0c1d982bef"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\343b95da-6083-4fe7-b82c-694921a69080\\locations\\Dark_Forest.md": {
+    "mtime": 1778992192.074214,
+    "hash": "3301af7a5fe82b6f7bc9ee4151c2f684"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\343b95da-6083-4fe7-b82c-694921a69080\\npcs\\Haleth.md": {
+    "mtime": 1778992192.094161,
+    "hash": "771f88ffbcd4adb5bcb2065290a34393"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\343b95da-6083-4fe7-b82c-694921a69080\\npcs\\test-npc-p7.md": {
+    "mtime": 1778992193.1120842,
+    "hash": "13b9d41fa1e4f1d6615823475bd8adbd"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\343b95da-6083-4fe7-b82c-694921a69080\\relationships\\Hero_Villain.md": {
+    "mtime": 1778992192.114856,
+    "hash": "c4ff042318b1e3677c546dead871facc"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\356a4713-1e91-49cc-85e0-b9ceae799143\\events\\Simple_Event.md": {
+    "mtime": 1778922371.2347422,
+    "hash": "ff501345d4e683df13ed355b7a352d13"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\356a4713-1e91-49cc-85e0-b9ceae799143\\events\\The_Battle_of_Helm's_Deep.md": {
+    "mtime": 1778922371.223706,
+    "hash": "946fe215b8739a0378e5ef3205de304f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\356a4713-1e91-49cc-85e0-b9ceae799143\\events\\xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.md": {
+    "mtime": 1778922372.5509067,
+    "hash": "9f519baeaade016102d6bae1e63b7dba"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\356a4713-1e91-49cc-85e0-b9ceae799143\\locations\\crystal_cave.md": {
+    "mtime": 1778922367.8097575,
+    "hash": "7a570ac8c564dca9831d9ebd08310ce2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\356a4713-1e91-49cc-85e0-b9ceae799143\\locations\\Dark_Forest.md": {
+    "mtime": 1778922368.5285437,
+    "hash": "354cd7e34674aa7960f46ae20dfca11f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\356a4713-1e91-49cc-85e0-b9ceae799143\\locations\\Location_with_'quotes'_&_special_chars!.md": {
+    "mtime": 1778922372.5828505,
+    "hash": "1bf99340183598802f2bdf0e81a6651d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\356a4713-1e91-49cc-85e0-b9ceae799143\\locations\\xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.md": {
+    "mtime": 1778922372.4683146,
+    "hash": "43cb2fff51799b24f071335fa99eabc7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\356a4713-1e91-49cc-85e0-b9ceae799143\\npcs\\Forest_Guardian.md": {
+    "mtime": 1778922368.6001444,
+    "hash": "6b06040a3d3a62c1a182ade859fb1bc7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\356a4713-1e91-49cc-85e0-b9ceae799143\\npcs\\Gandalf_the_Grey.md": {
+    "mtime": 1778922369.3050268,
+    "hash": "fce07625a08d01e740d6d0ea5eabfdce"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\356a4713-1e91-49cc-85e0-b9ceae799143\\npcs\\xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.md": {
+    "mtime": 1778922372.491685,
+    "hash": "157fe8fe505248e0fe80d46a58bd4b71"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\356a4713-1e91-49cc-85e0-b9ceae799143\\npcs\\\u89d2\u8272\u540d_\ud83d\udc09.md": {
+    "mtime": 1778922372.6059332,
+    "hash": "ff4af24546b015655bf83ccfd164af54"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\356a4713-1e91-49cc-85e0-b9ceae799143\\relationships\\Aragorn_Legolas.md": {
+    "mtime": 1778922369.4842727,
+    "hash": "d6d83333be5993858505444ad84948a8"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\356a4713-1e91-49cc-85e0-b9ceae799143\\relationships\\Frodo_Gandalf.md": {
+    "mtime": 1778922369.4448009,
+    "hash": "b508efb26d0df0d95cf9193b06beabf9"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\357049f0-dd06-4ed7-90e4-8e268b47780a\\locations\\Dark_Forest.md": {
+    "mtime": 1778933943.0230293,
+    "hash": "d5ad1fd8aefaee63275f8459b92191ea"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\357049f0-dd06-4ed7-90e4-8e268b47780a\\npcs\\Haleth.md": {
+    "mtime": 1778933943.0415533,
+    "hash": "d44ef586f4ffbd4450e5c01f7ae56a9c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\357049f0-dd06-4ed7-90e4-8e268b47780a\\npcs\\test-npc-p7.md": {
+    "mtime": 1778933947.1562293,
+    "hash": "853abf8cd3a2de458c21bb1b4d06ca1e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\357049f0-dd06-4ed7-90e4-8e268b47780a\\relationships\\Hero_Villain.md": {
+    "mtime": 1778933943.0634181,
+    "hash": "ff524cd0e4ebefcca48f417d0e7c40e2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\35eb19d1-c5b7-4ae1-aa2e-d6f71684514a\\locations\\Dark_Forest.md": {
+    "mtime": 1778934662.887652,
+    "hash": "a7ca56acfc606938a9730a2f98323730"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\35eb19d1-c5b7-4ae1-aa2e-d6f71684514a\\npcs\\Haleth.md": {
+    "mtime": 1778934662.9052057,
+    "hash": "1238fa6ddc4aeada60baae2706435eb4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\35eb19d1-c5b7-4ae1-aa2e-d6f71684514a\\npcs\\test-npc-p7.md": {
+    "mtime": 1778934663.72931,
+    "hash": "cb3420316993027faa15508102eff749"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\35eb19d1-c5b7-4ae1-aa2e-d6f71684514a\\relationships\\Hero_Villain.md": {
+    "mtime": 1778934662.922549,
+    "hash": "b6e7bd6ea72d5659bd1a10640aab585d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\38d5e5ef-9e46-4da9-a3ab-4157cc00fd6f\\events\\simple_event_0a566cdf.md": {
+    "mtime": 1778915845.1856847,
+    "hash": "3b388c92f234f754dc7f0cbc56248050"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\38d5e5ef-9e46-4da9-a3ab-4157cc00fd6f\\events\\the_battle_of_helm's_deep_8b82e1ff.md": {
+    "mtime": 1778915845.17317,
+    "hash": "68f97af1a43793cab76c88d1064d291b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\38d5e5ef-9e46-4da9-a3ab-4157cc00fd6f\\locations\\crystal_cave.md": {
+    "mtime": 1778915844.537294,
+    "hash": "17740b73289f4a067ae17543ef0949c6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\38d5e5ef-9e46-4da9-a3ab-4157cc00fd6f\\locations\\dark_forest.md": {
+    "mtime": 1778915844.6071966,
+    "hash": "a3f8b0360a17860643b32bc92fd6c25c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\38d5e5ef-9e46-4da9-a3ab-4157cc00fd6f\\npcs\\forest_guardian.md": {
+    "mtime": 1778915844.6918945,
+    "hash": "9825b618a25123136edd38201da0dc34"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\38d5e5ef-9e46-4da9-a3ab-4157cc00fd6f\\npcs\\gandalf_the_grey.md": {
+    "mtime": 1778915844.7573073,
+    "hash": "d279d4b4482b88b1e87b83ca16c7144d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\38d5e5ef-9e46-4da9-a3ab-4157cc00fd6f\\npcs\\\u89d2\u8272\u540d_\ud83d\udc09.md": {
+    "mtime": 1778915846.186491,
+    "hash": "e9f2c38fa4db2498479b35e0ac86aed2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\38d5e5ef-9e46-4da9-a3ab-4157cc00fd6f\\relationships\\Aragorn_Legolas.md": {
+    "mtime": 1778915844.8306184,
+    "hash": "41b5fe542614e2ad6847065920812c0a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\38d5e5ef-9e46-4da9-a3ab-4157cc00fd6f\\relationships\\Frodo_Gandalf.md": {
+    "mtime": 1778915844.816867,
+    "hash": "192471f7637a1826bace1a1e64025d59"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\3cfc28bf-5ab4-4175-bf5d-c108e79e3812\\locations\\Test_Location.md": {
+    "mtime": 1778926740.8185184,
+    "hash": "0c2e1987daaa156394db8f948fc23074"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\3cfc28bf-5ab4-4175-bf5d-c108e79e3812\\npcs\\Test_NPC.md": {
+    "mtime": 1778926740.827245,
+    "hash": "051e98babd28333478c6f745803658d4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\4b5b38df-b2cf-4ddc-bf93-95bffa78398c\\locations\\Test_Location.md": {
+    "mtime": 1778922076.3595238,
+    "hash": "714982d8c3a6d4f11c50e50dd3f28412"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\4b5b38df-b2cf-4ddc-bf93-95bffa78398c\\npcs\\Test_NPC.md": {
+    "mtime": 1778922076.3685424,
+    "hash": "29bfce02ff7f2f70b910068c306dec1e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\4ca2f793-0792-4f25-b2d8-67f0f55b6a02\\locations\\Dark_Forest.md": {
+    "mtime": 1778929507.2844043,
+    "hash": "2caa62e00b7e5545ba076365751fe5cd"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\4ca2f793-0792-4f25-b2d8-67f0f55b6a02\\npcs\\Haleth.md": {
+    "mtime": 1778929507.3154168,
+    "hash": "7a0e5bfd636a793abc316673abc26a7c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\4ca2f793-0792-4f25-b2d8-67f0f55b6a02\\npcs\\test-npc-p7.md": {
+    "mtime": 1778929511.0239751,
+    "hash": "8b36a34d7243e5d7a3dd229fbd5265df"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\4ca2f793-0792-4f25-b2d8-67f0f55b6a02\\relationships\\Hero_Villain.md": {
+    "mtime": 1778929507.3467517,
+    "hash": "a0d63082a88705894d9a4e2a5f25ac8a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\4dbc234c-45ae-4e6c-a19a-5aa577980d6f\\npcs\\test-npc-p7.md": {
+    "mtime": 1778925597.974408,
+    "hash": "26543c440ca0f08a894f1bc74346c06d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\4dbc234c-45ae-4e6c-a19a-5aa577980d6f\\relationships\\Hero_Villain.md": {
+    "mtime": 1778925597.3374395,
+    "hash": "f804cc6c657342a5aca5c63ed080bae9"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\51c1106d-4d5a-44a9-96ed-d5c0aa5dd9ad\\relationships\\A_B.md": {
+    "mtime": 1778925668.4705544,
+    "hash": "4595eba272f4c95aad58446ab6eb5a42"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\57d76bf6-2376-4b5a-ace3-e243628c6c34\\locations\\Dark_Forest.md": {
+    "mtime": 1778932846.5314534,
+    "hash": "cb8d5cd0906a890d3879e9bb52226c7b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\57d76bf6-2376-4b5a-ace3-e243628c6c34\\npcs\\Haleth.md": {
+    "mtime": 1778932846.5398393,
+    "hash": "dffcfd237566270558c3b9e04f985fca"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\57d76bf6-2376-4b5a-ace3-e243628c6c34\\npcs\\test-npc-p7.md": {
+    "mtime": 1778932847.2423964,
+    "hash": "6609ac9d14b09a9c716252b389ae26eb"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\57d76bf6-2376-4b5a-ace3-e243628c6c34\\relationships\\Hero_Villain.md": {
+    "mtime": 1778932846.5495658,
+    "hash": "cdd81b9a09c406decb4da3a7f48f9b0b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\58fc757e-9de4-4315-8b1d-4e066408edce\\locations\\Dark_Forest.md": {
+    "mtime": 1778932871.168083,
+    "hash": "ec40473224a095c5a0bb5235d0fa179b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\58fc757e-9de4-4315-8b1d-4e066408edce\\npcs\\Haleth.md": {
+    "mtime": 1778932871.178441,
+    "hash": "c62908a5f7aeca87ab7230efc84ba9a6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\58fc757e-9de4-4315-8b1d-4e066408edce\\npcs\\test-npc-p7.md": {
+    "mtime": 1778932872.0122538,
+    "hash": "344f07fda56763890b03b4ab0689753d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\58fc757e-9de4-4315-8b1d-4e066408edce\\relationships\\Hero_Villain.md": {
+    "mtime": 1778932871.1890545,
+    "hash": "86dd03ed5474bf02062acf356abef27c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\5dc57099-4a6f-440f-a97c-e7ad70b2f9c7\\locations\\Dark_Forest.md": {
+    "mtime": 1778933637.5689611,
+    "hash": "86ea292b8e43ab48ae7d47a7ccb99351"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\5dc57099-4a6f-440f-a97c-e7ad70b2f9c7\\npcs\\Haleth.md": {
+    "mtime": 1778933637.6019433,
+    "hash": "81539975363cd6316f809eda4d4fa2db"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\5dc57099-4a6f-440f-a97c-e7ad70b2f9c7\\relationships\\Hero_Villain.md": {
+    "mtime": 1778933637.6310914,
+    "hash": "9d73e3a78ae540e94a5e48f0c4fe642b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\60390f59-4f23-4fea-95a2-cdbb94ee3d99\\locations\\Dark_Forest.md": {
+    "mtime": 1778940179.226141,
+    "hash": "f4bfe2ac271dfa168f6eb125d4978f7d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\60390f59-4f23-4fea-95a2-cdbb94ee3d99\\npcs\\Haleth.md": {
+    "mtime": 1778940179.2372737,
+    "hash": "dbcb6ce701877f55f87b8059cd556009"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\60390f59-4f23-4fea-95a2-cdbb94ee3d99\\npcs\\test-npc-p7.md": {
+    "mtime": 1778940179.9987116,
+    "hash": "991b158f22a76c21fc1f5d4c060a4acb"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\60390f59-4f23-4fea-95a2-cdbb94ee3d99\\relationships\\Hero_Villain.md": {
+    "mtime": 1778940179.2468126,
+    "hash": "884eaee82287d4bbf187c771dca93ece"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\63389b6c-c46f-40bd-b1a8-0280f898897d\\locations\\Dark_Forest.md": {
+    "mtime": 1778928179.7413464,
+    "hash": "3318dc63b992b2c1acf87ee4d4eb53ed"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\63389b6c-c46f-40bd-b1a8-0280f898897d\\npcs\\Haleth.md": {
+    "mtime": 1778928179.752037,
+    "hash": "3d13516f5154f53e060afc5680b3460c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\63389b6c-c46f-40bd-b1a8-0280f898897d\\npcs\\test-npc-p7.md": {
+    "mtime": 1778928180.526935,
+    "hash": "fc956c1b6ade1172deabc8775e1cbdf1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\63389b6c-c46f-40bd-b1a8-0280f898897d\\relationships\\Hero_Villain.md": {
+    "mtime": 1778928179.7612472,
+    "hash": "02afbd806fcfa32792be0f7a080e13ac"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\656514df-810c-4c01-a636-429b03392c9d\\events\\Battle_A.md": {
+    "mtime": 1779001212.188525,
+    "hash": "d2afb93842fe26770a4d4c19336e80c6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\656514df-810c-4c01-a636-429b03392c9d\\events\\Launch_B.md": {
+    "mtime": 1779001212.2008133,
+    "hash": "d7a9a22f4f22a6b008bd1f01e440c700"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\656514df-810c-4c01-a636-429b03392c9d\\locations\\Forest_A.md": {
+    "mtime": 1779001212.1250808,
+    "hash": "afbfbc988950ac2fb562bb6f9e319871"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\656514df-810c-4c01-a636-429b03392c9d\\locations\\Station_B.md": {
+    "mtime": 1779001212.1347895,
+    "hash": "ab9f9d42b7134b20a421adec95deffd7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\656514df-810c-4c01-a636-429b03392c9d\\npcs\\Elf_A.md": {
+    "mtime": 1779001212.1613085,
+    "hash": "a7847cecaba61ac3fc4d91b890ba98ae"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\656514df-810c-4c01-a636-429b03392c9d\\npcs\\Robot_B.md": {
+    "mtime": 1779001212.1706903,
+    "hash": "9a73e47b7eb2f0922ebc75223ae8863e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\656514df-810c-4c01-a636-429b03392c9d\\relationships\\Elf A_Forest A.md": {
+    "mtime": 1779001212.2420695,
+    "hash": "2514b8d8e5ec4499379d38d15c018f1d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\68165ea2-84da-4bfa-81d7-79489a95a373\\locations\\Dark_Forest.md": {
+    "mtime": 1778940353.9726708,
+    "hash": "4cb0a851bdb00b0b62e625cadc98f294"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\68165ea2-84da-4bfa-81d7-79489a95a373\\npcs\\Haleth.md": {
+    "mtime": 1778940353.9816585,
+    "hash": "72fa2a94bb7f90b9201aeea4ac3eacbf"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\68165ea2-84da-4bfa-81d7-79489a95a373\\npcs\\test-npc-p7.md": {
+    "mtime": 1778940354.7238364,
+    "hash": "f3f6e96a718b5538ebddf721c63a12be"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\68165ea2-84da-4bfa-81d7-79489a95a373\\relationships\\Hero_Villain.md": {
+    "mtime": 1778940353.9914007,
+    "hash": "93265fcb35bc4a0d1689b437fec56ae7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\6981bad9-da52-4afa-881e-1672ec174960\\locations\\Test_Location.md": {
+    "mtime": 1778927540.5825722,
+    "hash": "065f5f0312686a9211ea99381ec17bc7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\6981bad9-da52-4afa-881e-1672ec174960\\npcs\\Test_NPC.md": {
+    "mtime": 1778927540.6009138,
+    "hash": "27a359bf4f3c78a25135c063cbfc543a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\6cd27c7a-08e4-4de3-a08b-c180989837c5\\locations\\Dark_Forest.md": {
+    "mtime": 1778933405.9600022,
+    "hash": "bbbf68be3df2c4b961371c06c0a62d26"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\6cd27c7a-08e4-4de3-a08b-c180989837c5\\npcs\\Haleth.md": {
+    "mtime": 1778933405.9676156,
+    "hash": "4a23d1061f286cab8fb13cbcb6d4f6c6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\6cd27c7a-08e4-4de3-a08b-c180989837c5\\npcs\\test-npc-p7.md": {
+    "mtime": 1778933406.6896653,
+    "hash": "cd85f398e7ae797e359af295ef63bb88"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\6cd27c7a-08e4-4de3-a08b-c180989837c5\\relationships\\Hero_Villain.md": {
+    "mtime": 1778933405.9770174,
+    "hash": "0746d050b235d8aa48e7d19934286ebc"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\6eb9546d-cb8d-4a5f-a265-ce51f15d9c51\\locations\\Dark_Forest.md": {
+    "mtime": 1778991933.94797,
+    "hash": "277e28786610c18a8206761b906417fe"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\6eb9546d-cb8d-4a5f-a265-ce51f15d9c51\\npcs\\Haleth.md": {
+    "mtime": 1778991933.968045,
+    "hash": "0c1e04454111300a1e90fe50dac5be01"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\6eb9546d-cb8d-4a5f-a265-ce51f15d9c51\\npcs\\test-npc-p7.md": {
+    "mtime": 1778991934.8674953,
+    "hash": "0501b773b635108ec5980f9d704ede05"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\6eb9546d-cb8d-4a5f-a265-ce51f15d9c51\\relationships\\Hero_Villain.md": {
+    "mtime": 1778991933.9893892,
+    "hash": "07da4bb7478aeda3fe8f9a9983ffb5ba"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\7021e855-1a0f-4901-b35b-0c30a4a5444a\\locations\\Dark_Forest.md": {
+    "mtime": 1778936147.1538522,
+    "hash": "093ed4d27eee1556de435d18ad6340d8"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\7021e855-1a0f-4901-b35b-0c30a4a5444a\\npcs\\Haleth.md": {
+    "mtime": 1778936147.1622555,
+    "hash": "22eb44fadbb41481251bbb0a3479bd3d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\7021e855-1a0f-4901-b35b-0c30a4a5444a\\npcs\\test-npc-p7.md": {
+    "mtime": 1778936147.9004807,
+    "hash": "75db4d8cc35ead45b0d1833d2e829827"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\7021e855-1a0f-4901-b35b-0c30a4a5444a\\relationships\\Hero_Villain.md": {
+    "mtime": 1778936147.17337,
+    "hash": "347284fa321c2b419f80ab739c1b8c4b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\709bdc26-ff72-43ce-b2dc-9a29bbc33828\\locations\\Dark_Forest.md": {
+    "mtime": 1778927541.5373774,
+    "hash": "cc7da8d1da3142ccacfcafee42045f83"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\709bdc26-ff72-43ce-b2dc-9a29bbc33828\\npcs\\Haleth.md": {
+    "mtime": 1778927541.5466318,
+    "hash": "3c1950775866433728b552200247bdd8"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\709bdc26-ff72-43ce-b2dc-9a29bbc33828\\npcs\\test-npc-p7.md": {
+    "mtime": 1778927545.1094763,
+    "hash": "e7a4c8b434b71bcc66ec6da695a2b6c3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\709bdc26-ff72-43ce-b2dc-9a29bbc33828\\relationships\\Hero_Villain.md": {
+    "mtime": 1778927541.5652926,
+    "hash": "c36cefed94f5649e0b9ea6b454b64fd3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\726da077-c402-4140-8d3a-85b84ae45e72\\locations\\Dark_Forest.md": {
+    "mtime": 1778933255.5616188,
+    "hash": "f02d52e6a9a1431b00605d810fe303d2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\726da077-c402-4140-8d3a-85b84ae45e72\\npcs\\Haleth.md": {
+    "mtime": 1778933255.5928972,
+    "hash": "1d9945164c7f32cd2b5927699d2dfe52"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\726da077-c402-4140-8d3a-85b84ae45e72\\npcs\\test-npc-p7.md": {
+    "mtime": 1778933256.5337358,
+    "hash": "2de01580eec93c4b242f8b8931e35279"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\726da077-c402-4140-8d3a-85b84ae45e72\\relationships\\Hero_Villain.md": {
+    "mtime": 1778933255.6217654,
+    "hash": "844936644f0b38817dc91ef6e569f285"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\78981613-8000-473b-a340-1fa3c9467e89\\locations\\Dark_Forest.md": {
+    "mtime": 1778928197.9497747,
+    "hash": "c4bda0b5a3306998cde21d606523dd0a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\78981613-8000-473b-a340-1fa3c9467e89\\npcs\\Haleth.md": {
+    "mtime": 1778928197.9586806,
+    "hash": "6245c1e528179c0b86e3d7aef36b67e2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\78981613-8000-473b-a340-1fa3c9467e89\\npcs\\test-npc-p7.md": {
+    "mtime": 1778928198.681223,
+    "hash": "89c351fc8bf1195bcb638479c4324b34"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\78981613-8000-473b-a340-1fa3c9467e89\\relationships\\Hero_Villain.md": {
+    "mtime": 1778928197.9679728,
+    "hash": "c157456738c89dd335fe956d6751bd1a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\7d0e1c17-5f1c-49c9-9a4b-cd88b30e046c\\locations\\Test_Location.md": {
+    "mtime": 1778922057.8139126,
+    "hash": "281b5bef0d85493ea62cc213179d84e7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\7d0e1c17-5f1c-49c9-9a4b-cd88b30e046c\\npcs\\Test_NPC.md": {
+    "mtime": 1778922057.8216312,
+    "hash": "4aae4e5ba75b04ce3be71a0609182692"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\809c3cde-37ac-45f1-9b36-88a4395322f5\\locations\\Test_Location.md": {
+    "mtime": 1778922031.820393,
+    "hash": "9aea79f76d7f9cd4919889cd98b37dc4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\809c3cde-37ac-45f1-9b36-88a4395322f5\\npcs\\Test_NPC.md": {
+    "mtime": 1778922031.8321488,
+    "hash": "5e3be1fbf6b0139b29a3773be7f6598a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\82294b4d-7729-4df1-9b44-bdae88a1d9ea\\locations\\Dark_Forest.md": {
+    "mtime": 1778941714.146022,
+    "hash": "f2ae4603c5f5873129806d9619aa3587"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\82294b4d-7729-4df1-9b44-bdae88a1d9ea\\npcs\\Haleth.md": {
+    "mtime": 1778941714.1591077,
+    "hash": "34cbe2048239a789db10372a20bd6836"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\82294b4d-7729-4df1-9b44-bdae88a1d9ea\\npcs\\test-npc-p7.md": {
+    "mtime": 1778941715.0270727,
+    "hash": "59f9c2454d687695c9f04c804d9c9d71"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\82294b4d-7729-4df1-9b44-bdae88a1d9ea\\relationships\\Hero_Villain.md": {
+    "mtime": 1778941714.174145,
+    "hash": "12ba59f7fb03a46b175975a928fcc91f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\843a256a-42c4-4089-809b-39e5a080acbf\\relationships\\A_B.md": {
+    "mtime": 1778925713.8159008,
+    "hash": "3291079a629bfc078103f742b527cc4c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\843b48b5-b65e-4af1-818c-6fb4d7cab2f5\\locations\\Dark_Forest.md": {
+    "mtime": 1778928102.6733692,
+    "hash": "25a2d85bb2f70ce0387266adfd9c327d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\843b48b5-b65e-4af1-818c-6fb4d7cab2f5\\npcs\\Haleth.md": {
+    "mtime": 1778928102.7027454,
+    "hash": "667ffae8bfef8257459158ce9a563051"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\843b48b5-b65e-4af1-818c-6fb4d7cab2f5\\npcs\\test-npc-p7.md": {
+    "mtime": 1778928106.5249312,
+    "hash": "8ad78f6f5ee825b7616710c731bc0a8e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\843b48b5-b65e-4af1-818c-6fb4d7cab2f5\\relationships\\Hero_Villain.md": {
+    "mtime": 1778928102.7333615,
+    "hash": "f45abc7e20395db9e158d98b73c99f89"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\84d547a2-1653-4c5d-a5c8-43c5236fa490\\locations\\Dark_Forest.md": {
+    "mtime": 1778927615.425834,
+    "hash": "5402980521b78ebf75bc513812c57372"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\84d547a2-1653-4c5d-a5c8-43c5236fa490\\npcs\\Haleth.md": {
+    "mtime": 1778927615.4365482,
+    "hash": "46a8dca9748d9778e1cc0ec6ddbe00a5"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\84d547a2-1653-4c5d-a5c8-43c5236fa490\\npcs\\test-npc-p7.md": {
+    "mtime": 1778927616.14653,
+    "hash": "fa5ae4a7ab37fa1c43a5757f426c880f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\84d547a2-1653-4c5d-a5c8-43c5236fa490\\relationships\\Hero_Villain.md": {
+    "mtime": 1778927615.444791,
+    "hash": "60a149704cf97ef33d306f069fc004e7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\85467b31-e12e-4a00-99f8-6690abf69034\\locations\\Test_Location.md": {
+    "mtime": 1778921930.8138714,
+    "hash": "b54ba887068ddbd25c28948cc4543f6f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\85467b31-e12e-4a00-99f8-6690abf69034\\npcs\\Test_NPC.md": {
+    "mtime": 1778921930.9248574,
+    "hash": "05df0578e00ff6800e8d8e2132e6be13"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\85fff603-2280-40f7-a543-53faf961db20\\locations\\Dark_Forest.md": {
+    "mtime": 1778940389.4186542,
+    "hash": "ccb4404e2b96d433441124ed39b5f01d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\85fff603-2280-40f7-a543-53faf961db20\\npcs\\Haleth.md": {
+    "mtime": 1778940389.4274747,
+    "hash": "d605c59cf087439f1aa6a6ed5fbcec62"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\85fff603-2280-40f7-a543-53faf961db20\\npcs\\test-npc-p7.md": {
+    "mtime": 1778940390.1536481,
+    "hash": "5ea5098395b96caba6b1547c5c52135d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\85fff603-2280-40f7-a543-53faf961db20\\relationships\\Hero_Villain.md": {
+    "mtime": 1778940389.4359245,
+    "hash": "8f474f8a5f526e39da24fea425219772"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\88025f9f-9726-49d5-b989-d2dd6a4e42e1\\locations\\Dark_Forest.md": {
+    "mtime": 1778932925.2298896,
+    "hash": "fcda24e08d6c768e99a04c5cdf329f22"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\88025f9f-9726-49d5-b989-d2dd6a4e42e1\\npcs\\Haleth.md": {
+    "mtime": 1778932925.2409701,
+    "hash": "8b7c4df1e956d61b431e67298eee3773"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\88025f9f-9726-49d5-b989-d2dd6a4e42e1\\npcs\\test-npc-p7.md": {
+    "mtime": 1778932926.009991,
+    "hash": "880bb2809e14e8b17374bec942854389"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\88025f9f-9726-49d5-b989-d2dd6a4e42e1\\relationships\\Hero_Villain.md": {
+    "mtime": 1778932925.2683387,
+    "hash": "1d6e12e8ebd513ee2de3edf2dbebfd48"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\8a6a17bf-b215-41f1-9bc1-8eb2509a6638\\locations\\Dark_Forest.md": {
+    "mtime": 1778929161.7112117,
+    "hash": "f77f7ea58c29ff5d87f107b69f77823b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\8a6a17bf-b215-41f1-9bc1-8eb2509a6638\\npcs\\Haleth.md": {
+    "mtime": 1778929161.742158,
+    "hash": "7a23ebb2513d3ef689053c4f38d59267"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\8a6a17bf-b215-41f1-9bc1-8eb2509a6638\\npcs\\test-npc-p7.md": {
+    "mtime": 1778929165.413476,
+    "hash": "38d236cf604abcc4f68f049e6cc7e647"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\8a6a17bf-b215-41f1-9bc1-8eb2509a6638\\relationships\\Hero_Villain.md": {
+    "mtime": 1778929161.7752235,
+    "hash": "578f6fd956a482f60266226301fe4f86"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\8ba110f4-3cd4-43a3-9d66-a474c3231933\\locations\\Dark_Forest.md": {
+    "mtime": 1778940194.8932095,
+    "hash": "57cb34e180514330f7cd71a3f7739366"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\8ba110f4-3cd4-43a3-9d66-a474c3231933\\npcs\\Haleth.md": {
+    "mtime": 1778940194.9015954,
+    "hash": "a3c33c49f200c68bf6727f7805bb86ae"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\8ba110f4-3cd4-43a3-9d66-a474c3231933\\npcs\\test-npc-p7.md": {
+    "mtime": 1778940195.6539352,
+    "hash": "e304a8f3010f3cd0a023f4a34bffd2b4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\8ba110f4-3cd4-43a3-9d66-a474c3231933\\relationships\\Hero_Villain.md": {
+    "mtime": 1778940194.9114428,
+    "hash": "b97817a15a9bac3a344a02ee65bd8764"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\8e783424-f829-4a8b-8fd8-10d8dbe5fa34\\locations\\Test_Location.md": {
+    "mtime": 1778927631.67328,
+    "hash": "dff7d4214d852520c61839110718c94c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\8e783424-f829-4a8b-8fd8-10d8dbe5fa34\\npcs\\Test_NPC.md": {
+    "mtime": 1778927631.6818986,
+    "hash": "4b78de30c91fa979e96bc8c5460e6920"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\90445f00-2538-47ab-8f11-1ab51d4d94f2\\locations\\Dark_Forest.md": {
+    "mtime": 1778928212.000748,
+    "hash": "7211b1ab8ca585a7f0e522aacee3da22"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\90445f00-2538-47ab-8f11-1ab51d4d94f2\\npcs\\Haleth.md": {
+    "mtime": 1778928212.0105903,
+    "hash": "78a68f17581ed5cf8e153ee60cc258ce"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\90445f00-2538-47ab-8f11-1ab51d4d94f2\\npcs\\test-npc-p7.md": {
+    "mtime": 1778928212.762638,
+    "hash": "71879169315a85aa8333044336ff98e6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\90445f00-2538-47ab-8f11-1ab51d4d94f2\\relationships\\Hero_Villain.md": {
+    "mtime": 1778928212.0195737,
+    "hash": "7d4a16514159bb57ca5c703711ad3fd3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\97008e00-c01c-4d80-be19-c8dd952c8874\\npcs\\test-npc-p7.md": {
+    "mtime": 1778925867.837512,
+    "hash": "45a487f942e18a3a21f1395fbc0e42b1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\97008e00-c01c-4d80-be19-c8dd952c8874\\relationships\\Hero_Villain.md": {
+    "mtime": 1778925867.1913557,
+    "hash": "ecd2971e8eacc1cff87c980a642c4d79"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\978c8b3c-9495-4531-a9e2-90eef3943096\\locations\\Dark_Forest.md": {
+    "mtime": 1778932940.1786788,
+    "hash": "33a2e2d6fae0dbde4f5f1fcdbeb3d9af"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\978c8b3c-9495-4531-a9e2-90eef3943096\\npcs\\Haleth.md": {
+    "mtime": 1778932940.1874936,
+    "hash": "9fb12a0d3f9b8e57cbef4291ea92b110"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\978c8b3c-9495-4531-a9e2-90eef3943096\\npcs\\test-npc-p7.md": {
+    "mtime": 1778932940.9145067,
+    "hash": "637c749896b88fb8eaa3bdb5bb86ea4e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\978c8b3c-9495-4531-a9e2-90eef3943096\\relationships\\Hero_Villain.md": {
+    "mtime": 1778932940.1958463,
+    "hash": "3e50ca9e6e34e575eed287008f11d1c0"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\99bfa113-3628-42ec-a08c-f1b18ffd96a9\\locations\\Dark_Forest.md": {
+    "mtime": 1778926551.6476076,
+    "hash": "0639e781e1ab7e6c0ee1461872cea9e6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\99bfa113-3628-42ec-a08c-f1b18ffd96a9\\npcs\\Haleth.md": {
+    "mtime": 1778926551.6770272,
+    "hash": "fdc59990ffce29364d441fbb900407d2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\99bfa113-3628-42ec-a08c-f1b18ffd96a9\\npcs\\test-npc-p7.md": {
+    "mtime": 1778926552.6209033,
+    "hash": "b525fb8c467cf4d3748a7b59a48f0f71"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\99bfa113-3628-42ec-a08c-f1b18ffd96a9\\relationships\\Hero_Villain.md": {
+    "mtime": 1778926551.7110546,
+    "hash": "91a8094c1e47b5573aca948ed53936bf"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\9ab18b92-6c08-4c71-8f33-8710f488ed12\\locations\\Dark_Forest.md": {
+    "mtime": 1778940314.5889094,
+    "hash": "1187e692cc4fae6ae6dba745eb56568d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\9ab18b92-6c08-4c71-8f33-8710f488ed12\\npcs\\Haleth.md": {
+    "mtime": 1778940314.5995996,
+    "hash": "714385fd3cc1c5ea414f78f25adf5ec6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\9ab18b92-6c08-4c71-8f33-8710f488ed12\\npcs\\test-npc-p7.md": {
+    "mtime": 1778940315.3750167,
+    "hash": "345a43cc33bdf058feb4b3de83994d76"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\9ab18b92-6c08-4c71-8f33-8710f488ed12\\relationships\\Hero_Villain.md": {
+    "mtime": 1778940314.609035,
+    "hash": "8f035b326de0f3b6489331773a3d7160"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\9fff5838-5d28-4ddc-8627-ffc8f9e8a589\\locations\\Dark_Forest.md": {
+    "mtime": 1778991723.439428,
+    "hash": "fa76f1d083e2c7b72b5f2a8d2eb1f88b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\9fff5838-5d28-4ddc-8627-ffc8f9e8a589\\npcs\\Haleth.md": {
+    "mtime": 1778991723.4584742,
+    "hash": "1d913448e4f3201900381c4d116861ea"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\9fff5838-5d28-4ddc-8627-ffc8f9e8a589\\npcs\\test-npc-p7.md": {
+    "mtime": 1778991727.3935199,
+    "hash": "18899aae69242951ae8a32a5f8bf46a1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\9fff5838-5d28-4ddc-8627-ffc8f9e8a589\\relationships\\Hero_Villain.md": {
+    "mtime": 1778991723.4781609,
+    "hash": "0529d3db9117580e6a757a74cca10a95"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\a285622a-3ad2-4755-afa2-fdafc5787d69\\locations\\Test_Location.md": {
+    "mtime": 1778925892.425979,
+    "hash": "d66ee8e5aedce4749c35899b5da55947"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\a285622a-3ad2-4755-afa2-fdafc5787d69\\npcs\\Test_NPC.md": {
+    "mtime": 1778925892.4359527,
+    "hash": "1a162d9e4ac071253cf27ac0cec35cc6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\a3684f8c-418b-4c53-bb7b-6adb493890cc\\locations\\Dark_Forest.md": {
+    "mtime": 1778930167.382852,
+    "hash": "3ba366b38c01baabe25b02fc618279f4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\a3684f8c-418b-4c53-bb7b-6adb493890cc\\npcs\\Haleth.md": {
+    "mtime": 1778930167.4106104,
+    "hash": "bd8eae42d681267c5a9f09ea6b2d6e7c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\a3684f8c-418b-4c53-bb7b-6adb493890cc\\npcs\\test-npc-p7.md": {
+    "mtime": 1778930170.9815378,
+    "hash": "ae4b56a4d413d9a6e5bda7c9fd82194e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\a3684f8c-418b-4c53-bb7b-6adb493890cc\\relationships\\Hero_Villain.md": {
+    "mtime": 1778930167.4388213,
+    "hash": "974f8eccd6b9d1a58d1c584b21eb737a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ae314eec-22c3-48c1-9cba-13f45512d2df\\locations\\Dark_Forest.md": {
+    "mtime": 1778941731.8308945,
+    "hash": "b16a22d7003b4120eb175b871cfcffea"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ae314eec-22c3-48c1-9cba-13f45512d2df\\npcs\\Haleth.md": {
+    "mtime": 1778941731.844249,
+    "hash": "4d0d8635154a57cf6d48bff81c17f0b2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ae314eec-22c3-48c1-9cba-13f45512d2df\\npcs\\test-npc-p7.md": {
+    "mtime": 1778941732.7693455,
+    "hash": "170545bbec0e95386e1bf4cec0b99d35"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ae314eec-22c3-48c1-9cba-13f45512d2df\\relationships\\Hero_Villain.md": {
+    "mtime": 1778941731.8588178,
+    "hash": "25814eda8fa17b856608f0d91c4a9e80"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\b1567577-ef13-4b5e-a2e4-b85110e9f1e3\\locations\\Dark_Forest.md": {
+    "mtime": 1778933098.516813,
+    "hash": "da77dcd8fc04b6491553a4174051ac4a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\b1567577-ef13-4b5e-a2e4-b85110e9f1e3\\npcs\\Haleth.md": {
+    "mtime": 1778933098.5267158,
+    "hash": "a37e8c6402dff8bc10a7a61e162cfbd6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\b1567577-ef13-4b5e-a2e4-b85110e9f1e3\\npcs\\test-npc-p7.md": {
+    "mtime": 1778933099.213341,
+    "hash": "2572d3c03a65093081afeef1cc079fca"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\b1567577-ef13-4b5e-a2e4-b85110e9f1e3\\relationships\\Hero_Villain.md": {
+    "mtime": 1778933098.5350487,
+    "hash": "0722bc42e1e071f4685dfdc3a024eea4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\b3b69392-0d43-4311-8610-c9745538dc94\\locations\\Dark_Forest.md": {
+    "mtime": 1778934501.140413,
+    "hash": "e8576d416c6cc09f3c3b0900b51da38d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\b3b69392-0d43-4311-8610-c9745538dc94\\npcs\\Haleth.md": {
+    "mtime": 1778934501.1498456,
+    "hash": "0c1465ee3730655ac82e794b0bbb4dca"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\b3b69392-0d43-4311-8610-c9745538dc94\\npcs\\test-npc-p7.md": {
+    "mtime": 1778934504.81902,
+    "hash": "7c364d54da62eb27adf4bc1c804896eb"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\b3b69392-0d43-4311-8610-c9745538dc94\\relationships\\Hero_Villain.md": {
+    "mtime": 1778934501.158976,
+    "hash": "cd83c718d7b45d540dbae199fdeaa6f3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\b61d0d4d-5390-4ca4-86ac-8489d593eefb\\locations\\Dark_Forest.md": {
+    "mtime": 1778932858.7291832,
+    "hash": "c180c57c174346912cb4443d2fc860df"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\b61d0d4d-5390-4ca4-86ac-8489d593eefb\\npcs\\Haleth.md": {
+    "mtime": 1778932858.7384257,
+    "hash": "6778f8db7e5c2874cf488a69d04b7277"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\b61d0d4d-5390-4ca4-86ac-8489d593eefb\\npcs\\test-npc-p7.md": {
+    "mtime": 1778932859.4487293,
+    "hash": "a336b4b0d92aed91b5cb750cdd7ffeb7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\b61d0d4d-5390-4ca4-86ac-8489d593eefb\\relationships\\Hero_Villain.md": {
+    "mtime": 1778932858.7473464,
+    "hash": "6b39209e26000ad5fd4d66f2d7cda249"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\b7ff9f4a-eb4f-4089-90ef-4c54e6375bef\\locations\\Dark_Forest.md": {
+    "mtime": 1778934616.621323,
+    "hash": "0c72d9dbae05f6146529c3182e5ed313"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\b7ff9f4a-eb4f-4089-90ef-4c54e6375bef\\npcs\\Haleth.md": {
+    "mtime": 1778934616.6515367,
+    "hash": "047c9e825758be334df1bc2fb4efa849"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\b7ff9f4a-eb4f-4089-90ef-4c54e6375bef\\npcs\\test-npc-p7.md": {
+    "mtime": 1778934617.5426736,
+    "hash": "6a7891651f14d7d8d0e91c24a837c0a7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\b7ff9f4a-eb4f-4089-90ef-4c54e6375bef\\relationships\\Hero_Villain.md": {
+    "mtime": 1778934616.6804433,
+    "hash": "b6f8952502b1f2dc3682ee2a721c7f92"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\bda5480f-5a64-4864-b861-699132563409\\locations\\Dark_Forest.md": {
+    "mtime": 1778933084.7441614,
+    "hash": "54bc3a4bae0b9c7c744e2cfaab295f9f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\bda5480f-5a64-4864-b861-699132563409\\npcs\\Haleth.md": {
+    "mtime": 1778933084.7541978,
+    "hash": "99da054edef158cf337eae4a4b5bd300"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\bda5480f-5a64-4864-b861-699132563409\\npcs\\test-npc-p7.md": {
+    "mtime": 1778933085.4885485,
+    "hash": "9d437310c35d81f458c8773bdb393c09"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\bda5480f-5a64-4864-b861-699132563409\\relationships\\Hero_Villain.md": {
+    "mtime": 1778933084.7638066,
+    "hash": "0ad221899984ec320e35be1715b625aa"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\bde6166c-474a-42e1-bf5f-9cc43b1b1478\\locations\\Dark_Forest.md": {
+    "mtime": 1778940331.3696856,
+    "hash": "33f45fd7331ed53fd828864caf6a8a6e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\bde6166c-474a-42e1-bf5f-9cc43b1b1478\\npcs\\Haleth.md": {
+    "mtime": 1778940331.378764,
+    "hash": "64691235d081a2e9f6387e729e886bed"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\bde6166c-474a-42e1-bf5f-9cc43b1b1478\\npcs\\test-npc-p7.md": {
+    "mtime": 1778940332.1079648,
+    "hash": "7fb1ebbca99ad7446a396b37e1308c63"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\bde6166c-474a-42e1-bf5f-9cc43b1b1478\\relationships\\Hero_Villain.md": {
+    "mtime": 1778940331.3871112,
+    "hash": "953a0f221987c92c39e6a4e4c858af48"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\c11b8e47-20fd-4178-a3e2-7258396bfc49\\locations\\Dark_Forest.md": {
+    "mtime": 1778940245.0018024,
+    "hash": "c7ba8a982b6d3a486bd1e9e0acc78351"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\c11b8e47-20fd-4178-a3e2-7258396bfc49\\npcs\\Haleth.md": {
+    "mtime": 1778940245.0117557,
+    "hash": "e656f300b12176c828a7ca459a9a5f1e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\c11b8e47-20fd-4178-a3e2-7258396bfc49\\npcs\\test-npc-p7.md": {
+    "mtime": 1778940245.7215085,
+    "hash": "eb29c7209f7d9d86693a3043da913f5e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\c11b8e47-20fd-4178-a3e2-7258396bfc49\\relationships\\Hero_Villain.md": {
+    "mtime": 1778940245.020807,
+    "hash": "a842ce54f3cdeeddadea540d4df27746"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\c2ac6d86-b96d-411d-8f2e-cfb98f122ead\\locations\\Dark_Forest.md": {
+    "mtime": 1778932830.599334,
+    "hash": "ad0564262489c7303425175cb212e5c4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\c2ac6d86-b96d-411d-8f2e-cfb98f122ead\\npcs\\Haleth.md": {
+    "mtime": 1778932830.6477904,
+    "hash": "87a72e2753f297610c98a77361c062d7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\c2ac6d86-b96d-411d-8f2e-cfb98f122ead\\npcs\\test-npc-p7.md": {
+    "mtime": 1778932834.222098,
+    "hash": "4d44fdfb95a25a1e78684bc64b22f6c5"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\c2ac6d86-b96d-411d-8f2e-cfb98f122ead\\relationships\\Hero_Villain.md": {
+    "mtime": 1778932830.6933863,
+    "hash": "6d77fae6c91b10976310d0db3f01a08e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\c8d7015b-13ad-40ed-b5a5-902d7fd28bd9\\locations\\Test_Location.md": {
+    "mtime": 1778922018.366008,
+    "hash": "428ef97bbf4803645aabbf76bbde69ad"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\c8d7015b-13ad-40ed-b5a5-902d7fd28bd9\\npcs\\Test_NPC.md": {
+    "mtime": 1778922018.4007905,
+    "hash": "8df1970fbe42deb09f0ba6c8c1ad3355"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\c9967d01-0c30-437d-a241-64b420142795\\npcs\\test-npc-p7.md": {
+    "mtime": 1778925820.2482827,
+    "hash": "4acdecfb1e627d7399ca0abc33bc244e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\c9967d01-0c30-437d-a241-64b420142795\\relationships\\Hero_Villain.md": {
+    "mtime": 1778925805.5680752,
+    "hash": "ff353d53a66b91ecebea2dfcc71668cd"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\cc0059cd-3469-4484-9fa5-5f67610c8ea5\\locations\\Dark_Forest.md": {
+    "mtime": 1778940164.2103307,
+    "hash": "37eaf0de8831fee0b46ee69e2b9b0937"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\cc0059cd-3469-4484-9fa5-5f67610c8ea5\\npcs\\Haleth.md": {
+    "mtime": 1778940164.2205155,
+    "hash": "624fb2a9168cd16fa2bf53a7d74da2d3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\cc0059cd-3469-4484-9fa5-5f67610c8ea5\\npcs\\test-npc-p7.md": {
+    "mtime": 1778940164.9698138,
+    "hash": "c8aa0497fc3526c5905724ab1e432b97"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\cc0059cd-3469-4484-9fa5-5f67610c8ea5\\relationships\\Hero_Villain.md": {
+    "mtime": 1778940164.2288003,
+    "hash": "144a67e21cd30209e4e160cd9bc19b2e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\cc60cb37-1377-4919-831e-0487f0067fe9\\locations\\Dark_Forest.md": {
+    "mtime": 1778926620.2828896,
+    "hash": "d292c2f41d21ab389232c679175e5307"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\cc60cb37-1377-4919-831e-0487f0067fe9\\npcs\\Haleth.md": {
+    "mtime": 1778926620.2944133,
+    "hash": "d3072bf52fad3c7e0fd07e7514ef8800"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\cc60cb37-1377-4919-831e-0487f0067fe9\\npcs\\test-npc-p7.md": {
+    "mtime": 1778926621.0395393,
+    "hash": "381748da34f61f597a53632aac64d873"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\cc60cb37-1377-4919-831e-0487f0067fe9\\relationships\\Hero_Villain.md": {
+    "mtime": 1778926620.304356,
+    "hash": "cf24773e32fa203d4f5ec19532c2ec8e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\d059c2cd-7af5-4f4a-adad-713bcd0b8df8\\locations\\Dark_Forest.md": {
+    "mtime": 1778932911.3170688,
+    "hash": "44c1b0c117b7d51a38272b071ffd8fd7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\d059c2cd-7af5-4f4a-adad-713bcd0b8df8\\npcs\\Haleth.md": {
+    "mtime": 1778932911.3261495,
+    "hash": "8d7935f825ab09b0a8fcee44539df68d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\d059c2cd-7af5-4f4a-adad-713bcd0b8df8\\npcs\\test-npc-p7.md": {
+    "mtime": 1778932912.024703,
+    "hash": "88b7b0c7c10daf02d00a49dc51411772"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\d059c2cd-7af5-4f4a-adad-713bcd0b8df8\\relationships\\Hero_Villain.md": {
+    "mtime": 1778932911.3351173,
+    "hash": "5f91d2a5aac62bbf4fdbe57e6c9a7c3a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\d05fcae5-bd8d-487a-8672-1558b9d9550e\\locations\\Dark_Forest.md": {
+    "mtime": 1778927600.574522,
+    "hash": "d363d908bbb849e97f28d8e0f10116fa"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\d05fcae5-bd8d-487a-8672-1558b9d9550e\\npcs\\Haleth.md": {
+    "mtime": 1778927600.5850303,
+    "hash": "36f35bf0ea684cccdf417cca979f900e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\d05fcae5-bd8d-487a-8672-1558b9d9550e\\npcs\\test-npc-p7.md": {
+    "mtime": 1778927601.3425226,
+    "hash": "4d93dadb40a2cef88785b97c9b759244"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\d05fcae5-bd8d-487a-8672-1558b9d9550e\\relationships\\Hero_Villain.md": {
+    "mtime": 1778927600.5955873,
+    "hash": "6110f145211f39d442e0ca7657f883ed"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\d17232d4-1258-4067-bed5-4cffa169fef3\\locations\\Dark_Forest.md": {
+    "mtime": 1778932974.1139252,
+    "hash": "b10befa14dc0811a5fb6f74eaa393c4c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\d17232d4-1258-4067-bed5-4cffa169fef3\\npcs\\Haleth.md": {
+    "mtime": 1778932974.1229405,
+    "hash": "13f633883c2e0e4189fe12a6b8990280"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\d17232d4-1258-4067-bed5-4cffa169fef3\\npcs\\test-npc-p7.md": {
+    "mtime": 1778932974.847249,
+    "hash": "83ed9b274af274b3986123af4e8e9666"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\d17232d4-1258-4067-bed5-4cffa169fef3\\relationships\\Hero_Villain.md": {
+    "mtime": 1778932974.1313424,
+    "hash": "42b297d11f6029e5a19b87471751b261"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\d930100b-8676-420a-983f-e5f2712b0c3c\\locations\\Dark_Forest.md": {
+    "mtime": 1778941753.0948086,
+    "hash": "ab5d84ba76e913726de4e4f5e0bec3c0"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\d930100b-8676-420a-983f-e5f2712b0c3c\\npcs\\Haleth.md": {
+    "mtime": 1778941753.1077938,
+    "hash": "85137af1cce3dac448385fd6e3d64167"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\d930100b-8676-420a-983f-e5f2712b0c3c\\npcs\\test-npc-p7.md": {
+    "mtime": 1778941754.1156268,
+    "hash": "ed15de8983b212db83293af4c9acff15"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\d930100b-8676-420a-983f-e5f2712b0c3c\\relationships\\Hero_Villain.md": {
+    "mtime": 1778941753.1218288,
+    "hash": "8feb7a2f18ed4a9cc478aebf085d682a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\da41d3fb-18ef-42d4-8d06-8d17186de1bd\\locations\\Dark_Forest.md": {
+    "mtime": 1778927632.5449257,
+    "hash": "b3905c7babf2e7d9072fd37702ec9579"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\da41d3fb-18ef-42d4-8d06-8d17186de1bd\\npcs\\Haleth.md": {
+    "mtime": 1778927632.5554035,
+    "hash": "c57abe0c3a15592a731c63ddd7f643a8"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\da41d3fb-18ef-42d4-8d06-8d17186de1bd\\npcs\\test-npc-p7.md": {
+    "mtime": 1778927633.2568638,
+    "hash": "059513971cfd6129fda7f2eba2e33714"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\da41d3fb-18ef-42d4-8d06-8d17186de1bd\\relationships\\Hero_Villain.md": {
+    "mtime": 1778927632.5643346,
+    "hash": "87068e485662bcdc53f069d337378a70"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\da755649-275f-410c-81bb-bbce896df6a0\\locations\\Dark_Forest.md": {
+    "mtime": 1778936054.5206754,
+    "hash": "9c4f35c02e267b0a15d893bd617247b5"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\da755649-275f-410c-81bb-bbce896df6a0\\npcs\\Haleth.md": {
+    "mtime": 1778936054.7308433,
+    "hash": "ef7e0a864cc91d24673eac200f495ae2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\da755649-275f-410c-81bb-bbce896df6a0\\npcs\\test-npc-p7.md": {
+    "mtime": 1778936062.0779734,
+    "hash": "91d8c86a8ef88108bcda937504f89fa1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\da755649-275f-410c-81bb-bbce896df6a0\\relationships\\Hero_Villain.md": {
+    "mtime": 1778936055.1194227,
+    "hash": "cd7c52c49c7c6b108c793e267b1ac5a8"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\e1e6a485-fa3b-43b0-8ea5-f1f20f558dd4\\locations\\Dark_Forest.md": {
+    "mtime": 1778940142.8790998,
+    "hash": "7733f47b0f1289be0d85934a0707014c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\e1e6a485-fa3b-43b0-8ea5-f1f20f558dd4\\npcs\\Haleth.md": {
+    "mtime": 1778940142.9093542,
+    "hash": "d211a2957f02ee10b69e5da0f2df01c7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\e1e6a485-fa3b-43b0-8ea5-f1f20f558dd4\\npcs\\test-npc-p7.md": {
+    "mtime": 1778940146.507158,
+    "hash": "8c1e245c8a953763a941a8e98ce07825"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\e1e6a485-fa3b-43b0-8ea5-f1f20f558dd4\\relationships\\Hero_Villain.md": {
+    "mtime": 1778940142.9394681,
+    "hash": "3685b2defdd0d45e74feda5921d39c69"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\e29a2fe7-36a7-4bef-a7d5-3e767987c691\\events\\simple_event_433576ed.md": {
+    "mtime": 1778915770.7634833,
+    "hash": "152211de6e0c7312f23687f6dd0e6786"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\e29a2fe7-36a7-4bef-a7d5-3e767987c691\\events\\the_battle_of_helm's_deep_17170686.md": {
+    "mtime": 1778915770.7455363,
+    "hash": "811154c14ae4dfae74166d6df05fee97"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\e29a2fe7-36a7-4bef-a7d5-3e767987c691\\locations\\crystal_cave.md": {
+    "mtime": 1778915766.0413232,
+    "hash": "5a522711acb897a313b625645b4c8e9b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\e29a2fe7-36a7-4bef-a7d5-3e767987c691\\locations\\dark_forest.md": {
+    "mtime": 1778915766.931983,
+    "hash": "799dd1a8b7c3845eec77ec29c05b312c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\e29a2fe7-36a7-4bef-a7d5-3e767987c691\\npcs\\forest_guardian.md": {
+    "mtime": 1778915767.0695395,
+    "hash": "7e85cb464d31b92efff7cd394512bf4c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\e29a2fe7-36a7-4bef-a7d5-3e767987c691\\npcs\\gandalf_the_grey.md": {
+    "mtime": 1778915767.9501753,
+    "hash": "bf844c097aad7023db302319a7494642"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\e29a2fe7-36a7-4bef-a7d5-3e767987c691\\npcs\\\u89d2\u8272\u540d_\ud83d\udc09.md": {
+    "mtime": 1778915773.2981458,
+    "hash": "73fe3c5427c756e41041971337e6a377"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\e29a2fe7-36a7-4bef-a7d5-3e767987c691\\relationships\\Aragorn_Legolas.md": {
+    "mtime": 1778915768.3100784,
+    "hash": "531c087d7c071755503db6424e8d6aa5"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\e29a2fe7-36a7-4bef-a7d5-3e767987c691\\relationships\\Frodo_Gandalf.md": {
+    "mtime": 1778915768.2904246,
+    "hash": "e129756efdcc9f7b1d3d445be2f3c8ff"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ef37d091-2b01-419e-8b4b-90913db37070\\events\\Simple_Event.md": {
+    "mtime": 1778918627.3814735,
+    "hash": "9358a652815909105cff3ae7f9fe3704"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ef37d091-2b01-419e-8b4b-90913db37070\\events\\The_Battle_of_Helm's_Deep.md": {
+    "mtime": 1778918627.371376,
+    "hash": "1e27977aed65f8a2c14d3ca4313dda5b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ef37d091-2b01-419e-8b4b-90913db37070\\events\\xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.md": {
+    "mtime": 1778918627.972116,
+    "hash": "5f4ba2d295f13c05c393ec8d13f60bd4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ef37d091-2b01-419e-8b4b-90913db37070\\locations\\crystal_cave.md": {
+    "mtime": 1778918626.441036,
+    "hash": "2bc4726c262c1f55635db25c2bc8e24b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ef37d091-2b01-419e-8b4b-90913db37070\\locations\\Dark_Forest.md": {
+    "mtime": 1778918626.5831647,
+    "hash": "4fea9fc90b670f627f2978c872303ce3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ef37d091-2b01-419e-8b4b-90913db37070\\locations\\Location_with_'quotes'_&_special_chars!.md": {
+    "mtime": 1778918627.9923897,
+    "hash": "7621ca0e1e9a195e14dbe906b5651303"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ef37d091-2b01-419e-8b4b-90913db37070\\locations\\xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.md": {
+    "mtime": 1778918627.8986712,
+    "hash": "1d098257cdb106614d119d4a174e096a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ef37d091-2b01-419e-8b4b-90913db37070\\npcs\\Forest_Guardian.md": {
+    "mtime": 1778918626.7028818,
+    "hash": "fe5e719f365354b24ca26d80b4b56806"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ef37d091-2b01-419e-8b4b-90913db37070\\npcs\\Gandalf_the_Grey.md": {
+    "mtime": 1778918626.8023567,
+    "hash": "edbad64c595d2d7c71da8f7a6447d681"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ef37d091-2b01-419e-8b4b-90913db37070\\npcs\\xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.md": {
+    "mtime": 1778918627.9256606,
+    "hash": "bfeda98461eaf423ad27820f49d70b1a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ef37d091-2b01-419e-8b4b-90913db37070\\npcs\\\u89d2\u8272\u540d_\ud83d\udc09.md": {
+    "mtime": 1778918628.0117843,
+    "hash": "9584592ce4df30707e15bdfd2db5ee26"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ef37d091-2b01-419e-8b4b-90913db37070\\relationships\\Aragorn_Legolas.md": {
+    "mtime": 1778918626.954661,
+    "hash": "e800a1fc72c9facab8b8193daee892d0"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ef37d091-2b01-419e-8b4b-90913db37070\\relationships\\Frodo_Gandalf.md": {
+    "mtime": 1778918626.9433112,
+    "hash": "f9324fd6971235bba6e410c7307aedbb"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ef62dceb-6f92-4705-bed5-ef87a191e60d\\locations\\Dark_Forest.md": {
+    "mtime": 1778928338.406388,
+    "hash": "b9f469c13617c8f6c670fa9122705ed1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ef62dceb-6f92-4705-bed5-ef87a191e60d\\npcs\\Haleth.md": {
+    "mtime": 1778928338.4371629,
+    "hash": "dc2f41915c492bde6cfc62b34bdce87b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ef62dceb-6f92-4705-bed5-ef87a191e60d\\npcs\\test-npc-p7.md": {
+    "mtime": 1778928339.3338842,
+    "hash": "d15d2e723d6a2661cdd108643e23318a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ef62dceb-6f92-4705-bed5-ef87a191e60d\\relationships\\Hero_Villain.md": {
+    "mtime": 1778928338.4662325,
+    "hash": "e5694f40e68bcc3f68f7cc92f0718e5b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\f25bb283-fd9f-4034-9641-eeb8c8cc7170\\locations\\Test_Location.md": {
+    "mtime": 1778921939.9282057,
+    "hash": "1756e56e79e9ba69aad952e45a1f27b6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\f25bb283-fd9f-4034-9641-eeb8c8cc7170\\npcs\\Test_NPC.md": {
+    "mtime": 1778921939.9366884,
+    "hash": "9adb3e45bd4512bd56966ee2d6cfc5d7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\f38d4c00-cd8a-423f-aa3a-34d9a23b9271\\locations\\Dark_Forest.md": {
+    "mtime": 1778928121.882611,
+    "hash": "1bb99aebcb9458d1119bd94c561094f7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\f38d4c00-cd8a-423f-aa3a-34d9a23b9271\\npcs\\Haleth.md": {
+    "mtime": 1778928121.8912961,
+    "hash": "b6443c8d0d50a221863e74895bf4f968"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\f38d4c00-cd8a-423f-aa3a-34d9a23b9271\\npcs\\test-npc-p7.md": {
+    "mtime": 1778928122.733824,
+    "hash": "d6d658db38b752c01dc9307e749c4210"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\f38d4c00-cd8a-423f-aa3a-34d9a23b9271\\relationships\\Hero_Villain.md": {
+    "mtime": 1778928121.9001746,
+    "hash": "5488c3e9108297065868d352ebb93e66"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\f7c65b59-4348-46fb-889b-6bad4042a4e1\\locations\\Dark_Forest.md": {
+    "mtime": 1778926391.260805,
+    "hash": "113a9f4f5aeb1d239a9993ef2135d0c2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\f7c65b59-4348-46fb-889b-6bad4042a4e1\\npcs\\Haleth.md": {
+    "mtime": 1778926391.2709663,
+    "hash": "16543679213ac71c0bba7b510e9e254f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\f7c65b59-4348-46fb-889b-6bad4042a4e1\\npcs\\test-npc-p7.md": {
+    "mtime": 1778926394.901835,
+    "hash": "50443e8236f56d6edcc9336f3f311103"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\f7c65b59-4348-46fb-889b-6bad4042a4e1\\relationships\\Hero_Villain.md": {
+    "mtime": 1778926391.2823617,
+    "hash": "b2aa368f8bda791b26eecca532aac8f6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\f996123c-52fe-456b-a945-45ea6e264dc0\\locations\\Dark_Forest.md": {
+    "mtime": 1778931891.6182785,
+    "hash": "058e433c73402e2444d8275c20bdf782"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\f996123c-52fe-456b-a945-45ea6e264dc0\\npcs\\Haleth.md": {
+    "mtime": 1778931891.6516852,
+    "hash": "ceb9cdbfe3f25e1d25dce2bfa9cbe328"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\f996123c-52fe-456b-a945-45ea6e264dc0\\npcs\\test-npc-p7.md": {
+    "mtime": 1778931895.3477983,
+    "hash": "216623b1aa019bf2b17e83e9f7f55fb6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\f996123c-52fe-456b-a945-45ea6e264dc0\\relationships\\Hero_Villain.md": {
+    "mtime": 1778931891.6815846,
+    "hash": "da9b183d828bf03884da3f86dcc36991"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\fa041dd2-2279-4b27-82b9-ef9bb6688186\\locations\\Dark_Forest.md": {
+    "mtime": 1778934765.8598778,
+    "hash": "3fe34ce25b34b428ed03d6a21053eb22"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\fa041dd2-2279-4b27-82b9-ef9bb6688186\\npcs\\Haleth.md": {
+    "mtime": 1778934765.8682544,
+    "hash": "d6a119d24792b8fd64f199641a2953e8"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\fa041dd2-2279-4b27-82b9-ef9bb6688186\\npcs\\test-npc-p7.md": {
+    "mtime": 1778934766.6744924,
+    "hash": "878d8d27b27024fe9cd7e164f869f785"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\fa041dd2-2279-4b27-82b9-ef9bb6688186\\relationships\\Hero_Villain.md": {
+    "mtime": 1778934765.8769314,
+    "hash": "95a7c5504807a3d4df29bdca36f01299"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\fb8d7e35-81f2-4dce-a16d-695d15afe259\\locations\\Dark_Forest.md": {
+    "mtime": 1778926723.2941961,
+    "hash": "e6a43b163b98c86992eb019ac3611de1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\fb8d7e35-81f2-4dce-a16d-695d15afe259\\npcs\\Haleth.md": {
+    "mtime": 1778926723.323672,
+    "hash": "5a0e909081419ba0bb88b236778ff85b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\fb8d7e35-81f2-4dce-a16d-695d15afe259\\npcs\\test-npc-p7.md": {
+    "mtime": 1778926724.2579496,
+    "hash": "f037a2e428664c11920228c40dd919a4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\fb8d7e35-81f2-4dce-a16d-695d15afe259\\relationships\\Hero_Villain.md": {
+    "mtime": 1778926723.3536844,
+    "hash": "c06d0385431a9fa9cf1e0990576e984d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\fd19ad8b-e1b3-4abc-a08d-dc6ebf58975f\\locations\\Dark_Forest.md": {
+    "mtime": 1778928759.5706005,
+    "hash": "42d27c4ed66695cf3c2e7982ab6b4dba"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\fd19ad8b-e1b3-4abc-a08d-dc6ebf58975f\\npcs\\Haleth.md": {
+    "mtime": 1778928759.6008024,
+    "hash": "82dcf88d4c125bdc401e7aceef7f4ddf"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\fd19ad8b-e1b3-4abc-a08d-dc6ebf58975f\\npcs\\test-npc-p7.md": {
+    "mtime": 1778928763.329244,
+    "hash": "c3af895f43e50a1e5166fabd4066a1b2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\fd19ad8b-e1b3-4abc-a08d-dc6ebf58975f\\relationships\\Hero_Villain.md": {
+    "mtime": 1778928759.6311755,
+    "hash": "ab2f7458bfffb75e7e06ea74eb6f3c09"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\decisions\\ADR-template.md": {
+    "mtime": 1778862289.3842082,
+    "hash": "a5c038c0b5d9d90885c99bfaccaace1a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\active\\master-feature-plan.md": {
+    "mtime": 1779011874.6424997,
+    "hash": "fd609702a899e232a98a77a4e1c44fab"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\active\\phase8\\8a-30fps-render-loop.md": {
+    "mtime": 1778927009.9779513,
+    "hash": "85426e4476db19864a3dd47db82f09ae"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\active\\phase8\\8b-automatic-idle-detection.md": {
+    "mtime": 1778927055.1877637,
+    "hash": "f92ff205e692f5dca5de4f6afaff9f80"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\active\\phase8\\8c-narrative-threads-ui.md": {
+    "mtime": 1778927095.3897204,
+    "hash": "c581426a358f0ef3e625a9361ed70008"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\active\\phase8\\8d-timeline-management.md": {
+    "mtime": 1778927127.6896458,
+    "hash": "c386a014ea925a886e1d2dc7dbe5f54a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\active\\phase8\\8e-markdown-lore-editor.md": {
+    "mtime": 1778927178.7385716,
+    "hash": "82f7c26c2f67b364deda1d50bec5922b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\archived\\gap-closure-master-plan.md": {
+    "mtime": 1778930862.6086092,
+    "hash": "1f567632ebf3283bdb15d309453ddd53"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\archived\\phase4-integration.md": {
+    "mtime": 1778935516.7179756,
+    "hash": "304999b7c940d18fb1c7c295ab2d47c2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\archived\\phase5-components.md": {
+    "mtime": 1778940815.816998,
+    "hash": "8eed71f64ee9d632f6ed3084be91b213"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\canon-layers-ui.md": {
+    "mtime": 1779009366.1132572,
+    "hash": "be31964352cf4401a06f3cff1daf08c0"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\character-declaration.md": {
+    "mtime": 1779002160.9527445,
+    "hash": "d61790c74e6120198ab1f49acdf9bbdf"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\color-palette-alignment.md": {
+    "mtime": 1779010485.8655016,
+    "hash": "c0a067667677e2c219c9a397f8363374"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\connection-status.md": {
+    "mtime": 1779002286.7974732,
+    "hash": "f26da236f56de5489a563dce80da8658"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\job-queue-progress-bars.md": {
+    "mtime": 1779006741.97718,
+    "hash": "7704aa104a8a13b7bf48951422fd7a77"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\lore-editor.md": {
+    "mtime": 1779002255.4080875,
+    "hash": "953c59a8d7c8ee0920847fd11940c6ab"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\modern-dark-ui.md": {
+    "mtime": 1778909291.8853533,
+    "hash": "2ac60f474f53fcce3be8c0534334d66d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\observer-mode.md": {
+    "mtime": 1779002270.1445115,
+    "hash": "aacce6be8ec1824c4ed393fe71fef0a0"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\private-state-ui.md": {
+    "mtime": 1779005978.2338383,
+    "hash": "d97a472388cab4e45f03bdce129d7b05"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\relationship-visualization.md": {
+    "mtime": 1779010350.361119,
+    "hash": "26519207f0b3f7ad829a3d2ae48e7e48"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\roleplay-engine-implementation.md": {
+    "mtime": 1778926050.009178,
+    "hash": "e84c89cc3f2ba24def1538f135cc895b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\settings-page.md": {
+    "mtime": 1779002233.9892566,
+    "hash": "11a9751281ffc11f54f2a3d4858a31a3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\sqlite-vec-integration.md": {
+    "mtime": 1779002182.4504597,
+    "hash": "dbe0989b57099919f7321a78c56c7cf2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\timeline-layer-management.md": {
+    "mtime": 1779008601.2229702,
+    "hash": "4d57f900afb7a669339dfbe03289bdbf"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\tts-streaming.md": {
+    "mtime": 1779002211.4550574,
+    "hash": "d9ee1f70c30e03865135a450edc9bf68"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\yaml-frontmatter-sync.md": {
+    "mtime": 1779009865.171543,
+    "hash": "11bfbfd3b37543be091805572c23fce3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\public\\file.svg": {
+    "mtime": 1778587663.305934,
+    "hash": "d09f95206c3fa0bb9bd9fefabfd0ea71"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\public\\globe.svg": {
+    "mtime": 1778587663.321487,
+    "hash": "2aaafa6a49b6563925fe440891e32717"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\public\\next.svg": {
+    "mtime": 1778587663.3365135,
+    "hash": "8e061864f388b47f33a1c3780831193e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\public\\vercel.svg": {
+    "mtime": 1778587663.350305,
+    "hash": "c0af2f507b369b085b35ef4bbe3bcf1e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\public\\window.svg": {
+    "mtime": 1778587663.3650312,
+    "hash": "a2760511c65806022ad20adf74370ff3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\42f5eccc-1d51-4264-9094-31b3c230b8ae\\tts_cache\\7899d1ae4eae231b89f8ab59584b39716dd80a4f9daafcdf2f896690bed02b8c.mp3": {
+    "mtime": 1778996576.368857,
+    "hash": "7d64d40bffb8f80d99fde444957a746a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\49c01703-f03f-4d91-be9a-a4de9abe07a4\\tts_cache\\2a7756c47d245d746b4a56ed0ca10f973135e0a729ea2ae001efeee432f4786c.mp3": {
+    "mtime": 1778914866.2830167,
+    "hash": "245a5aeab0dc9841a599b7d7c533401d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\4eafd6fe-a5ee-4384-a5d6-6474aae86810\\tts_cache\\2a7756c47d245d746b4a56ed0ca10f973135e0a729ea2ae001efeee432f4786c.mp3": {
+    "mtime": 1778922356.6822817,
+    "hash": "76171ac8f580f8b81f20c0b88fb4f4ec"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\4f9b0418-e45c-4884-b973-9987578d13d0\\tts_cache\\2a7756c47d245d746b4a56ed0ca10f973135e0a729ea2ae001efeee432f4786c.mp3": {
+    "mtime": 1778914646.7067425,
+    "hash": "9fd7bab66f0f7b8eabcf8af38b0ba445"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\7cb6f215-4906-42bd-92d8-b29dff68eeda\\tts_cache\\2a7756c47d245d746b4a56ed0ca10f973135e0a729ea2ae001efeee432f4786c.mp3": {
+    "mtime": 1778914925.117456,
+    "hash": "029a84ff28db984751c79c3a0783c689"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\91fa96df-b2a6-48c2-bb4d-a157ac2896a4\\tts_cache\\2a7756c47d245d746b4a56ed0ca10f973135e0a729ea2ae001efeee432f4786c.mp3": {
+    "mtime": 1778914975.8968253,
+    "hash": "fe8ecc8d7fa3fbf872e8e1efe0630590"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\b8fc2354-8868-480c-9cbb-1ed06abf4ef4\\tts_cache\\2a7756c47d245d746b4a56ed0ca10f973135e0a729ea2ae001efeee432f4786c.mp3": {
+    "mtime": 1778915049.8585036,
+    "hash": "d1df358ee48aa19fa71006074f650c89"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\c9fc2cd4-c825-46d6-b1a6-48d83e835f95\\tts_cache\\2a7756c47d245d746b4a56ed0ca10f973135e0a729ea2ae001efeee432f4786c.mp3": {
+    "mtime": 1778914762.532489,
+    "hash": "1ae3114067d86d7e6eb610471ca842e0"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\ca9107f0-7ea7-41e4-b88f-64797ab89e60\\tts_cache\\2a7756c47d245d746b4a56ed0ca10f973135e0a729ea2ae001efeee432f4786c.mp3": {
+    "mtime": 1778918593.759247,
+    "hash": "3e4ac170aa27c07b2605a8695eb8f234"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\e9ab95ce-0cd8-4244-8045-ec4d42d1e250\\tts_cache\\2a7756c47d245d746b4a56ed0ca10f973135e0a729ea2ae001efeee432f4786c.mp3": {
+    "mtime": 1778914840.4108703,
+    "hash": "a016af5b044b3eee791d2ed235589261"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\fba2480f-9b8f-4ee9-9f44-5b1f1f3894d1\\tts_cache\\2a7756c47d245d746b4a56ed0ca10f973135e0a729ea2ae001efeee432f4786c.mp3": {
+    "mtime": 1778918618.04682,
+    "hash": "5813d049a1703024d1205302ce99f7ea"
+  }
+}
