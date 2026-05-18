@@ -119,3 +119,23 @@ export const CANON_TIER_COLORS: Record<string, string> = {
   session_lore: "border-purple-500/50 bg-purple-500/10 text-purple-400",
   rumor: "border-gray-500/50 bg-gray-500/10 text-gray-400",
 };
+
+// ---------------------------------------------------------------------------
+// Wiki
+// ---------------------------------------------------------------------------
+
+export const WIKI_FOLDERS = ['entities', 'concepts', 'sources', 'synthesis', '_review'] as const;
+
+export const WIKI_STATUS_COLORS: Record<string, string> = {
+  draft: 'border-yellow-500/50 bg-yellow-500/10 text-yellow-400',
+  reviewed: 'border-blue-500/50 bg-blue-500/10 text-blue-400',
+  locked: 'border-red-500/50 bg-red-500/10 text-red-400',
+  rejected: 'border-gray-500/50 bg-gray-500/10 text-gray-400',
+};
+
+export const WIKI_PAGE_TYPE_ICONS: Record<string, string> = {
+  entity: 'Users',
+  concept: 'BookOpen',
+  source: 'FileText',
+  synthesis: 'GitBranch',
+};
