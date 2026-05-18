@@ -5,16 +5,17 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { SessionCreator } from "@/components/session/session-creator";
-import { useActiveUniverse } from "@/contexts/active-universe";
+import { useApp } from "@/contexts/app-context";
 
 interface Universe {
   id: string;
   name: string;
+  group_id: string | null;
 }
 
 export default function NewSessionPage() {
   const router = useRouter();
-  const { activeUniverse, universes } = useActiveUniverse();
+  const { activeUniverse, universes, activeGroup, refreshAll } = useApp();
   const [universeList, setUniverseList] = useState<Universe[]>([]);
 
   useEffect(() => {
@@ -29,6 +30,7 @@ export default function NewSessionPage() {
         name: data.name,
         universe_id: data.universe_id || activeUniverse?.id || null,
         type: data.type,
+        group_id: activeGroup?.id || null,
       }),
     });
 
@@ -37,6 +39,9 @@ export default function NewSessionPage() {
     if (!res.ok) {
       throw new Error(result.error || "Failed to create session");
     }
+
+    // Refresh all data
+    refreshAll();
 
     router.push(`/session/${result.session.id}`);
   }

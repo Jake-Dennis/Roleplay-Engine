@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { LoreBrowser } from "@/components/lore/lore-browser";
 import { useActiveUniverse } from "@/contexts/active-universe";
+import { useApp } from "@/contexts/app-context";
 
 interface Location {
   id: string;
@@ -17,6 +18,7 @@ interface Location {
 
 export default function LorePage() {
   const { activeUniverse } = useActiveUniverse();
+  const { activeGroup } = useApp();
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -27,8 +29,10 @@ export default function LorePage() {
 
   async function loadLocations() {
     try {
-      const params = activeUniverse ? `?universe_id=${activeUniverse.id}` : "";
-      const res = await fetch(`/api/locations${params}`);
+      const params = new URLSearchParams();
+      if (activeUniverse) params.set("universe_id", activeUniverse.id);
+      if (activeGroup) params.set("group_id", activeGroup.id);
+      const res = await fetch(`/api/locations${params.toString() ? "?" + params.toString() : ""}`);
       const data = await res.json();
       setLocations(data.locations || []);
     } catch {
@@ -40,7 +44,7 @@ export default function LorePage() {
 
   useEffect(() => {
     loadLocations();
-  }, [activeUniverse?.id]);
+  }, [activeUniverse?.id, activeGroup?.id]);
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
@@ -55,6 +59,7 @@ export default function LorePage() {
           name: name.trim(),
           importance,
           universe_id: activeUniverse?.id || null,
+          group_id: activeGroup?.id || null,
         }),
       });
 

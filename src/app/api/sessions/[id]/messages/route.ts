@@ -3,6 +3,7 @@ import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { queueJob } from "@/lib/job-processor";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
+import { ensureGroupSupport } from "@/lib/group-migrations";
 
 export async function GET(
   request: NextRequest,
@@ -30,9 +31,10 @@ export async function GET(
     }
 
     const messages = db.prepare(`
-      SELECT m.*, u.username as sender_name
+      SELECT m.*, u.username as sender_name, p.name as persona_name, p.avatar_url as persona_avatar
       FROM messages m
       LEFT JOIN users u ON m.sender_id = u.id
+      LEFT JOIN personas p ON m.persona_id = p.id
       WHERE m.session_id = ? AND m.is_deleted = 0
       ORDER BY m.timestamp ASC
     `).all(sessionId);
@@ -79,10 +81,20 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { content } = body;
+    const { content, personaId } = body;
 
     if (!content) {
       return NextResponse.json({ error: "Content is required" }, { status: 400 });
+    }
+
+    // Verify persona belongs to user if provided
+    if (personaId) {
+      const persona = db.prepare(
+        "SELECT id FROM personas WHERE id = ? AND user_id = ?"
+      ).get(personaId, decoded.sub);
+      if (!persona) {
+        return NextResponse.json({ error: "Persona not found" }, { status: 404 });
+      }
     }
 
     const messageId = crypto.randomUUID();
@@ -93,8 +105,8 @@ export async function POST(
     ).get(sessionId) as { id: string } | undefined;
 
     db.prepare(
-      "INSERT INTO messages (id, session_id, sender_id, content, parent_message_id) VALUES (?, ?, ?, ?, ?)"
-    ).run(messageId, sessionId, decoded.sub, content, lastMessage?.id || null);
+      "INSERT INTO messages (id, session_id, sender_id, content, parent_message_id, persona_id) VALUES (?, ?, ?, ?, ?, ?)"
+    ).run(messageId, sessionId, decoded.sub, content, lastMessage?.id || null, personaId || null);
 
     // Emit message created event for SSE
     eventBus.emit(`${SessionEvents.MESSAGE_CREATED}:${sessionId}`, {
@@ -123,9 +135,10 @@ export async function POST(
     db.prepare("UPDATE sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(sessionId);
 
     const message = db.prepare(`
-      SELECT m.*, u.username as sender_name
+      SELECT m.*, u.username as sender_name, p.name as persona_name, p.avatar_url as persona_avatar
       FROM messages m
       LEFT JOIN users u ON m.sender_id = u.id
+      LEFT JOIN personas p ON m.persona_id = p.id
       WHERE m.id = ?
     `).get(messageId);
 

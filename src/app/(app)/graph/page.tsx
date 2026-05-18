@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Network, Sparkles, Filter } from "lucide-react";
 import { useActiveUniverse } from "@/contexts/active-universe";
+import { useApp } from "@/contexts/app-context";
 
 interface Backlink {
   id: string;
@@ -31,6 +32,7 @@ interface GraphEdge {
 
 export default function GraphPage() {
   const { activeUniverse } = useActiveUniverse();
+  const { activeGroup } = useApp();
   const [backlinks, setBacklinks] = useState<Backlink[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
@@ -41,15 +43,18 @@ export default function GraphPage() {
   const animationRef = useRef<number>(0);
 
   useEffect(() => {
-    const params = activeUniverse ? `?universe_id=${activeUniverse.id}` : "";
-    fetch(`/api/backlinks${params}`)
+    const params = new URLSearchParams();
+    if (activeUniverse) params.set("universe_id", activeUniverse.id);
+    if (activeGroup) params.set("group_id", activeGroup.id);
+    const url = `/api/backlinks${params.toString() ? "?" + params.toString() : ""}`;
+    fetch(url)
       .then((res) => res.json())
       .then((data) => {
         setBacklinks(data.backlinks || []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [activeUniverse?.id]);
+  }, [activeUniverse?.id, activeGroup?.id]);
 
   const buildGraph = useCallback(() => {
     const nodeMap = new Map<string, GraphNode>();

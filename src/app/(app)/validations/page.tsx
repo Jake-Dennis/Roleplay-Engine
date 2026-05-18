@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Shield, Check, X, Sparkles, Filter, Clock } from "lucide-react";
 import { useActiveUniverse } from "@/contexts/active-universe";
+import { useApp } from "@/contexts/app-context";
 
 interface Validation {
   id: string;
@@ -18,6 +19,7 @@ interface Validation {
 
 export default function ValidationsPage() {
   const { activeUniverse } = useActiveUniverse();
+  const { activeGroup } = useApp();
   const [validations, setValidations] = useState<Validation[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
@@ -25,14 +27,15 @@ export default function ValidationsPage() {
 
   useEffect(() => {
     loadValidations();
-  }, [activeUniverse?.id, filter]);
+  }, [activeUniverse?.id, activeGroup?.id, filter]);
 
   async function loadValidations() {
     try {
       const params = new URLSearchParams();
       if (filter !== "all") params.set("state", filter);
       if (activeUniverse) params.set("universe_id", activeUniverse.id);
-      const url = `/api/lore-validations?${params}`;
+      if (activeGroup) params.set("group_id", activeGroup.id);
+      const url = `/api/lore-validations${params.toString() ? "?" + params.toString() : ""}`;
       const res = await fetch(url);
       const data = await res.json();
       setValidations(data.validations || []);

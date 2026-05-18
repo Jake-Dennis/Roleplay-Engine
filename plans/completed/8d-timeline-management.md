@@ -1,14 +1,18 @@
-# Phase 8D: Timeline Management
+# Phase 8D: Timeline Management ✅ COMPLETE
 
 ## Goal
 Build a full CRUD UI for timelines — the system that defines eras, years, restrictions, and active factions within a universe.
 
+## Status
+All steps completed. Timeline list page, detail page, API routes, and session integration all built.
+
 ## Current State
-- `timelines` table exists in schema
-- No API routes for timelines
-- No UI page
-- Timelines are referenced by `sessions.timeline_id`
-- No library functions for timeline management
+- [x] `src/app/api/timelines/route.ts` — GET (list), POST (create)
+- [x] `src/app/api/timelines/[id]/route.ts` — GET, PUT, DELETE
+- [x] `src/app/(app)/timeline/page.tsx` — list with universe filter, sort by year
+- [x] `src/app/(app)/timeline/[id]/page.tsx` — detail with era, year, restrictions, factions
+- [x] `src/app/(app)/layout.tsx` — sidebar nav item "Timeline"
+- [x] Session creation includes timeline selection
 
 ## Schema Reference
 ```sql

@@ -14,7 +14,7 @@
 import { getDb } from "@/lib/db";
 import { generateText } from "@/lib/ollama";
 import { writeLoreFile, sanitizeFilename } from "@/lib/lore-markdown";
-import { detectContradictions } from "@/lib/contradiction-detector";
+import { detectContradictions, detectAllContradictionsWithSemantic } from "@/lib/contradiction-detector";
 
 export interface LoreExpansionResult {
   expandedCount: number;
@@ -287,6 +287,13 @@ async function createLoreEntry(
 
     // Run rule-based contradiction detection
     detectContradictions("locations", loreId, userId);
+
+    // Run semantic contradiction detection
+    try {
+      await detectAllContradictionsWithSemantic("locations", loreId, userId);
+    } catch {
+      // Semantic check failed — rule-based still ran
+    }
   } else if (candidate.type === "npc") {
     const filename = `${sanitizeFilename(candidate.name)}.md`;
     const content = `# ${candidate.name}\n\n**Importance:** ${candidate.importance}\n\n${candidate.description}\n`;
@@ -305,6 +312,13 @@ async function createLoreEntry(
 
     // Run rule-based contradiction detection
     detectContradictions("npcs", loreId, userId);
+
+    // Run semantic contradiction detection
+    try {
+      await detectAllContradictionsWithSemantic("npcs", loreId, userId);
+    } catch {
+      // Semantic check failed — rule-based still ran
+    }
   }
 
   return loreId;

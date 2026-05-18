@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ARC_TYPE_LABELS, ESCALATION_COLORS, THREAD_STATUS_ICONS, THREAD_STATUS_COLORS } from "@/lib/entity-constants";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useActiveUniverse } from "@/contexts/active-universe";
+import { useApp } from "@/contexts/app-context";
 
 interface NarrativeThread {
   id: string;
@@ -23,6 +24,7 @@ interface NarrativeThread {
 
 export default function NarrativeThreadsPage() {
   const { activeUniverse } = useActiveUniverse();
+  const { activeGroup } = useApp();
   const [threads, setThreads] = useState<NarrativeThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -39,7 +41,8 @@ export default function NarrativeThreadsPage() {
       const params = new URLSearchParams();
       if (filterStatus !== "all") params.set("status", filterStatus);
       if (activeUniverse) params.set("universe_id", activeUniverse.id);
-      const url = `/api/narrative-threads?${params}`;
+      if (activeGroup) params.set("group_id", activeGroup.id);
+      const url = `/api/narrative-threads${params.toString() ? "?" + params.toString() : ""}`;
       const res = await fetch(url);
       const data = await res.json();
       setThreads(data.threads || []);
@@ -50,7 +53,7 @@ export default function NarrativeThreadsPage() {
     }
   }
 
-  useEffect(() => { loadThreads(); }, [filterStatus, activeUniverse?.id]);
+  useEffect(() => { loadThreads(); }, [filterStatus, activeUniverse?.id, activeGroup?.id]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -66,6 +69,7 @@ export default function NarrativeThreadsPage() {
           arcType,
           escalationLevel,
           universe_id: activeUniverse?.id || null,
+          group_id: activeGroup?.id || null,
         }),
       });
       setShowCreate(false);

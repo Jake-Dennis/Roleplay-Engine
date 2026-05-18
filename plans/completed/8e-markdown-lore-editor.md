@@ -1,14 +1,19 @@
-# Phase 8E: Markdown Lore Editor
+# Phase 8E: Markdown Lore Editor ✅ COMPLETE
 
 ## Goal
 Build a full-featured markdown editor for lore entries (locations, NPCs, events) with live preview, wikilink autocomplete, canon layer selector, validation badge, and backlink panel.
 
+## Status
+All steps completed. Lore editor with frontmatter, wikilink autocomplete, backlink panel, and edit page all built.
+
 ## Current State
-- `src/lib/lore-markdown.ts` exists with `buildMarkdown` and `writeLoreFile` functions
-- Lore browser page (`/lore`) exists but is read-only
-- No editor UI
-- Backlinks API exists but not integrated into an editor view
-- Lore validations API exists but not connected to editing workflow
+- [x] `src/components/lore/lore-editor.tsx` — markdown editor with frontmatter, live preview toggle
+- [x] `src/components/lore/wikilink-autocomplete.tsx` — `[[wikilink]]` autocomplete overlay
+- [x] `src/components/lore/lore-browser.tsx` — lore list with edit buttons
+- [x] `src/components/backlinks/backlink-panel.tsx` — incoming/outgoing backlinks
+- [x] `src/lib/backlinks.ts` — wikilink parsing, link type inference, backlink storage
+- [x] `src/app/(app)/lore/[id]/edit/page.tsx` — edit page with editor + preview
+- [x] `src/app/(app)/lore/page.tsx` — lore browser with edit links
 
 ## Architecture
 

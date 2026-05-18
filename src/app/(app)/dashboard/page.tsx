@@ -12,6 +12,7 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
+import { useApp } from "@/contexts/app-context";
 
 interface Session {
   id: string;
@@ -25,18 +26,20 @@ interface Session {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { activeGroup } = useApp();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/sessions")
+    const url = activeGroup ? `/api/sessions?group_id=${activeGroup.id}` : "/api/sessions?scope=personal";
+    fetch(url)
       .then((res) => res.json())
       .then((data) => {
         setSessions(data.sessions || []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [activeGroup?.id]);
 
   const recentSessions = sessions.slice(0, 5);
 

@@ -13,6 +13,7 @@
 
 import { getDb } from "@/lib/db";
 import { generateText } from "@/lib/ollama";
+import { syncRelationshipToFilesystem } from "@/lib/relationship-markdown";
 
 export interface RelationshipAnalysisResult {
   analyzedCount: number;
@@ -93,6 +94,9 @@ export async function processRelationshipAnalysis(
         SET emotional_state = ?, relationship_stage = ?, shared_history = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `).run(rel.emotionalState, rel.stage, rel.sharedHistory, existing.id);
+
+      // Sync to markdown files
+      syncRelationshipToFilesystem(existing.id);
     } else {
       // Create new relationship
       const relId = crypto.randomUUID();
@@ -100,6 +104,9 @@ export async function processRelationshipAnalysis(
         INSERT INTO relationships (id, user_id, source_entity, target_entity, emotional_state, relationship_stage, shared_history, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       `).run(relId, userId, rel.source, rel.target, rel.emotionalState, rel.stage, rel.sharedHistory);
+
+      // Sync to markdown files
+      syncRelationshipToFilesystem(relId);
     }
 
     updatedRelationships.push({

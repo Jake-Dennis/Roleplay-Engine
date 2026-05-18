@@ -1,13 +1,18 @@
-# Phase 8A: True 30fps Render Loop
+# Phase 8A: True 30fps Render Loop ✅ COMPLETE
 
 ## Goal
 Wire the existing `RenderLoop` class into React components so animated elements (streaming text, typing indicators, scroll, FPS counter) update at a capped 30fps instead of relying on React's default render cycle.
 
+## Status
+All steps completed. Render loop runs at 30fps, FPS counter toggleable with Ctrl+Shift+F, auto-scroll uses render loop, connection indicator in footer, idle tracker integrated.
+
 ## Current State
-- `src/lib/render-loop.ts` exists with a `RenderLoop` class (RAF-based, 30fps cap)
-- Not imported or used anywhere in the app
-- Session chat page uses `useEffect` + state updates for streaming (uncontrolled render rate)
-- No FPS counter visible in UI
+- [x] `src/lib/render-loop.ts` — RenderLoop class (RAF-based, 30fps cap)
+- [x] `src/hooks/use-render-loop.ts` — React hook with `useMeasuredFPS`
+- [x] `src/components/ui/fps-counter.tsx` — FPS overlay, color-coded, toggleable
+- [x] `src/components/ui/connection-indicator.tsx` — Ollama + Kokoro status footer
+- [x] `src/app/(app)/layout.tsx` — renderLoop.start() on mount, idle tracker integrated
+- [x] `src/app/(app)/session/[id]/page.tsx` — auto-scroll via useRenderLoop
 
 ## Architecture
 
@@ -27,7 +32,7 @@ Wire the existing `RenderLoop` class into React components so animated elements 
 
 ## Execution Plan
 
-### Step 1: Create `useRenderLoop` Hook
+### Step 1: Create `useRenderLoop` Hook ✅
 **File**: `src/hooks/use-render-loop.ts`
 
 ```typescript

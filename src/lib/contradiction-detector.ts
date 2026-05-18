@@ -1,13 +1,15 @@
 /**
- * Rule-based Contradiction Detection
+ * Rule-based + Semantic Contradiction Detection
  *
  * Checks lore entities against canon rules for contradictions:
  * - Alive/Dead conflicts
  * - Temporal impossibilities (event before timeline start)
  * - Location conflicts (entity in two places at once)
+ * - Semantic contradictions (embedding similarity + LLM comparison)
  */
 
 import { getDb } from "./db";
+import { detectSemanticContradictions, SemanticContradiction } from "./semantic-contradiction";
 
 export interface Contradiction {
   type: string;
@@ -233,5 +235,75 @@ export function detectAllContradictions(userId: string): {
   return {
     total: Object.values(byType).reduce((sum, count) => sum + count, 0),
     byType,
+  };
+}
+
+/**
+ * Detect contradictions using both rule-based and semantic methods.
+ * Returns combined results from both detection systems.
+ */
+export async function detectAllContradictionsWithSemantic(
+  entityType: string,
+  entityId: string,
+  userId: string
+): Promise<{
+  ruleBased: Contradiction[];
+  semantic: SemanticContradiction[];
+  total: number;
+}> {
+  // Run rule-based detection
+  const ruleBased = detectContradictions(entityType, entityId, userId);
+
+  // Get entity content for semantic comparison
+  const db = getDb();
+  let content = "";
+
+  switch (entityType) {
+    case "npcs":
+    case "npc": {
+      const row = db.prepare(
+        "SELECT name, file_path FROM npcs WHERE id = ? AND user_id = ?"
+      ).get(entityId, userId) as { name: string; file_path: string | null } | undefined;
+      if (row?.file_path) {
+        try {
+          const fs = require("fs");
+          if (fs.existsSync(row.file_path)) {
+            content = fs.readFileSync(row.file_path, "utf-8").slice(0, 2000);
+          }
+        } catch {
+          // skip
+        }
+      }
+      if (!content && row?.name) content = row.name;
+      break;
+    }
+    case "events":
+    case "event": {
+      const row = db.prepare(
+        "SELECT title, outcome FROM events WHERE id = ? AND user_id = ?"
+      ).get(entityId, userId) as { title: string; outcome: string | null } | undefined;
+      content = `${row?.title || ""}: ${row?.outcome || ""}`;
+      break;
+    }
+    case "locations":
+    case "location": {
+      const row = db.prepare(
+        "SELECT name, description FROM locations WHERE id = ? AND user_id = ?"
+      ).get(entityId, userId) as { name: string; description: string | null } | undefined;
+      content = `${row?.name || ""}: ${row?.description || ""}`;
+      break;
+    }
+  }
+
+  // Run semantic detection if we have content
+  let semantic: SemanticContradiction[] = [];
+  if (content.trim()) {
+    semantic = await detectSemanticContradictions(userId, content, entityType, entityId);
+  }
+
+  return {
+    ruleBased,
+    semantic,
+    total: ruleBased.length + semantic.length,
   };
 }

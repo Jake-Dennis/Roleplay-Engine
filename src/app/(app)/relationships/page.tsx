@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Heart, Sparkles, Trash2, Plus, ChevronDown, ChevronUp, TrendingUp, Network } from "lucide-react";
+import { Heart, Sparkles, Trash2, Plus, ChevronDown, ChevronUp, TrendingUp, Network, FileEdit } from "lucide-react";
 import { DecayIndicator } from "@/components/relationships/decay-indicator";
 import { RelationshipWeb } from "@/components/relationships/relationship-web";
 import { EmotionGraph } from "@/components/relationships/emotion-graph";
@@ -9,6 +9,7 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { EmotionBar } from "@/components/relationship/emotion-bar";
 import { RelationshipHistory } from "@/components/relationship/relationship-history";
 import { useActiveUniverse } from "@/contexts/active-universe";
+import { useApp } from "@/contexts/app-context";
 
 interface Relationship {
   id: string;
@@ -29,6 +30,7 @@ interface EvolutionEntry {
 
 export default function RelationshipsPage() {
   const { activeUniverse } = useActiveUniverse();
+  const { activeGroup } = useApp();
   const [relationships, setRelationships] = useState<Relationship[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -42,11 +44,18 @@ export default function RelationshipsPage() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "viz">("list");
   const [selectedRel, setSelectedRel] = useState<Relationship | null>(null);
+  const [editingRelId, setEditingRelId] = useState<string | null>(null);
+  const [markdownContent, setMarkdownContent] = useState("");
+  const [markdownNotes, setMarkdownNotes] = useState("");
+  const [savingMarkdown, setSavingMarkdown] = useState(false);
+  const [markdownLoaded, setMarkdownLoaded] = useState(false);
 
   async function loadRelationships() {
     try {
-      const params = activeUniverse ? `?universe_id=${activeUniverse.id}` : "";
-      const res = await fetch(`/api/relationships${params}`);
+      const params = new URLSearchParams();
+      if (activeUniverse) params.set("universe_id", activeUniverse.id);
+      if (activeGroup) params.set("group_id", activeGroup.id);
+      const res = await fetch(`/api/relationships${params.toString() ? "?" + params.toString() : ""}`);
       const data = await res.json();
       setRelationships(data.relationships || []);
     } catch {
@@ -56,7 +65,7 @@ export default function RelationshipsPage() {
     }
   }
 
-  useEffect(() => { loadRelationships(); }, [activeUniverse?.id]);
+  useEffect(() => { loadRelationships(); }, [activeUniverse?.id, activeGroup?.id]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -71,6 +80,7 @@ export default function RelationshipsPage() {
           targetEntity: targetEntity.trim(),
           relationshipStage,
           universe_id: activeUniverse?.id || null,
+          group_id: activeGroup?.id || null,
         }),
       });
       setShowCreate(false);
@@ -122,6 +132,52 @@ export default function RelationshipsPage() {
       return emotionalState ? JSON.parse(emotionalState) : {};
     } catch {
       return {};
+    }
+  }
+
+  async function openMarkdownEditor(relId: string) {
+    setEditingRelId(relId);
+    setMarkdownLoaded(false);
+    try {
+      const res = await fetch(`/api/relationships/${relId}/file`);
+      const data = await res.json();
+      if (data.relationship) {
+        // Reconstruct markdown from parsed data
+        const rel = relationships.find((r) => r.id === relId);
+        if (rel) {
+          const emotions = parseEmotions(rel.emotional_state);
+          const emotionTable = Object.entries(emotions)
+            .map(([k, v]) => `| ${k} | ${(v as number).toFixed(2)} |`)
+            .join("\n");
+          const history = data.history || "";
+          const notes = data.relationship.notes || "";
+          setMarkdownNotes(notes);
+          setMarkdownContent(
+            `# ${rel.source_entity} ↔ ${rel.target_entity}\n\n## Emotional State\n\n| Emotion | Value |\n|---------|-------|\n${emotionTable}\n\n## Stage\n\n**${rel.relationship_stage}**\n\n## Notes\n\n${notes}\n`
+          );
+        }
+      }
+    } catch {
+      // ignore
+    } finally {
+      setMarkdownLoaded(true);
+    }
+  }
+
+  async function saveMarkdownEditor() {
+    if (!editingRelId) return;
+    setSavingMarkdown(true);
+    try {
+      await fetch(`/api/relationships/${editingRelId}/file`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes: markdownNotes }),
+      });
+      setEditingRelId(null);
+    } catch {
+      // ignore
+    } finally {
+      setSavingMarkdown(false);
     }
   }
 
@@ -281,6 +337,13 @@ export default function RelationshipsPage() {
                   </button>
                   <div className="flex items-center gap-1">
                     <button
+                      onClick={() => openMarkdownEditor(rel.id)}
+                      className="rounded p-1.5 text-text-muted hover:bg-bg-raised hover:text-text-primary"
+                      title="Edit as Markdown"
+                    >
+                      <FileEdit className="h-3.5 w-3.5" />
+                    </button>
+                    <button
                       onClick={() => toggleExpand(rel.id)}
                       className="rounded p-1.5 text-text-muted hover:bg-bg-raised"
                     >
@@ -337,6 +400,68 @@ export default function RelationshipsPage() {
         </div>
       )}
         </>
+      )}
+
+      {/* Markdown Editor Modal */}
+      {editingRelId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-2xl max-h-[80vh] rounded-xl border border-border-default bg-bg-elevated flex flex-col">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border-default">
+              <h3 className="text-sm font-medium text-text-primary">Edit Relationship Markdown</h3>
+              <button
+                onClick={() => setEditingRelId(null)}
+                className="rounded p-1 text-text-muted hover:bg-bg-raised hover:text-text-primary"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {!markdownLoaded ? (
+                <div className="flex items-center gap-2 text-text-muted py-8 justify-center">
+                  <Sparkles className="h-4 w-4 animate-pulse" />
+                  <span className="text-xs">Loading...</span>
+                </div>
+              ) : (
+                <>
+                  {/* Preview */}
+                  <div className="rounded-lg border border-border-default bg-bg-raised px-3 py-2">
+                    <p className="text-xxs text-text-muted mb-1">Preview</p>
+                    <pre className="text-xs text-text-secondary whitespace-pre-wrap font-mono max-h-40 overflow-y-auto">
+                      {markdownContent}
+                    </pre>
+                  </div>
+                  {/* Notes editor */}
+                  <div>
+                    <label className="mb-1 block text-xs text-text-secondary">Notes</label>
+                    <textarea
+                      value={markdownNotes}
+                      onChange={(e) => setMarkdownNotes(e.target.value)}
+                      rows={4}
+                      className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary resize-y"
+                      placeholder="Add notes about this relationship..."
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border-default">
+              <button
+                onClick={() => setEditingRelId(null)}
+                className="rounded-lg bg-bg-raised px-3.5 py-2 text-xs font-medium text-text-muted hover:text-text-primary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveMarkdownEditor}
+                disabled={savingMarkdown || !markdownLoaded}
+                className="flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-2 text-xs font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+              >
+                <FileEdit className="h-3.5 w-3.5" />
+                {savingMarkdown ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <ConfirmationDialog

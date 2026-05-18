@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 
+// Ensure character_name column exists in session_participants
+function ensureParticipantColumns(db: any) {
+  try {
+    db.exec("ALTER TABLE session_participants ADD COLUMN character_name TEXT");
+  } catch {
+    // Column already exists
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -14,6 +23,7 @@ export async function GET(
 
   const { id } = await params;
   const db = getDb();
+  ensureParticipantColumns(db);
 
   const session = db.prepare(`
     SELECT s.*, u.username as owner_name

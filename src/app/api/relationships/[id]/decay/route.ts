@@ -2,6 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { processRelationshipDecay, getDecayStats } from "@/lib/relationship-decay";
+import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
+
+function hasRelationshipAccess(db: any, relationshipId: string, userId: string): any {
+  const rel = db.prepare(
+    `SELECT r.*, u.group_id
+     FROM relationships r
+     LEFT JOIN universes u ON r.universe_id = u.id
+     WHERE r.id = ?`
+  ).get(relationshipId);
+
+  if (!rel) return null;
+
+  // Direct ownership
+  if (rel.user_id === userId) return rel;
+
+  // Group membership
+  if (rel.group_id && isGroupMember(db, rel.group_id, userId)) return rel;
+
+  return null;
+}
 
 export async function GET(
   request: NextRequest,
@@ -15,12 +35,10 @@ export async function GET(
 
   const { id } = await params;
   const db = getDb();
+  ensureGroupSupport(db);
 
   // Verify ownership
-  const relationship = db.prepare(
-    "SELECT * FROM relationships WHERE id = ? AND user_id = ?"
-  ).get(id, decoded.sub);
-
+  const relationship = hasRelationshipAccess(db, id, decoded.sub);
   if (!relationship) {
     return NextResponse.json({ error: "Relationship not found" }, { status: 404 });
   }
@@ -46,12 +64,10 @@ export async function POST(
 
   const { id } = await params;
   const db = getDb();
+  ensureGroupSupport(db);
 
   // Verify ownership
-  const relationship = db.prepare(
-    "SELECT * FROM relationships WHERE id = ? AND user_id = ?"
-  ).get(id, decoded.sub);
-
+  const relationship = hasRelationshipAccess(db, id, decoded.sub);
   if (!relationship) {
     return NextResponse.json({ error: "Relationship not found" }, { status: 404 });
   }

@@ -1,10 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
-import { generateTextStream, isOllamaAvailable, checkOllamaConnection } from "@/lib/ollama";
+import { generateTextStream, isOllamaAvailable, checkOllamaConnection, getUserModels, getActivePersonaContext, buildPersonaPrompt } from "@/lib/ollama";
 import { getRetrievedContext, assemblePromptWithBudget, type RetrievedContext } from "@/lib/retrieval";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { queueJob } from "@/lib/job-processor";
+import { OLLAMA_CONFIG } from "@/lib/config";
+
+function getSessionSettings(db: any, sessionId: string) {
+  const rows = db.prepare(
+    `SELECT key, value FROM session_settings WHERE session_id = ?`
+  ).all(sessionId) as { key: string; value: string }[];
+
+  const map: Record<string, string> = {};
+  for (const row of rows) {
+    map[row.key] = row.value;
+  }
+
+  return {
+    llmModel: map.llm_model || null,
+    embeddingModel: map.embedding_model || null,
+    temperature: map.temperature ? parseFloat(map.temperature) : null,
+    topP: map.top_p ? parseFloat(map.top_p) : null,
+    numCtx: map.num_ctx ? parseInt(map.num_ctx, 10) : null,
+    systemPrompt: map.system_prompt || null,
+    maxResponseLength: map.max_response_length ? parseInt(map.max_response_length, 10) : null,
+  };
+}
 
 export async function POST(
   request: NextRequest,
@@ -50,7 +72,10 @@ export async function POST(
   // giving the actual generation a chance to connect.
 
   // System prompt base
-  const systemPrompt = `You are a narrative roleplay engine. You narrate immersive, character-driven stories in response to user actions. Write in a literary style with vivid description. Stay in character and maintain story consistency. Keep responses to 2-4 paragraphs unless the situation demands more.`;
+  const sessionSettings = getSessionSettings(db, sessionId);
+  const persona = getActivePersonaContext(decoded.sub);
+  const baseSystemPrompt = sessionSettings.systemPrompt || `You are a narrative roleplay engine. You narrate immersive, character-driven stories in response to user actions. Write in a literary style with vivid description. Stay in character and maintain story consistency. Keep responses to 2-4 paragraphs unless the situation demands more.`;
+  const systemPrompt = buildPersonaPrompt(persona, baseSystemPrompt);
 
   // Build context using retrieval pipeline
   const ctx: RetrievedContext = await getRetrievedContext(
@@ -94,6 +119,10 @@ export async function POST(
   const stream = new ReadableStream({
     async start(controller) {
       try {
+        // Resolve model: session > persona > user > default
+        const userModels = getUserModels(decoded.sub);
+        const resolvedModel = sessionSettings.llmModel || persona?.llmModel || userModels.llmModel;
+
         await generateTextStream(prompt, (chunk) => {
           fullResponse += chunk;
 
@@ -104,6 +133,12 @@ export async function POST(
           );
 
           controller.enqueue(encoder.encode(JSON.stringify({ chunk }) + "\n"));
+        }, {
+          userId: decoded.sub,
+          model: resolvedModel,
+          temperature: sessionSettings.temperature ?? undefined,
+          top_p: sessionSettings.topP ?? undefined,
+          num_ctx: sessionSettings.numCtx ?? undefined,
         });
 
         // Emit generation done event

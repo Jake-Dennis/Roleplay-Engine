@@ -13,6 +13,7 @@
  */
 
 import { getDb } from "@/lib/db";
+import { syncRelationshipToFilesystem } from "@/lib/relationship-markdown";
 
 export interface DecayResult {
   decayedCount: number;
@@ -33,6 +34,31 @@ const DEFAULT_DECAY_RATES = {
   stageRegressionDays: 14,
   minEmotionalState: "neutral",
 };
+
+// Per-emotion half-life rates (from spec)
+export const EMOTION_HALF_LIVES: Record<string, number> = {
+  trust: 30,
+  suspicion: 60,
+  loyalty: 30,
+  resentment: 90,
+  attraction: 14,
+  respect: 30,
+  fear: 14,
+};
+
+/**
+ * Apply exponential decay to a single emotion value.
+ * Formula: new_value = current_value × (0.5 ^ (days_inactive / half_life_days))
+ */
+export function applyEmotionDecay(
+  currentValue: number,
+  daysInactive: number,
+  halfLifeDays: number
+): number {
+  if (daysInactive <= 0 || halfLifeDays <= 0) return currentValue;
+  const decayFactor = Math.pow(0.5, daysInactive / halfLifeDays);
+  return currentValue * decayFactor;
+}
 
 // Emotional state progression (strongest to weakest)
 const EMOTIONAL_STATES = [
@@ -112,6 +138,9 @@ export function processRelationshipDecay(userId: string): DecayResult {
         SET emotional_state = ?, relationship_stage = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `).run(newState, newStage, rel.id);
+
+      // Sync to markdown files
+      syncRelationshipToFilesystem(rel.id);
 
       decayedRelationships.push({
         id: rel.id,
@@ -253,5 +282,109 @@ export function getDecayStats(userId: string): {
     totalRelationships: total?.count || 0,
     decayingRelationships: decaying?.count || 0,
     stableRelationships: (total?.count || 0) - (decaying?.count || 0),
+  };
+}
+
+/**
+ * Apply decay to all relationships for a user using per-emotion half-life formulas.
+ * Called during >30min idle enrichment or on-demand via job processor.
+ * 
+ * Formula: new_value = current_value × (0.5 ^ (days_inactive / half_life_days))
+ */
+export async function applyDecayToAllRelationships(
+  userId: string,
+  universeId: string | null = null
+): Promise<{
+  decayedCount: number;
+  relationships: {
+    id: string;
+    source: string;
+    target: string;
+    previousEmotions: Record<string, number>;
+    newEmotions: Record<string, number>;
+  }[];
+}> {
+  const db = getDb();
+
+  let query = `
+    SELECT r.id, r.source_entity, r.target_entity, r.emotional_state, r.relationship_stage,
+           r.decay_rates, r.updated_at
+    FROM relationships r
+    WHERE r.user_id = ?
+  `;
+  const params: (string | number)[] = [userId];
+
+  if (universeId) {
+    query += " AND r.universe_id = ?";
+    params.push(universeId);
+  }
+
+  const relationships = db.prepare(query).all(...params) as {
+    id: string;
+    source_entity: string;
+    target_entity: string;
+    emotional_state: string | null;
+    relationship_stage: string | null;
+    decay_rates: string | null;
+    updated_at: string | null;
+  }[];
+
+  const decayed: {
+    id: string;
+    source: string;
+    target: string;
+    previousEmotions: Record<string, number>;
+    newEmotions: Record<string, number>;
+  }[] = [];
+
+  for (const rel of relationships) {
+    const lastUpdate = rel.updated_at ? new Date(rel.updated_at) : new Date();
+    const daysSinceUpdate = (Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24);
+
+    // Skip if recently updated (within 24 hours)
+    if (daysSinceUpdate < 1) continue;
+
+    // Parse emotional state
+    const emotions = rel.emotional_state ? JSON.parse(rel.emotional_state) : {};
+    if (Object.keys(emotions).length === 0) continue;
+
+    const previousEmotions = { ...emotions };
+    const newEmotions: Record<string, number> = {};
+
+    // Apply per-emotion decay
+    for (const [emotion, value] of Object.entries(emotions)) {
+      const halfLife = EMOTION_HALF_LIVES[emotion] || DEFAULT_DECAY_RATES.emotionalHalfLifeDays;
+      const decayedValue = applyEmotionDecay(value as number, daysSinceUpdate, halfLife);
+      newEmotions[emotion] = Math.round(decayedValue * 100) / 100;
+    }
+
+    // Check if any emotion changed significantly
+    const hasChanged = Object.keys(newEmotions).some(
+      (k) => Math.abs((newEmotions[k] || 0) - (previousEmotions[k] || 0)) > 0.05
+    );
+
+    if (hasChanged) {
+      db.prepare(`
+        UPDATE relationships
+        SET emotional_state = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).run(JSON.stringify(newEmotions), rel.id);
+
+      // Sync to markdown files
+      syncRelationshipToFilesystem(rel.id);
+
+      decayed.push({
+        id: rel.id,
+        source: rel.source_entity,
+        target: rel.target_entity,
+        previousEmotions,
+        newEmotions,
+      });
+    }
+  }
+
+  return {
+    decayedCount: decayed.length,
+    relationships: decayed,
   };
 }

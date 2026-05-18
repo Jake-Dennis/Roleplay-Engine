@@ -4,6 +4,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { Plus, Users, Trash2, Sparkles, Volume2 } from "lucide-react";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useActiveUniverse } from "@/contexts/active-universe";
+import { useApp } from "@/contexts/app-context";
 
 interface NPC {
   id: string;
@@ -24,6 +25,7 @@ interface VoiceDetail {
 
 export default function CharactersPage() {
   const { activeUniverse } = useActiveUniverse();
+  const { activeGroup } = useApp();
   const [npcs, setNpcs] = useState<NPC[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -38,8 +40,10 @@ export default function CharactersPage() {
 
   async function loadNpcs() {
     try {
-      const params = activeUniverse ? `?universe_id=${activeUniverse.id}` : "";
-      const res = await fetch(`/api/npcs${params}`);
+      const params = new URLSearchParams();
+      if (activeUniverse) params.set("universe_id", activeUniverse.id);
+      if (activeGroup) params.set("group_id", activeGroup.id);
+      const res = await fetch(`/api/npcs${params.toString() ? "?" + params.toString() : ""}`);
       const data = await res.json();
       setNpcs(data.npcs || []);
     } catch {
@@ -62,8 +66,10 @@ export default function CharactersPage() {
   async function loadAssignments() {
     try {
       const assignments: Record<string, string> = {};
-      const params = activeUniverse ? `?universe_id=${activeUniverse.id}` : "";
-      const npcRes = await fetch(`/api/npcs${params}`);
+      const params = new URLSearchParams();
+      if (activeUniverse) params.set("universe_id", activeUniverse.id);
+      if (activeGroup) params.set("group_id", activeGroup.id);
+      const npcRes = await fetch(`/api/npcs${params.toString() ? "?" + params.toString() : ""}`);
       const npcData = await npcRes.json();
       const npcList: NPC[] = npcData.npcs || [];
 
@@ -85,7 +91,7 @@ export default function CharactersPage() {
   useEffect(() => {
     loadNpcs();
     loadVoices();
-  }, [activeUniverse?.id]);
+  }, [activeUniverse?.id, activeGroup?.id]);
 
   useEffect(() => {
     if (npcs.length > 0) {
@@ -107,6 +113,7 @@ export default function CharactersPage() {
           importance,
           tags: tags.trim() ? tags.split(",").map((t) => t.trim()) : null,
           universe_id: activeUniverse?.id || null,
+          group_id: activeGroup?.id || null,
         }),
       });
 

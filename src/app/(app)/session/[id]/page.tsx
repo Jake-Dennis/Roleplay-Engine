@@ -20,18 +20,23 @@ import {
   GitBranch,
   Sparkles,
   Lock,
+  Settings,
+  User,
 } from "lucide-react";
 
 import { classifyIntent, type Intent } from "@/lib/intent-analyzer";
 import { useRenderLoop } from "@/hooks/use-render-loop";
 import { useSession } from "@/hooks/use-session";
+import { useApp } from "@/contexts/app-context";
 import type { Message } from "@/hooks/use-session";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { ChatWindow } from "@/components/chat/chat-window";
+import { TypingIndicator } from "@/components/chat/typing-indicator";
 import { ParticipantList } from "@/components/session/participant-list";
 import { CharacterDeclarationModal } from "@/components/session/character-declaration-modal";
 import { SceneStatePanel } from "@/components/session/scene-state-panel";
 import { PrivateStatePanel } from "@/components/session/private-state-panel";
+import { SessionSettingsPanel } from "@/components/session/session-settings-panel";
 
 export default function SessionChatPage() {
   const params = useParams();
@@ -54,6 +59,34 @@ export default function SessionChatPage() {
     advanceTurn,
   } = useSession(sessionId);
 
+  // Set session context so sidebar locks to this session's universe
+  const { setActiveSession, refreshAll } = useApp();
+  useEffect(() => {
+    if (session) {
+      setActiveSession({
+        id: session.id,
+        name: session.name,
+        type: session.type || "solo",
+        group_id: session.group_id || null,
+        universe_id: session.universe_id || null,
+      });
+      refreshAll();
+    }
+  }, [session?.id]); // Only re-run when session ID changes
+
+  // Load personas
+  useEffect(() => {
+    fetch("/api/personas")
+      .then((res) => res.json())
+      .then((data) => {
+        const list = data.personas || [];
+        setPersonas(list);
+        const active = list.find((p: { is_active: number }) => p.is_active === 1);
+        if (active) setActivePersonaId(active.id);
+      })
+      .catch(() => {});
+  }, []);
+
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [streamContent, setStreamContent] = useState("");
@@ -70,11 +103,17 @@ export default function SessionChatPage() {
     }
     return false;
   });
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [inviteUsername, setInviteUsername] = useState("");
   const [editHistoryMessageId, setEditHistoryMessageId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ type: "leave" | "delete"; id?: string } | null>(null);
   const [showCharacterModal, setShowCharacterModal] = useState(false);
   const [joinError, setJoinError] = useState("");
+
+  // Persona state
+  const [personas, setPersonas] = useState<{ id: string; name: string }[]>([]);
+  const [activePersonaId, setActivePersonaId] = useState<string | null>(null);
+  const [showPersonaSelector, setShowPersonaSelector] = useState(false);
 
   const isGroup = session?.type === "group";
 
@@ -311,11 +350,11 @@ export default function SessionChatPage() {
 
     setInput("");
 
-    // Add user message
+    // Add user message with persona
     const msgRes = await fetch(`/api/sessions/${sessionId}/messages`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, personaId: activePersonaId }),
     });
 
     if (!msgRes.ok) return;
@@ -598,6 +637,17 @@ export default function SessionChatPage() {
               >
                 <Lock className="h-3 w-3" />
               </button>
+              {isOwner && (
+                <button
+                  onClick={() => setShowSettingsPanel(!showSettingsPanel)}
+                  className={`rounded p-1 transition-colors hover:bg-bg-raised ${
+                    showSettingsPanel ? "text-accent" : "text-text-muted hover:text-accent"
+                  }`}
+                  title="Session Settings"
+                >
+                  <Settings className="h-3 w-3" />
+                </button>
+              )}
             </div>
             <p className="text-xxs text-text-muted">
               {allMessages.length} message{allMessages.length !== 1 ? "s" : ""}
@@ -642,6 +692,14 @@ export default function SessionChatPage() {
         />
       )}
 
+      {/* Session Settings Panel (owner only) */}
+      {showSettingsPanel && isOwner && (
+        <SessionSettingsPanel
+          sessionId={sessionId}
+          onClose={() => setShowSettingsPanel(false)}
+        />
+      )}
+
       {/* Generation Error Banner */}
       {generationError && (
         <div className="mb-2 flex items-center gap-2 rounded-lg border border-error/30 bg-error/10 px-3 py-2">
@@ -654,6 +712,9 @@ export default function SessionChatPage() {
           </button>
         </div>
       )}
+
+      {/* Typing Indicator */}
+      {streaming && <TypingIndicator />}
 
       {/* Chat Window */}
       <ChatWindow
@@ -684,6 +745,9 @@ export default function SessionChatPage() {
         editHistoryMessageId={editHistoryMessageId}
         onEditHistoryClose={() => setEditHistoryMessageId(null)}
         disabled={isObserver}
+        personas={personas}
+        activePersonaId={activePersonaId}
+        onPersonaChange={setActivePersonaId}
       />
 
       {/* Confirmation Dialogs */}

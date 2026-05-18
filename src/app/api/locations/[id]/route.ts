@@ -2,6 +2,35 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { buildMarkdown, writeLoreFile, deleteLoreFile } from "@/lib/lore-markdown";
+import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
+
+function hasEntityAccess(db: any, entityType: string, entityId: string, userId: string): any {
+  let entity: any = null;
+  if (entityType === "locations") {
+    entity = db.prepare(
+      `SELECT l.*, u.group_id, g.owner_id as group_owner_id
+       FROM locations l
+       LEFT JOIN universes u ON l.universe_id = u.id
+       LEFT JOIN groups g ON u.group_id = g.id
+       WHERE l.id = ?`
+    ).get(entityId);
+  }
+
+  if (!entity) return null;
+
+  // Direct ownership
+  if (entity.user_id === userId) return entity;
+
+  // Group membership
+  if (entity.group_id && isGroupMember(db, entity.group_id, userId)) return entity;
+
+  return null;
+}
+
+function getFileOwnerId(entity: any, fallbackUserId: string): string {
+  if (entity.group_id && entity.group_owner_id) return entity.group_owner_id;
+  return fallbackUserId;
+}
 
 export async function GET(
   request: NextRequest,
@@ -18,14 +47,10 @@ export async function GET(
   }
 
   const { id } = await params;
-
   const db = getDb();
-  const location = db
-    .prepare(
-      "SELECT id, user_id, universe_id, name, file_path, importance, canon_layer, parent_location_id, known_info, hidden_info, created_at FROM locations WHERE id = ? AND user_id = ?"
-    )
-    .get(id, decoded.sub);
+  ensureGroupSupport(db);
 
+  const location = hasEntityAccess(db, "locations", id, decoded.sub);
   if (!location) {
     return NextResponse.json({ error: "Location not found" }, { status: 404 });
   }
@@ -51,11 +76,9 @@ export async function PUT(
   const body = await request.json();
 
   const db = getDb();
+  ensureGroupSupport(db);
 
-  const existing = db
-    .prepare("SELECT * FROM locations WHERE id = ? AND user_id = ?")
-    .get(id, decoded.sub) as any;
-
+  const existing = hasEntityAccess(db, "locations", id, decoded.sub);
   if (!existing) {
     return NextResponse.json({ error: "Location not found" }, { status: 404 });
   }
@@ -65,7 +88,8 @@ export async function PUT(
   const newName = name || existing.name;
   const newFilePath = file_path || existing.file_path;
 
-  // Update markdown file
+  // Update markdown file - use group owner's directory for group universes
+  const fileOwnerId = getFileOwnerId(existing, decoded.sub);
   const mdContent = buildMarkdown(
     {
       id,
@@ -80,9 +104,9 @@ export async function PUT(
 
   // If file path changed, delete old file
   if (newFilePath !== existing.file_path) {
-    deleteLoreFile(decoded.sub, existing.file_path);
+    deleteLoreFile(fileOwnerId, existing.file_path);
   }
-  writeLoreFile(decoded.sub, "locations", newFilePath, mdContent);
+  writeLoreFile(fileOwnerId, "locations", newFilePath, mdContent);
 
   // Build dynamic update
   const updates: string[] = [];
@@ -126,17 +150,16 @@ export async function DELETE(
   const { id } = await params;
 
   const db = getDb();
+  ensureGroupSupport(db);
 
-  const existing = db
-    .prepare("SELECT file_path FROM locations WHERE id = ? AND user_id = ?")
-    .get(id, decoded.sub) as { file_path: string } | undefined;
-
+  const existing = hasEntityAccess(db, "locations", id, decoded.sub);
   if (!existing) {
     return NextResponse.json({ error: "Location not found" }, { status: 404 });
   }
 
-  // Delete markdown file
-  deleteLoreFile(decoded.sub, existing.file_path);
+  // Delete markdown file - use group owner's directory for group universes
+  const fileOwnerId = getFileOwnerId(existing, decoded.sub);
+  deleteLoreFile(fileOwnerId, existing.file_path);
 
   db.prepare("DELETE FROM locations WHERE id = ?").run(id);
 

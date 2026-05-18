@@ -12,6 +12,19 @@ function parseBoundaries(raw: string | null): string[] {
   }
 }
 
+function hasUniverseAccess(db: any, universeId: string, userId: string): boolean {
+  const universe = db.prepare(
+    `SELECT u.id, u.user_id, u.session_id
+     FROM universes u
+     WHERE u.id = ?
+     AND (u.user_id = ? OR u.session_id IN (
+       SELECT session_id FROM session_participants WHERE user_id = ?
+     ))`
+  ).get(universeId, userId, userId);
+
+  return !!universe;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -29,17 +42,21 @@ export async function GET(
   const { id } = await params;
 
   const db = getDb();
+
+  if (!hasUniverseAccess(db, id, decoded.sub)) {
+    return NextResponse.json({ error: "Universe not found" }, { status: 404 });
+  }
+
   const universe = db
     .prepare(
-      "SELECT id, user_id, name, canon_mode, lore_source, tone, boundaries, created_at FROM universes WHERE id = ? AND user_id = ?"
+      "SELECT id, user_id, session_id, name, canon_mode, lore_source, tone, boundaries, created_at FROM universes WHERE id = ?"
     )
-    .get(id, decoded.sub) as Record<string, unknown> | undefined;
+    .get(id) as Record<string, unknown> | undefined;
 
   if (!universe) {
     return NextResponse.json({ error: "Universe not found" }, { status: 404 });
   }
 
-  // Parse boundaries from JSON to array
   const parsed = { ...universe, boundaries: parseBoundaries(universe.boundaries as string | null) };
 
   return NextResponse.json({ universe: parsed });
@@ -64,10 +81,14 @@ export async function PUT(
 
   const db = getDb();
 
-  // Verify ownership
-  const existing = db
-    .prepare("SELECT id FROM universes WHERE id = ? AND user_id = ?")
-    .get(id, decoded.sub);
+  // Verify ownership (user-owned OR session owner)
+  const existing = db.prepare(
+    `SELECT u.id, u.user_id, u.session_id, s.owner_id as session_owner_id
+     FROM universes u
+     LEFT JOIN sessions s ON u.session_id = s.id
+     WHERE u.id = ?
+     AND (u.user_id = ? OR s.owner_id = ?)`
+  ).get(id, decoded.sub, decoded.sub);
 
   if (!existing) {
     return NextResponse.json({ error: "Universe not found" }, { status: 404 });
@@ -75,7 +96,6 @@ export async function PUT(
 
   const { name, canon_mode, lore_source, tone, boundaries } = body;
 
-  // Validate name — cannot be null/empty (NOT NULL constraint)
   if (name !== undefined && (!name || !name.trim())) {
     return NextResponse.json(
       { error: "Universe name cannot be empty" },
@@ -83,7 +103,6 @@ export async function PUT(
     );
   }
 
-  // Validate canon_mode
   const validModes = ["strict", "loose", "custom"];
   if (canon_mode !== undefined && !validModes.includes(canon_mode)) {
     return NextResponse.json(
@@ -92,7 +111,6 @@ export async function PUT(
     );
   }
 
-  // Boundaries: accept array or newline-separated string, store as JSON
   let boundariesJson: string | null = null;
   if (boundaries !== undefined) {
     if (Array.isArray(boundaries)) {
@@ -103,7 +121,6 @@ export async function PUT(
     }
   }
 
-  // Build dynamic update — only update fields that are provided
   const updates: string[] = [];
   const values: unknown[] = [];
 
@@ -122,7 +139,7 @@ export async function PUT(
 
   const universe = db
     .prepare(
-      "SELECT id, user_id, name, canon_mode, lore_source, tone, boundaries, created_at FROM universes WHERE id = ?"
+      "SELECT id, user_id, session_id, name, canon_mode, lore_source, tone, boundaries, created_at FROM universes WHERE id = ?"
     )
     .get(id) as Record<string, unknown> | undefined;
 
@@ -130,7 +147,6 @@ export async function PUT(
     return NextResponse.json({ error: "Failed to retrieve universe" }, { status: 500 });
   }
 
-  // Return parsed boundaries
   const parsed = { ...universe, boundaries: parseBoundaries(universe.boundaries as string | null) };
 
   return NextResponse.json({ universe: parsed });
@@ -155,9 +171,13 @@ export async function DELETE(
   const db = getDb();
 
   // Verify ownership
-  const existing = db
-    .prepare("SELECT id FROM universes WHERE id = ? AND user_id = ?")
-    .get(id, decoded.sub);
+  const existing = db.prepare(
+    `SELECT u.id, u.user_id, u.session_id, s.owner_id as session_owner_id
+     FROM universes u
+     LEFT JOIN sessions s ON u.session_id = s.id
+     WHERE u.id = ?
+     AND (u.user_id = ? OR s.owner_id = ?)`
+  ).get(id, decoded.sub, decoded.sub);
 
   if (!existing) {
     return NextResponse.json({ error: "Universe not found" }, { status: 404 });

@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 @theme {
+  /* Font families */
+  --font-sans: var(--font-open-dyslexic), ui-sans-serif, system-ui, sans-serif;
+
   /* Background colors - soft black base with grey elevations */
   --color-bg-base: #0a0a0a;
   --color-bg-elevated: #141414;
@@ -87,7 +90,12 @@ input, textarea, select {
   background-color: var(--color-bg-raised);
   border: 1px solid var(--color-border-default);
   color: var(--color-text-primary);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
+}
+
+/* Selects need smaller text due to OpenDyslexic's larger x-height */
+select {
+  font-size: 9px !important;
 }
 
 input:focus, textarea:focus, select:focus {

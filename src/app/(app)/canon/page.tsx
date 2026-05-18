@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Shield, Sparkles, Check, Globe, Users, MapPin, BookOpen, Layers } from "lucide-react";
 import { useActiveUniverse } from "@/contexts/active-universe";
+import { useApp } from "@/contexts/app-context";
 import { LayerViewer } from "@/components/canon/layer-viewer";
 import { PromotionDialog } from "@/components/canon/promotion-dialog";
 
@@ -44,6 +45,7 @@ type TabKey = "universes" | "npcs" | "locations";
 
 export default function CanonEditorPage() {
   const { activeUniverse } = useActiveUniverse();
+  const { activeGroup } = useApp();
   const [activeTab, setActiveTab] = useState<TabKey>("universes");
   const [universes, setUniverses] = useState<Universe[]>([]);
   const [npcs, setNpcs] = useState<NPC[]>([]);
@@ -57,11 +59,14 @@ export default function CanonEditorPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const universeParams = activeUniverse ? `?universe_id=${activeUniverse.id}` : "";
+      const params = new URLSearchParams();
+      if (activeUniverse) params.set("universe_id", activeUniverse.id);
+      if (activeGroup) params.set("group_id", activeGroup.id);
+      const query = params.toString() ? "?" + params.toString() : "";
       const [uRes, nRes, lRes] = await Promise.all([
-        fetch(`/api/universes`),
-        fetch(`/api/npcs${universeParams}`),
-        fetch(`/api/locations${universeParams}`),
+        fetch(`/api/universes${query}`),
+        fetch(`/api/npcs${query}`),
+        fetch(`/api/locations${query}`),
       ]);
       const uData = await uRes.json();
       const nData = await nRes.json();
@@ -74,7 +79,7 @@ export default function CanonEditorPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeUniverse?.id]);
+  }, [activeUniverse?.id, activeGroup?.id]);
 
   useEffect(() => { loadData(); }, [loadData]);
 

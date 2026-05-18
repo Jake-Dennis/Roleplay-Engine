@@ -26,6 +26,124 @@ export interface UserModels {
   embeddingModel: string;
 }
 
+export interface PersonaContext {
+  name: string;
+  description: string | null;
+  personality: string | null;
+  scenario: string | null;
+  firstMes: string | null;
+  mesExample: string | null;
+  creatorNotes: string | null;
+  systemPrompt: string | null;
+  postHistoryInstructions: string | null;
+  tags: string[] | null;
+  writingStyle: string | null;
+  llmModel: string | null;
+}
+
+/**
+ * Get the active persona context for a user.
+ * Returns null if no active persona exists.
+ */
+export function getActivePersonaContext(userId: string): PersonaContext | null {
+  try {
+    const db = getDb();
+    const persona = db.prepare(
+      "SELECT name, description, personality, scenario, first_mes, mes_example, creator_notes, system_prompt, post_history_instructions, tags, writing_style, llm_model FROM personas WHERE user_id = ? AND is_active = 1"
+    ).get(userId) as {
+      name: string;
+      description: string | null;
+      personality: string | null;
+      scenario: string | null;
+      first_mes: string | null;
+      mes_example: string | null;
+      creator_notes: string | null;
+      system_prompt: string | null;
+      post_history_instructions: string | null;
+      tags: string | null;
+      writing_style: string | null;
+      llm_model: string | null;
+    } | undefined;
+
+    if (!persona) return null;
+
+    let tags: string[] | null = null;
+    if (persona.tags) {
+      try { tags = JSON.parse(persona.tags); } catch { tags = null; }
+    }
+
+    return {
+      name: persona.name,
+      description: persona.description,
+      personality: persona.personality,
+      scenario: persona.scenario,
+      firstMes: persona.first_mes,
+      mesExample: persona.mes_example,
+      creatorNotes: persona.creator_notes,
+      systemPrompt: persona.system_prompt,
+      postHistoryInstructions: persona.post_history_instructions,
+      tags,
+      writingStyle: persona.writing_style,
+      llmModel: persona.llm_model,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Build a SillyTavern-style system prompt from persona context.
+ * Follows the standard ST prompt structure:
+ *   [Character card] → [Scenario] → [Personality] → [Example dialogue] → [Post-history instructions]
+ */
+export function buildPersonaPrompt(persona: PersonaContext | null, baseSystemPrompt: string): string {
+  if (!persona) return baseSystemPrompt;
+
+  const parts: string[] = [];
+
+  // 1. Character description (SillyTavern style)
+  const descParts: string[] = [];
+  descParts.push(`Name: ${persona.name}`);
+  if (persona.description) descParts.push(`Description: ${persona.description}`);
+  if (persona.personality) descParts.push(`Personality: ${persona.personality}`);
+  if (persona.writingStyle) descParts.push(`Writing style: ${persona.writingStyle}`);
+  if (persona.tags && persona.tags.length > 0) descParts.push(`Tags: ${persona.tags.join(", ")}`);
+
+  if (descParts.length > 1) {
+    parts.push(`[Character("${persona.name}")\n${descParts.join("\n")}]`);
+  }
+
+  // 2. Scenario
+  if (persona.scenario) {
+    parts.push(`[Scenario]\n${persona.scenario}`);
+  }
+
+  // 3. Example dialogue (mes_example)
+  if (persona.mesExample) {
+    parts.push(`<START>\n${persona.mesExample}`);
+  }
+
+  // 4. Post-history instructions
+  if (persona.postHistoryInstructions) {
+    parts.push(`[Post-history instructions]\n${persona.postHistoryInstructions}`);
+  }
+
+  // 5. Creator notes
+  if (persona.creatorNotes) {
+    parts.push(`[Creator's notes]\n${persona.creatorNotes}`);
+  }
+
+  // 6. Base system prompt
+  parts.push(baseSystemPrompt);
+
+  // 7. Character-specific system prompt override
+  if (persona.systemPrompt) {
+    parts.push(`[System override]\n${persona.systemPrompt}`);
+  }
+
+  return parts.join("\n\n");
+}
+
 let ollamaAvailable = false;
 let localModels: string[] = [];
 
@@ -36,7 +154,7 @@ let localModels: string[] = [];
 export async function fetchLocalModels(): Promise<string[]> {
   try {
     const response = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/tags`, {
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(30000),
     });
     if (!response.ok) {
       ollamaAvailable = false;
@@ -94,7 +212,7 @@ export function getUserModels(userId: string): UserModels {
 export async function checkOllamaConnection(): Promise<boolean> {
   try {
     const response = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/tags`, {
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(30000),
     });
     ollamaAvailable = response.ok;
     return response.ok;

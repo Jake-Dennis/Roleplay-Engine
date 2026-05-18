@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { SessionList } from "@/components/session/session-list";
+import { useApp } from "@/contexts/app-context";
 
 interface Session {
   id: string;
@@ -30,6 +31,7 @@ interface Invitation {
 
 export default function SessionListPage() {
   const router = useRouter();
+  const { refreshAll, activeGroup } = useApp();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,8 +39,9 @@ export default function SessionListPage() {
 
   async function loadSessions() {
     try {
+      const url = activeGroup ? `/api/sessions?group_id=${activeGroup.id}` : "/api/sessions?scope=personal";
       const [sessRes, invRes] = await Promise.all([
-        fetch("/api/sessions"),
+        fetch(url),
         fetch("/api/invitations"),
       ]);
       const sessData = await sessRes.json();
@@ -54,11 +57,12 @@ export default function SessionListPage() {
 
   useEffect(() => {
     loadSessions();
-  }, []);
+  }, [activeGroup?.id]);
 
   async function deleteSession(id: string) {
     await fetch(`/api/sessions/${id}`, { method: "DELETE" });
     setSessions((prev) => prev.filter((s) => s.id !== id));
+    refreshAll();
     setDeleteTarget(null);
   }
 
@@ -67,6 +71,7 @@ export default function SessionListPage() {
     if (res.ok) {
       setInvitations((prev) => prev.filter((i) => i.id !== inviteId));
       await loadSessions();
+      refreshAll();
     }
   }
 
@@ -75,8 +80,12 @@ export default function SessionListPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-base font-semibold text-text-primary">Sessions</h1>
-          <p className="mt-1 text-xs text-text-muted">All your roleplaying sessions</p>
+          <h1 className="text-base font-semibold text-text-primary">
+            {activeGroup ? `${activeGroup.name} Sessions` : "Sessions"}
+          </h1>
+          <p className="mt-1 text-xs text-text-muted">
+            {activeGroup ? `Sessions in ${activeGroup.name}` : "All your roleplaying sessions"}
+          </p>
         </div>
         <Link
           href="/session/new"

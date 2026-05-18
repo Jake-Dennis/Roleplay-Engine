@@ -1,14 +1,18 @@
-# Phase 8C: Narrative Threads/Arcs UI
+# Phase 8C: Narrative Threads/Arcs UI ✅ COMPLETE
 
 ## Goal
 Build a full CRUD UI for narrative threads/arcs — the system that tracks ongoing story arcs, unresolved items, and escalation levels across sessions.
 
+## Status
+All steps completed. Threads list page, detail page, API routes, sidebar nav, and session integration all built.
+
 ## Current State
-- `narrative_threads` table exists in schema
-- No API routes for threads
-- No UI page
-- Threads are referenced in `scene_states.active_threads` (JSON array of IDs)
-- Library functions reference threads but no management interface
+- [x] `src/app/api/narrative-threads/route.ts` — GET (list), POST (create)
+- [x] `src/app/api/narrative-threads/[id]/route.ts` — GET, PUT, DELETE
+- [x] `src/app/(app)/narrative-threads/page.tsx` — list with filter by status/session
+- [x] `src/app/(app)/narrative-threads/[id]/page.tsx` — detail with edit, unresolved items
+- [x] `src/app/(app)/layout.tsx` — sidebar nav item "Threads"
+- [x] `src/lib/job-processor.ts` — `thread_analysis` job handler
 
 ## Schema Reference
 ```sql

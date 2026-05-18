@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { EventTimeline } from "@/components/narrative/event-timeline";
 import { useActiveUniverse } from "@/contexts/active-universe";
+import { useApp } from "@/contexts/app-context";
 
 interface Event {
   id: string;
@@ -18,6 +19,7 @@ interface Event {
 
 export default function EventsPage() {
   const { activeUniverse } = useActiveUniverse();
+  const { activeGroup } = useApp();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -29,8 +31,10 @@ export default function EventsPage() {
 
   async function loadEvents() {
     try {
-      const params = activeUniverse ? `?universe_id=${activeUniverse.id}` : "";
-      const res = await fetch(`/api/events${params}`);
+      const params = new URLSearchParams();
+      if (activeUniverse) params.set("universe_id", activeUniverse.id);
+      if (activeGroup) params.set("group_id", activeGroup.id);
+      const res = await fetch(`/api/events${params.toString() ? "?" + params.toString() : ""}`);
       const data = await res.json();
       setEvents(data.events || []);
     } catch {
@@ -40,7 +44,7 @@ export default function EventsPage() {
     }
   }
 
-  useEffect(() => { loadEvents(); }, [activeUniverse?.id]);
+  useEffect(() => { loadEvents(); }, [activeUniverse?.id, activeGroup?.id]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -55,6 +59,7 @@ export default function EventsPage() {
           eventType,
           outcome: outcome.trim() || null,
           universe_id: activeUniverse?.id || null,
+          group_id: activeGroup?.id || null,
         }),
       });
       setShowCreate(false);

@@ -1,6 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
+
+function hasRelationshipAccess(db: any, relationshipId: string, userId: string): any {
+  const rel = db.prepare(
+    `SELECT r.*, u.group_id
+     FROM relationships r
+     LEFT JOIN universes u ON r.universe_id = u.id
+     WHERE r.id = ?`
+  ).get(relationshipId);
+
+  if (!rel) return null;
+
+  // Direct ownership
+  if (rel.user_id === userId) return rel;
+
+  // Group membership
+  if (rel.group_id && isGroupMember(db, rel.group_id, userId)) return rel;
+
+  return null;
+}
 
 export async function GET(
   request: NextRequest,
@@ -13,21 +33,19 @@ export async function GET(
 
   const { id } = await params;
   const db = getDb();
+  ensureGroupSupport(db);
 
-  // Verify relationship belongs to user
-  const rel = db.prepare(
-    "SELECT id FROM relationships WHERE id = ? AND user_id = ?"
-  ).get(id, decoded.sub);
-
+  // Verify relationship access
+  const rel = hasRelationshipAccess(db, id, decoded.sub);
   if (!rel) return NextResponse.json({ error: "Relationship not found" }, { status: 404 });
 
   // Get evolution history
   const history = db.prepare(`
     SELECT id, emotional_state, relationship_stage, trigger_event, recorded_at
     FROM relationship_evolution
-    WHERE relationship_id = ? AND user_id = ?
+    WHERE relationship_id = ?
     ORDER BY recorded_at ASC
-  `).all(id, decoded.sub);
+  `).all(id);
 
   // Parse emotional states
   const parsedHistory = history.map((entry: any) => ({
@@ -49,12 +67,10 @@ export async function POST(
 
   const { id } = await params;
   const db = getDb();
+  ensureGroupSupport(db);
 
-  // Verify relationship belongs to user
-  const rel = db.prepare(
-    "SELECT id FROM relationships WHERE id = ? AND user_id = ?"
-  ).get(id, decoded.sub);
-
+  // Verify relationship access
+  const rel = hasRelationshipAccess(db, id, decoded.sub);
   if (!rel) return NextResponse.json({ error: "Relationship not found" }, { status: 404 });
 
   const body = await request.json();

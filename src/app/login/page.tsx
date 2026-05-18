@@ -31,7 +31,19 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/dashboard");
+      if (data.token) {
+        localStorage.setItem("auth-token", data.token);
+      }
+
+      const meRes = await fetch("/api/auth/me", {
+        headers: { "x-auth-token": data.token },
+      });
+
+      if (meRes.ok) {
+        window.location.href = "/dashboard";
+      } else {
+        setError("Login succeeded but session could not be verified. Try again.");
+      }
     } catch {
       setError("Connection failed. Is the server running?");
     } finally {
@@ -74,6 +86,7 @@ export default function LoginPage() {
                 placeholder="Enter your username"
                 required
                 autoFocus
+                autoComplete="username"
               />
             </div>
 
@@ -88,6 +101,7 @@ export default function LoginPage() {
                 className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary placeholder-text-muted transition-colors focus:border-accent"
                 placeholder="Enter your password"
                 required
+                autoComplete="current-password"
               />
             </div>
 

@@ -38,13 +38,15 @@ export async function POST(request: NextRequest) {
         id: result.user.id,
         username: result.user.username,
       },
+      token: result.token,
     });
 
+    // Set cookie with relaxed settings for IP-based dev access
     response.cookies.set("auth-token", result.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      httpOnly: false,
+      secure: false,
       sameSite: "lax",
-      maxAge: 60 * 60 * 24, // 24 hours
+      maxAge: 60 * 60 * 24,
       path: "/",
     });
 

@@ -46,6 +46,7 @@ export interface IdleProcessingResult {
   loreExpanded: number;
   relationshipsDecayed: number;
   memoriesCompressed: number;
+  contradictionsFound: number;
 }
 
 // Track last processing time in memory (resets on server restart)
@@ -71,6 +72,7 @@ export async function processIdleTime(userId: string, universeId: string | null 
       loreExpanded: 0,
       relationshipsDecayed: 0,
       memoriesCompressed: 0,
+      contradictionsFound: 0,
     };
   }
 
@@ -83,6 +85,7 @@ export async function processIdleTime(userId: string, universeId: string | null 
     loreExpanded: 0,
     relationshipsDecayed: 0,
     memoriesCompressed: 0,
+    contradictionsFound: 0,
   };
 
   // Update last processing time
@@ -116,7 +119,7 @@ export async function processIdleTime(userId: string, universeId: string | null 
     }
   }
 
-  // Tier 3 (15+ minutes): Lore expansion
+  // Tier 3 (15+ minutes): Lore expansion + semantic contradiction scan
   if (idleTime >= TIER_THRESHOLDS.tier3_15min) {
     result.tiersProcessed.push("15min");
 
@@ -130,6 +133,15 @@ export async function processIdleTime(userId: string, universeId: string | null 
       } catch {
         // Skip failed universes
       }
+    }
+
+    // Scan unverified lore for semantic contradictions
+    try {
+      const { scanUnverifiedLoreForContradictions } = await import("./semantic-contradiction");
+      const scanResult = await scanUnverifiedLoreForContradictions(userId);
+      result.contradictionsFound += scanResult.contradictionsFound;
+    } catch {
+      // Skip if semantic scan fails
     }
   }
 

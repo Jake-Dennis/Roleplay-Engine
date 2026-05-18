@@ -7,10 +7,12 @@ const JWT_SECRET = new TextEncoder().encode(
 );
 
 // Routes that don't require authentication
-const publicRoutes = ["/login", "/register", "/api/auth/login", "/api/auth/register"];
+const publicRoutes = ["/login", "/register", "/api/auth/login", "/api/auth/register", "/api/auth/me"];
 
-// Routes that should redirect to login if not authenticated
-const protectedRoutes = ["/dashboard", "/session", "/universe", "/lore", "/characters", "/settings"];
+// NOTE: All protected routes are handled client-side via layout.tsx auth check.
+// Middleware can't read localStorage, which is needed for IP/DDNS-based access.
+// The client-side guard in (app)/layout.tsx checks /api/auth/me with x-auth-token header.
+const protectedRoutes: string[] = [];
 
 async function verifyToken(token: string): Promise<{ sub: string; username: string } | null> {
   try {
@@ -26,7 +28,12 @@ async function verifyToken(token: string): Promise<{ sub: string; username: stri
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get("auth-token")?.value;
+  let token = request.cookies.get("auth-token")?.value;
+
+  // Fallback: check for token in header (for IP-based access where cookies may fail)
+  if (!token) {
+    token = request.headers.get("x-auth-token") || undefined;
+  }
 
   // Check if route is public
   if (publicRoutes.some((route) => pathname.startsWith(route))) {

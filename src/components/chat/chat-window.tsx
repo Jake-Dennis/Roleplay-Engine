@@ -22,7 +22,7 @@
 
 "use client";
 
-import { memo } from "react";
+import { memo, useState } from "react";
 import {
   Send,
   Loader2,
@@ -36,6 +36,9 @@ import {
   RotateCcw,
   Trash2,
   GitBranch,
+  User,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { StreamingText } from "@/components/chat/streaming-text";
 import { EditHistory } from "@/components/chat/edit-history";
@@ -48,6 +51,8 @@ interface Message {
   content: string;
   timestamp: string;
   sender_name: string | null;
+  persona_name: string | null;
+  persona_avatar: string | null;
   has_siblings?: number;
 }
 
@@ -96,7 +101,13 @@ const MessageItem = memo(function MessageItem({
     <div className={`group flex ${isAI ? "" : "flex-row-reverse"}`}>
       <div className={`max-w-[75%] rounded-xl px-4 py-3 ${isAI ? "border border-border-default bg-bg-elevated" : "bg-accent/10"}`}>
         <p className="text-xxs font-medium text-text-muted mb-1 flex items-center gap-1.5">
-          <span>{isAI ? "AI Narrator" : message.sender_name || "You"}</span>
+          <span>{isAI ? "AI Narrator" : (message.persona_name || message.sender_name || "You")}</span>
+          {!isAI && message.persona_name && (
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-bg-raised px-1.5 py-0.5 text-xxs text-text-muted">
+              <User className="h-2.5 w-2.5" />
+              {message.persona_name}
+            </span>
+          )}
           {!isAI && intent && (
             <span className="inline-flex items-center gap-0.5 rounded-full bg-bg-raised px-1.5 py-0.5 text-xxs text-text-muted capitalize">
               {intentIcons[intent]}
@@ -200,6 +211,10 @@ interface ChatWindowProps {
   editHistoryMessageId: string | null;
   onEditHistoryClose: () => void;
   disabled?: boolean;
+  // Persona props
+  personas?: { id: string; name: string }[];
+  activePersonaId?: string | null;
+  onPersonaChange?: (id: string | null) => void;
 }
 
 export function ChatWindow({
@@ -230,7 +245,12 @@ export function ChatWindow({
   editHistoryMessageId,
   onEditHistoryClose,
   disabled = false,
+  personas = [],
+  activePersonaId = null,
+  onPersonaChange,
 }: ChatWindowProps) {
+  const [showPersonaDropdown, setShowPersonaDropdown] = useState(false);
+  const activePersona = personas.find(p => p.id === activePersonaId);
   return (
     <>
       {/* Messages */}
@@ -309,7 +329,45 @@ export function ChatWindow({
             </p>
           </div>
         ) : (
-          <div className="flex gap-2">
+          <div className="space-y-2">
+            {/* Persona selector */}
+            {personas.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowPersonaDropdown(!showPersonaDropdown)}
+                  className="flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-raised px-2.5 py-1.5 text-xs text-text-secondary hover:bg-bg-highlight"
+                >
+                  <User className="h-3 w-3" />
+                  <span>{activePersona?.name || "No persona"}</span>
+                  {showPersonaDropdown ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                </button>
+                {showPersonaDropdown && (
+                  <div className="absolute bottom-full mb-1 left-0 min-w-[180px] rounded-lg border border-border-default bg-bg-elevated shadow-lg z-10">
+                    <button
+                      onClick={() => { onPersonaChange?.(null); setShowPersonaDropdown(false); }}
+                      className={`w-full text-left px-3 py-2 text-xs transition-colors ${
+                        !activePersonaId ? "bg-accent/10 text-accent" : "text-text-secondary hover:bg-bg-raised"
+                      }`}
+                    >
+                      No persona (username)
+                    </button>
+                    {personas.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => { onPersonaChange?.(p.id); setShowPersonaDropdown(false); }}
+                        className={`w-full text-left px-3 py-2 text-xs transition-colors ${
+                          p.id === activePersonaId ? "bg-accent/10 text-accent" : "text-text-secondary hover:bg-bg-raised"
+                        }`}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-2">
             <textarea
               ref={inputRef}
               value={input}
@@ -333,6 +391,7 @@ export function ChatWindow({
                 <Send className="h-4 w-4" />
               )}
             </button>
+          </div>
           </div>
         )}
       </div>

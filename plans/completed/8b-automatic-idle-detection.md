@@ -1,13 +1,16 @@
-# Phase 8B: Automatic Idle Detection
+# Phase 8B: Automatic Idle Detection ✅ COMPLETE
 
 ## Goal
 Replace the current API-triggered idle processing with true client-side idle detection that automatically triggers server-side enrichment jobs based on user inactivity duration.
 
+## Status
+All steps completed. Client-side idle tracker hooks user events, sends heartbeat to server, server processes tiered enrichment jobs.
+
 ## Current State
-- `src/lib/idle-processing.ts` exists with 4-tier idle processing coordinator
-- Currently triggered via `/api/jobs` route (manual/explicit)
-- No client-side idle tracking
-- No heartbeat mechanism between client and server
+- [x] `src/hooks/use-idle-tracker.ts` — tracks mousemove/keydown/click/scroll, calculates idle time + tier
+- [x] `src/lib/idle-processing.ts` — 4-tier processing coordinator with `processIdleTier`
+- [x] `src/app/(app)/layout.tsx` — idle tracker integrated, idle status indicator shown
+- [x] Idle status badge shows "Idle Xm · Tier Y" in bottom-left
 
 ## Architecture
 

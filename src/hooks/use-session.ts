@@ -28,6 +28,7 @@ interface Session {
   name: string;
   owner_id: string;
   universe_id: string | null;
+  group_id: string | null;
   status: string;
   type: string;
 }
@@ -39,6 +40,8 @@ export interface Message {
   content: string;
   timestamp: string;
   sender_name: string | null;
+  persona_name: string | null;
+  persona_avatar: string | null;
 }
 
 interface SceneState {
@@ -84,7 +87,11 @@ export function useSession(sessionId: string): UseSessionResult {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/sessions/${sessionId}`);
+      const headers: HeadersInit = {};
+      const localToken = typeof window !== "undefined" ? localStorage.getItem("auth-token") : null;
+      if (localToken) headers["x-auth-token"] = localToken;
+
+      const res = await fetch(`/api/sessions/${sessionId}`, { headers });
       if (!res.ok) throw new Error(`Failed to load session: ${res.status}`);
       const data = await res.json();
       setSession(data.session || null);

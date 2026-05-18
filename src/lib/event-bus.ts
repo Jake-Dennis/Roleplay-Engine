@@ -167,4 +167,5 @@ export const SessionEvents = {
   THREAD_UPDATED: "thread:updated",
   JOB_COMPLETED: "job:completed",
   JOB_PROGRESS: "job:progress",
+  SESSION_UPDATED: "session:updated",
 } as const;

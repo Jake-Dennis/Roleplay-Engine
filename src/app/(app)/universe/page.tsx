@@ -12,6 +12,7 @@ import {
   Check,
 } from "lucide-react";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { useApp } from "@/contexts/app-context";
 
 interface Universe {
   id: string;
@@ -25,6 +26,7 @@ interface Universe {
 
 export default function UniverseListPage() {
   const router = useRouter();
+  const { activeGroup, refreshAll } = useApp();
   const [universes, setUniverses] = useState<Universe[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -39,7 +41,8 @@ export default function UniverseListPage() {
 
   async function loadUniverses() {
     try {
-      const res = await fetch("/api/universes");
+      const url = activeGroup ? `/api/universes?group_id=${activeGroup.id}` : "/api/universes?scope=personal";
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to load universes");
       const data = await res.json();
       setUniverses(data.universes || []);
@@ -52,7 +55,7 @@ export default function UniverseListPage() {
 
   useEffect(() => {
     loadUniverses();
-  }, []);
+  }, [activeGroup?.id]);
 
   // Clear messages after 3s
   useEffect(() => {
@@ -75,6 +78,7 @@ export default function UniverseListPage() {
         body: JSON.stringify({
           name: name.trim(),
           tone: tone.trim() || null,
+          group_id: activeGroup?.id || null,
         }),
       });
 
@@ -84,6 +88,7 @@ export default function UniverseListPage() {
         setName("");
         setTone("");
         setSuccess(`"${data.universe.name}" created`);
+        refreshAll();
         await loadUniverses();
       } else {
         setError(data.error || "Failed to create universe");
@@ -126,8 +131,12 @@ export default function UniverseListPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-base font-semibold text-text-primary">Universes</h1>
-          <p className="mt-1 text-xs text-text-muted">Your roleplaying worlds</p>
+          <h1 className="text-base font-semibold text-text-primary">
+            {activeGroup ? `${activeGroup.name} Universes` : "Universes"}
+          </h1>
+          <p className="mt-1 text-xs text-text-muted">
+            {activeGroup ? `Worlds in ${activeGroup.name}` : "Your roleplaying worlds"}
+          </p>
         </div>
         <button
           onClick={() => setShowCreate(!showCreate)}

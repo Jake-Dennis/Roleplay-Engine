@@ -50,6 +50,7 @@ function main() {
       session_id TEXT REFERENCES sessions(id),
       user_id TEXT REFERENCES users(id),
       role TEXT DEFAULT 'participant',
+      character_name TEXT,
       joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (session_id, user_id)
     );

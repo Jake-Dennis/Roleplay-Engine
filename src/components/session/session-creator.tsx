@@ -20,6 +20,7 @@ import { Sparkles } from "lucide-react";
 interface Universe {
   id: string;
   name: string;
+  group_id: string | null;
 }
 
 interface SessionCreateData {
@@ -40,6 +41,11 @@ export function SessionCreator({ universes, onCreate, onCancel }: SessionCreator
   const [type, setType] = useState("solo");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Filter universes based on session type
+  const filteredUniverses = type === "solo"
+    ? universes.filter((u) => !u.group_id)
+    : universes.filter((u) => u.group_id);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -94,7 +100,7 @@ export function SessionCreator({ universes, onCreate, onCancel }: SessionCreator
             className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary transition-colors focus:border-accent"
           >
             <option value="">No universe</option>
-            {universes.map((u) => (
+            {filteredUniverses.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.name}
               </option>

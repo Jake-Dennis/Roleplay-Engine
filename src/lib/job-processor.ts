@@ -25,10 +25,14 @@ import { processLoreExpansion } from "@/lib/lore-expansion";
 import { generateText } from "@/lib/ollama";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { getRetrievedContext, assemblePromptWithBudget } from "@/lib/retrieval";
+import { summarizeMessage } from "@/lib/message-summarizer";
+import { applyDecayToAllRelationships } from "@/lib/relationship-decay";
+import { runIdleEnrichment } from "@/lib/idle-enrichment";
 
 export type JobType =
   | "generate_response"
   | "summarize_messages"
+  | "summarize_message"
   | "generate_embeddings"
   | "analyze_relationships"
   | "expand_lore"
@@ -37,7 +41,12 @@ export type JobType =
   | "refine_relationship_summary"
   | "enrich_npc"
   | "expand_rumors"
-  | "archival_processing";
+  | "archival_processing"
+  | "extract_event"
+  | "expand_location_lore"
+  | "thread_analysis"
+  | "lore_deepening"
+  | "idle_enrichment";
 
 export type JobPriority = "high" | "medium" | "low" | "idle";
 export type JobStatus = "queued" | "processing" | "completed" | "failed" | "cancelled";
@@ -223,6 +232,19 @@ export function cancelAllUserJobs(userId: string): number {
 }
 
 /**
+ * Cancel all queued generate_response jobs for a specific session
+ */
+export function cancelSessionJobs(userId: string, sessionId: string): number {
+  const db = getDb();
+  const result = db.prepare(
+    `UPDATE job_queue SET status = 'cancelled' 
+     WHERE user_id = ? AND status = 'queued' AND type = 'generate_response' 
+     AND payload LIKE ?`
+  ).run(userId, `%${sessionId}%`);
+  return result.changes;
+}
+
+/**
  * Get job queue stats for a user
  */
 export function getJobStats(userId: string): Record<string, number> {
@@ -256,6 +278,8 @@ export async function processJob(job: QueuedJob): Promise<JobResult> {
         return await handleGenerateResponse(job.id, payload);
       case "summarize_messages":
         return await handleSummarizeMessages(job.id, payload);
+      case "summarize_message":
+        return await handleSummarizeSingleMessage(job.id, payload);
       case "generate_embeddings":
         return await handleGenerateEmbeddings(job.id, payload);
       case "analyze_relationships":
@@ -274,6 +298,16 @@ export async function processJob(job: QueuedJob): Promise<JobResult> {
         return await handleExpandRumors(job.id, payload);
       case "archival_processing":
         return await handleArchivalProcessing(job.id, payload);
+      case "extract_event":
+        return await handleExtractEvent(job.id, payload);
+      case "expand_location_lore":
+        return await handleExpandLocationLore(job.id, payload);
+      case "thread_analysis":
+        return await handleThreadAnalysis(job.id, payload);
+      case "lore_deepening":
+        return await handleLoreDeepening(job.id, payload);
+      case "idle_enrichment":
+        return await handleIdleEnrichment(job.id, payload);
       default:
         throw new Error(`Unknown job type: ${job.type}`);
     }
@@ -363,7 +397,7 @@ async function handleGenerateResponse(jobId: string, payload: JobPayload): Promi
   });
 
   // Generate AI response using Ollama with full context
-  const response = await generateText(prompt, { temperature: 0.8, num_ctx: 8192 });
+  const response = await generateText(prompt, { temperature: 0.8, num_ctx: 8192, userId: payload.userId || "" });
 
   // Insert the AI response as a new message
   const newMessageId = crypto.randomUUID();
@@ -960,5 +994,348 @@ async function handleArchivalProcessing(jobId: string, payload: JobPayload): Pro
     jobId,
     type: "archival_processing",
     data: { archived },
+  };
+}
+
+async function handleSummarizeSingleMessage(jobId: string, payload: JobPayload): Promise<JobResult> {
+  const { messageId } = payload;
+  if (!messageId) throw new Error("Missing messageId");
+
+  updateJobProgress(jobId, 20, "Analyzing message...");
+  const result = await summarizeMessage(messageId as string);
+  updateJobProgress(jobId, 80, "Saving summaries...");
+  markJobCompleted(jobId);
+
+  return {
+    success: true,
+    jobId,
+    type: "summarize_message",
+    data: { summaryId: result.summaryId, types: result.types },
+  };
+}
+
+async function handleExtractEvent(jobId: string, payload: JobPayload): Promise<JobResult> {
+  const { sessionId, userId } = payload;
+  if (!sessionId || !userId) throw new Error("Missing sessionId or userId");
+
+  const db = getDb();
+
+  // Get recent messages from the session
+  const messages = db.prepare(`
+    SELECT id, content, sender_id, timestamp
+    FROM messages
+    WHERE session_id = ? AND is_deleted = 0
+    ORDER BY timestamp DESC
+    LIMIT 10
+  `).all(sessionId) as { id: string; content: string; sender_id: string | null; timestamp: string }[];
+
+  if (messages.length === 0) {
+    markJobCompleted(jobId);
+    return { success: true, jobId, type: "extract_event", data: { extractedCount: 0 } };
+  }
+
+  const messageText = messages
+    .map((m) => `${m.sender_id === null ? "AI" : "Player"}: ${m.content}`)
+    .join("\n");
+
+  const prompt = `Analyze these recent messages and extract any significant narrative events. Return JSON:
+{
+  "events": [
+    {
+      "title": "brief event title",
+      "eventType": "conflict|discovery|relationship|journey|decision|other",
+      "outcome": "what happened as a result",
+      "importance": "low|medium|high|critical"
+    }
+  ]
+}
+
+Messages:
+${messageText}`;
+
+  let extracted = 0;
+  try {
+    const response = await generateText(prompt, { temperature: 0.3, num_ctx: 4096, userId: userId as string });
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (Array.isArray(parsed.events)) {
+        for (const event of parsed.events) {
+          const eventId = crypto.randomUUID();
+          db.prepare(`
+            INSERT INTO events (id, user_id, session_id, title, event_type, outcome, importance, occurred_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+          `).run(
+            eventId,
+            userId,
+            sessionId,
+            event.title || "Unknown Event",
+            event.eventType || "other",
+            event.outcome || null,
+            event.importance || "medium"
+          );
+          extracted++;
+        }
+      }
+    }
+  } catch {
+    // Skip if extraction fails
+  }
+
+  markJobCompleted(jobId);
+
+  return {
+    success: true,
+    jobId,
+    type: "extract_event",
+    data: { extractedCount: extracted },
+  };
+}
+
+async function handleExpandLocationLore(jobId: string, payload: JobPayload): Promise<JobResult> {
+  const { userId, universeId, locationId } = payload;
+  if (!userId) throw new Error("Missing userId");
+
+  const db = getDb();
+
+  let query = `
+    SELECT l.id, l.name, l.description
+    FROM locations l
+    WHERE l.user_id = ?
+  `;
+  const params: (string | number)[] = [userId];
+
+  if (locationId) {
+    query += " AND l.id = ?";
+    params.push(locationId as string);
+  } else if (universeId) {
+    query += " AND l.universe_id = ?";
+    params.push(universeId as string);
+  }
+
+  query += " ORDER BY l.updated_at DESC LIMIT 3";
+
+  const locations = db.prepare(query).all(...params) as {
+    id: string;
+    name: string;
+    description: string | null;
+  }[];
+
+  let expanded = 0;
+  for (const loc of locations) {
+    const existingLore = loc.description || "";
+    if (!existingLore) continue;
+
+    const prompt = `Expand on the location "${loc.name}". Current description:\n${existingLore.slice(0, 500)}\n\nAdd 2-3 new atmospheric details, historical notes, or sensory descriptions. Do not contradict existing facts.`;
+
+    try {
+      const expansion = await generateText(prompt, { userId: userId as string });
+
+      db.prepare(`
+        INSERT INTO narrative_memories (id, user_id, universe_id, session_id, type, content, importance)
+        VALUES (?, ?, ?, NULL, 'location_lore', ?, ?)
+      `).run(
+        crypto.randomUUID(),
+        userId,
+        universeId,
+        `[LOCATION LORE] ${loc.name}: ${expansion}`,
+        JSON.stringify({ emotional: 1, local: 3, canonical: 2, recency: 4 })
+      );
+
+      db.prepare(`
+        INSERT INTO lore_validations (id, user_id, entity_type, entity_id, state, generated_by)
+        VALUES (?, ?, 'location', ?, 'generated_unverified', 'expand_location_lore')
+      `).run(crypto.randomUUID(), userId, loc.id);
+
+      expanded++;
+    } catch {
+      // Skip failed locations
+    }
+  }
+
+  markJobCompleted(jobId);
+
+  return {
+    success: true,
+    jobId,
+    type: "expand_location_lore",
+    data: { expandedCount: expanded },
+  };
+}
+
+async function handleThreadAnalysis(jobId: string, payload: JobPayload): Promise<JobResult> {
+  const { sessionId, userId } = payload;
+  if (!sessionId || !userId) throw new Error("Missing sessionId or userId");
+
+  const db = getDb();
+
+  // Get session messages
+  const messages = db.prepare(`
+    SELECT content, sender_id, timestamp
+    FROM messages
+    WHERE session_id = ? AND is_deleted = 0
+    ORDER BY timestamp ASC
+    LIMIT 50
+  `).all(sessionId) as { content: string; sender_id: string | null; timestamp: string }[];
+
+  if (messages.length < 5) {
+    markJobCompleted(jobId);
+    return { success: true, jobId, type: "thread_analysis", data: { threadsFound: 0 } };
+  }
+
+  const messageText = messages
+    .map((m) => `${m.sender_id === null ? "AI" : "Player"}: ${m.content}`)
+    .join("\n");
+
+  const prompt = `Analyze this narrative and identify the key story threads/themes. Return JSON:
+{
+  "threads": [
+    {
+      "name": "thread name",
+      "status": "active|resolved|dormant",
+      "summary": "brief description",
+      "keyEntities": ["list of characters/locations involved"]
+    }
+  ]
+}
+
+Narrative:
+${messageText}`;
+
+  let threadsFound = 0;
+  try {
+    const response = await generateText(prompt, { temperature: 0.3, num_ctx: 8192, userId: userId as string });
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (Array.isArray(parsed.threads)) {
+        for (const thread of parsed.threads) {
+          const threadId = crypto.randomUUID();
+          db.prepare(`
+            INSERT INTO narrative_threads (id, user_id, session_id, name, status, summary, key_entities)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `).run(
+            threadId,
+            userId,
+            sessionId,
+            thread.name || "Unknown Thread",
+            thread.status || "active",
+            thread.summary || "",
+            JSON.stringify(thread.keyEntities || [])
+          );
+          threadsFound++;
+        }
+      }
+    }
+  } catch {
+    // Skip if analysis fails
+  }
+
+  markJobCompleted(jobId);
+
+  return {
+    success: true,
+    jobId,
+    type: "thread_analysis",
+    data: { threadsFound },
+  };
+}
+
+async function handleLoreDeepening(jobId: string, payload: JobPayload): Promise<JobResult> {
+  const { userId, universeId } = payload;
+  if (!userId) throw new Error("Missing userId");
+
+  const db = getDb();
+
+  // Get lore entries that haven't been deepened recently
+  let query = `
+    SELECT le.id, le.title, le.content, le.type
+    FROM lore_entries le
+    WHERE le.user_id = ?
+  `;
+  const params: (string | number)[] = [userId];
+
+  if (universeId) {
+    query += " AND le.universe_id = ?";
+    params.push(universeId);
+  }
+
+  query += `
+    AND le.updated_at < datetime('now', '-3 days')
+    ORDER BY le.updated_at ASC
+    LIMIT 5
+  `;
+
+  const loreEntries = db.prepare(query).all(...params) as {
+    id: string;
+    title: string;
+    content: string;
+    type: string;
+  }[];
+
+  let deepened = 0;
+  for (const entry of loreEntries) {
+    const prompt = `Deepen this lore entry "${entry.title}" (${entry.type}). Current content:\n${entry.content.slice(0, 800)}\n\nAdd new details, connections to other lore, or implications. Do not contradict existing facts. Return only the new content.`;
+
+    try {
+      const deepening = await generateText(prompt, { userId: userId as string });
+
+      db.prepare(`
+        INSERT INTO narrative_memories (id, user_id, universe_id, session_id, type, content, importance, related_entities)
+        VALUES (?, ?, ?, NULL, 'lore_deepening', ?, ?, ?)
+      `).run(
+        crypto.randomUUID(),
+        userId,
+        universeId,
+        `[LORE DEEPENING] ${entry.title}: ${deepening}`,
+        JSON.stringify({ emotional: 1, local: 2, canonical: 3, recency: 4 }),
+        JSON.stringify([entry.id])
+      );
+
+      db.prepare(`
+        INSERT INTO lore_validations (id, user_id, entity_type, entity_id, state, generated_by)
+        VALUES (?, ?, 'lore', ?, 'generated_unverified', 'lore_deepening')
+      `).run(crypto.randomUUID(), userId, entry.id);
+
+      deepened++;
+    } catch {
+      // Skip failed entries
+    }
+  }
+
+  markJobCompleted(jobId);
+
+  return {
+    success: true,
+    jobId,
+    type: "lore_deepening",
+    data: { deepenedCount: deepened },
+  };
+}
+
+async function handleIdleEnrichment(jobId: string, payload: JobPayload): Promise<JobResult> {
+  const { userId, idleMinutes, universeId } = payload;
+  if (!userId) throw new Error("Missing userId");
+
+  const minutes = typeof idleMinutes === "number" ? idleMinutes : 5;
+
+  updateJobProgress(jobId, 10, `Starting idle enrichment (${minutes}min idle)...`);
+  const result = await runIdleEnrichment(
+    userId as string,
+    minutes,
+    (universeId as string) || null
+  );
+  updateJobProgress(jobId, 90, "Enrichment complete");
+  markJobCompleted(jobId);
+
+  return {
+    success: true,
+    jobId,
+    type: "idle_enrichment",
+    data: {
+      tier: result.tier,
+      actionsCompleted: result.actionsCompleted,
+      itemsProcessed: result.itemsProcessed,
+    },
   };
 }

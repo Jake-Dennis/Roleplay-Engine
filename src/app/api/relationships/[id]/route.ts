@@ -1,6 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
+
+function hasEntityAccess(db: any, entityType: string, entityId: string, userId: string): any {
+  let entity: any = null;
+  if (entityType === "relationships") {
+    entity = db.prepare(
+      `SELECT r.*, u.group_id, g.owner_id as group_owner_id
+       FROM relationships r
+       LEFT JOIN universes u ON r.universe_id = u.id
+       LEFT JOIN groups g ON u.group_id = g.id
+       WHERE r.id = ?`
+    ).get(entityId);
+  }
+
+  if (!entity) return null;
+
+  // Direct ownership
+  if (entity.user_id === userId) return entity;
+
+  // Group membership
+  if (entity.group_id && isGroupMember(db, entity.group_id, userId)) return entity;
+
+  return null;
+}
 
 export async function GET(
   request: NextRequest,
@@ -13,7 +37,9 @@ export async function GET(
 
   const { id } = await params;
   const db = getDb();
-  const rel = db.prepare("SELECT * FROM relationships WHERE id = ? AND user_id = ?").get(id, decoded.sub);
+  ensureGroupSupport(db);
+
+  const rel = hasEntityAccess(db, "relationships", id, decoded.sub);
   if (!rel) return NextResponse.json({ error: "Relationship not found" }, { status: 404 });
   return NextResponse.json({ relationship: rel });
 }
@@ -30,8 +56,9 @@ export async function PUT(
   const { id } = await params;
   const body = await request.json();
   const db = getDb();
+  ensureGroupSupport(db);
 
-  const existing = db.prepare("SELECT id FROM relationships WHERE id = ? AND user_id = ?").get(id, decoded.sub);
+  const existing = hasEntityAccess(db, "relationships", id, decoded.sub);
   if (!existing) return NextResponse.json({ error: "Relationship not found" }, { status: 404 });
 
   const { emotionalState, sharedHistory, relationshipStage, decayRates } = body;
@@ -60,7 +87,9 @@ export async function DELETE(
 
   const { id } = await params;
   const db = getDb();
-  const existing = db.prepare("SELECT id FROM relationships WHERE id = ? AND user_id = ?").get(id, decoded.sub);
+  ensureGroupSupport(db);
+
+  const existing = hasEntityAccess(db, "relationships", id, decoded.sub);
   if (!existing) return NextResponse.json({ error: "Relationship not found" }, { status: 404 });
 
   db.prepare("DELETE FROM relationships WHERE id = ?").run(id);

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ENTRY_TYPE_LABELS, IMPORTANCE_COLORS } from "@/lib/entity-constants";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useActiveUniverse } from "@/contexts/active-universe";
+import { useApp } from "@/contexts/app-context";
 
 interface TimelineEntry {
   id: string;
@@ -22,6 +23,7 @@ interface TimelineEntry {
 
 export default function TimelinePage() {
   const { activeUniverse } = useActiveUniverse();
+  const { activeGroup } = useApp();
   const [entries, setEntries] = useState<TimelineEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -42,6 +44,7 @@ export default function TimelinePage() {
       params.set("sort", sortOrder);
       if (filterEra !== "all") params.set("era", filterEra);
       if (activeUniverse) params.set("universe_id", activeUniverse.id);
+      if (activeGroup) params.set("group_id", activeGroup.id);
       const res = await fetch(`/api/timeline?${params}`);
       const data = await res.json();
       setEntries(data.entries || []);
@@ -52,7 +55,7 @@ export default function TimelinePage() {
     }
   }
 
-  useEffect(() => { loadEntries(); }, [sortOrder, filterEra, activeUniverse?.id]);
+  useEffect(() => { loadEntries(); }, [sortOrder, filterEra, activeUniverse?.id, activeGroup?.id]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -70,6 +73,7 @@ export default function TimelinePage() {
           entryType,
           importance,
           universe_id: activeUniverse?.id || null,
+          group_id: activeGroup?.id || null,
         }),
       });
       setShowCreate(false);
