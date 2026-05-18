@@ -762,7 +762,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
 
   **Commit**: YES (groups with 17-20)
 
-- [ ] 22. Updated Retrieval Pipeline — Wiki-First Context
+- [x] 22. Updated Retrieval Pipeline — Wiki-First Context
 
   **What to do**: Update `src/lib/retrieval.ts` to use wiki as primary context source. Replace getLoreContext() with getWikiContext(): read index.md for first-pass filtering → read relevant full pages → assemble context. Keep DB as fallback during migration period. Maintain same return shape as existing function to avoid breaking callers.
 
@@ -792,7 +792,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
 
   **Commit**: YES (groups with 23-26)
 
-- [ ] 23. Updated Job Processor — Wiki Enrichment Jobs
+- [x] 23. Updated Job Processor — Wiki Enrichment Jobs
 
   **What to do**: Update `src/lib/job-processor.ts` to replace lore expansion jobs with wiki enrichment jobs. Replace: expand_lore → wiki_ingest, enrich_npc → wiki_enrich_entity, expand_rumors → wiki_generate_rumors, lore_deepening → wiki_deepen_page, expand_location_lore → wiki_deepen_location, extract_event → wiki_extract_event. Update job handlers to use wiki I/O instead of DB.
 
@@ -822,7 +822,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
 
   **Commit**: YES (groups with 22, 24-26)
 
-- [ ] 24. Updated Idle-Time Processing — Wiki Enrichment Tiers
+- [x] 24. Updated Idle-Time Processing — Wiki Enrichment Tiers
 
   **What to do**: Update `src/lib/idle-processing.ts` and `src/lib/idle-enrichment.ts` to use wiki enrichment. Tier 1: wiki compress summaries. Tier 2: wiki deepen pages, wiki enrich entities. Tier 3: wiki generate rumors, wiki archive. Tier 4: wiki decay relationships. All tiers use wiki I/O instead of DB operations.
 
@@ -850,7 +850,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
 
   **Commit**: YES (groups with 22-23, 25-26)
 
-- [ ] 25. API Route Updates — Wiki CRUD, Lore Route Deprecation
+- [x] 25. API Route Updates — Wiki CRUD, Lore Route Deprecation
 
   **What to do**: Create `src/app/api/wiki/[...slug]/route.ts` for wiki CRUD (GET read page, PUT update page, DELETE delete page, POST create page). Deprecate old lore routes: return 410 Gone with migration guide link for /api/locations, /api/npcs, /api/events. Keep /api/lore-files working during migration period.
 
@@ -907,7 +907,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
 
   **Commit**: YES (groups with 22-25)
 
-- [ ] 27. Wikilink Collision Handling + Namespace Resolution
+- [x] 27. Wikilink Collision Handling + Namespace Resolution
 
   **What to do**: Handle wikilink collisions when two pages have the same name (e.g., "River" in two universes). Implement namespace resolution: `[[Universe::Page]]` format for cross-universe links. Update `src/lib/wiki/wikilinks.ts` resolveWikilink to accept universeId and prefer same-universe matches. Add collision detection: warn when creating page with name that exists in another universe.
 
@@ -935,7 +935,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
 
   **Commit**: YES (groups with 28-31)
 
-- [ ] 28. Orphan Page Detection + Flagging
+- [x] 28. Orphan Page Detection + Flagging
 
   **What to do**: Create `src/lib/wiki/orphans.ts` with findOrphans(wikiRoot). Orphan = page with no inbound wikilinks AND no outbound wikilinks. Flag orphans in lint report. Show orphan badge in file tree. Suggest actions: link to related page, delete, or mark as standalone. Run orphan detection as part of lint pass.
 
@@ -963,7 +963,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
 
   **Commit**: YES (groups with 27, 29-31)
 
-- [ ] 29. Concurrent Edit Protection (Last-Writer-Wins + Diff)
+- [x] 29. Concurrent Edit Protection (Last-Writer-Wins + Diff)
 
   **What to do**: Implement file locking in `src/lib/wiki/file-io.ts`. When writing: check if file is locked by another process, if so wait or fail with conflict error. On conflict: save diff of changes, return conflict response to caller. Add `lastModified` timestamp to frontmatter for conflict detection. UI: show conflict dialog when user tries to save a page that was modified by LLM enrichment.
 
@@ -993,7 +993,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
 
   **Commit**: YES (groups with 27-28, 30-31)
 
-- [ ] 30. Page Size Limits + Split-Into-Subpages Logic
+- [x] 30. Page Size Limits + Split-Into-Subpages Logic
 
   **What to do**: Enforce max page size (e.g., 10,000 characters). When page exceeds limit during LLM enrichment: suggest split into subpages (e.g., "Haleth" → "Haleth/Background", "Haleth/Relationships", "Haleth/Events"). Create `src/lib/wiki/page-split.ts` with suggestSplit(pagePath). Add warning in markdown renderer when page approaches limit.
 
@@ -1021,7 +1021,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
 
   **Commit**: YES (groups with 27-29, 31)
 
-- [ ] 31. Empty States + Error States + Loading States
+- [x] 31. Empty States + Error States + Loading States
 
   **What to do**: Add polished empty/error/loading states to all wiki components. File tree: "No wiki pages yet — create your first page" with CTA. Backlink panel: "No pages link to this yet" with suggestion. Search: "No results for X" with tips. Graph view: "No connections yet" with empty graph. Markdown renderer: loading spinner, "Page not found" error, "File system error" toast.
 
@@ -1050,7 +1050,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
 
   **Commit**: YES (groups with 27-30)
 
-- [ ] 32. Old DB Table Deprecation Plan + Cleanup Script
+- [x] 32. Old DB Table Deprecation Plan + Cleanup Script
 
   **What to do**: Create `scripts/cleanup-old-lore-tables.ts`. After migration verified: drop old DB tables (locations, npcs, events, relationships, narrative_memories, lore_validations, lore_edits, backlinks, embedding_index, embedding_vectors). Keep operational tables (users, sessions, job_queue, universes, scene_states). Archive old lore markdown files to `data/{userId}/lore-archive/`. Update spec.md to reflect new architecture.
 
@@ -1079,7 +1079,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
 
   **Commit**: YES (groups with 33-34)
 
-- [ ] 33. Performance Benchmark + Optimization
+- [x] 33. Performance Benchmark + Optimization
 
   **What to do**: Benchmark wiki operations: page render time, graph view load time, search response time, index regeneration time. Target: page render < 200ms, graph load < 1s, search < 100ms, index regen < 500ms for 100 pages. Optimize: cache index in memory, lazy-load graph nodes, debounce search, batch file reads.
 
@@ -1107,7 +1107,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
 
   **Commit**: YES (groups with 32, 34)
 
-- [ ] 34. Documentation + Migration Guide
+- [x] 34. Documentation + Migration Guide
 
   **What to do**: Create `docs/wiki-migration.md` with: architecture overview, migration steps, wiki schema reference, LLM operations guide (ingest/query/lint), troubleshooting. Update `README.md` with wiki system description. Create `docs/wiki-schema-reference.md` with frontmatter fields, page types, wikilink conventions.
 
