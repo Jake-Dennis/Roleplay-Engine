@@ -151,11 +151,9 @@ const SessionSelector = memo(function SessionSelector() {
   // Fetch sessions when dropdown opens - filtered by active group context
   useEffect(() => {
     if (open) {
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth-token") : null;
-      const headers: HeadersInit = token ? { "x-auth-token": token } : {};
-      // When personal (no activeGroup), fetch with group_id=personal to get only personal sessions
+      // Browser automatically sends httpOnly cookies with same-origin requests
       const url = activeGroup ? `/api/sessions?group_id=${activeGroup.id}` : "/api/sessions?scope=personal";
-      fetch(url, { headers })
+      fetch(url)
         .then((res) => res.ok ? res.json() : { sessions: [] })
         .then((data) => setLocalSessions(data.sessions || []))
         .catch(() => setLocalSessions([]));
@@ -240,10 +238,9 @@ const UniverseSelector = memo(function UniverseSelector() {
   // Fetch universes when dropdown opens - filtered by active group context
   useEffect(() => {
     if (open) {
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth-token") : null;
-      const headers: HeadersInit = token ? { "x-auth-token": token } : {};
+      // Browser automatically sends httpOnly cookies with same-origin requests
       const url = activeGroup ? `/api/universes?group_id=${activeGroup.id}` : "/api/universes?scope=personal";
-      fetch(url, { headers })
+      fetch(url)
         .then((res) => res.ok ? res.json() : { universes: [] })
         .then((data) => setLocalUniverses(data.universes || []))
         .catch(() => setLocalUniverses([]));
@@ -326,9 +323,8 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
     if (match) {
       const sessionId = match[1];
       if (!activeSession || activeSession.id !== sessionId) {
-        const token = typeof window !== "undefined" ? localStorage.getItem("auth-token") : null;
-        const headers: HeadersInit = token ? { "x-auth-token": token } : {};
-        fetch(`/api/sessions/${sessionId}`, { headers })
+        // Browser automatically sends httpOnly cookies with same-origin requests
+        fetch(`/api/sessions/${sessionId}`)
           .then((res) => res.ok ? res.json() : null)
           .then((data) => {
             if (data?.session) {
@@ -347,16 +343,13 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
-    const localToken = typeof window !== "undefined" ? localStorage.getItem("auth-token") : null;
-    const headers: HeadersInit = {};
-    if (localToken) headers["x-auth-token"] = localToken;
-
+    // Browser automatically sends httpOnly cookies with same-origin requests
     const timeout = setTimeout(() => {
       setError("Connection timed out. Server may be unreachable.");
       setLoading(false);
     }, 5000);
 
-    fetch("/api/auth/me", { headers })
+    fetch("/api/auth/me")
       .then((res) => { if (!res.ok) throw new Error("Not authenticated"); return res.json(); })
       .then((data) => { clearTimeout(timeout); setUser(data.user); setLoading(false); })
       .catch((err) => { clearTimeout(timeout); setError(err.message); setLoading(false); });

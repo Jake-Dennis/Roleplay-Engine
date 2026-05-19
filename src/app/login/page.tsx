@@ -31,13 +31,8 @@ export default function LoginPage() {
         return;
       }
 
-      if (data.token) {
-        localStorage.setItem("auth-token", data.token);
-      }
-
-      const meRes = await fetch("/api/auth/me", {
-        headers: { "x-auth-token": data.token },
-      });
+      // Browser sets httpOnly cookie from response automatically
+      const meRes = await fetch("/api/auth/me");
 
       if (meRes.ok) {
         window.location.href = "/dashboard";

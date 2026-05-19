@@ -59,14 +59,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const authHeaders = useCallback((): HeadersInit => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("auth-token") : null;
-    return token ? { "x-auth-token": token } : {};
+    return {};
   }, []);
 
   const saveStateToDb = useCallback((updates: Partial<ActiveState>) => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("auth-token") : null;
-    if (!token) return;
-    const headers: HeadersInit = { "x-auth-token": token, "Content-Type": "application/json" };
+    const headers: HeadersInit = { "Content-Type": "application/json" };
 
     // Update localStorage cache immediately
     const current: ActiveState = (() => {

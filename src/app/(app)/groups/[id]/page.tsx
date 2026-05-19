@@ -68,10 +68,8 @@ export default function GroupDetailPage() {
   const [addMemberLoading, setAddMemberLoading] = useState(false);
 
   const loadData = useCallback(() => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("auth-token") : null;
-    const headers: HeadersInit = token ? { "x-auth-token": token } : {};
-
-    fetch(`/api/groups/${groupId}`, { headers })
+    // Browser automatically sends httpOnly cookies with same-origin requests
+    fetch(`/api/groups/${groupId}`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load group");
         return res.json();
@@ -98,10 +96,8 @@ export default function GroupDetailPage() {
     if (!addMemberOpen) return;
     const timer = setTimeout(() => {
       setSearchLoading(true);
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth-token") : null;
-      const headers: HeadersInit = token ? { "x-auth-token": token } : {};
       const url = `/api/users?group_id=${groupId}&q=${encodeURIComponent(searchQuery)}`;
-      fetch(url, { headers })
+      fetch(url)
         .then((res) => res.ok ? res.json() : { users: [] })
         .then((data) => setAvailableUsers(data.users || []))
         .catch(() => setAvailableUsers([]))
@@ -111,12 +107,9 @@ export default function GroupDetailPage() {
   }, [addMemberOpen, searchQuery, groupId]);
 
   async function handleSaveGroup() {
-    const token = typeof window !== "undefined" ? localStorage.getItem("auth-token") : null;
-    const headers: HeadersInit = token ? { "x-auth-token": token, "Content-Type": "application/json" } : {};
-
     const res = await fetch(`/api/groups/${groupId}`, {
       method: "PUT",
-      headers,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: editName, description: editDescription }),
     });
 
@@ -133,12 +126,9 @@ export default function GroupDetailPage() {
     setAddMemberLoading(true);
     setAddMemberError("");
 
-    const token = typeof window !== "undefined" ? localStorage.getItem("auth-token") : null;
-    const headers: HeadersInit = token ? { "x-auth-token": token, "Content-Type": "application/json" } : {};
-
     const res = await fetch(`/api/groups/${groupId}/members`, {
       method: "POST",
-      headers,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: selectedUser.id }),
     });
 
@@ -155,12 +145,9 @@ export default function GroupDetailPage() {
   }
 
   async function handleRemoveMember(userId: string) {
-    const token = typeof window !== "undefined" ? localStorage.getItem("auth-token") : null;
-    const headers: HeadersInit = token ? { "x-auth-token": token, "Content-Type": "application/json" } : {};
-
     await fetch(`/api/groups/${groupId}/members`, {
       method: "DELETE",
-      headers,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: userId }),
     });
     loadData();
@@ -169,10 +156,7 @@ export default function GroupDetailPage() {
   async function handleDeleteGroup() {
     if (!confirm(`Delete "${group?.name}"? This cannot be undone.`)) return;
 
-    const token = typeof window !== "undefined" ? localStorage.getItem("auth-token") : null;
-    const headers: HeadersInit = token ? { "x-auth-token": token } : {};
-
-    await fetch(`/api/groups/${groupId}`, { method: "DELETE", headers });
+    await fetch(`/api/groups/${groupId}`, { method: "DELETE" });
     router.push("/groups");
   }
 

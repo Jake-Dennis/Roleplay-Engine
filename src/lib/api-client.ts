@@ -1,8 +1,8 @@
 /**
  * API Client
  *
- * Typed API client with centralized auth header injection, error handling, and retry logic.
- * Replaces raw `fetch()` calls across all page files.
+ * Typed API client with error handling and retry logic.
+ * Auth is handled via httpOnly cookies — browser sends them automatically.
  *
  * Usage:
  *   const { data, error } = await api.get("/api/wiki");
@@ -16,7 +16,6 @@ interface ApiResponse<T = any> {
 }
 
 interface ApiOptions {
-  token?: string;
   retries?: number;
   retryDelay?: number;
 }
@@ -29,7 +28,8 @@ class ApiClient {
   }
 
   /**
-   * Make an API request with auth headers and error handling
+   * Make an API request with error handling.
+   * Browser automatically sends httpOnly cookies with same-origin requests.
    */
   private async request<T>(
     method: string,
@@ -37,16 +37,12 @@ class ApiClient {
     body?: any,
     options: ApiOptions = {}
   ): Promise<ApiResponse<T>> {
-    const { token, retries = 0, retryDelay = 1000 } = options;
+    const { retries = 0, retryDelay = 1000 } = options;
     const url = `${this.baseUrl}${path}`;
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-
-    if (token) {
-      headers["Cookie"] = `auth-token=${token}`;
-    }
 
     let lastError: Error | null = null;
 

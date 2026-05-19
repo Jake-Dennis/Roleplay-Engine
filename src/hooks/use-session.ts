@@ -87,11 +87,8 @@ export function useSession(sessionId: string): UseSessionResult {
     setLoading(true);
     setError(null);
     try {
-      const headers: HeadersInit = {};
-      const localToken = typeof window !== "undefined" ? localStorage.getItem("auth-token") : null;
-      if (localToken) headers["x-auth-token"] = localToken;
-
-      const res = await fetch(`/api/sessions/${sessionId}`, { headers });
+      // Browser automatically sends httpOnly cookies with same-origin requests
+      const res = await fetch(`/api/sessions/${sessionId}`);
       if (!res.ok) throw new Error(`Failed to load session: ${res.status}`);
       const data = await res.json();
       setSession(data.session || null);
