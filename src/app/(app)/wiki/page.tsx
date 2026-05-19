@@ -10,6 +10,7 @@ export default function WikiHomePage() {
   const [pages, setPages] = useState<WikiPage[]>([]);
   const [orphanPaths, setOrphanPaths] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'browse' | 'graph'>('browse');
 
   useEffect(() => {
@@ -20,7 +21,7 @@ export default function WikiHomePage() {
         setOrphanPaths(data.orphanPaths || []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => { setError(err.message); setLoading(false); });
   }, []);
 
   if (loading) {
@@ -94,7 +95,7 @@ export default function WikiHomePage() {
             </div>
           </>
         ) : (
-          <GraphView pages={pages} isLoading={loading} />
+          <GraphView pages={pages} isLoading={loading} error={error} onRetry={() => window.location.reload()} />
         )}
       </div>
     </div>
