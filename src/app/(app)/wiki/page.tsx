@@ -1,13 +1,16 @@
 'use client';
 import { useState, useEffect } from 'react';
+import GraphView from '@/components/wiki/graph-view';
 import FileTree from '@/components/wiki/file-tree';
 import Search from '@/components/wiki/search';
+import { BookOpen, Network } from 'lucide-react';
 import type { WikiPage } from '@/lib/wiki/file-io';
 
 export default function WikiHomePage() {
   const [pages, setPages] = useState<WikiPage[]>([]);
   const [orphanPaths, setOrphanPaths] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'browse' | 'graph'>('browse');
 
   useEffect(() => {
     fetch('/api/wiki')
@@ -43,24 +46,56 @@ export default function WikiHomePage() {
 
       {/* Main content */}
       <div className="flex-1 p-8 overflow-y-auto">
-        <h1 className="text-2xl font-bold mb-4">Wiki</h1>
-        <p className="text-text-muted mb-6">
-          Select a page from the sidebar or search to get started.
-        </p>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 bg-bg-raised rounded-lg border border-border-default">
-            <p className="text-sm font-medium">{counts.entity} Entities</p>
-          </div>
-          <div className="p-4 bg-bg-raised rounded-lg border border-border-default">
-            <p className="text-sm font-medium">{counts.concept} Concepts</p>
-          </div>
-          <div className="p-4 bg-bg-raised rounded-lg border border-border-default">
-            <p className="text-sm font-medium">{counts.source} Sources</p>
-          </div>
-          <div className="p-4 bg-bg-raised rounded-lg border border-border-default">
-            <p className="text-sm font-medium">{counts.synthesis} Synthesis</p>
-          </div>
+        {/* Tab bar */}
+        <div className="flex gap-1 rounded-lg bg-bg-raised p-1 mb-6 w-fit">
+          <button
+            onClick={() => setViewMode('browse')}
+            className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5 ${
+              viewMode === 'browse'
+                ? 'bg-accent text-white'
+                : 'text-text-muted hover:text-text-primary'
+            }`}
+          >
+            <BookOpen className="h-3.5 w-3.5" />
+            Browse
+          </button>
+          <button
+            onClick={() => setViewMode('graph')}
+            className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5 ${
+              viewMode === 'graph'
+                ? 'bg-accent text-white'
+                : 'text-text-muted hover:text-text-primary'
+            }`}
+          >
+            <Network className="h-3.5 w-3.5" />
+            Graph
+          </button>
         </div>
+
+        {viewMode === 'browse' ? (
+          <>
+            <h1 className="text-2xl font-bold mb-4">Wiki</h1>
+            <p className="text-text-muted mb-6">
+              Select a page from the sidebar or search to get started.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-bg-raised rounded-lg border border-border-default">
+                <p className="text-sm font-medium">{counts.entity} Entities</p>
+              </div>
+              <div className="p-4 bg-bg-raised rounded-lg border border-border-default">
+                <p className="text-sm font-medium">{counts.concept} Concepts</p>
+              </div>
+              <div className="p-4 bg-bg-raised rounded-lg border border-border-default">
+                <p className="text-sm font-medium">{counts.source} Sources</p>
+              </div>
+              <div className="p-4 bg-bg-raised rounded-lg border border-border-default">
+                <p className="text-sm font-medium">{counts.synthesis} Synthesis</p>
+              </div>
+            </div>
+          </>
+        ) : (
+          <GraphView pages={pages} isLoading={loading} />
+        )}
       </div>
     </div>
   );

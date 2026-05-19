@@ -13,7 +13,6 @@ import {
   Sparkles,
   Heart,
   Volume2,
-  Network,
   GitBranch,
   Clock,
   ListTodo,
@@ -44,7 +43,6 @@ const navItems = [
   { href: "/narrative-threads", label: "Threads", icon: GitBranch },
   { href: "/timeline", label: "Timeline", icon: Clock },
   { href: "/voice-combiner", label: "Voice Mixer", icon: Volume2 },
-  { href: "/wiki/graph", label: "Graph", icon: Network },
   { href: "/jobs", label: "Jobs", icon: ListTodo },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
