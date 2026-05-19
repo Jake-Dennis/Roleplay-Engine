@@ -8,7 +8,7 @@ import {
   WikiFrontmatter,
 } from "@/lib/wiki/file-io";
 import { generateIndex } from "@/lib/wiki/index-generator";
-import { findOrphans } from "@/lib/wiki/orphans";
+import { findOrphans, getOrphanSuggestions } from "@/lib/wiki/orphans";
 import path from "path";
 import fs from "fs";
 
@@ -26,6 +26,11 @@ export async function GET(request: NextRequest) {
 
   const pages = listWikiPages(wikiRoot);
   const orphanPaths = findOrphans(wikiRoot);
+  const orphanSuggestions = getOrphanSuggestions(orphanPaths, pages);
+  const suggestionsObj: Record<string, string[]> = {};
+  for (const [orphanPath, suggestions] of orphanSuggestions) {
+    suggestionsObj[orphanPath] = suggestions.map(s => path.relative(wikiRoot, s).replace(/\\/g, "/"));
+  }
 
   return NextResponse.json({
     pages: pages.map((p) => ({
@@ -34,6 +39,7 @@ export async function GET(request: NextRequest) {
       frontmatter: p.frontmatter,
     })),
     orphanPaths,
+    orphanSuggestions: suggestionsObj,
   });
 }
 
