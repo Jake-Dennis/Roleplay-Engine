@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   // Check cache first
   const cached = getCachedAudio(decoded.sub, text, voice, speed, format);
   if (cached) {
-    return new NextResponse(cached.buffer as unknown as Blob, {
+    return new NextResponse(new Blob([new Uint8Array(cached.buffer)]), {
       headers: {
         "Content-Type": `audio/${format}`,
         "X-Cache": "HIT",
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     const audio = await generateSpeech(text, voice, format, speed);
     cacheAudio(decoded.sub, text, voice, speed, format, audio);
 
-    return new NextResponse(audio as unknown as Blob, {
+    return new NextResponse(new Blob([new Uint8Array(audio)]), {
       headers: {
         "Content-Type": `audio/${format}`,
         "X-Cache": "MISS",

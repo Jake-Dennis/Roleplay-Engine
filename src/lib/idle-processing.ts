@@ -251,7 +251,6 @@ export async function processIdleTime(userId: string, universeId: string | null 
     const sessionsNeedingSummaries = getSessionsNeedingSummaries(userId);
     for (const sessionId of sessionsNeedingSummaries.slice(0, 3)) {
       try {
-        const { queueJob } = await import("./job-processor");
         queueJob(userId, "summarize_messages", { sessionId }, "low");
       } catch {
         // Skip if queueing fails
