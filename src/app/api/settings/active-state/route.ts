@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { ensureGroupSupport } from "@/lib/group-migrations";
+import { getAuthToken } from '@/lib/auth-token';
 
 export async function PUT(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) {
     const headerToken = request.headers.get("x-auth-token");
     if (!headerToken) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

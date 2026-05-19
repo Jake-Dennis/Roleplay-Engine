@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
+import { getAuthToken } from '@/lib/auth-token';
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -31,7 +32,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) return new Response("Unauthorized", { status: 401 });
 
   const decoded = await verifyToken(token);

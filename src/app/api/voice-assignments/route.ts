@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
+import { getAuthToken } from '@/lib/auth-token';
 
 /**
  * GET /api/voice-assignments
@@ -8,7 +9,7 @@ import { verifyToken } from "@/lib/auth";
  * Returns the voice assignment for an entity, or null
  */
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const decoded = await verifyToken(token);
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
  * Create or update a voice assignment
  */
 export async function PUT(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const decoded = await verifyToken(token);
@@ -94,7 +95,7 @@ export async function PUT(request: NextRequest) {
  * Query: ?entityType=npc&entityId=xxx
  */
 export async function DELETE(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const decoded = await verifyToken(token);

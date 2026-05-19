@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { getAuthToken } from '@/lib/auth-token';
 
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const decoded = await verifyToken(token);

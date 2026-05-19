@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
+import { getAuthToken } from '@/lib/auth-token';
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -14,7 +15,7 @@ export const runtime = "nodejs";
  *  - job:completed  { jobId, type }
  */
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) return new Response("Unauthorized", { status: 401 });
 
   const decoded = await verifyToken(token);

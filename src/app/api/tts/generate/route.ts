@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateSpeech, getCachedAudio, cacheAudio } from "@/lib/tts";
 import { TTS_CONFIG } from "@/lib/config";
 import { verifyToken } from "@/lib/auth";
+import { getAuthToken } from '@/lib/auth-token';
 
 export async function POST(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

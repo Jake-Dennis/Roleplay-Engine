@@ -3,9 +3,10 @@ import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { OLLAMA_CONFIG, TTS_CONFIG } from "@/lib/config";
 import { fetchLocalModels } from "@/lib/ollama";
+import { getAuthToken } from '@/lib/auth-token';
 
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
 
   // Fetch local models in parallel
   const localModels = await fetchLocalModels();
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const decoded = await verifyToken(token);

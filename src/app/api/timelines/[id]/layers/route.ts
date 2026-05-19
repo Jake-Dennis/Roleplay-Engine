@@ -3,6 +3,7 @@ import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { rowToJson } from "@/lib/row-to-json";
 import type { DbParams } from "@/lib/types";
+import { getAuthToken } from '@/lib/auth-token';
 
 const VALID_LAYER_TYPES = ["era", "faction", "active_characters"] as const;
 
@@ -12,7 +13,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
@@ -52,7 +53,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });

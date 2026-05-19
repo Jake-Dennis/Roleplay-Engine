@@ -4,6 +4,7 @@ import { getDb } from "@/lib/db";
 import { processRelationshipDecay, getDecayStats } from "@/lib/relationship-decay";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
 import type { DbDatabase, DbResult } from "@/lib/types";
+import { getAuthToken } from '@/lib/auth-token';
 
 function hasRelationshipAccess(db: DbDatabase, relationshipId: string, userId: string): DbResult | null {
   const rel = db.prepare(
@@ -28,7 +29,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const decoded = await verifyToken(token);
@@ -57,7 +58,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const decoded = await verifyToken(token);

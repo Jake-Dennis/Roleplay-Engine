@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken, getUserById } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { ensureGroupSupport } from "@/lib/group-migrations";
+import { getAuthToken } from '@/lib/auth-token';
 
 export async function GET(request: NextRequest) {
-  let token = request.cookies.get("auth-token")?.value;
+  let token = getAuthToken(request);
   if (!token) {
     token = request.headers.get("x-auth-token") || undefined;
   }

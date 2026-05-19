@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { processIdleTier } from "@/lib/idle-processing";
+import { getAuthToken } from '@/lib/auth-token';
 
 /**
  * POST /api/idle/heartbeat
@@ -12,7 +13,7 @@ import { processIdleTier } from "@/lib/idle-processing";
  * Body: { idleTime: number, tier: number, page: string }
  */
 export async function POST(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const decoded = await verifyToken(token);

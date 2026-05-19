@@ -4,6 +4,7 @@ import { APP_CONFIG } from "@/lib/config";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 import path from "path";
 import fs from "fs";
+import { getAuthToken } from '@/lib/auth-token';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_EXTENSIONS = new Set([
@@ -11,7 +12,7 @@ const ALLOWED_EXTENSIONS = new Set([
 ]);
 
 export async function POST(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });

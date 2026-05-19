@@ -5,9 +5,10 @@ import { listWikiPages } from "@/lib/wiki/file-io";
 import { buildLinkGraph, detectCollisions } from "@/lib/wiki/wikilinks";
 import path from "path";
 import fs from "fs";
+import { getAuthToken } from '@/lib/auth-token';
 
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const decoded = await verifyToken(token);

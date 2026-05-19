@@ -4,9 +4,10 @@ import { APP_CONFIG } from "@/lib/config";
 import { lintWiki } from "@/lib/wiki/lint";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 import path from "path";
+import { getAuthToken } from '@/lib/auth-token';
 
 export async function POST(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });

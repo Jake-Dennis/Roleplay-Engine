@@ -5,13 +5,14 @@ import { queueJob } from "@/lib/job-processor";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { ensureGroupSupport } from "@/lib/group-migrations";
 import { unauthorizedError, notFoundError, forbiddenError, badRequestError, internalError } from "@/lib/error-response";
+import { getAuthToken } from '@/lib/auth-token';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const token = request.cookies.get("auth-token")?.value;
+    const token = getAuthToken(request);
     if (!token) return unauthorizedError();
 
     const decoded = await verifyToken(token);
@@ -52,7 +53,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const token = request.cookies.get("auth-token")?.value;
+    const token = getAuthToken(request);
     if (!token) return unauthorizedError();
 
     const decoded = await verifyToken(token);

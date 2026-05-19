@@ -8,6 +8,7 @@ import { queueJob } from "@/lib/job-processor";
 import { OLLAMA_CONFIG } from "@/lib/config";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 import type { DbDatabase } from "@/lib/types";
+import { getAuthToken } from '@/lib/auth-token';
 
 function getSessionSettings(db: DbDatabase, sessionId: string) {
   const rows = db.prepare(
@@ -34,7 +35,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const decoded = await verifyToken(token);

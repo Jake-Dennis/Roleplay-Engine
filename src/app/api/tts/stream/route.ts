@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { generateSpeechStream } from "@/lib/tts";
+import { getAuthToken } from '@/lib/auth-token';
 
 export async function POST(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
+  const token = getAuthToken(request);
   if (!token) return new Response("Unauthorized", { status: 401 });
 
   const decoded = await verifyToken(token);
