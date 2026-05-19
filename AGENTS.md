@@ -7,7 +7,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 # PROJECT KNOWLEDGE BASE — Roleplay-Engine
 
 **Generated:** 2026-05-20
-**Commit:** b608f21
+**Commit:** 9267d10
 **Branch:** master
 
 ## OVERVIEW
