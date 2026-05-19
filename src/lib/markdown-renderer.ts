@@ -32,8 +32,12 @@ export function renderMarkdownPreview(md: string): string {
   // Wikilinks
   html = html.replace(/\[\[([^\]]+)\]\]/g, '<span class="text-accent underline cursor-pointer">[[$1]]</span>');
 
-  // Links
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-accent underline">$1</a>');
+  // Links — validate URL scheme to prevent XSS (javascript:, data:, etc.)
+  const SAFE_SCHEMES = /^(https?:|mailto:|tel:|\/|#)/i;
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, text, href) => {
+    const safeHref = SAFE_SCHEMES.test(href) ? href : "#";
+    return `<a href="${safeHref}" class="text-accent underline">${text}</a>`;
+  });
 
   // Unordered lists
   html = html.replace(/^[-*] (.+)$/gm, '<li class="ml-4 list-disc text-text-secondary">$1</li>');

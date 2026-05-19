@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { APP_CONFIG } from "@/lib/config";
 import { validatePage } from "@/lib/wiki/validation";
+import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import path from "path";
 import fs from "fs";
 
@@ -21,7 +22,7 @@ export async function PUT(
   const fullPath = path.join(wikiRoot, relativePath);
 
   // Security: prevent path traversal
-  if (!fullPath.startsWith(wikiRoot)) {
+  if (!isPathWithinRoot(fullPath, wikiRoot)) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
 

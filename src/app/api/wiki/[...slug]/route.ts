@@ -14,6 +14,7 @@ import { saveRevision } from "@/lib/wiki/revisions";
 import { generateIndex } from "@/lib/wiki/index-generator";
 import { findOrphans } from "@/lib/wiki/orphans";
 import { parseWikilinks } from "@/lib/wiki/wikilinks";
+import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import path from "path";
 import fs from "fs";
 
@@ -175,7 +176,7 @@ export async function GET(
   const fullPath = path.join(wikiRoot, relativePath);
 
   // Security: prevent path traversal
-  if (!fullPath.startsWith(wikiRoot)) {
+  if (!isPathWithinRoot(fullPath, wikiRoot)) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
 
@@ -281,7 +282,7 @@ export async function PUT(
   const fullPath = path.join(wikiRoot, relativePath);
 
   // Security: prevent path traversal
-  if (!fullPath.startsWith(wikiRoot)) {
+  if (!isPathWithinRoot(fullPath, wikiRoot)) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
 
@@ -349,7 +350,7 @@ export async function DELETE(
   const fullPath = path.join(wikiRoot, relativePath);
 
   // Security: prevent path traversal
-  if (!fullPath.startsWith(wikiRoot)) {
+  if (!isPathWithinRoot(fullPath, wikiRoot)) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
 

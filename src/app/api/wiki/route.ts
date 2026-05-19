@@ -9,6 +9,7 @@ import {
 } from "@/lib/wiki/file-io";
 import { generateIndex } from "@/lib/wiki/index-generator";
 import { findOrphans, getOrphanSuggestions } from "@/lib/wiki/orphans";
+import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import path from "path";
 import fs from "fs";
 
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
   const fullPath = path.join(wikiRoot, relativePath);
 
   // Security: prevent path traversal
-  if (!fullPath.startsWith(wikiRoot)) {
+  if (!isPathWithinRoot(fullPath, wikiRoot)) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
 

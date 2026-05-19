@@ -3,6 +3,7 @@ import { verifyToken } from "@/lib/auth";
 import { APP_CONFIG } from "@/lib/config";
 import { readWikiPage } from "@/lib/wiki/file-io";
 import { checkPageSize, suggestSplit } from "@/lib/wiki/page-split";
+import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import path from "path";
 import fs from "fs";
 
@@ -21,7 +22,7 @@ export async function GET(
   const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
   const fullPath = path.join(wikiRoot, relativePath);
 
-  if (!fullPath.startsWith(wikiRoot)) return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+  if (!isPathWithinRoot(fullPath, wikiRoot)) return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   if (!fs.existsSync(fullPath)) return NextResponse.json({ error: "Wiki page not found" }, { status: 404 });
 
   const page = readWikiPage(fullPath);

@@ -3,6 +3,7 @@ import { verifyToken } from "@/lib/auth";
 import { APP_CONFIG } from "@/lib/config";
 import { readWikiPage } from "@/lib/wiki/file-io";
 import { listRevisions, saveRevision, getRevision } from "@/lib/wiki/revisions";
+import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import path from "path";
 import fs from "fs";
 
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
   const fullPath = path.join(wikiRoot, relativePath);
 
   // Security: prevent path traversal
-  if (!fullPath.startsWith(wikiRoot)) {
+  if (!isPathWithinRoot(fullPath, wikiRoot)) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
 
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
   const relativePath = slugParam.endsWith(".md") ? slugParam : `${slugParam}.md`;
   const fullPath = path.join(wikiRoot, relativePath);
 
-  if (!fullPath.startsWith(wikiRoot)) {
+  if (!isPathWithinRoot(fullPath, wikiRoot)) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
 
