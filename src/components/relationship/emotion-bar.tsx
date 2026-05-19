@@ -8,8 +8,6 @@
  *   <EmotionBar label="trust" value={0.75} />
  */
 
-"use client";
-
 import { EMOTION_COLORS } from "@/lib/entity-constants";
 
 interface EmotionBarProps {

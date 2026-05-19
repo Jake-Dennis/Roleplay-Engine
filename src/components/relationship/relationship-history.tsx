@@ -8,8 +8,6 @@
  *   <RelationshipHistory entries={history} loading={loading} />
  */
 
-"use client";
-
 import { Clock, Sparkles } from "lucide-react";
 import { EmotionBar } from "./emotion-bar";
 
