@@ -3,7 +3,15 @@ import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "change-this-to-a-random-secret-key"
+  (() => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error(
+        "FATAL: JWT_SECRET environment variable is required. Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\""
+      );
+    }
+    return secret;
+  })()
 );
 
 // Routes that don't require authentication

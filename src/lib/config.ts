@@ -36,7 +36,15 @@ export const TTS_CONFIG = {
 };
 
 export const AUTH_CONFIG = {
-  jwtSecret: process.env.JWT_SECRET || "change-this-to-a-random-secret-key",
+  jwtSecret: (() => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error(
+        "FATAL: JWT_SECRET environment variable is required. Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\""
+      );
+    }
+    return secret;
+  })(),
   jwtExpiry: 86400, // 24 hours in seconds
   bcryptRounds: 12,
   usernameMinLength: 3,

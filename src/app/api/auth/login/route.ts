@@ -41,11 +41,11 @@ export async function POST(request: NextRequest) {
       token: result.token,
     });
 
-    // Set cookie with relaxed settings for IP-based dev access
+    // Set secure httpOnly cookie — XSS-resistant, MITM-resistant
     response.cookies.set("auth-token", result.token, {
-      httpOnly: false,
-      secure: false,
-      sameSite: "lax",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
       maxAge: 60 * 60 * 24,
       path: "/",
     });
