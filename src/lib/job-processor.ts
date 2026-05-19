@@ -22,7 +22,7 @@ import { processEmbeddings } from "@/lib/embeddings";
 import { processRelationshipAnalysis } from "@/lib/relationship-analysis";
 import { generateText } from "@/lib/ollama";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
-import { runIdleEnrichment } from "@/lib/idle-enrichment";
+import { runIdleEnrichment } from "@/lib/processing-coordinator";
 import { PROMPTS } from "@/lib/prompts";
 
 // Extracted job handlers

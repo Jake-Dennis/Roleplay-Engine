@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState, useMemo, memo } from "react";
+import { useEffect, useState, memo } from "react";
 import Link from "next/link";
 import {
   MessageSquare,
@@ -26,25 +26,6 @@ import { FPSCounter } from "@/components/ui/fps-counter";
 import { ConnectionIndicator } from "@/components/ui/connection-indicator";
 import { useIdleTracker } from "@/hooks/use-idle-tracker";
 import { useApp } from "@/contexts/app-context";
-
-interface AppUser {
-  id: string;
-  username: string;
-}
-
-interface SessionItem {
-  id: string;
-  name: string;
-  type: string;
-  group_id: string | null;
-  universe_id: string | null;
-}
-
-interface UniverseItem {
-  id: string;
-  name: string;
-  group_id: string | null;
-}
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -158,21 +139,8 @@ const GroupSelector = memo(function GroupSelector() {
 });
 
 const SessionSelector = memo(function SessionSelector() {
-  const { activeSession, setActiveSession, activeGroup, loading } = useApp();
+  const { activeSession, setActiveSession, sessions, loading } = useApp();
   const [open, setOpen] = useState(false);
-  const [localSessions, setLocalSessions] = useState<SessionItem[]>([]);
-
-  // Fetch sessions when dropdown opens - filtered by active group context
-  useEffect(() => {
-    if (open) {
-      // Browser automatically sends httpOnly cookies with same-origin requests
-      const url = activeGroup ? `/api/sessions?group_id=${activeGroup.id}` : "/api/sessions?scope=personal";
-      fetch(url)
-        .then((res) => res.ok ? res.json() : { sessions: [] })
-        .then((data) => setLocalSessions(data.sessions || []))
-        .catch(() => setLocalSessions([]));
-    }
-  }, [open, activeGroup?.id]);
 
   if (loading) {
     return (
@@ -207,10 +175,10 @@ const SessionSelector = memo(function SessionSelector() {
 
       {open && (
         <div className="absolute left-3 right-3 z-50 mt-1 rounded-lg border border-border-default bg-bg-elevated py-1 shadow-lg">
-          {localSessions.length === 0 ? (
+          {sessions.length === 0 ? (
             <div className="px-3 py-2 text-xs text-text-muted">No sessions yet</div>
           ) : (
-            localSessions.map((s: SessionItem) => (
+            sessions.map((s) => (
               <button
                 key={s.id}
                 onClick={() => { setActiveSession(s); setOpen(false); }}
@@ -245,21 +213,8 @@ const SessionSelector = memo(function SessionSelector() {
 });
 
 const UniverseSelector = memo(function UniverseSelector() {
-  const { activeUniverse, setActiveUniverse, activeSession, activeGroup, loading } = useApp();
+  const { activeUniverse, setActiveUniverse, universes, loading } = useApp();
   const [open, setOpen] = useState(false);
-  const [localUniverses, setLocalUniverses] = useState<UniverseItem[]>([]);
-
-  // Fetch universes when dropdown opens - filtered by active group context
-  useEffect(() => {
-    if (open) {
-      // Browser automatically sends httpOnly cookies with same-origin requests
-      const url = activeGroup ? `/api/universes?group_id=${activeGroup.id}` : "/api/universes?scope=personal";
-      fetch(url)
-        .then((res) => res.ok ? res.json() : { universes: [] })
-        .then((data) => setLocalUniverses(data.universes || []))
-        .catch(() => setLocalUniverses([]));
-    }
-  }, [open, activeGroup?.id]);
 
   if (loading) {
     return (
@@ -290,10 +245,10 @@ const UniverseSelector = memo(function UniverseSelector() {
 
       {open && (
         <div className="absolute left-3 right-3 z-50 mt-1 rounded-lg border border-border-default bg-bg-elevated py-1 shadow-lg">
-          {localUniverses.length === 0 ? (
+          {universes.length === 0 ? (
             <div className="px-3 py-2 text-xs text-text-muted">No universes yet</div>
           ) : (
-            localUniverses.map((u: UniverseItem) => (
+            universes.map((u) => (
               <button
                 key={u.id}
                 onClick={() => { setActiveUniverse(u); setOpen(false); }}
@@ -326,10 +281,7 @@ const UniverseSelector = memo(function UniverseSelector() {
 export function AppLayoutShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<AppUser | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { activeSession, setActiveSession, refreshAll } = useApp();
+  const { user, loading, activeSession, setActiveSession, refreshAll } = useApp();
 
   // Sync session from URL
   useEffect(() => {
@@ -357,19 +309,6 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
-    // Browser automatically sends httpOnly cookies with same-origin requests
-    const timeout = setTimeout(() => {
-      setError("Connection timed out. Server may be unreachable.");
-      setLoading(false);
-    }, 5000);
-
-    fetch("/api/auth/me")
-      .then((res) => { if (!res.ok) throw new Error("Not authenticated"); return res.json(); })
-      .then((data) => { clearTimeout(timeout); setUser(data.user); setLoading(false); })
-      .catch((err) => { clearTimeout(timeout); setError(err.message); setLoading(false); });
-  }, [router]);
-
-  useEffect(() => {
     renderLoop.start();
     return () => renderLoop.stop();
   }, []);
@@ -387,7 +326,6 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col items-center gap-2 text-text-muted">
           <Sparkles className="h-4 w-4 animate-pulse" />
           <span className="text-xs">Loading...</span>
-          {error && <span className="text-xs text-error">{error}</span>}
         </div>
       </div>
     );

@@ -21,7 +21,7 @@ import {
   processJobsByType,
   queueJob,
   type JobType,
-} from "@/lib/job-processor";
+} from "@/lib/processing-coordinator";
 import { getSessionsNeedingSummaries } from "@/lib/summarization";
 import { getEntitiesNeedingEmbeddings, processEmbeddings } from "@/lib/embeddings";
 import { getSessionsNeedingRelationshipAnalysis, processRelationshipAnalysis } from "@/lib/relationship-analysis";
@@ -251,7 +251,7 @@ export async function processIdleTime(userId: string, universeId: string | null 
     const sessionsNeedingSummaries = getSessionsNeedingSummaries(userId);
     for (const sessionId of sessionsNeedingSummaries.slice(0, 3)) {
       try {
-        const { queueJob } = await import("./job-processor");
+        const { queueJob } = await import("./processing-coordinator");
         queueJob(userId, "summarize_messages", { sessionId }, "low");
       } catch {
         // Skip if queueing fails

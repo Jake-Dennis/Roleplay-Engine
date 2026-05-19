@@ -26,7 +26,13 @@ interface Group {
   universe_count: number;
 }
 
+interface AppUser {
+  id: string;
+  username: string;
+}
+
 interface AppContextType {
+  user: AppUser | null;
   activeUniverse: Universe | null;
   universes: Universe[];
   setActiveUniverse: (universe: Universe) => void;
@@ -54,6 +60,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [universes, setUniverses] = useState<Universe[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [activeUniverse, setActiveUniverseState] = useState<Universe | null>(null);
   const [activeSession, setActiveSessionState] = useState<Session | null>(null);
   const [activeGroup, setActiveGroupState] = useState<Group | null>(null);
@@ -98,6 +105,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // DB-backed active state from /api/auth/me
       const dbState: ActiveState = authData?.activeState || { groupId: null, sessionId: null, universeId: null };
       logger.debug('DB state:', dbState);
+
+      // Extract user from auth response
+      if (authData?.user) {
+        setUser({ id: authData.user.id, username: authData.user.username });
+      }
 
       // Sync DB state to localStorage cache
       localStorage.setItem(ACTIVE_STATE_KEY, JSON.stringify(dbState));
@@ -249,7 +261,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      activeUniverse, universes, setActiveUniverse, loading,
+      user, activeUniverse, universes, setActiveUniverse, loading,
       activeSession, sessions, setActiveSession,
       activeGroup, groups, setActiveGroup,
       refreshAll,
