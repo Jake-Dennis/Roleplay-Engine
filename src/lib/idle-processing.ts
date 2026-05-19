@@ -27,6 +27,7 @@ import { getEntitiesNeedingEmbeddings, processEmbeddings } from "@/lib/embedding
 import { getSessionsNeedingRelationshipAnalysis, processRelationshipAnalysis } from "@/lib/relationship-analysis";
 import { needsDecayProcessing } from "@/lib/relationship-decay";
 import { needsMemoryCompression } from "@/lib/memory-compression";
+import { TIME, CONTENT_LIMITS, IDLE_TIERS } from "@/lib/config";
 
 // Wiki I/O modules
 import { listWikiPages, writeWikiPage, readWikiPage, WikiFrontmatter } from "@/lib/wiki/file-io";
@@ -39,10 +40,10 @@ import fs from "fs";
 
 // Processing tier thresholds (in milliseconds)
 const TIER_THRESHOLDS = {
-  tier1_5min: 5 * 60 * 1000,
-  tier2_10min: 10 * 60 * 1000,
-  tier3_15min: 15 * 60 * 1000,
-  tier4_30min: 30 * 60 * 1000,
+  tier1_5min: IDLE_TIERS.TIER_1,
+  tier2_10min: IDLE_TIERS.TIER_2,
+  tier3_15min: IDLE_TIERS.TIER_3,
+  tier4_30min: IDLE_TIERS.TIER_4,
 };
 
 export interface IdleProcessingResult {
@@ -90,7 +91,7 @@ async function wikiCompressSummaries(userId: string, universeId?: string): Promi
   if (!fs.existsSync(wikiRoot)) return { compressed: 0, errors: ["Wiki root not found"] };
 
   const pages = listWikiPages(wikiRoot);
-  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const sevenDaysAgo = Date.now() - TIME.SEVEN_DAYS;
   let compressed = 0;
   const errors: string[] = [];
 
@@ -230,7 +231,7 @@ async function wikiDeepenPages(userId: string, universeId?: string): Promise<{ d
   if (!fs.existsSync(wikiRoot)) return { deepened: 0, errors: ["Wiki root not found"] };
 
   const pages = listWikiPages(wikiRoot);
-  const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
+  const threeDaysAgo = Date.now() - TIME.THREE_DAYS;
 
   const pagesToDeepen = pages
     .filter((p) => {
@@ -295,7 +296,7 @@ async function wikiEnrichEntities(userId: string, universeId?: string): Promise<
 
   for (const page of entitiesToEnrich) {
     const title = page.frontmatter.title || path.basename(page.path, ".md");
-    const prompt = PROMPTS.wikiEnrichEntity(title, page.content.slice(0, 1000));
+    const prompt = PROMPTS.wikiEnrichEntity(title, page.content.slice(0, CONTENT_LIMITS.SUMMARY_CHUNK));
 
     try {
       const enrichment = await generateText(prompt, { userId });
@@ -398,7 +399,7 @@ async function wikiArchive(userId: string, universeId?: string): Promise<{ archi
   if (!fs.existsSync(wikiRoot)) return { archived: 0, errors: ["Wiki root not found"] };
 
   const pages = listWikiPages(wikiRoot);
-  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const thirtyDaysAgo = Date.now() - TIME.THIRTY_DAYS;
 
   // Find old draft pages with no recent updates
   const archiveCandidates = pages
@@ -417,7 +418,7 @@ async function wikiArchive(userId: string, universeId?: string): Promise<{ archi
   for (const page of archiveCandidates) {
     try {
       // Summarize before archiving
-      const prompt = PROMPTS.wikiSummarizePageOneSentence(page.content.slice(0, 300));
+      const prompt = PROMPTS.wikiSummarizePageOneSentence(page.content.slice(0, CONTENT_LIMITS.PREVIEW));
       const summary = await generateText(prompt, { temperature: 0.2, num_ctx: 2048, userId });
 
       const updatedFrontmatter: WikiFrontmatter = {
@@ -713,7 +714,7 @@ export async function processIdleTime(userId: string, universeId: string | null 
             db.prepare("UPDATE narrative_memories SET content = ?, importance = 'low' WHERE id = ?").run(memory.content.slice(0, 200), memory.id);
             result.memoriesCompressed++;
           } else if (age >= 7) {
-            db.prepare("UPDATE narrative_memories SET content = ? WHERE id = ?").run(memory.content.slice(0, 300), memory.id);
+            db.prepare("UPDATE narrative_memories SET content = ? WHERE id = ?").run(memory.content.slice(0, CONTENT_LIMITS.PREVIEW), memory.id);
             result.memoriesCompressed++;
           }
         }

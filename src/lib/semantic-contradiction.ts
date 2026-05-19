@@ -18,6 +18,7 @@
 import { getDb } from "@/lib/db";
 import { generateText } from "@/lib/ollama";
 import { vectorSearch } from "@/lib/vector-search";
+import { CONTENT_LIMITS } from "@/lib/config";
 import * as fs from "fs";
 
 export interface CanonEntry {
@@ -125,7 +126,7 @@ export async function findSimilarCanonEntries(
         entityType: result.entityType,
         entityId: result.entityId,
         title,
-        content: fullContent.slice(0, 1000),
+        content: fullContent.slice(0, CONTENT_LIMITS.SUMMARY_CHUNK),
         similarity: Math.round(similarity * 100) / 100,
       });
     }
@@ -280,7 +281,7 @@ export async function scanUnverifiedLoreForContradictions(
         if (row?.file_path) {
           try {
             if (fs.existsSync(row.file_path)) {
-              content = fs.readFileSync(row.file_path, "utf-8").slice(0, 1000);
+              content = fs.readFileSync(row.file_path, "utf-8").slice(0, CONTENT_LIMITS.SUMMARY_CHUNK);
             }
           } catch {
             // skip

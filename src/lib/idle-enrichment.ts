@@ -24,6 +24,7 @@
 import { getDb } from "@/lib/db";
 import { generateText } from "@/lib/ollama";
 import { PROMPTS } from "@/lib/prompts";
+import { TIME, CONTENT_LIMITS } from "@/lib/config";
 
 // Wiki I/O modules
 import { listWikiPages, writeWikiPage, readWikiPage, WikiFrontmatter } from "@/lib/wiki/file-io";
@@ -64,7 +65,7 @@ async function wikiCompressOldSummaries(userId: string, universeId: string | nul
   if (!fs.existsSync(wikiRoot)) return 0;
 
   const pages = listWikiPages(wikiRoot);
-  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const sevenDaysAgo = Date.now() - TIME.SEVEN_DAYS;
   let compressed = 0;
 
   for (const page of pages.slice(0, 10)) {
@@ -268,7 +269,7 @@ async function wikiEnrichNPCBackstories(userId: string, universeId: string | nul
 
   for (const page of pagesToEnrich) {
     const title = page.frontmatter.title || path.basename(page.path, ".md");
-    const prompt = PROMPTS.wikiEnrichEntityAlt(title, page.content.slice(0, 1000));
+    const prompt = PROMPTS.wikiEnrichEntityAlt(title, page.content.slice(0, CONTENT_LIMITS.SUMMARY_CHUNK));
 
     try {
       const enrichment = await generateText(prompt, { userId });
@@ -369,7 +370,7 @@ async function wikiArchiveLowImportanceMemories(userId: string, universeId: stri
   if (!fs.existsSync(wikiRoot)) return 0;
 
   const pages = listWikiPages(wikiRoot);
-  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const thirtyDaysAgo = Date.now() - TIME.THIRTY_DAYS;
 
   const archiveCandidates = pages
     .filter((p) => {
@@ -385,7 +386,7 @@ async function wikiArchiveLowImportanceMemories(userId: string, universeId: stri
 
   for (const page of archiveCandidates) {
     try {
-      const prompt = PROMPTS.wikiSummarizePageOneSentence(page.content.slice(0, 300));
+      const prompt = PROMPTS.wikiSummarizePageOneSentence(page.content.slice(0, CONTENT_LIMITS.PREVIEW));
       const summary = await generateText(prompt, { temperature: 0.2, num_ctx: 2048, userId });
 
       const updatedFrontmatter: WikiFrontmatter = {

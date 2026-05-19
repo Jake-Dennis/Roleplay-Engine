@@ -7,6 +7,7 @@ import {
 } from "./wikilinks";
 import { findOrphans } from "./orphans";
 import { generateText } from "../ollama";
+import { TIME } from "../config";
 
 // ---------------------------------------------------------------------------
 // Report Types
@@ -111,8 +112,8 @@ function detectStaleClaims(
 ): StaleClaim[] {
   const stale: StaleClaim[] = [];
   const now = Date.now();
-  const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
-  const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
+  const thirtyDaysMs = TIME.THIRTY_DAYS;
+  const ninetyDaysMs = TIME.NINETY_DAYS;
 
   // Compute the most recent update across all pages as a reference point
   let mostRecentUpdate = 0;

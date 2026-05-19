@@ -4,6 +4,7 @@ import { verifyToken } from "@/lib/auth";
 import { queueJob } from "@/lib/job-processor";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { ensureGroupSupport } from "@/lib/group-migrations";
+import { unauthorizedError, notFoundError, forbiddenError, badRequestError, internalError } from "@/lib/error-response";
 
 export async function GET(
   request: NextRequest,
@@ -11,7 +12,7 @@ export async function GET(
 ) {
   try {
     const token = request.cookies.get("auth-token")?.value;
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!token) return unauthorizedError();
 
     const decoded = await verifyToken(token);
     if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
@@ -27,7 +28,7 @@ export async function GET(
     `).get(sessionId, decoded.sub, decoded.sub);
 
     if (!session) {
-      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+      return notFoundError("Session");
     }
 
     const messages = db.prepare(`
@@ -42,7 +43,7 @@ export async function GET(
     return NextResponse.json({ messages });
   } catch (err) {
     console.error("GET /api/sessions/[id]/messages error:", err);
-    return NextResponse.json({ error: "Internal server error", details: err instanceof Error ? err.message : String(err) }, { status: 500 });
+    return internalError();
   }
 }
 
@@ -52,7 +53,7 @@ export async function POST(
 ) {
   try {
     const token = request.cookies.get("auth-token")?.value;
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!token) return unauthorizedError();
 
     const decoded = await verifyToken(token);
     if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
@@ -68,7 +69,7 @@ export async function POST(
     `).get(sessionId, decoded.sub, decoded.sub) as { id: string; universe_id: string | null } | undefined;
 
     if (!session) {
-      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+      return notFoundError("Session");
     }
 
     // Check if user is an observer (cannot send messages)
@@ -77,14 +78,14 @@ export async function POST(
     ).get(sessionId, decoded.sub) as { role: string } | undefined;
 
     if (participant?.role === "observer") {
-      return NextResponse.json({ error: "Observers cannot send messages" }, { status: 403 });
+      return forbiddenError();
     }
 
     const body = await request.json();
     const { content, personaId } = body;
 
     if (!content) {
-      return NextResponse.json({ error: "Content is required" }, { status: 400 });
+      return badRequestError("Content is required");
     }
 
     // Verify persona belongs to user if provided
@@ -93,7 +94,7 @@ export async function POST(
         "SELECT id FROM personas WHERE id = ? AND user_id = ?"
       ).get(personaId, decoded.sub);
       if (!persona) {
-        return NextResponse.json({ error: "Persona not found" }, { status: 404 });
+        return notFoundError("Persona");
       }
     }
 
@@ -145,6 +146,6 @@ export async function POST(
     return NextResponse.json({ message }, { status: 201 });
   } catch (err) {
     console.error("POST /api/sessions/[id]/messages error:", err);
-    return NextResponse.json({ error: "Internal server error", details: err instanceof Error ? err.message : String(err) }, { status: 500 });
+    return internalError();
   }
 }

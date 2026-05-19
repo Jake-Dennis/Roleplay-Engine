@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
+import { logger } from "@/lib/logger";
 
 export default function NewGroupPage() {
   const router = useRouter();
@@ -29,7 +30,7 @@ export default function NewGroupPage() {
       });
 
       const data = await res.json();
-      console.log("Create group response:", res.status, data);
+      logger.debug("Create group response:", res.status, data);
 
       if (!res.ok) {
         setError(data.error || "Failed to create group");

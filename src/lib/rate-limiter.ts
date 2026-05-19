@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { TIME } from '@/lib/config';
 
 interface RateLimitEntry {
   count: number;
@@ -13,10 +14,10 @@ interface RateLimitConfig {
 }
 
 export const RATE_LIMITS: Record<string, RateLimitConfig> = {
-  auth: { windowMs: 15 * 60 * 1000, maxRequests: 10 },
-  generate: { windowMs: 60 * 1000, maxRequests: 5 },
-  upload: { windowMs: 60 * 1000, maxRequests: 20 },
-  api: { windowMs: 60 * 1000, maxRequests: 100 },
+  auth: { windowMs: TIME.ONE_HOUR / 4, maxRequests: 10 },
+  generate: { windowMs: TIME.ONE_MINUTE, maxRequests: 5 },
+  upload: { windowMs: TIME.ONE_MINUTE, maxRequests: 20 },
+  api: { windowMs: TIME.ONE_MINUTE, maxRequests: 100 },
 };
 
 export function checkRateLimit(
@@ -50,7 +51,7 @@ export function createRateLimitResponse(retryAfter: number): Response {
 let lastCleanup = 0;
 export function cleanupExpiredEntries(): void {
   const now = Date.now();
-  if (now - lastCleanup < 5 * 60 * 1000) return;
+  if (now - lastCleanup < TIME.ONE_MINUTE * 5) return;
   lastCleanup = now;
   for (const [key, entry] of store.entries()) {
     if (now > entry.resetAt) store.delete(key);

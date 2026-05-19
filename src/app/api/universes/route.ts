@@ -3,6 +3,7 @@ import { withAuth } from "@/lib/with-auth";
 import { getDb } from "@/lib/db";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
 import type { DbResult } from "@/lib/types";
+import { forbiddenError, badRequestError, internalError } from "@/lib/error-response";
 
 function parseBoundaries(raw: string | null): string[] {
   if (!raw) return [];
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
 
   if (groupId) {
     if (!isGroupMember(db, groupId, userId)) {
-      return NextResponse.json({ error: "Not a member" }, { status: 403 });
+      return forbiddenError();
     }
     universes = db.prepare(
       `SELECT u.id, u.user_id, u.group_id, u.name, u.canon_mode, u.lore_source, u.tone, u.boundaries, u.created_at
@@ -75,19 +76,19 @@ export async function POST(request: NextRequest) {
   const { name, canon_mode = "strict", lore_source, tone, boundaries, group_id } = body;
 
   if (!name || !name.trim()) {
-    return NextResponse.json({ error: "Universe name is required" }, { status: 400 });
+    return badRequestError("Universe name is required");
   }
 
   const validModes = ["strict", "loose", "custom"];
   if (!validModes.includes(canon_mode)) {
-    return NextResponse.json({ error: `Invalid canon_mode. Must be one of: ${validModes.join(", ")}` }, { status: 400 });
+    return badRequestError(`Invalid canon_mode. Must be one of: ${validModes.join(", ")}`);
   }
 
   const db = getDb();
   ensureGroupSupport(db);
 
   if (group_id && !isGroupMember(db, group_id, userId)) {
-    return NextResponse.json({ error: "Not a member of this group" }, { status: 403 });
+    return forbiddenError();
   }
 
   const id = crypto.randomUUID();
@@ -109,7 +110,7 @@ export async function POST(request: NextRequest) {
     .get(id) as Record<string, unknown> | undefined;
 
   if (!universe) {
-    return NextResponse.json({ error: "Failed to create universe" }, { status: 500 });
+    return internalError();
   }
 
   const parsed = { ...universe, boundaries: parseBoundaries(universe.boundaries as string | null) };

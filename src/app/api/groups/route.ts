@@ -3,6 +3,7 @@ import { getDb } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { ensureGroupSupport } from "@/lib/group-migrations";
 import type { DbRow } from "@/lib/types";
+import { badRequestError, internalError } from "@/lib/error-response";
 
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ groups: result });
   } catch (e) {
     console.error("Groups GET error:", e);
-    return NextResponse.json({ error: "Failed to load groups" }, { status: 500 });
+    return internalError();
   }
 }
 
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
     const { name, description } = body;
 
     if (!name || !name.trim()) {
-      return NextResponse.json({ error: "Group name is required" }, { status: 400 });
+      return badRequestError("Group name is required");
     }
 
     const db = getDb();
@@ -84,6 +85,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ group }, { status: 201 });
   } catch (e) {
     console.error("Groups POST error:", e);
-    return NextResponse.json({ error: "Failed to create group" }, { status: 500 });
+    return internalError();
   }
 }

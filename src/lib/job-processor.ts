@@ -28,6 +28,7 @@ import { summarizeMessage } from "@/lib/message-summarizer";
 import { applyDecayToAllRelationships } from "@/lib/relationship-decay";
 import { runIdleEnrichment } from "@/lib/idle-enrichment";
 import { PROMPTS } from "@/lib/prompts";
+import { TIME, CONTENT_LIMITS } from "@/lib/config";
 
 // Wiki I/O modules (Wave 1-3)
 import { ingestSource } from "@/lib/wiki/ingest";
@@ -1031,7 +1032,7 @@ async function handleWikiEnrichEntity(jobId: string, payload: JobPayload): Promi
     const page = entitiesToEnrich[i];
     const title = page.frontmatter.title || page.path;
 
-    const prompt = PROMPTS.wikiEnrichEntity(title, page.content.slice(0, 1000));
+    const prompt = PROMPTS.wikiEnrichEntity(title, page.content.slice(0, CONTENT_LIMITS.SUMMARY_CHUNK));
 
     try {
       const enrichment = await generateText(prompt, { userId: userId as string });
@@ -1219,7 +1220,7 @@ async function handleWikiDeepenPage(jobId: string, payload: JobPayload): Promise
     pagesToDeepen = allPages
       .filter((p) => {
         const matchUniverse = !universeId || p.frontmatter.universe === universeId;
-        const isOld = !p.frontmatter.updated || new Date(p.frontmatter.updated) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+        const isOld = !p.frontmatter.updated || new Date(p.frontmatter.updated) < new Date(Date.now() - TIME.THREE_DAYS);
         return matchUniverse && isOld;
       })
       .slice(0, 5);

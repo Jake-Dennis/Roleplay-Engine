@@ -3,6 +3,7 @@ import { getDb } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
 import type { DbResult } from "@/lib/types";
+import { forbiddenError, badRequestError } from "@/lib/error-response";
 
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
 
   if (groupId) {
     if (!isGroupMember(db, groupId, userId)) {
-      return NextResponse.json({ error: "Not a member" }, { status: 403 });
+      return forbiddenError();
     }
     sessions = db.prepare(`
       SELECT s.*, u.username as owner_name
@@ -65,14 +66,14 @@ export async function POST(request: NextRequest) {
   const { name, universe_id, timeline_id, type = "solo", group_id } = body;
 
   if (!name) {
-    return NextResponse.json({ error: "Session name is required" }, { status: 400 });
+    return badRequestError("Session name is required");
   }
 
   const db = getDb();
   ensureGroupSupport(db);
 
   if (group_id && !isGroupMember(db, group_id, userId)) {
-    return NextResponse.json({ error: "Not a member of this group" }, { status: 403 });
+    return forbiddenError();
   }
 
   const id = crypto.randomUUID();

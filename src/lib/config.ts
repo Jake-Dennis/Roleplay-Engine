@@ -66,6 +66,7 @@ export const TIME = {
   THREE_DAYS: 3 * 24 * 60 * 60 * 1000,
   SEVEN_DAYS: 7 * 24 * 60 * 60 * 1000,
   THIRTY_DAYS: 30 * 24 * 60 * 60 * 1000,
+  NINETY_DAYS: 90 * 24 * 60 * 60 * 1000,
 } as const;
 
 export const CONTENT_LIMITS = {
@@ -73,4 +74,11 @@ export const CONTENT_LIMITS = {
   MEDIUM: 5000,
   PREVIEW: 300,
   SUMMARY_CHUNK: 1000,
+} as const;
+
+export const IDLE_TIERS = {
+  TIER_1: 5 * 60 * 1000,
+  TIER_2: 10 * 60 * 1000,
+  TIER_3: 15 * 60 * 1000,
+  TIER_4: 30 * 60 * 1000,
 } as const;

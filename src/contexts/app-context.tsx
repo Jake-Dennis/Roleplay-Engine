@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { logger } from "@/lib/logger";
 
 interface Universe {
   id: string;
@@ -74,7 +75,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })();
     const merged = { ...current, ...updates };
     localStorage.setItem(ACTIVE_STATE_KEY, JSON.stringify(merged));
-    console.log('[AppProvider] saveStateToDb:', updates, '→ merged:', merged);
+    logger.debug('saveStateToDb:', updates, '→ merged:', merged);
 
     // Sync to DB (fire-and-forget)
     fetch("/api/settings/active-state", {
@@ -96,7 +97,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ]).then(([authData, universeData, sessionData, groupData]) => {
       // DB-backed active state from /api/auth/me
       const dbState: ActiveState = authData?.activeState || { groupId: null, sessionId: null, universeId: null };
-      console.log('[AppProvider] DB state:', dbState);
+      logger.debug('DB state:', dbState);
 
       // Sync DB state to localStorage cache
       localStorage.setItem(ACTIVE_STATE_KEY, JSON.stringify(dbState));
@@ -145,7 +146,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setActiveSessionState(foundSession);
           restoredSession = foundSession;
         } else {
-          console.log('[AppProvider] Session not found or group mismatch:', dbState.sessionId);
+          logger.debug('Session not found or group mismatch:', dbState.sessionId);
         }
       }
 
@@ -156,7 +157,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setActiveUniverseState(found);
           restoredUniverse = found;
         } else {
-          console.log('[AppProvider] Universe not found or group mismatch:', dbState.universeId);
+          logger.debug('Universe not found or group mismatch:', dbState.universeId);
         }
       }
 
@@ -175,7 +176,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setSessions(filteredSessions);
       setGroups(groupList);
 
-      console.log('[AppProvider] Restore complete:', {
+      logger.debug('Restore complete:', {
         group: restoredGroup?.name || (dbState.groupId ? 'not found' : 'personal'),
         session: restoredSession?.name || 'none',
         universe: restoredUniverse?.name || 'none',
