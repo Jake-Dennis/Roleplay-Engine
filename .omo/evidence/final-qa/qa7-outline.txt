@@ -1,0 +1,13 @@
+QA7: Outline panel shows headings
+==================================
+Method: Code review of outline-panel.tsx
+Date: 2026-05-19
+
+Input: qa-test-page.md with H1, H2 (x5), H3 (x2), H4 (x1)
+Parsing: regex /^(#{1,6})\s+(.+)$/gm extracts all headings
+Features:
+  - Nested indentation by heading level
+  - IntersectionObserver for active section highlighting
+  - Click-to-scroll with smooth behavior
+  - Active state: text-accent bg-accent/10 font-medium
+Result: PASS

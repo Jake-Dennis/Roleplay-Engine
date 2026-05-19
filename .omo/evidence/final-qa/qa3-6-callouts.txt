@@ -1,0 +1,30 @@
+QA3-QA6: Callout rendering (basic, collapsed, nested, markdown)
+================================================================
+Method: Code review of callout-remark-plugin.ts + callout.tsx
+Date: 2026-05-19
+
+QA3 - Basic callout:
+  Input: > [!info] Info Callout
+  Output: div.callout.callout-info with data-callout="info"
+  Icon: Info (lucide-react)
+  Color: border-l-blue-500, bg-blue-500/10, text-blue-300
+  Result: PASS
+
+QA4 - Collapsed callout:
+  Input: > [!warning]- Collapsed Warning
+  Output: data-callout-fold="-" → useState(true) → collapsed by default
+  Icon: AlertTriangle
+  Color: border-l-orange-500, bg-orange-500/10
+  Result: PASS
+
+QA5 - Nested callouts:
+  Input: > [!note] ... > > [!warning] ...
+  Output: processCallout() recursively processes nested blockquotes
+  Result: PASS
+
+QA6 - Markdown inside callouts:
+  Input: **bold**, *italic*, [link](url), - list items
+  Output: Children are standard mdast nodes → react-markdown renders them
+  Result: PASS
+
+12 types supported: note, abstract, info, todo, tip, success, question, warning, failure, danger, bug, example, quote

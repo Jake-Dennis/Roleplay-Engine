@@ -1,0 +1,17 @@
+QA12: Outgoing links panel
+===========================
+Method: Code review of outgoing-links-panel.tsx
+Date: 2026-05-19
+
+Input: qa-test-page.md with [[Test Source]], [[NonExistentPage]], [[Test Source|My Alias]]
+Parsing: parseWikilinks(content) → filters out embeds (![[...]])
+Resolution: resolveWikilink(name, allPages, universe)
+Display:
+  - Existing links: text-blue-400 hover:text-blue-300
+  - Non-existing: text-red-400 hover:text-red-300
+  - Alias support: displays "My Alias" for [[Test Source|My Alias]]
+  - Link count in header: "3 outgoing links"
+  - Context snippet shown below each link
+  - Click navigates to page via Next.js Link component
+
+Result: PASS

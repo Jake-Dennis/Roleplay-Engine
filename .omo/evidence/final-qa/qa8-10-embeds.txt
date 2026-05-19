@@ -1,0 +1,28 @@
+QA8-QA10: Embed transclusion
+=============================
+Method: API verification + code review
+Date: 2026-05-19
+
+QA8 - Full page embed:
+  Input: ![[Test Source]] in qa-test-page.md
+  API: embeds["Test Source"].content = full page content
+  Content includes: "Hello world from the source page. This content should appear when embedded."
+  Client: EmbedTransclusion renders via MarkdownRenderer recursively
+  Result: PASS
+
+QA9 - Circular embeds:
+  Input: circular-a.md → ![[Circular B]] → circular-b.md → ![[Circular A]]
+  API: Returns content for both without infinite loop
+  Client: MAX_EMBED_DEPTH = 2, depth > 2 shows "Circular embed detected" placeholder
+  Result: PASS
+
+QA10 - API returns embed content:
+  GET /api/wiki/sources/qa-test-page
+  Response shape: { page, allPages, orphanPaths, embeds }
+  embeds["Test Source"] = { content: "...", frontmatter: {...} }
+  Result: PASS
+
+Edge cases:
+  - Missing target: embeds["NonExistentPage"] = { content: null, frontmatter: null } → PASS
+  - Section embed: Page#Heading → extractSection() → PASS
+  - Block embed: Page#^block-id → extractBlock() → PASS

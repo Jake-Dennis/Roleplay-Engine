@@ -1,0 +1,18 @@
+QA11: Hover preview on wikilink hover
+======================================
+Method: Code review of hover-preview.tsx
+Date: 2026-05-19
+
+Hook: useHoverPreview(target, existingPages, wikiRoute)
+Features:
+  - 300ms debounce (setTimeout)
+  - Fetches /api/wiki/{slug} for preview data
+  - Preview shows: title, first 200 chars (markdown stripped), type badge, status badge
+  - Loading state: Loader2 spinner + "Loading preview..."
+  - Error state: FileX icon + "Page not found"
+  - Cache: previewCache Map prevents redundant API calls
+  - Portal: createPortal(document.body) for proper z-index
+  - Position: clampPosition() prevents viewport overflow
+  - Mouse events: onMouseEnter, onMouseLeave, onMouseMove
+
+Result: PASS

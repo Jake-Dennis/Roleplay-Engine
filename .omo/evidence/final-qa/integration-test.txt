@@ -1,0 +1,38 @@
+Cross-Feature Integration Test
+===============================
+Date: 2026-05-19
+
+Test page: sources/qa-test-page.md
+Contains ALL features simultaneously:
+
+Wikilinks:
+  - [[Test Source]] (existing) → PASS
+  - [[NonExistentPage]] (non-existing) → PASS
+  - [[Test Source|My Alias]] (alias) → PASS
+
+Callouts:
+  - > [!info] Info Callout → PASS
+  - > [!warning]- Collapsed Warning → PASS
+  - > [!tip] Tip with Markdown → PASS
+  - Nested: > [!note] with > > [!warning] → PASS
+
+Embeds:
+  - ![[Test Source]] → PASS
+
+Headings:
+  - # QA Test Page (H1) → PASS
+  - ## Wikilinks Section, ## Callouts Section, etc. (H2 x5) → PASS
+  - ### Subheading One, ### Subheading Two (H3 x2) → PASS
+  - #### Deep Heading (H4) → PASS
+
+API Response Shape:
+  - page: present → PASS
+  - page.content: present → PASS
+  - page.frontmatter: present → PASS
+  - allPages: 10 pages → PASS
+  - orphanPaths: present → PASS
+  - embeds: present → PASS
+  - embeds["Test Source"].content: present → PASS
+  - embeds["Test Source"].frontmatter: present → PASS
+
+Result: PASS - All features work together without conflicts

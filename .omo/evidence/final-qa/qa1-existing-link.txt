@@ -1,0 +1,11 @@
+QA1: Wikilink to existing page renders blue
+============================================
+Method: Code verification + API data check
+Date: 2026-05-19
+
+Test: [[Test Source]] link in qa-test-page.md
+API Check: sources/test-source.md found in allPages (path: sources/test-source.md)
+Code: WikiLink component checks className.includes('new') — false for existing pages
+Color: text-blue-400 hover:text-blue-300 (blue, not red)
+
+Result: PASS

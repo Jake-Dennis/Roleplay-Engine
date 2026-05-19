@@ -1,0 +1,11 @@
+QA2: Wikilink to non-existing page renders red
+===============================================
+Method: Code verification + API data check
+Date: 2026-05-19
+
+Test: [[NonExistentPage]] link in qa-test-page.md
+API Check: No page matching "nonexistentpage" in allPages
+Code: @flowershow/remark-wiki-link adds 'new' class when page not in permalinks
+Color: text-red-400 hover:text-red-300 (red)
+
+Result: PASS
