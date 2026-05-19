@@ -15,7 +15,7 @@ import fs from "fs";
 export async function GET(request: NextRequest) {
   const token = request.cookies.get("auth-token")?.value;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const token = request.cookies.get("auth-token")?.value;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const body = await request.json();

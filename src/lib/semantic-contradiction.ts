@@ -249,7 +249,7 @@ export async function scanUnverifiedLoreForContradictions(
   // Get unverified lore validations
   const validations = db.prepare(`
     SELECT id, entity_type, entity_id, validation_notes
-    FROM lore_validations
+    FROM entity_validations
     WHERE user_id = ? AND state IN ('generated_unverified', 'under_review')
     LIMIT 20
   `).all(userId) as {
@@ -317,7 +317,7 @@ export async function scanUnverifiedLoreForContradictions(
         .join("\n");
 
       db.prepare(`
-        UPDATE lore_validations
+        UPDATE entity_validations
         SET state = 'under_review', validation_notes = ?
         WHERE id = ?
       `).run(notes, validation.id);

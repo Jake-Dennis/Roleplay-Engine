@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
   // If authenticated, merge user settings
   if (token) {
-    const decoded = verifyToken(token);
+    const decoded = await verifyToken(token);
     if (decoded) {
       const db = getDb();
       const row = db.prepare("SELECT settings FROM users WHERE id = ?").get(decoded.sub) as { settings: string | null } | undefined;
@@ -61,7 +61,7 @@ export async function PUT(request: NextRequest) {
   const token = request.cookies.get("auth-token")?.value;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const body = await request.json();

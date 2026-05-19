@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   try {
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
   const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   try {

@@ -11,7 +11,7 @@ export async function PUT(
   const token = request.cookies.get("auth-token")?.value;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const { id: sessionId, messageId } = await params;
@@ -138,7 +138,7 @@ export async function DELETE(
   const token = request.cookies.get("auth-token")?.value;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const { id: sessionId, messageId } = await params;

@@ -2,7 +2,7 @@
 
 @theme {
   /* Font families */
-  --font-sans: var(--font-open-dyslexic), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
   /* Background colors - soft black base with grey elevations */
   --color-bg-base: #0a0a0a;
@@ -93,9 +93,9 @@ input, textarea, select {
   font-size: var(--text-xs);
 }
 
-/* Selects need smaller text due to OpenDyslexic's larger x-height */
+/* Selects */
 select {
-  font-size: 9px !important;
+  font-size: var(--text-xs);
 }
 
 input:focus, textarea:focus, select:focus {

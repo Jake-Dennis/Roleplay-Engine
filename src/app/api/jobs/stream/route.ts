@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   const token = request.cookies.get("auth-token")?.value;
   if (!token) return new Response("Unauthorized", { status: 401 });
 
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) return new Response("Invalid token", { status: 401 });
 
   const encoder = new TextEncoder();

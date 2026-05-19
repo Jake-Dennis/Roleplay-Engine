@@ -5,8 +5,8 @@
  * Replaces raw `fetch()` calls across all page files.
  *
  * Usage:
- *   const { data, error } = await api.get("/api/npcs");
- *   const { data } = await api.post("/api/npcs", { name: "Test" });
+ *   const { data, error } = await api.get("/api/wiki");
+ *   const { data } = await api.post("/api/wiki", { title: "Test" });
  */
 
 interface ApiResponse<T = any> {

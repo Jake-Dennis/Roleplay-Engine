@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import { SignJWT, jwtVerify } from "jose";
 import fs from "fs";
 import path from "path";
 import { AUTH_CONFIG, APP_CONFIG } from "./config";
@@ -31,17 +31,21 @@ export async function verifyPassword(
   return bcrypt.compare(password, hash);
 }
 
-export function generateToken(user: User): string {
-  return jwt.sign(
-    { sub: user.id, username: user.username },
-    AUTH_CONFIG.jwtSecret,
-    { expiresIn: AUTH_CONFIG.jwtExpiry }
-  );
+export async function generateToken(user: User): Promise<string> {
+  const secret = new TextEncoder().encode(AUTH_CONFIG.jwtSecret);
+  const iat = Math.floor(Date.now() / 1000);
+  return new SignJWT({ sub: user.id, username: user.username })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt(iat)
+    .setExpirationTime(iat + AUTH_CONFIG.jwtExpiry)
+    .sign(secret);
 }
 
-export function verifyToken(token: string): AuthToken | null {
+export async function verifyToken(token: string): Promise<AuthToken | null> {
   try {
-    return jwt.verify(token, AUTH_CONFIG.jwtSecret) as AuthToken;
+    const secret = new TextEncoder().encode(AUTH_CONFIG.jwtSecret);
+    const { payload } = await jwtVerify(token, secret);
+    return payload as unknown as AuthToken;
   } catch {
     return null;
   }
@@ -160,7 +164,7 @@ export async function authenticateUser(
     settings: row.settings,
   };
 
-  const token = generateToken(user);
+  const token = await generateToken(user);
 
   return { user, token };
 }

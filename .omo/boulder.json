@@ -8,7 +8,7 @@
       "plan_name": "llm-wiki",
       "status": "completed",
       "started_at": "2026-05-18T12:23:00.648Z",
-      "updated_at": "2026-05-19T02:24:33.591Z",
+      "updated_at": "2026-05-19T05:24:36.378Z",
       "session_ids": [
         "ses_1c53eff67ffeCdr0YX3P28JlBj",
         "ses_1c4599476ffe73kUUAVdLai20x",
@@ -18,7 +18,11 @@
         "ses_1c42357ceffeSdLXEvx4DHKY5H",
         "ses_1c4230222ffeQWa5kmITSvaxFS",
         "ses_1c4229cfeffeFnTkGcV1e4w24i",
-        "ses_1c4224e59ffegiqAu3gRiMp9xz"
+        "ses_1c4224e59ffegiqAu3gRiMp9xz",
+        "ses_1c14f8a72ffeF4p6AQvxjvBJnJ",
+        "ses_1c14f3faeffeFzn4lCwFMp3IVo",
+        "ses_1c14eefa9ffeyEJ0KCmxukolQ6",
+        "ses_1c14e923dffe0uwFXjRMIr8LVT"
       ],
       "session_origins": {
         "ses_1c53eff67ffeCdr0YX3P28JlBj": "direct",
@@ -29,7 +33,11 @@
         "ses_1c42357ceffeSdLXEvx4DHKY5H": "appended",
         "ses_1c4230222ffeQWa5kmITSvaxFS": "appended",
         "ses_1c4229cfeffeFnTkGcV1e4w24i": "appended",
-        "ses_1c4224e59ffegiqAu3gRiMp9xz": "appended"
+        "ses_1c4224e59ffegiqAu3gRiMp9xz": "appended",
+        "ses_1c14f8a72ffeF4p6AQvxjvBJnJ": "appended",
+        "ses_1c14f3faeffeFzn4lCwFMp3IVo": "appended",
+        "ses_1c14eefa9ffeyEJ0KCmxukolQ6": "appended",
+        "ses_1c14e923dffe0uwFXjRMIr8LVT": "appended"
       },
       "agent": "atlas",
       "task_sessions": {
@@ -275,7 +283,7 @@
   "active_plan": "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\llm-wiki.md",
   "started_at": "2026-05-18T12:23:00.648Z",
   "status": "completed",
-  "updated_at": "2026-05-19T02:24:33.591Z",
+  "updated_at": "2026-05-19T05:24:36.378Z",
   "session_ids": [
     "ses_1c53eff67ffeCdr0YX3P28JlBj",
     "ses_1c4599476ffe73kUUAVdLai20x",
@@ -285,7 +293,11 @@
     "ses_1c42357ceffeSdLXEvx4DHKY5H",
     "ses_1c4230222ffeQWa5kmITSvaxFS",
     "ses_1c4229cfeffeFnTkGcV1e4w24i",
-    "ses_1c4224e59ffegiqAu3gRiMp9xz"
+    "ses_1c4224e59ffegiqAu3gRiMp9xz",
+    "ses_1c14f8a72ffeF4p6AQvxjvBJnJ",
+    "ses_1c14f3faeffeFzn4lCwFMp3IVo",
+    "ses_1c14eefa9ffeyEJ0KCmxukolQ6",
+    "ses_1c14e923dffe0uwFXjRMIr8LVT"
   ],
   "session_origins": {
     "ses_1c53eff67ffeCdr0YX3P28JlBj": "direct",
@@ -296,7 +308,11 @@
     "ses_1c42357ceffeSdLXEvx4DHKY5H": "appended",
     "ses_1c4230222ffeQWa5kmITSvaxFS": "appended",
     "ses_1c4229cfeffeFnTkGcV1e4w24i": "appended",
-    "ses_1c4224e59ffegiqAu3gRiMp9xz": "appended"
+    "ses_1c4224e59ffegiqAu3gRiMp9xz": "appended",
+    "ses_1c14f8a72ffeF4p6AQvxjvBJnJ": "appended",
+    "ses_1c14f3faeffeFzn4lCwFMp3IVo": "appended",
+    "ses_1c14eefa9ffeyEJ0KCmxukolQ6": "appended",
+    "ses_1c14e923dffe0uwFXjRMIr8LVT": "appended"
   },
   "plan_name": "llm-wiki",
   "task_sessions": {

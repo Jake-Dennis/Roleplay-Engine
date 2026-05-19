@@ -16,7 +16,7 @@ import fs from "fs";
 import path from "path";
 import { APP_CONFIG } from "@/lib/config";
 import { getDb } from "@/lib/db";
-import { buildMarkdown, parseFrontmatter, LoreFrontmatter } from "@/lib/lore-markdown";
+import { buildMarkdown, parseFrontmatter, LoreFrontmatter } from "@/lib/markdown-utils";
 import { EMOTION_HALF_LIVES } from "@/lib/relationship-decay";
 
 export interface RelationshipRecord {

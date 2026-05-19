@@ -5,7 +5,7 @@
  * Replaces the identical fetch/useEffect pattern used in 16+ pages.
  *
  * Usage:
- *   const { data, loading, error, refetch } = useEntityFetch("/api/npcs", "npcs");
+ *   const { data, loading, error, refetch } = useEntityFetch("/api/wiki", "pages");
  */
 
 import { useState, useEffect, useCallback } from "react";

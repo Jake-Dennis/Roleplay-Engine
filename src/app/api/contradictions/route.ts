@@ -12,7 +12,7 @@ import { scanUnverifiedLoreForContradictions } from "@/lib/semantic-contradictio
 export async function POST(request: NextRequest) {
   const token = request.cookies.get("auth-token")?.value;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const body = await request.json();
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const token = request.cookies.get("auth-token")?.value;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   try {
@@ -73,7 +73,7 @@ export async function PUT(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const token = request.cookies.get("auth-token")?.value;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
 
   const db = require("@/lib/db").getDb();
 
-  // Get rule-based contradictions from lore_validations
+  // Get rule-based contradictions from entity_validations
   let conditions = "WHERE user_id = ? AND state = 'under_review'";
   const params: any[] = [decoded.sub];
 
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
 
   const validations = db.prepare(
     `SELECT id, entity_type, entity_id, validation_notes, created_at
-     FROM lore_validations ${conditions}
+     FROM entity_validations ${conditions}
      ORDER BY created_at DESC
      LIMIT 50`
   ).all(...params);

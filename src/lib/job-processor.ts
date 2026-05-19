@@ -21,7 +21,6 @@ import { getDb } from "@/lib/db";
 import { processSummarization } from "@/lib/summarization";
 import { processEmbeddings } from "@/lib/embeddings";
 import { processRelationshipAnalysis } from "@/lib/relationship-analysis";
-import { processLoreExpansion } from "@/lib/lore-expansion";
 import { generateText } from "@/lib/ollama";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { getRetrievedContext, assemblePromptWithBudget } from "@/lib/retrieval";
@@ -43,19 +42,13 @@ export type JobType =
   | "summarize_message"
   | "generate_embeddings"
   | "analyze_relationships"
-  | "expand_lore"
   | "decay_relationships"
   | "compress_memories"
   | "refine_relationship_summary"
-  | "enrich_npc"
-  | "expand_rumors"
   | "archival_processing"
-  | "extract_event"
-  | "expand_location_lore"
   | "thread_analysis"
-  | "lore_deepening"
   | "idle_enrichment"
-  // Wiki enrichment job types (replaces lore expansion jobs)
+  // Wiki enrichment job types
   | "wiki_ingest"
   | "wiki_enrich_entity"
   | "wiki_generate_rumors"
@@ -299,49 +292,19 @@ export async function processJob(job: QueuedJob): Promise<JobResult> {
         return await handleGenerateEmbeddings(job.id, payload);
       case "analyze_relationships":
         return await handleAnalyzeRelationships(job.id, payload);
-      case "expand_lore":
-        if (process.env.WIKI_JOBS === "true") {
-          return await handleWikiIngest(job.id, payload);
-        }
-        return await handleExpandLore(job.id, payload);
       case "decay_relationships":
         return await handleDecayRelationships(job.id, payload);
       case "compress_memories":
         return await handleCompressMemories(job.id, payload);
       case "refine_relationship_summary":
         return await handleRefineRelationshipSummary(job.id, payload);
-      case "enrich_npc":
-        if (process.env.WIKI_JOBS === "true") {
-          return await handleWikiEnrichEntity(job.id, payload);
-        }
-        return await handleEnrichNpc(job.id, payload);
-      case "expand_rumors":
-        if (process.env.WIKI_JOBS === "true") {
-          return await handleWikiGenerateRumors(job.id, payload);
-        }
-        return await handleExpandRumors(job.id, payload);
       case "archival_processing":
         return await handleArchivalProcessing(job.id, payload);
-      case "extract_event":
-        if (process.env.WIKI_JOBS === "true") {
-          return await handleWikiExtractEvent(job.id, payload);
-        }
-        return await handleExtractEvent(job.id, payload);
-      case "expand_location_lore":
-        if (process.env.WIKI_JOBS === "true") {
-          return await handleWikiDeepenLocation(job.id, payload);
-        }
-        return await handleExpandLocationLore(job.id, payload);
       case "thread_analysis":
         return await handleThreadAnalysis(job.id, payload);
-      case "lore_deepening":
-        if (process.env.WIKI_JOBS === "true") {
-          return await handleWikiDeepenPage(job.id, payload);
-        }
-        return await handleLoreDeepening(job.id, payload);
       case "idle_enrichment":
         return await handleIdleEnrichment(job.id, payload);
-      // New wiki-native job types
+      // Wiki-native job types
       case "wiki_ingest":
         return await handleWikiIngest(job.id, payload);
       case "wiki_enrich_entity":
@@ -538,26 +501,6 @@ async function handleAnalyzeRelationships(jobId: string, payload: JobPayload): P
     jobId,
     type: "analyze_relationships",
     data: { analyzedCount: result.analyzedCount },
-  };
-}
-
-async function handleExpandLore(jobId: string, payload: JobPayload): Promise<JobResult> {
-  const { universeId, userId } = payload;
-  if (!universeId || !userId) throw new Error("Missing universeId or userId");
-
-  updateJobProgress(jobId, 20, "Scanning existing lore...");
-  const result = await processLoreExpansion(
-    userId as string,
-    universeId as string
-  );
-  updateJobProgress(jobId, 80, "Generating new lore...");
-  markJobCompleted(jobId);
-
-  return {
-    success: true,
-    jobId,
-    type: "expand_lore",
-    data: { expandedCount: result.expandedCount },
   };
 }
 
@@ -844,147 +787,6 @@ Write a 2-3 sentence narrative summary of their current relationship dynamic.`;
   };
 }
 
-async function handleEnrichNpc(jobId: string, payload: JobPayload): Promise<JobResult> {
-  const { userId, universeId } = payload;
-  if (!userId) throw new Error("Missing userId");
-
-  const db = getDb();
-
-  let query = `
-    SELECT n.id, n.name, n.file_path, n.importance
-    FROM npcs n
-    WHERE n.user_id = ? AND n.importance IN ('high', 'critical')
-  `;
-  const params: (string | number)[] = [userId];
-
-  if (universeId) {
-    query += " AND n.universe_id = ?";
-    params.push(universeId);
-  }
-
-  query += `
-    ORDER BY n.importance DESC
-    LIMIT 3
-  `;
-
-  const npcs = db.prepare(query).all(...params) as { id: string; name: string; file_path: string; importance: string }[];
-
-  let processed = 0;
-  const totalNpcs = npcs.length;
-  for (let i = 0; i < npcs.length; i++) {
-    const npc = npcs[i];
-    const filePath = npc.file_path;
-    if (!filePath) continue;
-
-    const fs = require("fs");
-    const path = require("path");
-    const fullPath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
-
-    if (!fs.existsSync(fullPath)) continue;
-
-    const existingContent = fs.readFileSync(fullPath, "utf-8");
-
-    const prompt = `Expand on the NPC "${npc.name}". Current lore:\n${existingContent.slice(0, 1000)}\n\nAdd 2-3 new details about their personality, habits, or hidden motivations. Do not contradict existing facts. Return only the new content as markdown.`;
-
-    try {
-      const enrichment = await generateText(prompt, { userId: userId as string });
-      const newContent = existingContent + `\n\n## Recent Observations\n${enrichment}`;
-      fs.writeFileSync(fullPath, newContent, "utf-8");
-
-      db.prepare(
-        "INSERT INTO lore_validations (id, user_id, entity_type, entity_id, state, generated_by) VALUES (?, ?, 'npc', ?, 'generated_unverified', 'enrich_npc')"
-      ).run(crypto.randomUUID(), userId, npc.id);
-      processed++;
-    } catch {
-      // Skip failed NPCs
-    }
-
-    // Update progress
-    if (totalNpcs > 1 && (i + 1) % Math.max(1, Math.floor(totalNpcs / 3)) === 0) {
-      updateJobProgress(jobId, Math.round(((i + 1) / totalNpcs) * 80), `Enriching ${i + 1}/${totalNpcs}...`);
-    }
-  }
-
-  markJobCompleted(jobId);
-
-  return {
-    success: true,
-    jobId,
-    type: "enrich_npc",
-    data: { processed },
-  };
-}
-
-async function handleExpandRumors(jobId: string, payload: JobPayload): Promise<JobResult> {
-  const { userId, universeId } = payload;
-  if (!userId) throw new Error("Missing userId");
-
-  const db = getDb();
-
-  let query = `
-    SELECT id, title, event_type, outcome, occurred_at
-    FROM events
-    WHERE user_id = ? AND occurred_at > datetime('now', '-7 days')
-  `;
-  const params: (string | number)[] = [userId];
-
-  if (universeId) {
-    query += " AND universe_id = ?";
-    params.push(universeId);
-  }
-
-  query += `
-    ORDER BY occurred_at DESC
-    LIMIT 5
-  `;
-
-  const recentEvents = db.prepare(query).all(...params) as { id: string; title: string; event_type: string; outcome: string | null; occurred_at: string }[];
-
-  let processed = 0;
-  const totalEvents = recentEvents.length;
-  for (let i = 0; i < recentEvents.length; i++) {
-    const event = recentEvents[i];
-    const existingRumor = db.prepare(
-      "SELECT id FROM narrative_memories WHERE user_id = ? AND type = 'rumor' AND content LIKE ?"
-    ).get(userId, `%${event.title}%`);
-
-    if (existingRumor) continue;
-
-    const prompt = `Based on this event: "${event.title}" (${event.event_type}, outcome: ${event.outcome || "unknown"}), generate 1-2 rumors that might spread among NPCs. Rumors should be plausible but potentially inaccurate. Return as bullet points.`;
-
-    try {
-      const rumors = await generateText(prompt, { userId: userId as string });
-
-      db.prepare(
-        "INSERT INTO narrative_memories (id, user_id, session_id, type, content, importance, related_entities) VALUES (?, ?, NULL, 'rumor', ?, ?, ?)"
-      ).run(
-        crypto.randomUUID(),
-        userId,
-        rumors,
-        JSON.stringify({ emotional: 1, local: 2, canonical: 1, recency: 4 }),
-        JSON.stringify([event.id])
-      );
-      processed++;
-    } catch {
-      // Skip failed events
-    }
-
-    // Update progress
-    if (totalEvents > 2 && (i + 1) % Math.max(1, Math.floor(totalEvents / 3)) === 0) {
-      updateJobProgress(jobId, Math.round(((i + 1) / totalEvents) * 80), `Expanding rumors ${i + 1}/${totalEvents}...`);
-    }
-  }
-
-  markJobCompleted(jobId);
-
-  return {
-    success: true,
-    jobId,
-    type: "expand_rumors",
-    data: { processed },
-  };
-}
-
 async function handleArchivalProcessing(jobId: string, payload: JobPayload): Promise<JobResult> {
   const { userId, universeId } = payload;
   if (!userId) throw new Error("Missing userId");
@@ -1057,155 +859,6 @@ async function handleSummarizeSingleMessage(jobId: string, payload: JobPayload):
     jobId,
     type: "summarize_message",
     data: { summaryId: result.summaryId, types: result.types },
-  };
-}
-
-async function handleExtractEvent(jobId: string, payload: JobPayload): Promise<JobResult> {
-  const { sessionId, userId } = payload;
-  if (!sessionId || !userId) throw new Error("Missing sessionId or userId");
-
-  const db = getDb();
-
-  // Get recent messages from the session
-  const messages = db.prepare(`
-    SELECT id, content, sender_id, timestamp
-    FROM messages
-    WHERE session_id = ? AND is_deleted = 0
-    ORDER BY timestamp DESC
-    LIMIT 10
-  `).all(sessionId) as { id: string; content: string; sender_id: string | null; timestamp: string }[];
-
-  if (messages.length === 0) {
-    markJobCompleted(jobId);
-    return { success: true, jobId, type: "extract_event", data: { extractedCount: 0 } };
-  }
-
-  const messageText = messages
-    .map((m) => `${m.sender_id === null ? "AI" : "Player"}: ${m.content}`)
-    .join("\n");
-
-  const prompt = `Analyze these recent messages and extract any significant narrative events. Return JSON:
-{
-  "events": [
-    {
-      "title": "brief event title",
-      "eventType": "conflict|discovery|relationship|journey|decision|other",
-      "outcome": "what happened as a result",
-      "importance": "low|medium|high|critical"
-    }
-  ]
-}
-
-Messages:
-${messageText}`;
-
-  let extracted = 0;
-  try {
-    const response = await generateText(prompt, { temperature: 0.3, num_ctx: 4096, userId: userId as string });
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      if (Array.isArray(parsed.events)) {
-        for (const event of parsed.events) {
-          const eventId = crypto.randomUUID();
-          db.prepare(`
-            INSERT INTO events (id, user_id, session_id, title, event_type, outcome, importance, occurred_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-          `).run(
-            eventId,
-            userId,
-            sessionId,
-            event.title || "Unknown Event",
-            event.eventType || "other",
-            event.outcome || null,
-            event.importance || "medium"
-          );
-          extracted++;
-        }
-      }
-    }
-  } catch {
-    // Skip if extraction fails
-  }
-
-  markJobCompleted(jobId);
-
-  return {
-    success: true,
-    jobId,
-    type: "extract_event",
-    data: { extractedCount: extracted },
-  };
-}
-
-async function handleExpandLocationLore(jobId: string, payload: JobPayload): Promise<JobResult> {
-  const { userId, universeId, locationId } = payload;
-  if (!userId) throw new Error("Missing userId");
-
-  const db = getDb();
-
-  let query = `
-    SELECT l.id, l.name, l.description
-    FROM locations l
-    WHERE l.user_id = ?
-  `;
-  const params: (string | number)[] = [userId];
-
-  if (locationId) {
-    query += " AND l.id = ?";
-    params.push(locationId as string);
-  } else if (universeId) {
-    query += " AND l.universe_id = ?";
-    params.push(universeId as string);
-  }
-
-  query += " ORDER BY l.updated_at DESC LIMIT 3";
-
-  const locations = db.prepare(query).all(...params) as {
-    id: string;
-    name: string;
-    description: string | null;
-  }[];
-
-  let expanded = 0;
-  for (const loc of locations) {
-    const existingLore = loc.description || "";
-    if (!existingLore) continue;
-
-    const prompt = `Expand on the location "${loc.name}". Current description:\n${existingLore.slice(0, 500)}\n\nAdd 2-3 new atmospheric details, historical notes, or sensory descriptions. Do not contradict existing facts.`;
-
-    try {
-      const expansion = await generateText(prompt, { userId: userId as string });
-
-      db.prepare(`
-        INSERT INTO narrative_memories (id, user_id, universe_id, session_id, type, content, importance)
-        VALUES (?, ?, ?, NULL, 'location_lore', ?, ?)
-      `).run(
-        crypto.randomUUID(),
-        userId,
-        universeId,
-        `[LOCATION LORE] ${loc.name}: ${expansion}`,
-        JSON.stringify({ emotional: 1, local: 3, canonical: 2, recency: 4 })
-      );
-
-      db.prepare(`
-        INSERT INTO lore_validations (id, user_id, entity_type, entity_id, state, generated_by)
-        VALUES (?, ?, 'location', ?, 'generated_unverified', 'expand_location_lore')
-      `).run(crypto.randomUUID(), userId, loc.id);
-
-      expanded++;
-    } catch {
-      // Skip failed locations
-    }
-  }
-
-  markJobCompleted(jobId);
-
-  return {
-    success: true,
-    jobId,
-    type: "expand_location_lore",
-    data: { expandedCount: expanded },
   };
 }
 
@@ -1287,78 +940,6 @@ ${messageText}`;
   };
 }
 
-async function handleLoreDeepening(jobId: string, payload: JobPayload): Promise<JobResult> {
-  const { userId, universeId } = payload;
-  if (!userId) throw new Error("Missing userId");
-
-  const db = getDb();
-
-  // Get lore entries that haven't been deepened recently
-  let query = `
-    SELECT le.id, le.title, le.content, le.type
-    FROM lore_entries le
-    WHERE le.user_id = ?
-  `;
-  const params: (string | number)[] = [userId];
-
-  if (universeId) {
-    query += " AND le.universe_id = ?";
-    params.push(universeId);
-  }
-
-  query += `
-    AND le.updated_at < datetime('now', '-3 days')
-    ORDER BY le.updated_at ASC
-    LIMIT 5
-  `;
-
-  const loreEntries = db.prepare(query).all(...params) as {
-    id: string;
-    title: string;
-    content: string;
-    type: string;
-  }[];
-
-  let deepened = 0;
-  for (const entry of loreEntries) {
-    const prompt = `Deepen this lore entry "${entry.title}" (${entry.type}). Current content:\n${entry.content.slice(0, 800)}\n\nAdd new details, connections to other lore, or implications. Do not contradict existing facts. Return only the new content.`;
-
-    try {
-      const deepening = await generateText(prompt, { userId: userId as string });
-
-      db.prepare(`
-        INSERT INTO narrative_memories (id, user_id, universe_id, session_id, type, content, importance, related_entities)
-        VALUES (?, ?, ?, NULL, 'lore_deepening', ?, ?, ?)
-      `).run(
-        crypto.randomUUID(),
-        userId,
-        universeId,
-        `[LORE DEEPENING] ${entry.title}: ${deepening}`,
-        JSON.stringify({ emotional: 1, local: 2, canonical: 3, recency: 4 }),
-        JSON.stringify([entry.id])
-      );
-
-      db.prepare(`
-        INSERT INTO lore_validations (id, user_id, entity_type, entity_id, state, generated_by)
-        VALUES (?, ?, 'lore', ?, 'generated_unverified', 'lore_deepening')
-      `).run(crypto.randomUUID(), userId, entry.id);
-
-      deepened++;
-    } catch {
-      // Skip failed entries
-    }
-  }
-
-  markJobCompleted(jobId);
-
-  return {
-    success: true,
-    jobId,
-    type: "lore_deepening",
-    data: { deepenedCount: deepened },
-  };
-}
-
 async function handleIdleEnrichment(jobId: string, payload: JobPayload): Promise<JobResult> {
   const { userId, idleMinutes, universeId } = payload;
   if (!userId) throw new Error("Missing userId");
@@ -1408,109 +989,25 @@ function getWikiRoot(userId: string, universeId?: string): string {
 async function handleWikiIngest(jobId: string, payload: JobPayload): Promise<JobResult> {
   const { userId, universeId, sourcePath } = payload;
   if (!userId) throw new Error("Missing userId");
+  if (!sourcePath) throw new Error("Missing sourcePath — wiki_ingest requires a source file to ingest");
 
   const wikiRoot = getWikiRoot(userId as string, universeId as string);
 
   updateJobProgress(jobId, 20, "Reading source file...");
 
-  // If a specific source path is provided, ingest it directly
-  if (sourcePath) {
-    const result = await ingestSource(
-      sourcePath as string,
-      wikiRoot,
-      universeId as string
-    );
-    updateJobProgress(jobId, 80, `Ingested ${result.created.length} pages, updated ${result.updated.length}`);
-    markJobCompleted(jobId);
-
-    return {
-      success: true,
-      jobId,
-      type: "wiki_ingest",
-      data: { created: result.created.length, updated: result.updated.length, errors: result.errors },
-    };
-  }
-
-  // Otherwise, scan for existing lore entries and convert them to wiki pages
-  const db = getDb();
-  let query = `
-    SELECT le.id, le.title, le.content, le.type
-    FROM lore_entries le
-    WHERE le.user_id = ?
-  `;
-  const params: (string | number)[] = [userId];
-
-  if (universeId) {
-    query += " AND le.universe_id = ?";
-    params.push(universeId);
-  }
-
-  query += `
-    ORDER BY le.updated_at DESC
-    LIMIT 10
-  `;
-
-  const loreEntries = db.prepare(query).all(...params) as {
-    id: string;
-    title: string;
-    content: string;
-    type: string;
-  }[];
-
-  let created = 0;
-  let updated = 0;
-  const errors: string[] = [];
-  const totalEntries = loreEntries.length;
-
-  for (let i = 0; i < loreEntries.length; i++) {
-    const entry = loreEntries[i];
-    const folder = entry.type === "npc" ? "entities" : "concepts";
-    const filename = entry.title.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-") + ".md";
-    const pagePath = `${wikiRoot}/${folder}/${filename}`;
-
-    try {
-      const frontmatter: WikiFrontmatter = {
-        title: entry.title,
-        type: "entity",
-        status: "draft",
-        universe: universeId as string,
-        tags: ["auto-generated", `source:lore_entry`, `type:${entry.type}`],
-        created: new Date().toISOString(),
-      };
-
-      writeWikiPage(pagePath, entry.content, frontmatter);
-      created++;
-    } catch (error) {
-      errors.push(`Failed to create page for "${entry.title}": ${(error as Error).message}`);
-    }
-
-    // Progress reporting
-    if (totalEntries > 1 && (i + 1) % Math.max(1, Math.floor(totalEntries / 4)) === 0) {
-      updateJobProgress(jobId, Math.round(((i + 1) / totalEntries) * 80), `Ingesting ${i + 1}/${totalEntries}...`);
-    }
-  }
-
-  // Regenerate index
-  try {
-    generateIndex(wikiRoot);
-  } catch {
-    errors.push("Failed to regenerate index");
-  }
-
-  // Append to log
-  try {
-    appendLog(wikiRoot, "ingest", "batch", `Created: ${created}, Updated: ${updated}, Errors: ${errors.length}`);
-  } catch {
-    // Log append failure is non-fatal
-  }
-
+  const result = await ingestSource(
+    sourcePath as string,
+    wikiRoot,
+    universeId as string
+  );
+  updateJobProgress(jobId, 80, `Ingested ${result.created.length} pages, updated ${result.updated.length}`);
   markJobCompleted(jobId);
 
   return {
     success: true,
     jobId,
     type: "wiki_ingest",
-    data: { created, updated, errors },
+    data: { created: result.created.length, updated: result.updated.length, errors: result.errors },
   };
 }
 
@@ -1607,31 +1104,38 @@ async function handleWikiGenerateRumors(jobId: string, payload: JobPayload): Pro
   const db = getDb();
   const wikiRoot = getWikiRoot(userId as string, universeId as string);
 
-  // Get recent events from DB
-  let query = `
-    SELECT id, title, event_type, outcome, occurred_at
-    FROM events
-    WHERE user_id = ? AND occurred_at > datetime('now', '-7 days')
-  `;
-  const params: (string | number)[] = [userId];
+  // Get recent events from DB (wrapped in try/catch — events table will be dropped in Phase 5)
+  let recentEvents: { id: string; title: string; event_type: string; outcome: string | null; occurred_at: string }[] = [];
+  try {
+    let query = `
+      SELECT id, title, event_type, outcome, occurred_at
+      FROM events
+      WHERE user_id = ? AND occurred_at > datetime('now', '-7 days')
+    `;
+    const params: (string | number)[] = [userId];
 
-  if (universeId) {
-    query += " AND universe_id = ?";
-    params.push(universeId);
+    if (universeId) {
+      query += " AND universe_id = ?";
+      params.push(universeId);
+    }
+
+    query += `
+      ORDER BY occurred_at DESC
+      LIMIT 5
+    `;
+
+    recentEvents = db.prepare(query).all(...params) as {
+      id: string;
+      title: string;
+      event_type: string;
+      outcome: string | null;
+      occurred_at: string;
+    }[];
+  } catch {
+    // events table may not exist — return 0 processed
+    markJobCompleted(jobId);
+    return { success: true, jobId, type: "wiki_generate_rumors", data: { processed: 0 } };
   }
-
-  query += `
-    ORDER BY occurred_at DESC
-    LIMIT 5
-  `;
-
-  const recentEvents = db.prepare(query).all(...params) as {
-    id: string;
-    title: string;
-    event_type: string;
-    outcome: string | null;
-    occurred_at: string;
-  }[];
 
   let processed = 0;
   const totalEvents = recentEvents.length;

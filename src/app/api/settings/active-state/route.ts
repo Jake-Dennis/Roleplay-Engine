@@ -13,7 +13,7 @@ export async function PUT(request: NextRequest) {
     var authToken = token;
   }
 
-  const decoded = verifyToken(authToken);
+  const decoded = await verifyToken(authToken);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const body = await request.json();

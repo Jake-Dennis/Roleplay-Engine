@@ -164,7 +164,7 @@ export function detectContradictions(
 
   // Get validated canon entries for comparison
   const canon = db.prepare(
-    "SELECT * FROM lore_validations WHERE user_id = ? AND state = 'validated'"
+    "SELECT * FROM entity_validations WHERE user_id = ? AND state = 'validated'"
   ).all(userId) as Record<string, any>[];
 
   // Also get events for alive/dead checks
@@ -182,7 +182,7 @@ export function detectContradictions(
 
       // Create validation record for review
       db.prepare(
-        "INSERT INTO lore_validations (id, user_id, entity_type, entity_id, state, validation_notes, generated_by) VALUES (?, ?, ?, ?, 'under_review', ?, 'contradiction-detector')"
+        "INSERT INTO entity_validations (id, user_id, entity_type, entity_id, state, validation_notes, generated_by) VALUES (?, ?, ?, ?, 'under_review', ?, 'contradiction-detector')"
       ).run(
         crypto.randomUUID(),
         userId,

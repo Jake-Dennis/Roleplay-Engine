@@ -10,9 +10,7 @@
  * - 10 minutes: Relationship analysis, embedding generation
  * - 15 minutes: Lore expansion
  * - 30 minutes: Relationship decay, memory compression, summarization
- * 
- * When WIKI_JOBS=true, wiki-first operations are used with DB fallback.
- * 
+ *
  * The system tracks the last processing time per user and triggers
  * appropriate tier processing when a new request arrives.
  */
@@ -27,7 +25,6 @@ import {
 import { getSessionsNeedingSummaries } from "@/lib/summarization";
 import { getEntitiesNeedingEmbeddings, processEmbeddings } from "@/lib/embeddings";
 import { getSessionsNeedingRelationshipAnalysis, processRelationshipAnalysis } from "@/lib/relationship-analysis";
-import { getUniversesNeedingLoreExpansion, processLoreExpansion } from "@/lib/lore-expansion";
 import { needsDecayProcessing } from "@/lib/relationship-decay";
 import { needsMemoryCompression } from "@/lib/memory-compression";
 
@@ -329,22 +326,29 @@ async function wikiGenerateRumors(userId: string, universeId?: string): Promise<
   const wikiRoot = getWikiRoot(userId, universeId);
   if (!fs.existsSync(wikiRoot)) return { rumorsGenerated: 0, errors: ["Wiki root not found"] };
 
-  const db = getDb();
-  let query = `
-    SELECT id, title, event_type, outcome, occurred_at
-    FROM events
-    WHERE user_id = ? AND occurred_at > datetime('now', '-7 days')
-  `;
-  const params: (string | number)[] = [userId];
-  if (universeId) {
-    query += " AND universe_id = ?";
-    params.push(universeId);
-  }
-  query += " ORDER BY occurred_at DESC LIMIT 5";
+  // Get recent events from DB (wrapped in try/catch — events table will be dropped in Phase 5)
+  let recentEvents: { id: string; title: string; event_type: string; outcome: string | null; occurred_at: string }[] = [];
+  try {
+    const db = getDb();
+    let query = `
+      SELECT id, title, event_type, outcome, occurred_at
+      FROM events
+      WHERE user_id = ? AND occurred_at > datetime('now', '-7 days')
+    `;
+    const params: (string | number)[] = [userId];
+    if (universeId) {
+      query += " AND universe_id = ?";
+      params.push(universeId);
+    }
+    query += " ORDER BY occurred_at DESC LIMIT 5";
 
-  const recentEvents = db.prepare(query).all(...params) as {
-    id: string; title: string; event_type: string; outcome: string | null; occurred_at: string;
-  }[];
+    recentEvents = db.prepare(query).all(...params) as {
+      id: string; title: string; event_type: string; outcome: string | null; occurred_at: string;
+    }[];
+  } catch {
+    // events table may not exist — return 0 processed
+    return { rumorsGenerated: 0, errors: [] };
+  }
 
   let rumorsGenerated = 0;
   const errors: string[] = [];
@@ -595,29 +599,25 @@ export async function processIdleTime(userId: string, universeId: string | null 
   // Update last processing time
   lastProcessingTime.set(userId, now);
 
-  const useWiki = process.env.WIKI_JOBS === "true";
   const uid = universeId || undefined;
 
   // Tier 1 (5+ minutes): Process high-priority jobs
   if (idleTime >= TIER_THRESHOLDS.tier1_5min) {
     result.tiersProcessed.push("5min");
 
-    if (useWiki) {
-      // Wiki-first: compress summaries + refine relationships
-      try {
-        const compressResult = await wikiCompressSummaries(userId, uid);
-        result.wikiPagesUpdated += compressResult.compressed;
-        result.memoriesCompressed += compressResult.compressed;
-      } catch { /* fall through to DB fallback */ }
+    // Wiki: compress summaries + refine relationships
+    try {
+      const compressResult = await wikiCompressSummaries(userId, uid);
+      result.wikiPagesUpdated += compressResult.compressed;
+      result.memoriesCompressed += compressResult.compressed;
+    } catch { /* non-fatal */ }
 
-      try {
-        const refineResult = await wikiRefineRelationships(userId, uid);
-        result.wikiPagesCreated += refineResult.refined;
-        result.relationshipsAnalyzed += refineResult.refined;
-      } catch { /* fall through to DB fallback */ }
-    }
+    try {
+      const refineResult = await wikiRefineRelationships(userId, uid);
+      result.wikiPagesCreated += refineResult.refined;
+      result.relationshipsAnalyzed += refineResult.refined;
+    } catch { /* non-fatal */ }
 
-    // DB fallback (always runs if wiki disabled or wiki ops failed)
     const jobResults = await processJobsByType(userId, "generate_response", 5);
     result.jobsProcessed += jobResults.filter((r) => r.success).length;
   }
@@ -626,22 +626,19 @@ export async function processIdleTime(userId: string, universeId: string | null 
   if (idleTime >= TIER_THRESHOLDS.tier2_10min) {
     result.tiersProcessed.push("10min");
 
-    if (useWiki) {
-      // Wiki-first: deepen pages + enrich entities
-      try {
-        const deepenResult = await wikiDeepenPages(userId, uid);
-        result.wikiPagesUpdated += deepenResult.deepened;
-        result.loreExpanded += deepenResult.deepened;
-      } catch { /* fall through to DB fallback */ }
+    // Wiki: deepen pages + enrich entities
+    try {
+      const deepenResult = await wikiDeepenPages(userId, uid);
+      result.wikiPagesUpdated += deepenResult.deepened;
+      result.loreExpanded += deepenResult.deepened;
+    } catch { /* non-fatal */ }
 
-      try {
-        const enrichResult = await wikiEnrichEntities(userId, uid);
-        result.wikiEntitiesEnriched += enrichResult.enriched;
-        result.wikiPagesUpdated += enrichResult.enriched;
-      } catch { /* fall through to DB fallback */ }
-    }
+    try {
+      const enrichResult = await wikiEnrichEntities(userId, uid);
+      result.wikiEntitiesEnriched += enrichResult.enriched;
+      result.wikiPagesUpdated += enrichResult.enriched;
+    } catch { /* non-fatal */ }
 
-    // DB fallback
     const embedResults = await processJobsByType(userId, "generate_embeddings", 10);
     result.jobsProcessed += embedResults.filter((r) => r.success).length;
     result.embeddingsCreated += embedResults.filter((r) => r.success).length;
@@ -661,119 +658,30 @@ export async function processIdleTime(userId: string, universeId: string | null 
   if (idleTime >= TIER_THRESHOLDS.tier3_15min) {
     result.tiersProcessed.push("15min");
 
-    if (useWiki) {
-      // Wiki-first: generate rumors + archive low-importance pages
-      try {
-        const rumorResult = await wikiGenerateRumors(userId, uid);
-        result.wikiRumorsGenerated += rumorResult.rumorsGenerated;
-        result.wikiPagesCreated += rumorResult.rumorsGenerated;
-      } catch { /* fall through to DB fallback */ }
-
-      try {
-        const archiveResult = await wikiArchive(userId, uid);
-        result.wikiPagesArchived += archiveResult.archived;
-        result.memoriesCompressed += archiveResult.archived;
-      } catch { /* fall through to DB fallback */ }
-    }
-
-    // DB fallback
-    const universesNeedingExpansion = universeId
-      ? [universeId]
-      : getUniversesNeedingLoreExpansion(userId);
-    for (const uid of universesNeedingExpansion.slice(0, 2)) {
-      try {
-        const expansionResult = await processLoreExpansion(userId, uid);
-        result.loreExpanded += expansionResult.expandedCount;
-      } catch {
-        // Skip failed universes
-      }
-    }
-
-    // Scan unverified lore for semantic contradictions
+    // Wiki: generate rumors + archive low-importance pages
     try {
-      const { scanUnverifiedLoreForContradictions } = await import("./semantic-contradiction");
-      const scanResult = await scanUnverifiedLoreForContradictions(userId);
-      result.contradictionsFound += scanResult.contradictionsFound;
-    } catch {
-      // Skip if semantic scan fails
-    }
+      const rumorResult = await wikiGenerateRumors(userId, uid);
+      result.wikiRumorsGenerated += rumorResult.rumorsGenerated;
+      result.wikiPagesCreated += rumorResult.rumorsGenerated;
+    } catch { /* non-fatal */ }
+
+    try {
+      const archiveResult = await wikiArchive(userId, uid);
+      result.wikiPagesArchived += archiveResult.archived;
+      result.memoriesCompressed += archiveResult.archived;
+    } catch { /* non-fatal */ }
   }
 
   // Tier 4 (30+ minutes): Decay, compression, summarization
   if (idleTime >= TIER_THRESHOLDS.tier4_30min) {
     result.tiersProcessed.push("30min");
 
-    if (useWiki) {
-      // Wiki-first: decay relationships via wiki pages
-      try {
-        const decayResult = await wikiDecayRelationships(userId, uid);
-        result.wikiRelationshipsDecayed += decayResult.decayed;
-        result.relationshipsDecayed += decayResult.decayed;
-      } catch { /* fall through to DB fallback */ }
-    }
-
-    // DB fallback: Relationship decay
-    if (needsDecayProcessing(userId)) {
-      try {
-        const db = getDb();
-        let query = `
-          SELECT r.id, r.source_entity, r.target_entity, r.emotional_state, r.relationship_stage,
-                 r.decay_rates, r.updated_at
-          FROM relationships r
-          WHERE r.user_id = ?
-        `;
-        const params: (string | number)[] = [userId];
-        if (universeId) {
-          query += " AND r.universe_id = ?";
-          params.push(universeId);
-        }
-        const relationships = db.prepare(query).all(...params) as {
-          id: string; source_entity: string; target_entity: string;
-          emotional_state: string | null; relationship_stage: string | null;
-          decay_rates: string | null; updated_at: string | null;
-        }[];
-
-        const DEFAULT_DECAY_RATES = { emotionalHalfLifeDays: 7, stageRegressionDays: 14, minEmotionalState: "neutral" };
-        const EMOTIONAL_STATES = ["devoted", "loving", "trusting", "friendly", "warm", "neutral", "cold", "distant", "suspicious", "hostile", "hateful"] as const;
-        const RELATIONSHIP_STAGES = ["lovers", "close_friends", "friends", "allies", "acquaintances", "strangers"] as const;
-
-        for (const rel of relationships) {
-          const rates = rel.decay_rates ? { ...DEFAULT_DECAY_RATES, ...JSON.parse(rel.decay_rates) } : DEFAULT_DECAY_RATES;
-          const lastUpdate = rel.updated_at ? new Date(rel.updated_at) : new Date();
-          const daysSinceUpdate = (Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24);
-          if (daysSinceUpdate < 1) continue;
-
-          const previousState = rel.emotional_state || "neutral";
-          const previousStage = rel.relationship_stage || "acquaintances";
-
-          const ci = EMOTIONAL_STATES.indexOf(previousState as typeof EMOTIONAL_STATES[number]);
-          const ni = EMOTIONAL_STATES.indexOf("neutral");
-          const mi = EMOTIONAL_STATES.indexOf(rates.minEmotionalState as typeof EMOTIONAL_STATES[number]);
-          const halfLives = daysSinceUpdate / rates.emotionalHalfLifeDays;
-          const steps = Math.floor(halfLives);
-          let newState = previousState;
-          if (steps > 0 && ci !== -1) {
-            let idx = ci < ni ? Math.min(ci + steps, ni) : ci > ni ? Math.max(ci - steps, ni) : ni;
-            idx = Math.max(idx, mi);
-            newState = EMOTIONAL_STATES[idx];
-          }
-
-          const si = RELATIONSHIP_STAGES.indexOf(previousStage as typeof RELATIONSHIP_STAGES[number]);
-          const sri = RELATIONSHIP_STAGES.indexOf("strangers");
-          const periods = daysSinceUpdate / rates.stageRegressionDays;
-          const rSteps = Math.floor(periods);
-          let newStage = previousStage;
-          if (rSteps > 0 && si !== -1) newStage = RELATIONSHIP_STAGES[Math.min(si + rSteps, sri)];
-
-          if (newState !== previousState || newStage !== previousStage) {
-            db.prepare("UPDATE relationships SET emotional_state = ?, relationship_stage = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(newState, newStage, rel.id);
-            result.relationshipsDecayed++;
-          }
-        }
-      } catch {
-        // Skip if decay fails
-      }
-    }
+    // Wiki: decay relationships via wiki pages
+    try {
+      const decayResult = await wikiDecayRelationships(userId, uid);
+      result.wikiRelationshipsDecayed += decayResult.decayed;
+      result.relationshipsDecayed += decayResult.decayed;
+    } catch { /* non-fatal */ }
 
     // Memory compression (universe-scoped)
     if (needsMemoryCompression(userId)) {
@@ -871,85 +779,34 @@ export function queueIdleJobs(userId: string, universeId: string | null = null):
     return row?.universe_id || null;
   })();
 
-  const useWiki = process.env.WIKI_JOBS === "true";
+  // Wiki job queueing
+  // Queue wiki ingest for lore entries
+  queueJob(userId, "wiki_ingest", { userId, universeId: effectiveUniverse || undefined }, "low", effectiveUniverse || undefined);
+  queued++;
 
-  if (useWiki) {
-    // Wiki-first job queueing
-    // Queue wiki ingest for lore entries
-    queueJob(userId, "wiki_ingest", { userId, universeId: effectiveUniverse || undefined }, "low", effectiveUniverse || undefined);
+  // Queue wiki entity enrichment
+  queueJob(userId, "wiki_enrich_entity", { userId, universeId: effectiveUniverse || undefined }, "low", effectiveUniverse || undefined);
+  queued++;
+
+  // Queue wiki rumor generation
+  queueJob(userId, "wiki_generate_rumors", { userId, universeId: effectiveUniverse || undefined }, "low", effectiveUniverse || undefined);
+  queued++;
+
+  // Queue wiki page deepening
+  queueJob(userId, "wiki_deepen_page", { userId, universeId: effectiveUniverse || undefined }, "low", effectiveUniverse || undefined);
+  queued++;
+
+  // Queue wiki relationship decay
+  if (needsDecayProcessing(userId)) {
+    queueJob(userId, "decay_relationships", { userId, universeId: effectiveUniverse || undefined }, "low", effectiveUniverse || undefined);
     queued++;
+  }
 
-    // Queue wiki entity enrichment
-    queueJob(userId, "wiki_enrich_entity", { userId, universeId: effectiveUniverse || undefined }, "low", effectiveUniverse || undefined);
+  // Queue summarization (not wiki-specific)
+  const sessionsNeedingSummaries = getSessionsNeedingSummaries(userId);
+  for (const sessionId of sessionsNeedingSummaries.slice(0, 5)) {
+    queueJob(userId, "summarize_messages", { sessionId }, "low");
     queued++;
-
-    // Queue wiki rumor generation
-    queueJob(userId, "wiki_generate_rumors", { userId, universeId: effectiveUniverse || undefined }, "low", effectiveUniverse || undefined);
-    queued++;
-
-    // Queue wiki page deepening
-    queueJob(userId, "wiki_deepen_page", { userId, universeId: effectiveUniverse || undefined }, "low", effectiveUniverse || undefined);
-    queued++;
-
-    // Queue wiki relationship decay
-    if (needsDecayProcessing(userId)) {
-      queueJob(userId, "decay_relationships", { userId, universeId: effectiveUniverse || undefined }, "low", effectiveUniverse || undefined);
-      queued++;
-    }
-
-    // Queue summarization (not wiki-specific)
-    const sessionsNeedingSummaries = getSessionsNeedingSummaries(userId);
-    for (const sessionId of sessionsNeedingSummaries.slice(0, 5)) {
-      queueJob(userId, "summarize_messages", { sessionId }, "low");
-      queued++;
-    }
-  } else {
-    // DB fallback job queueing (original behavior)
-    // Queue embeddings for entities that need them
-    const entitiesNeedingEmbeddings = getEntitiesNeedingEmbeddings(userId);
-    for (const entity of entitiesNeedingEmbeddings.slice(0, 10)) {
-      queueJob(userId, "generate_embeddings", {
-        entityType: entity.entityType,
-        entityId: entity.entityId,
-        userId,
-      }, "low");
-      queued++;
-    }
-
-    // Queue summarization for sessions that need it
-    const sessionsNeedingSummaries = getSessionsNeedingSummaries(userId);
-    for (const sessionId of sessionsNeedingSummaries.slice(0, 5)) {
-      queueJob(userId, "summarize_messages", { sessionId }, "low");
-      queued++;
-    }
-
-    // Queue relationship analysis for active sessions
-    const sessionsNeedingAnalysis = getSessionsNeedingRelationshipAnalysis(userId);
-    for (const sessionId of sessionsNeedingAnalysis.slice(0, 3)) {
-      queueJob(userId, "analyze_relationships", { sessionId, userId }, "low");
-      queued++;
-    }
-
-    // Queue lore expansion for active universes
-    const universesNeedingExpansion = effectiveUniverse
-      ? [effectiveUniverse]
-      : getUniversesNeedingLoreExpansion(userId);
-    for (const uid of universesNeedingExpansion.slice(0, 2)) {
-      queueJob(userId, "expand_lore", { universeId: uid, userId }, "low", uid);
-      queued++;
-    }
-
-    // Queue decay if needed
-    if (needsDecayProcessing(userId)) {
-      queueJob(userId, "decay_relationships", { userId, universeId: effectiveUniverse || undefined }, "low", effectiveUniverse || undefined);
-      queued++;
-    }
-
-    // Queue compression if needed
-    if (needsMemoryCompression(userId)) {
-      queueJob(userId, "compress_memories", { userId, universeId: effectiveUniverse || undefined }, "low", effectiveUniverse || undefined);
-      queued++;
-    }
   }
 
   return queued;
@@ -960,10 +817,10 @@ export function queueIdleJobs(userId: string, universeId: string | null = null):
  * Called when the client detects user inactivity and reports a tier change.
  *
  * Tiers:
- * 1 (5 min):  wiki_compress_summaries, wiki_refine_relationships (or DB fallback)
- * 2 (10 min): wiki_deepen_pages, wiki_enrich_entities (or DB fallback)
- * 3 (15 min): wiki_generate_rumors, wiki_archive (or DB fallback)
- * 4 (30 min): wiki_decay_relationships, summarize_messages (or DB fallback)
+ * 1 (5 min):  compress_memories, refine_relationship_summary
+ * 2 (10 min): wiki_deepen_page, wiki_enrich_entity, generate_embeddings
+ * 3 (15 min): wiki_generate_rumors, archival_processing
+ * 4 (30 min): decay_relationships, summarize_messages
  */
 export async function processIdleTier(
   userId: string,
@@ -973,50 +830,22 @@ export async function processIdleTier(
 ): Promise<{ jobsQueued: number; tier: number }> {
   let queued = 0;
   const uid = universeId || undefined;
-  const useWiki = process.env.WIKI_JOBS === "true";
 
   try {
     switch (tier) {
       case 1: // 5 min idle
-        if (useWiki) {
-          // Wiki-first: compress summaries + refine relationships
-          queueJob(userId, "compress_memories", { userId, universeId: uid, wikiFirst: true }, "idle", uid);
-          queued++;
-          queueJob(userId, "refine_relationship_summary", { userId, universeId: uid, wikiFirst: true }, "idle", uid);
-          queued++;
-        } else {
-          // DB fallback
-          if (needsMemoryCompression(userId)) {
-            queueJob(userId, "compress_memories", { userId, universeId: uid }, "idle", uid);
-            queued++;
-          }
-          queueJob(userId, "refine_relationship_summary", { userId, universeId: uid }, "idle", uid);
-          queued++;
-        }
+        queueJob(userId, "compress_memories", { userId, universeId: uid }, "idle", uid);
+        queued++;
+        queueJob(userId, "refine_relationship_summary", { userId, universeId: uid }, "idle", uid);
+        queued++;
         break;
 
       case 2: // 10 min idle
-        if (useWiki) {
-          // Wiki-first: deepen pages + enrich entities
-          queueJob(userId, "wiki_deepen_page", { userId, universeId: uid }, "idle", uid);
-          queued++;
-          queueJob(userId, "wiki_enrich_entity", { userId, universeId: uid }, "idle", uid);
-          queued++;
-        } else {
-          // DB fallback
-          try {
-            const universesNeedingExpansion = uid
-              ? [uid]
-              : getUniversesNeedingLoreExpansion(userId);
-            for (const u of universesNeedingExpansion.slice(0, 2)) {
-              queueJob(userId, "expand_lore", { universeId: u, userId }, "idle", u);
-              queued++;
-            }
-          } catch { /* skip if lore expansion fails */ }
-          queueJob(userId, "enrich_npc", { userId, universeId: uid }, "idle", uid);
-          queued++;
-        }
-        // Embeddings (always queued regardless of wiki mode)
+        queueJob(userId, "wiki_deepen_page", { userId, universeId: uid }, "idle", uid);
+        queued++;
+        queueJob(userId, "wiki_enrich_entity", { userId, universeId: uid }, "idle", uid);
+        queued++;
+        // Embeddings (always queued)
         try {
           const entitiesNeedingEmbeddings = getEntitiesNeedingEmbeddings(userId);
           for (const entity of entitiesNeedingEmbeddings.slice(0, 5)) {
@@ -1031,36 +860,18 @@ export async function processIdleTier(
         break;
 
       case 3: // 15 min idle
-        if (useWiki) {
-          // Wiki-first: generate rumors + archive
-          queueJob(userId, "wiki_generate_rumors", { userId, universeId: uid }, "idle", uid);
-          queued++;
-          queueJob(userId, "archival_processing", { userId, universeId: uid, wikiFirst: true }, "idle", uid);
-          queued++;
-        } else {
-          // DB fallback
-          queueJob(userId, "expand_rumors", { userId, universeId: uid }, "idle", uid);
-          queued++;
-          queueJob(userId, "archival_processing", { userId, universeId: uid }, "idle", uid);
-          queued++;
-        }
+        queueJob(userId, "wiki_generate_rumors", { userId, universeId: uid }, "idle", uid);
+        queued++;
+        queueJob(userId, "archival_processing", { userId, universeId: uid }, "idle", uid);
+        queued++;
         break;
 
       case 4: // 30 min idle
-        if (useWiki) {
-          // Wiki-first: decay relationships via wiki
-          if (needsDecayProcessing(userId)) {
-            queueJob(userId, "decay_relationships", { userId, universeId: uid, wikiFirst: true }, "idle", uid);
-            queued++;
-          }
-        } else {
-          // DB fallback
-          if (needsDecayProcessing(userId)) {
-            queueJob(userId, "decay_relationships", { userId, universeId: uid }, "idle", uid);
-            queued++;
-          }
+        if (needsDecayProcessing(userId)) {
+          queueJob(userId, "decay_relationships", { userId, universeId: uid }, "idle", uid);
+          queued++;
         }
-        // Summarization (always queued regardless of wiki mode)
+        // Summarization (always queued)
         try {
           const sessionsNeedingSummaries = getSessionsNeedingSummaries(userId);
           for (const sessionId of sessionsNeedingSummaries.slice(0, 3)) {

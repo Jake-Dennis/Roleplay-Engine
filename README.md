@@ -37,7 +37,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## LLM Wiki System
 
-This project includes an LLM-maintained wiki that replaces the legacy lore database. Wiki content is stored as markdown files with YAML frontmatter, organized under `data/{userId}/wiki/`.
+This project includes an LLM-maintained wiki for world-building. Wiki content is stored as markdown files with YAML frontmatter, organized under `data/{userId}/wiki/`.
 
 ### Key Features
 
@@ -49,13 +49,6 @@ This project includes an LLM-maintained wiki that replaces the legacy lore datab
 - **LLM operations** - Ingest sources, query with synthesis, lint for contradictions
 - **Validation workflow** - Frontmatter status: draft -> reviewed -> locked
 - **Concurrent edit protection** - Timestamp-based conflict detection with diff saving
-
-### Feature Flags
-
-| Flag | Effect |
-|------|--------|
-| `WIKI_FIRST=true` | Use wiki as primary retrieval source |
-| `WIKI_JOBS=true` | Route lore jobs to wiki handlers |
 
 ### Documentation
 

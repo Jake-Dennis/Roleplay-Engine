@@ -34,7 +34,7 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
@@ -71,7 +71,7 @@ export async function PUT(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
@@ -161,7 +161,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
@@ -193,15 +193,11 @@ export async function DELETE(
   }
 
   // Delete all dependent records (cascade)
-  db.prepare("DELETE FROM locations WHERE universe_id = ?").run(id);
-  db.prepare("DELETE FROM npcs WHERE universe_id = ?").run(id);
   db.prepare("DELETE FROM relationships WHERE universe_id = ?").run(id);
-  db.prepare("DELETE FROM events WHERE universe_id = ?").run(id);
   db.prepare("DELETE FROM narrative_threads WHERE universe_id = ?").run(id);
-  db.prepare("DELETE FROM lore_validations WHERE universe_id = ?").run(id);
+  db.prepare("DELETE FROM entity_validations WHERE universe_id = ?").run(id);
   db.prepare("DELETE FROM backlinks WHERE universe_id = ?").run(id);
   db.prepare("DELETE FROM embedding_index WHERE universe_id = ?").run(id);
-  db.prepare("DELETE FROM narrative_memories WHERE universe_id = ?").run(id);
   db.prepare("DELETE FROM job_queue WHERE universe_id = ?").run(id);
 
   db.prepare("DELETE FROM universes WHERE id = ?").run(id);

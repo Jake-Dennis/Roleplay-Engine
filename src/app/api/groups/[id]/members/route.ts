@@ -11,7 +11,7 @@ export async function POST(
   const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const { id: groupId } = await params;
@@ -64,7 +64,7 @@ export async function DELETE(
   const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const { id: groupId } = await params;

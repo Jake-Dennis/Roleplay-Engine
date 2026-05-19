@@ -1,10 +1,8 @@
 import fs from "fs";
 import path from "path";
-import { getDb, isVecAvailable } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { classifyIntent, type Intent } from "@/lib/intent-analyzer";
 import { classifyIntentWithFallback } from "@/lib/semantic-intent-fallback";
-import { generateEmbedding } from "@/lib/ollama";
-import { vectorSearch } from "@/lib/embeddings";
 import { readWikiPage, listWikiPages } from "@/lib/wiki/file-io";
 
 // H5: Re-export prompt assembly functions from canonical source (prompt-builder.ts)
@@ -81,99 +79,6 @@ export function getSceneContext(sessionId: string): SceneContext {
       ? result.active_npcs.split(",").map((s: string) => s.trim()).filter(Boolean)
       : [],
   };
-}
-
-/**
- * Fetch lore entries relevant to a session's universe
- * Lore data comes from locations and NPCs with descriptions
- * Uses vector search when sqlite-vec is available
- */
-export async function getLoreContext(universeId: string, query?: string): Promise<LoreContext> {
-  const db = getDb();
-
-  // If vector search is available and we have a query, use it
-  if (isVecAvailable() && query) {
-    try {
-      const queryVector = await generateEmbedding(query);
-
-      // Search for relevant lore
-      const loreResults = vectorSearch("location", queryVector, universeId, 5);
-      const npcResults = vectorSearch("npc", queryVector, universeId, 5);
-
-      // Get full lore entries for matched entities
-      const matchedLocationIds = loreResults.map((r) => r.entityId);
-      const matchedNpcIds = npcResults.map((r) => r.entityId);
-
-      const locations = matchedLocationIds.length > 0
-        ? db.prepare(
-            `SELECT id, name, known_info as description, 'location' as type
-             FROM locations
-             WHERE id IN (${matchedLocationIds.map(() => "?").join(",")})
-          `).all(...matchedLocationIds) as { id: number; name: string; description: string; type: string }[]
-        : [];
-
-      const npcs = matchedNpcIds.length > 0
-        ? db.prepare(
-            `SELECT id, name, tags as description, 'npc' as type
-             FROM npcs
-             WHERE id IN (${matchedNpcIds.map(() => "?").join(",")})
-          `).all(...matchedNpcIds) as { id: number; name: string; description: string; type: string }[]
-        : [];
-
-      const allEntries = [
-        ...(locations || []).map((l: any) => ({
-          id: l.id,
-          name: l.name,
-          description: typeof l.description === 'string' ? l.description : (l.description ? JSON.stringify(l.description) : ''),
-          type: l.type,
-        })),
-        ...(npcs || []).map((n: any) => ({
-          id: n.id,
-          name: n.name,
-          description: typeof n.description === 'string' ? n.description : (n.description ? JSON.stringify(n.description) : ''),
-          type: n.type,
-        })),
-      ];
-
-      if (allEntries.length > 0) {
-        return { entries: allEntries };
-      }
-    } catch {
-      // Fall back to keyword-based retrieval
-    }
-  }
-
-  // Fallback: keyword-based retrieval
-  const locations = db.prepare(
-    `SELECT id, name, known_info as description, 'location' as type
-     FROM locations
-     WHERE universe_id = ?
-     ORDER BY name`
-  ).all(universeId) as { id: number; name: string; description: string; type: string }[];
-
-  const npcs = db.prepare(
-    `SELECT id, name, tags as description, 'npc' as type
-     FROM npcs
-     WHERE universe_id = ?
-     ORDER BY name`
-  ).all(universeId) as { id: number; name: string; description: string; type: string }[];
-
-  const allEntries = [
-    ...(locations || []).map((l: any) => ({
-      id: l.id,
-      name: l.name,
-      description: typeof l.description === 'string' ? l.description : (l.description ? JSON.stringify(l.description) : ''),
-      type: l.type,
-    })),
-    ...(npcs || []).map((n: any) => ({
-      id: n.id,
-      name: n.name,
-      description: typeof n.description === 'string' ? n.description : (n.description ? JSON.stringify(n.description) : ''),
-      type: n.type,
-    })),
-  ];
-
-  return { entries: allEntries };
 }
 
 // ---------------------------------------------------------------------------
@@ -345,15 +250,11 @@ function loadAllWikiEntries(wikiRoot: string, universeId: string): LoreContext {
  * 2. Score entries by relevance to scene context
  * 3. Read full content of top candidate pages
  * 4. Map to LoreContext shape
- * 5. Fall back to DB (getLoreContext) if wiki unavailable
- *
- * Feature flag: Set process.env.WIKI_FIRST="true" to use wiki as primary source.
- * When the flag is not set, callers should prefer getLoreContext() for DB-first.
  *
  * @param userId - User ID for wiki path resolution (data/{userId}/wiki/)
  * @param universeId - Universe ID to filter pages by
  * @param sceneContext - Optional scene context for relevance scoring
- * @returns LoreContext with wiki entries (or DB fallback)
+ * @returns LoreContext with wiki entries (or empty if wiki unavailable)
  */
 export async function getWikiContext(
   userId: string,
@@ -373,12 +274,12 @@ export async function getWikiContext(
     // Step 1: Read index.md
     const indexPath = path.join(wikiRoot, "index.md");
     if (!fs.existsSync(indexPath)) {
-      return getLoreContext(universeId, query);
+      return { entries: [] };
     }
 
     const indexEntries = parseWikiIndex(indexPath);
     if (indexEntries.length === 0) {
-      return getLoreContext(universeId, query);
+      return { entries: [] };
     }
 
     // Step 2: Score entries by relevance
@@ -391,7 +292,7 @@ export async function getWikiContext(
       // No relevant entries — load all wiki pages for this universe
       const wikiResult = loadAllWikiEntries(wikiRoot, universeId);
       if (wikiResult.entries.length > 0) return wikiResult;
-      return getLoreContext(universeId, query);
+      return { entries: [] };
     }
 
     // Step 3: Resolve top candidates to page paths and read content
@@ -419,11 +320,9 @@ export async function getWikiContext(
       return { entries };
     }
 
-    // Step 4: DB fallback
-    return getLoreContext(universeId, query);
+    return { entries: [] };
   } catch {
-    // Any error — fall back to DB
-    return getLoreContext(universeId, query);
+    return { entries: [] };
   }
 }
 
@@ -519,8 +418,18 @@ export async function getRetrievedContext(
   universeId: string,
   userMessage?: string
 ): Promise<RetrievedContext> {
+  const db = getDb();
   const scene = getSceneContext(sessionId);
-  const lore = await getLoreContext(universeId, userMessage);
+
+  // Look up userId from session for wiki context
+  const session = db.prepare(
+    "SELECT owner_id FROM sessions WHERE id = ?"
+  ).get(sessionId) as { owner_id: string } | undefined;
+  const userId = session?.owner_id || "";
+
+  const lore = userId
+    ? await getWikiContext(userId, universeId, scene)
+    : { entries: [] };
   const relationships = getRelationshipContext(universeId);
   const recentMessages = getRecentMessages(sessionId);
   const canonContext = getCanonContext(universeId);
@@ -549,7 +458,7 @@ export async function getRetrievedContextWithFallback(
   userMessage?: string
 ): Promise<RetrievedContext> {
   const scene = getSceneContext(sessionId);
-  const lore = await getLoreContext(universeId, userMessage);
+  const lore = await getWikiContext(userId, universeId, scene);
   const relationships = getRelationshipContext(universeId);
   const recentMessages = getRecentMessages(sessionId);
   const canonContext = getCanonContext(universeId);

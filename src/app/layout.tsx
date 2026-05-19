@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const openDyslexic = localFont({
-  src: [
-    { path: "../../public/fonts/OpenDyslexic-Regular.otf", weight: "400", style: "normal" },
-    { path: "../../public/fonts/OpenDyslexic-Italic.otf", weight: "400", style: "italic" },
-    { path: "../../public/fonts/OpenDyslexic-Bold.otf", weight: "700", style: "normal" },
-    { path: "../../public/fonts/OpenDyslexic-BoldItalic.otf", weight: "700", style: "italic" },
-  ],
-  variable: "--font-open-dyslexic",
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
@@ -25,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`h-full ${openDyslexic.variable}`}>
+    <html lang="en" className={`h-full ${inter.variable}`}>
       <body className="h-full antialiased font-sans">{children}</body>
     </html>
   );

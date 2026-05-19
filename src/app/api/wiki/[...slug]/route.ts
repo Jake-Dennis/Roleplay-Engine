@@ -7,7 +7,9 @@ import {
   deleteWikiPage,
   listWikiPages,
   WikiFrontmatter,
+  ConflictError,
 } from "@/lib/wiki/file-io";
+import { saveRevision } from "@/lib/wiki/revisions";
 import { generateIndex } from "@/lib/wiki/index-generator";
 import { findOrphans } from "@/lib/wiki/orphans";
 import path from "path";
@@ -29,7 +31,7 @@ export async function GET(
 ) {
   const token = request.cookies.get("auth-token")?.value;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const { slug } = await params;
@@ -75,7 +77,7 @@ export async function PUT(
 ) {
   const token = request.cookies.get("auth-token")?.value;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const { slug } = await params;
@@ -93,7 +95,7 @@ export async function PUT(
   }
 
   const body = await request.json();
-  const { content, frontmatter } = body;
+  const { content, frontmatter, expectedLastModified } = body;
 
   if (content === undefined && !frontmatter) {
     return NextResponse.json(
@@ -110,7 +112,13 @@ export async function PUT(
       ? { ...existing.frontmatter, ...frontmatter }
       : (existing.frontmatter as WikiFrontmatter);
 
-    writeWikiPage(fullPath, mergedContent, mergedFrontmatter as WikiFrontmatter);
+    // Save revision snapshot before overwriting
+    saveRevision(wikiRoot, slug, existing.content, existing.frontmatter);
+
+    writeWikiPage(fullPath, mergedContent, mergedFrontmatter as WikiFrontmatter, {
+      expectedLastModified,
+      onConflict: "fail",
+    });
 
     // Regenerate index
     generateIndex(wikiRoot);
@@ -120,6 +128,12 @@ export async function PUT(
       path: relativePath,
     });
   } catch (err: unknown) {
+    if (err instanceof ConflictError) {
+      return NextResponse.json(
+        { error: "Concurrent edit conflict", existingLastModified: err.existingLastModified },
+        { status: 409 }
+      );
+    }
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
   }
@@ -131,7 +145,7 @@ export async function DELETE(
 ) {
   const token = request.cookies.get("auth-token")?.value;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = verifyToken(token);
+  const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const { slug } = await params;
