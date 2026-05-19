@@ -1,0 +1,33 @@
+import { NextRequest, NextResponse } from "next/server";
+import { verifyToken } from "@/lib/auth";
+import { APP_CONFIG } from "@/lib/config";
+import { lintWiki } from "@/lib/wiki/lint";
+import path from "path";
+
+export async function POST(request: NextRequest) {
+  const token = request.cookies.get("auth-token")?.value;
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const decoded = await verifyToken(token);
+  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+  const body = await request.json().catch(() => ({}));
+  const { universeId } = body;
+
+  const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
+
+  try {
+    const result = await lintWiki(wikiRoot, universeId);
+    return NextResponse.json({
+      contradictions: result.contradictions,
+      staleClaims: result.staleClaims,
+      orphans: result.orphans,
+      missingPages: result.missingPages,
+      suggestions: result.suggestions,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: (error as Error).message },
+      { status: 500 }
+    );
+  }
+}
