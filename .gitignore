@@ -42,3 +42,22 @@ next-env.d.ts
 
 # runtime data
 /data/
+
+# graphify
+/graphify-out/
+
+# playwright MCP
+/.playwright-mcp/
+
+# obsidian docs (external reference)
+/obsidian-docs/
+
+# font downloads
+/opendyslexic-*/
+/public/fonts/
+
+# local scripts/logs
+*.bat
+*.log
+*.db
+PLAN_*.md
