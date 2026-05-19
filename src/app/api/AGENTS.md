@@ -4,15 +4,19 @@
 75 REST route handlers (`route.ts` files). Raw SQL via better-sqlite3, inline auth checks, `NextResponse.json` errors. No server actions.
 
 ## AUTH PATTERN
-Every protected route follows:
+Every protected route uses the `withAuth()` wrapper or `getAuthToken()` utility:
 ```typescript
-const token = request.cookies.get("auth-token")?.value;
-// OR: const token = getAuthToken(request);  // newer utility
+// Preferred: withAuth wrapper (10 routes, 28 handlers)
+const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
+
+// Alternative: getAuthToken utility (all remaining routes)
+import { getAuthToken } from '@/lib/auth-token';
+const token = getAuthToken(request);
 if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 ```
-Two extraction styles coexist: direct cookie (older, ~60 routes) and `getAuthToken()` (newer, 5 route groups).
+All routes use `getAuthToken()` (cookie + x-auth-token header fallback). Zero direct `request.cookies.get("auth-token")` calls remain.
 
 ## ERROR RESPONSES
 Always `NextResponse.json({ error: "..." }, { status: N })`:

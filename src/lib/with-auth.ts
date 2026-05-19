@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { getAuthToken } from '@/lib/auth-token';
 
+import type { DecodedToken } from '@/lib/types';
+
 export interface AuthContext {
   userId: string;
-  decoded: Record<string, unknown>;
+  decoded: DecodedToken;
 }
 
 export async function withAuth(
@@ -23,7 +25,7 @@ export async function withAuth(
   return {
     auth: {
       userId: decoded.sub,
-      decoded: decoded as unknown as Record<string, unknown>,
+      decoded,
     },
   };
 }
