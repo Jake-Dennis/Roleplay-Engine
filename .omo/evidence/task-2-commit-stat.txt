@@ -1,0 +1,19 @@
+﻿commit 46259590fa944c43f67b86fa8681b2d47d0df742
+Author: Jake-Dennis <Jakepauldennis@hotmail.com>
+Date:   Tue May 19 15:34:52 2026 +0930
+
+    feat(wiki): add edit mode, revision history, error boundaries
+    
+    Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-openagent)
+    
+    Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>
+
+ src/app/(app)/session/error.tsx          |  47 ++++++
+ src/app/(app)/timeline/error.tsx         |  47 ++++++
+ src/app/(app)/wiki/[...slug]/page.tsx    | 251 ++++++++++++++++++++++++++++++-
+ src/app/(app)/wiki/error.tsx             |  47 ++++++
+ src/app/api/wiki-revisions/route.ts      |  84 +++++++++++
+ src/components/wiki/revision-history.tsx | 231 ++++++++++++++++++++++++++++
+ src/lib/markdown-utils.ts                |  94 ++++++++++++
+ src/lib/wiki/revisions.ts                | 104 +++++++++++++
+ 8 files changed, 902 insertions(+), 3 deletions(-)
