@@ -1,8 +1,11 @@
+import fs from "fs";
+import path from "path";
 import { getDb, isVecAvailable } from "@/lib/db";
 import { classifyIntent, type Intent } from "@/lib/intent-analyzer";
 import { classifyIntentWithFallback } from "@/lib/semantic-intent-fallback";
 import { generateEmbedding } from "@/lib/ollama";
 import { vectorSearch } from "@/lib/embeddings";
+import { readWikiPage, listWikiPages } from "@/lib/wiki/file-io";
 
 // H5: Re-export prompt assembly functions from canonical source (prompt-builder.ts)
 export {
@@ -171,6 +174,257 @@ export async function getLoreContext(universeId: string, query?: string): Promis
   ];
 
   return { entries: allEntries };
+}
+
+// ---------------------------------------------------------------------------
+// Wiki-first retrieval (internal helpers)
+// ---------------------------------------------------------------------------
+
+/** Parsed entry from wiki index.md. */
+interface WikiIndexEntry {
+  title: string;
+  summary: string;
+  status: string;
+  section: string; // entity, concept, source, synthesis
+}
+
+/**
+ * Parse wiki index.md into structured entries grouped by section.
+ * Expected format:
+ *   ## Entities
+ *   - [[Title]] — summary (status: reviewed)
+ */
+function parseWikiIndex(indexPath: string): WikiIndexEntry[] {
+  if (!fs.existsSync(indexPath)) return [];
+
+  const content = fs.readFileSync(indexPath, "utf-8");
+  const entries: WikiIndexEntry[] = [];
+  let currentSection = "";
+
+  for (const line of content.split("\n")) {
+    const sectionMatch = line.match(/^##\s+(.+)$/);
+    if (sectionMatch) {
+      currentSection = sectionMatch[1].toLowerCase();
+      continue;
+    }
+
+    const entryMatch = line.match(/^-\s+\[\[([^\]]+)\]\]\s*[—-]\s*(.+)$/);
+    if (entryMatch) {
+      const title = entryMatch[1].trim();
+      const rest = entryMatch[2].trim();
+      const statusMatch = rest.match(/\(status:\s*(\w+)\)\s*$/);
+      const status = statusMatch ? statusMatch[1] : "draft";
+      const summary = statusMatch
+        ? rest.replace(/\(status:\s*\w+\)\s*$/, "").trim()
+        : rest;
+
+      entries.push({ title, summary, status, section: currentSection });
+    }
+  }
+
+  return entries;
+}
+
+/**
+ * Score a wiki index entry's relevance to a query using keyword overlap.
+ */
+function scoreWikiEntry(entry: WikiIndexEntry, query: string, universeId: string): number {
+  const queryTerms = query.toLowerCase().split(/\s+/).filter((t) => t.length > 2);
+  if (queryTerms.length === 0) return 0;
+
+  const searchable = `${entry.title} ${entry.summary} ${entry.section}`.toLowerCase();
+  let matches = 0;
+  for (const term of queryTerms) {
+    if (searchable.includes(term)) matches++;
+  }
+
+  let score = matches / queryTerms.length;
+
+  // Bonus for title match
+  if (entry.title.toLowerCase().includes(queryTerms[0])) score += 0.3;
+
+  // Bonus for reviewed/locked status
+  if (entry.status === "locked") score += 0.15;
+  else if (entry.status === "reviewed") score += 0.1;
+
+  // Bonus for universe-scoped sections
+  if (universeId && (entry.section === "entity" || entry.section === "concept")) {
+    score += 0.05;
+  }
+
+  return Math.min(score, 1.0);
+}
+
+/**
+ * Resolve an index entry title to an actual wiki page path.
+ */
+function resolveWikiPagePath(
+  title: string,
+  pages: ReturnType<typeof listWikiPages>,
+  universeId: string
+): string | null {
+  const normalizedTitle = title.toLowerCase().replace(/\s+/g, "-");
+
+  // First pass: exact title match + same universe
+  for (const page of pages) {
+    const pageTitle = (page.frontmatter.title || "").toLowerCase().replace(/\s+/g, "-");
+    const pageUniverse = page.frontmatter.universe?.toLowerCase();
+    if (pageTitle === normalizedTitle && pageUniverse === universeId) {
+      return page.path;
+    }
+  }
+
+  // Second pass: exact title match (any universe)
+  for (const page of pages) {
+    const pageTitle = (page.frontmatter.title || "").toLowerCase().replace(/\s+/g, "-");
+    if (pageTitle === normalizedTitle) return page.path;
+  }
+
+  // Third pass: filename match
+  for (const page of pages) {
+    const filename = path.basename(page.path, ".md").toLowerCase();
+    if (filename === normalizedTitle) return page.path;
+  }
+
+  return null;
+}
+
+/**
+ * Hash a file path to a numeric ID for LoreContext compatibility.
+ */
+function hashPathToId(filePath: string): number {
+  let hash = 0;
+  for (let i = 0; i < filePath.length; i++) {
+    const char = filePath.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // 32-bit integer
+  }
+  return Math.abs(hash);
+}
+
+/**
+ * Load all wiki entries for a universe when no query is provided.
+ * Returns entries sorted by status priority (locked > reviewed > draft).
+ */
+function loadAllWikiEntries(wikiRoot: string, universeId: string): LoreContext {
+  try {
+    const allPages = listWikiPages(wikiRoot);
+    const filtered = allPages.filter(
+      (p) => !p.frontmatter.universe || p.frontmatter.universe === universeId
+    );
+
+    const statusPriority: Record<string, number> = { locked: 0, reviewed: 1, draft: 2, rejected: 3 };
+    filtered.sort(
+      (a, b) =>
+        (statusPriority[a.frontmatter.status ?? "draft"] ?? 2) -
+        (statusPriority[b.frontmatter.status ?? "draft"] ?? 2)
+    );
+
+    const entries = filtered.slice(0, 20).map((page) => ({
+      id: hashPathToId(page.path),
+      name: page.frontmatter.title || path.basename(page.path, ".md"),
+      description: page.content.substring(0, 500),
+      type: page.frontmatter.type || page.frontmatter.section || "entity",
+    }));
+
+    return { entries };
+  } catch {
+    return { entries: [] };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Wiki-first retrieval (main entry point)
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch lore entries from the wiki using index-first retrieval.
+ *
+ * Flow:
+ * 1. Read index.md for first-pass filtering
+ * 2. Score entries by relevance to scene context
+ * 3. Read full content of top candidate pages
+ * 4. Map to LoreContext shape
+ * 5. Fall back to DB (getLoreContext) if wiki unavailable
+ *
+ * Feature flag: Set process.env.WIKI_FIRST="true" to use wiki as primary source.
+ * When the flag is not set, callers should prefer getLoreContext() for DB-first.
+ *
+ * @param userId - User ID for wiki path resolution (data/{userId}/wiki/)
+ * @param universeId - Universe ID to filter pages by
+ * @param sceneContext - Optional scene context for relevance scoring
+ * @returns LoreContext with wiki entries (or DB fallback)
+ */
+export async function getWikiContext(
+  userId: string,
+  universeId: string,
+  sceneContext?: SceneContext
+): Promise<LoreContext> {
+  const wikiRoot = path.join(process.cwd(), "data", userId, "wiki");
+
+  // Build query from scene context for relevance scoring
+  const queryParts: string[] = [];
+  if (sceneContext?.location) queryParts.push(sceneContext.location);
+  if (sceneContext?.goal) queryParts.push(sceneContext.goal);
+  if (sceneContext?.activeNpcs?.length) queryParts.push(...sceneContext.activeNpcs);
+  const query = queryParts.join(" ") || universeId;
+
+  try {
+    // Step 1: Read index.md
+    const indexPath = path.join(wikiRoot, "index.md");
+    if (!fs.existsSync(indexPath)) {
+      return getLoreContext(universeId, query);
+    }
+
+    const indexEntries = parseWikiIndex(indexPath);
+    if (indexEntries.length === 0) {
+      return getLoreContext(universeId, query);
+    }
+
+    // Step 2: Score entries by relevance
+    const scored = indexEntries
+      .map((entry) => ({ entry, score: scoreWikiEntry(entry, query, universeId) }))
+      .filter((s) => s.score > 0.1)
+      .sort((a, b) => b.score - a.score);
+
+    if (scored.length === 0) {
+      // No relevant entries — load all wiki pages for this universe
+      const wikiResult = loadAllWikiEntries(wikiRoot, universeId);
+      if (wikiResult.entries.length > 0) return wikiResult;
+      return getLoreContext(universeId, query);
+    }
+
+    // Step 3: Resolve top candidates to page paths and read content
+    const allPages = listWikiPages(wikiRoot);
+    const entries: LoreContext["entries"] = [];
+
+    for (const { entry } of scored.slice(0, 10)) {
+      const resolved = resolveWikiPagePath(entry.title, allPages, universeId);
+      if (!resolved) continue;
+
+      try {
+        const page = readWikiPage(resolved);
+        entries.push({
+          id: hashPathToId(resolved),
+          name: page.frontmatter.title || path.basename(resolved, ".md"),
+          description: page.content.substring(0, 500),
+          type: page.frontmatter.type || entry.section,
+        });
+      } catch {
+        // Skip unreadable pages
+      }
+    }
+
+    if (entries.length > 0) {
+      return { entries };
+    }
+
+    // Step 4: DB fallback
+    return getLoreContext(universeId, query);
+  } catch {
+    // Any error — fall back to DB
+    return getLoreContext(universeId, query);
+  }
 }
 
 /**
