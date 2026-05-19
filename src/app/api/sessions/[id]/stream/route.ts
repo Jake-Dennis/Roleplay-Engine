@@ -131,7 +131,7 @@ export async function GET(
       ];
 
       const unsubscribers = eventTypes.map((eventType) =>
-        eventBus.on(`${eventType}:${sessionId}`, (data: any) => {
+        eventBus.on(`${eventType}:${sessionId}`, (data: Record<string, unknown>) => {
           const eventId = data._eventId;
           const eventName = data._eventName;
           // Clean up internal fields

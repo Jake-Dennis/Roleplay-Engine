@@ -137,8 +137,8 @@ export default function GraphView({ pages, basePath = '/wiki', isLoading, error,
     synthesis: 'synthesis',
   };
 
-  const handleTap = (event: any) => {
-    const target = event.target;
+  const handleTap = (event: { target: () => { isNode: () => boolean; id: () => string } }) => {
+    const target = event.target();
     if (target.isNode()) {
       const nodeId = target.id();
       const page = pages.find(p => p.path === nodeId);
@@ -160,7 +160,7 @@ export default function GraphView({ pages, basePath = '/wiki', isLoading, error,
           {
             selector: 'node',
             style: {
-              'background-color': (ele: any) => NODE_COLORS[ele.data('type')] || '#6b7280',
+              'background-color': (ele: { data: (key: string) => string }) => NODE_COLORS[ele.data('type')] || '#6b7280',
               'label': 'data(label)',
               'font-size': '10px',
               'text-valign': 'bottom',

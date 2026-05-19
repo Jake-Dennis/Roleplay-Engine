@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from "@/lib/with-auth";
 import { getDb } from "@/lib/db";
 import { rowToJson } from "@/lib/row-to-json";
+import type { DbParams } from "@/lib/types";
 
 const VALID_ENTRY_TYPES = ["event", "milestone", "era_start", "era_end", "note"];
 const VALID_IMPORTANCE = ["low", "medium", "high", "critical"];
 
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
@@ -26,14 +26,14 @@ export async function GET(request: NextRequest) {
   if (id) {
     const row = db.prepare(
       "SELECT * FROM timeline_entries WHERE id = ? AND user_id = ?"
-    ).get(id, decoded.sub);
+    ).get(id, userId);
     if (!row) return NextResponse.json({ error: "Timeline entry not found" }, { status: 404 });
     return NextResponse.json({ entry: rowToJson(row) });
   }
 
   // List entries with filters
   let query = "SELECT * FROM timeline_entries WHERE user_id = ?";
-  const params: any[] = [decoded.sub];
+  const params: DbParams = [userId];
 
   if (sessionId) {
     query += " AND session_id = ?";
@@ -61,10 +61,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const body = await request.json();
   const { title, description, sessionId, threadId, occurredAt, era, entryType, importance } = body;
@@ -96,7 +95,7 @@ export async function POST(request: NextRequest) {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     id,
-    decoded.sub,
+    userId,
     sessionId || null,
     threadId || null,
     title.trim(),
@@ -112,10 +111,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const body = await request.json();
   const { id, title, description, occurredAt, era, entryType, importance } = body;
@@ -127,7 +125,7 @@ export async function PUT(request: NextRequest) {
   const db = getDb();
   const existing = db.prepare(
     "SELECT * FROM timeline_entries WHERE id = ? AND user_id = ?"
-  ).get(id, decoded.sub);
+  ).get(id, userId);
   if (!existing) return NextResponse.json({ error: "Timeline entry not found" }, { status: 404 });
 
   if (title !== undefined) {
@@ -161,7 +159,7 @@ export async function PUT(request: NextRequest) {
     entryType ?? null,
     importance ?? null,
     id,
-    decoded.sub
+    userId
   );
 
   const row = db.prepare("SELECT * FROM timeline_entries WHERE id = ?").get(id);
@@ -169,10 +167,9 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
@@ -184,9 +181,9 @@ export async function DELETE(request: NextRequest) {
   const db = getDb();
   const existing = db.prepare(
     "SELECT * FROM timeline_entries WHERE id = ? AND user_id = ?"
-  ).get(id, decoded.sub);
+  ).get(id, userId);
   if (!existing) return NextResponse.json({ error: "Timeline entry not found" }, { status: 404 });
 
-  db.prepare("DELETE FROM timeline_entries WHERE id = ? AND user_id = ?").run(id, decoded.sub);
+  db.prepare("DELETE FROM timeline_entries WHERE id = ? AND user_id = ?").run(id, userId);
   return NextResponse.json({ success: true });
 }

@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
+import type { DbDatabase } from "@/lib/types";
 
 // Ensure invitations table exists
-function ensureTable(db: any) {
+function ensureTable(db: DbDatabase) {
   db.exec(`CREATE TABLE IF NOT EXISTS invitations (
     id TEXT PRIMARY KEY,
     session_id TEXT NOT NULL REFERENCES sessions(id),

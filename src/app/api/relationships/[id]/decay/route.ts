@@ -3,14 +3,15 @@ import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { processRelationshipDecay, getDecayStats } from "@/lib/relationship-decay";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
+import type { DbDatabase, DbResult } from "@/lib/types";
 
-function hasRelationshipAccess(db: any, relationshipId: string, userId: string): any {
+function hasRelationshipAccess(db: DbDatabase, relationshipId: string, userId: string): DbResult | null {
   const rel = db.prepare(
     `SELECT r.*, u.group_id
      FROM relationships r
      LEFT JOIN universes u ON r.universe_id = u.id
      WHERE r.id = ?`
-  ).get(relationshipId);
+  ).get(relationshipId) as DbResult | undefined;
 
   if (!rel) return null;
 

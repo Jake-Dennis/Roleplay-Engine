@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from "@/lib/with-auth";
 import { getDb } from "@/lib/db";
+import type { DbParams } from "@/lib/types";
 
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const { searchParams } = new URL(request.url);
   const entityType = searchParams.get("entityType");
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   if (entityType && entityId) {
     // Get backlinks pointing TO this entity
     let query = "SELECT id, user_id, universe_id, source_type, source_id, target_type, target_id, link_type, context_snippet, created_at FROM backlinks WHERE target_type = ? AND target_id = ?";
-    const params: any[] = [entityType, entityId];
+    const params: DbParams = [entityType, entityId];
     if (universeId) {
       query += " AND universe_id = ?";
       params.push(universeId);
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   } else if (targetType) {
     // Get all backlinks of a specific target type
     let query = "SELECT id, user_id, universe_id, source_type, source_id, target_type, target_id, link_type, context_snippet, created_at FROM backlinks WHERE user_id = ? AND target_type = ?";
-    const params: any[] = [decoded.sub, targetType];
+    const params: DbParams = [userId, targetType];
     if (universeId) {
       query += " AND universe_id = ?";
       params.push(universeId);
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
   } else {
     // Get all recent backlinks (with limit)
     let query = "SELECT id, user_id, universe_id, source_type, source_id, target_type, target_id, link_type, context_snippet, created_at FROM backlinks WHERE user_id = ?";
-    const params: any[] = [decoded.sub];
+    const params: DbParams = [userId];
     if (universeId) {
       query += " AND universe_id = ?";
       params.push(universeId);
@@ -53,10 +53,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const body = await request.json();
   const { sourceType, sourceId, targetType, targetId, linkType, contextSnippet, universe_id } = body;
@@ -71,9 +70,10 @@ export async function POST(request: NextRequest) {
   try {
     db.prepare(
       "INSERT INTO backlinks (id, user_id, universe_id, source_type, source_id, target_type, target_id, link_type, context_snippet) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    ).run(id, decoded.sub, universe_id || null, sourceType, sourceId, targetType, targetId, linkType || "mentions", contextSnippet || null);
-  } catch (err: any) {
-    if (err.message?.includes("UNIQUE")) {
+    ).run(id, userId, universe_id || null, sourceType, sourceId, targetType, targetId, linkType || "mentions", contextSnippet || null);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes("UNIQUE")) {
       return NextResponse.json({ error: "Backlink already exists" }, { status: 409 });
     }
     throw err;
@@ -84,10 +84,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
@@ -97,6 +96,6 @@ export async function DELETE(request: NextRequest) {
   }
 
   const db = getDb();
-  db.prepare("DELETE FROM backlinks WHERE id = ? AND user_id = ?").run(id, decoded.sub);
+  db.prepare("DELETE FROM backlinks WHERE id = ? AND user_id = ?").run(id, userId);
   return NextResponse.json({ success: true });
 }

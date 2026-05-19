@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
+import type { DbDatabase } from "@/lib/types";
 
 // Add private_state column to session_participants if not exists
-function ensureColumn(db: any) {
+function ensureColumn(db: DbDatabase) {
   try {
     db.exec("ALTER TABLE session_participants ADD COLUMN private_state TEXT");
   } catch {
@@ -40,7 +41,7 @@ export async function GET(
     return NextResponse.json({ error: "Not a participant" }, { status: 403 });
   }
 
-  let state: any = {};
+  let state: Record<string, unknown> = {};
   try {
     state = participant.private_state ? JSON.parse(participant.private_state) : {};
   } catch (err) {

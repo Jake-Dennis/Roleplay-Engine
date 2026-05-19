@@ -5,10 +5,11 @@
  * Handles bigint → number conversion for safe serialization.
  */
 
-export function rowToJson(row: any): Record<string, any> {
-  const result: Record<string, any> = {};
+export function rowToJson(row: unknown): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  if (row === null || typeof row !== 'object') return result;
   for (const key of Object.keys(row)) {
-    const value = row[key];
+    const value = (row as Record<string, unknown>)[key];
     if (typeof value === 'bigint') {
       result[key] = Number(value);
     } else {

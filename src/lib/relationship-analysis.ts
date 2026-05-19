@@ -205,8 +205,8 @@ Only include relationships that have changed or are newly formed.`;
 
     return {
       relationships: parsed
-        .filter((r: any) => r.source && r.target)
-        .map((r: any) => ({
+        .filter((r: { source?: unknown; target?: unknown }) => r.source && r.target)
+        .map((r: { source: string; target: string; emotionalState?: string; stage?: string; confidence?: number; sharedHistory?: string }) => ({
           source: r.source,
           target: r.target,
           emotionalState: r.emotionalState || "neutral",

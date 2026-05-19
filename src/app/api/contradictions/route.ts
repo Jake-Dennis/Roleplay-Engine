@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from "@/lib/with-auth";
 import { detectAllContradictionsWithSemantic } from "@/lib/contradiction-detector";
 import { scanUnverifiedLoreForContradictions } from "@/lib/semantic-contradiction";
+import type { DbParams } from "@/lib/types";
 
 /**
  * POST /api/contradictions/check
@@ -10,10 +11,9 @@ import { scanUnverifiedLoreForContradictions } from "@/lib/semantic-contradictio
  * Body: { entityType: string, entityId: string }
  */
 export async function POST(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const body = await request.json();
   const { entityType, entityId } = body;
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     const result = await detectAllContradictionsWithSemantic(
       entityType,
       entityId,
-      decoded.sub
+      userId
     );
 
     return NextResponse.json(result);
@@ -48,13 +48,12 @@ export async function POST(request: NextRequest) {
  * Body: {} (no params needed, uses authenticated user)
  */
 export async function PUT(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   try {
-    const result = await scanUnverifiedLoreForContradictions(decoded.sub);
+    const result = await scanUnverifiedLoreForContradictions(userId);
 
     return NextResponse.json(result);
   } catch (error) {
@@ -71,10 +70,9 @@ export async function PUT(request: NextRequest) {
  * Combines rule-based and semantic contradictions.
  */
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const { searchParams } = new URL(request.url);
   const entityType = searchParams.get("entityType");
@@ -84,7 +82,7 @@ export async function GET(request: NextRequest) {
 
   // Get rule-based contradictions from entity_validations
   let conditions = "WHERE user_id = ? AND state = 'under_review'";
-  const params: any[] = [decoded.sub];
+  const params: DbParams = [userId];
 
   if (entityType) { conditions += " AND entity_type = ?"; params.push(entityType); }
   if (entityId) { conditions += " AND entity_id = ?"; params.push(entityId); }

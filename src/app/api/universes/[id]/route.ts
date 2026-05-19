@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import type { DbDatabase } from "@/lib/types";
 
 function parseBoundaries(raw: string | null): string[] {
   if (!raw) return [];
@@ -12,7 +13,7 @@ function parseBoundaries(raw: string | null): string[] {
   }
 }
 
-function hasUniverseAccess(db: any, universeId: string, userId: string): boolean {
+function hasUniverseAccess(db: DbDatabase, universeId: string, userId: string): boolean {
   const universe = db.prepare(
     `SELECT u.id, u.user_id, u.session_id
      FROM universes u

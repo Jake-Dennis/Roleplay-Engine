@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
+import type { DbDatabase } from "@/lib/types";
 
 // Ensure character_name column exists
-function ensureColumn(db: any) {
+function ensureColumn(db: DbDatabase) {
   try {
     db.exec("ALTER TABLE session_participants ADD COLUMN character_name TEXT");
   } catch {

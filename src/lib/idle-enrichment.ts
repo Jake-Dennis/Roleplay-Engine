@@ -146,7 +146,7 @@ async function wikiRefineRelationshipSummaries(userId: string, universeId: strin
       rel.source_entity,
       rel.target_entity,
       emotionSummary || "neutral",
-      history.slice(-3).map((h: any) => h.summary || h).join("; ")
+      history.slice(-3).map((h: { summary?: string } | string) => typeof h === 'string' ? h : (h.summary || h)).join("; ")
     );
 
     try {

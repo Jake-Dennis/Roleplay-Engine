@@ -9,7 +9,7 @@
  *   const { data } = await api.post("/api/wiki", { title: "Test" });
  */
 
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   data: T | null;
   error: string | null;
   status: number;
@@ -34,7 +34,7 @@ class ApiClient {
   private async request<T>(
     method: string,
     path: string,
-    body?: any,
+    body?: unknown,
     options: ApiOptions = {}
   ): Promise<ApiResponse<T>> {
     const { retries = 0, retryDelay = 1000 } = options;
@@ -61,8 +61,9 @@ class ApiClient {
         }
 
         if (!res.ok) {
-          const errorData = data as any;
-          throw new Error(errorData?.error || `Request failed: ${res.status}`);
+          const errorData = data as Record<string, unknown> | null;
+          const errorMsg = typeof errorData?.error === 'string' ? errorData.error : `Request failed: ${res.status}`;
+          throw new Error(errorMsg);
         }
 
         return { data, error: null, status: res.status };
@@ -80,28 +81,28 @@ class ApiClient {
   /**
    * GET request
    */
-  async get<T = any>(path: string, options?: ApiOptions): Promise<ApiResponse<T>> {
+  async get<T = unknown>(path: string, options?: ApiOptions): Promise<ApiResponse<T>> {
     return this.request<T>("GET", path, undefined, options);
   }
 
   /**
    * POST request
    */
-  async post<T = any>(path: string, body?: any, options?: ApiOptions): Promise<ApiResponse<T>> {
+  async post<T = unknown>(path: string, body?: unknown, options?: ApiOptions): Promise<ApiResponse<T>> {
     return this.request<T>("POST", path, body, options);
   }
 
   /**
    * PUT request
    */
-  async put<T = any>(path: string, body?: any, options?: ApiOptions): Promise<ApiResponse<T>> {
+  async put<T = unknown>(path: string, body?: unknown, options?: ApiOptions): Promise<ApiResponse<T>> {
     return this.request<T>("PUT", path, body, options);
   }
 
   /**
    * DELETE request
    */
-  async delete<T = any>(path: string, options?: ApiOptions): Promise<ApiResponse<T>> {
+  async delete<T = unknown>(path: string, options?: ApiOptions): Promise<ApiResponse<T>> {
     return this.request<T>("DELETE", path, undefined, options);
   }
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from "@/lib/with-auth";
 import { APP_CONFIG } from "@/lib/config";
 import {
   listWikiPages,
@@ -14,12 +14,11 @@ import path from "path";
 import fs from "fs";
 
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
-  const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
+  const wikiRoot = path.join(APP_CONFIG.dataDir, userId, "wiki");
 
   if (!fs.existsSync(wikiRoot)) {
     return NextResponse.json({ pages: [] });
@@ -45,10 +44,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const body = await request.json();
   const { path: pagePath, content, frontmatter } = body;
@@ -60,7 +58,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
+  const wikiRoot = path.join(APP_CONFIG.dataDir, userId, "wiki");
 
   // Sanitize filename from the last path segment
   const dir = path.dirname(pagePath);

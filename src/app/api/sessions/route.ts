@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
-import { getAuthToken } from "@/lib/auth-token";
+import { withAuth } from "@/lib/with-auth";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
+import type { DbResult } from "@/lib/types";
 
 export async function GET(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const db = getDb();
   ensureGroupSupport(db);
@@ -18,10 +16,10 @@ export async function GET(request: NextRequest) {
   const groupId = url.searchParams.get("group_id");
   const scope = url.searchParams.get("scope");
 
-  let sessions: any[];
+  let sessions: DbResult[];
 
   if (groupId) {
-    if (!isGroupMember(db, groupId, decoded.sub)) {
+    if (!isGroupMember(db, groupId, userId)) {
       return NextResponse.json({ error: "Not a member" }, { status: 403 });
     }
     sessions = db.prepare(`
@@ -30,7 +28,7 @@ export async function GET(request: NextRequest) {
       JOIN users u ON s.owner_id = u.id
       WHERE s.group_id = ?
       ORDER BY s.updated_at DESC
-    `).all(groupId);
+    `).all(groupId) as DbResult[];
   } else if (scope === "personal") {
     // Only personal sessions
     sessions = db.prepare(`
@@ -41,7 +39,7 @@ export async function GET(request: NextRequest) {
         SELECT session_id FROM session_participants WHERE user_id = ?
       ))
       ORDER BY s.updated_at DESC
-    `).all(decoded.sub, decoded.sub);
+    `).all(userId, userId) as DbResult[];
   } else {
     // Return ALL sessions the user has access to (personal + all groups)
     sessions = db.prepare(`
@@ -52,18 +50,16 @@ export async function GET(request: NextRequest) {
         SELECT session_id FROM session_participants WHERE user_id = ?
       )
       ORDER BY s.updated_at DESC
-    `).all(decoded.sub, decoded.sub);
+    `).all(userId, userId) as DbResult[];
   }
 
   return NextResponse.json({ sessions });
 }
 
 export async function POST(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const body = await request.json();
   const { name, universe_id, timeline_id, type = "solo", group_id } = body;
@@ -75,7 +71,7 @@ export async function POST(request: NextRequest) {
   const db = getDb();
   ensureGroupSupport(db);
 
-  if (group_id && !isGroupMember(db, group_id, decoded.sub)) {
+  if (group_id && !isGroupMember(db, group_id, userId)) {
     return NextResponse.json({ error: "Not a member of this group" }, { status: 403 });
   }
 
@@ -83,11 +79,11 @@ export async function POST(request: NextRequest) {
 
   db.prepare(
     "INSERT INTO sessions (id, owner_id, name, universe_id, timeline_id, status, type, group_id) VALUES (?, ?, ?, ?, ?, 'active', ?, ?)"
-  ).run(id, decoded.sub, name, universe_id || null, timeline_id || null, type, group_id || null);
+  ).run(id, userId, name, universe_id || null, timeline_id || null, type, group_id || null);
 
   db.prepare(
     "INSERT OR IGNORE INTO session_participants (session_id, user_id, role) VALUES (?, ?, 'player')"
-  ).run(id, decoded.sub);
+  ).run(id, userId);
 
   db.prepare(
     "INSERT INTO scene_states (id, session_id, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)"

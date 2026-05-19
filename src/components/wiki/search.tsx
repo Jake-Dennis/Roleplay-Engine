@@ -106,7 +106,7 @@ export default function Search({ pages, basePath = '/wiki', isSearching = false,
     try {
       const searchResults = indexRef.current.search(query, { limit: 10 });
       const hits = (Array.isArray(searchResults) ? searchResults : [])
-        .flatMap((r: any) => r.result || []);
+        .flatMap((r: { result?: unknown[] }) => r.result || []) as string[];
       setResults(hits.slice(0, 10));
       setIsOpen(true);
       setSelectedIndex(-1);

@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       );
 
       // Subscribe to job progress events
-      const unsubProgress = eventBus.on(SessionEvents.JOB_PROGRESS, (data: any) => {
+      const unsubProgress = eventBus.on(SessionEvents.JOB_PROGRESS, (data: Record<string, unknown>) => {
         try {
           controller.enqueue(
             encoder.encode(
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       });
 
       // Subscribe to job completed events
-      const unsubCompleted = eventBus.on(SessionEvents.JOB_COMPLETED, (data: any) => {
+      const unsubCompleted = eventBus.on(SessionEvents.JOB_COMPLETED, (data: Record<string, unknown>) => {
         try {
           controller.enqueue(
             encoder.encode(

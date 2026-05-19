@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from "@/lib/with-auth";
 import { getDb } from "@/lib/db";
 import { writeRelationshipFiles } from "@/lib/relationship-markdown";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
+import type { DbDatabase, DbResult } from "@/lib/types";
 
-function getUniverseOwnerId(db: any, universeId: string): string | null {
+function getUniverseOwnerId(db: DbDatabase, universeId: string): string | null {
   const universe = db.prepare(
     `SELECT u.user_id, u.group_id, g.owner_id as group_owner_id
      FROM universes u
      LEFT JOIN groups g ON u.group_id = g.id
      WHERE u.id = ?`
-  ).get(universeId);
+  ).get(universeId) as DbResult | undefined;
 
   if (!universe) return null;
   if (universe.group_id) {
@@ -20,10 +21,9 @@ function getUniverseOwnerId(db: any, universeId: string): string | null {
 }
 
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const { searchParams } = new URL(request.url);
   const universeId = searchParams.get("universe_id");
@@ -32,10 +32,10 @@ export async function GET(request: NextRequest) {
   const db = getDb();
   ensureGroupSupport(db);
 
-  let relationships: any[];
+  let relationships: DbResult[];
 
   if (groupId) {
-    if (!isGroupMember(db, groupId, decoded.sub)) {
+    if (!isGroupMember(db, groupId, userId)) {
       return NextResponse.json({ error: "Not a member" }, { status: 403 });
     }
     relationships = db.prepare(
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
        FROM relationships r
        WHERE r.universe_id IN (SELECT id FROM universes WHERE group_id = ?)
        ORDER BY r.updated_at DESC`
-    ).all(groupId);
+    ).all(groupId) as DbResult[];
   } else if (universeId) {
     relationships = db.prepare(
       `SELECT r.id, r.user_id, r.universe_id, r.source_entity, r.target_entity, r.emotional_state, r.shared_history, r.relationship_stage, r.decay_rates, r.updated_at
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
          )
        ))
        ORDER BY r.updated_at DESC`
-    ).all(universeId, decoded.sub, decoded.sub);
+    ).all(universeId, userId, userId) as DbResult[];
   } else {
     relationships = db.prepare(
       `SELECT r.id, r.user_id, r.universe_id, r.source_entity, r.target_entity, r.emotional_state, r.shared_history, r.relationship_stage, r.decay_rates, r.updated_at
@@ -67,17 +67,16 @@ export async function GET(request: NextRequest) {
          )
        )
        ORDER BY r.updated_at DESC`
-    ).all(decoded.sub, decoded.sub);
+    ).all(userId, userId) as DbResult[];
   }
 
   return NextResponse.json({ relationships });
 }
 
 export async function POST(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const body = await request.json();
   const { sourceEntity, targetEntity, emotionalState, sharedHistory, relationshipStage, decayRates, universe_id } = body;
@@ -90,12 +89,12 @@ export async function POST(request: NextRequest) {
   ensureGroupSupport(db);
   const id = crypto.randomUUID();
 
-  const fileOwnerId = universe_id ? getUniverseOwnerId(db, universe_id) : decoded.sub;
+  const fileOwnerId = universe_id ? getUniverseOwnerId(db, universe_id) : userId;
 
   db.prepare(
     "INSERT INTO relationships (id, user_id, universe_id, source_entity, target_entity, emotional_state, shared_history, relationship_stage, decay_rates) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
   ).run(
-    id, decoded.sub, universe_id || null, sourceEntity, targetEntity,
+    id, userId, universe_id || null, sourceEntity, targetEntity,
     emotionalState ? JSON.stringify(emotionalState) : JSON.stringify({ trust: 0.5, suspicion: 0 }),
     sharedHistory ? JSON.stringify(sharedHistory) : null,
     relationshipStage || "acquaintance",

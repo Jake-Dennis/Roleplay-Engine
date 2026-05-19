@@ -10,15 +10,16 @@ import {
 } from "@/lib/relationship-markdown";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
 import fs from "fs";
+import type { DbDatabase, DbResult } from "@/lib/types";
 
-function hasRelationshipAccess(db: any, relationshipId: string, userId: string): any {
+function hasRelationshipAccess(db: DbDatabase, relationshipId: string, userId: string): DbResult | null {
   const rel = db.prepare(
     `SELECT r.*, u.group_id, g.owner_id as group_owner_id
      FROM relationships r
      LEFT JOIN universes u ON r.universe_id = u.id
      LEFT JOIN groups g ON u.group_id = g.id
      WHERE r.id = ?`
-  ).get(relationshipId);
+  ).get(relationshipId) as DbResult | undefined;
 
   if (!rel) return null;
 
@@ -31,7 +32,7 @@ function hasRelationshipAccess(db: any, relationshipId: string, userId: string):
   return null;
 }
 
-function getFileOwnerId(entity: any, fallbackUserId: string): string {
+function getFileOwnerId(entity: DbResult, fallbackUserId: string): string {
   if (entity.group_id && entity.group_owner_id) return entity.group_owner_id;
   return fallbackUserId;
 }

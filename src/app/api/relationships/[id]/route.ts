@@ -2,18 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
+import type { DbDatabase, DbResult } from "@/lib/types";
 
-function hasEntityAccess(db: any, entityType: string, entityId: string, userId: string): any {
-  let entity: any = null;
-  if (entityType === "relationships") {
-    entity = db.prepare(
-      `SELECT r.*, u.group_id, g.owner_id as group_owner_id
-       FROM relationships r
-       LEFT JOIN universes u ON r.universe_id = u.id
-       LEFT JOIN groups g ON u.group_id = g.id
-       WHERE r.id = ?`
-    ).get(entityId);
-  }
+function hasEntityAccess(db: DbDatabase, entityType: string, entityId: string, userId: string): DbResult | null {
+  const entity = db.prepare(
+    `SELECT r.*, u.group_id, g.owner_id as group_owner_id
+     FROM relationships r
+     LEFT JOIN universes u ON r.universe_id = u.id
+     LEFT JOIN groups g ON u.group_id = g.id
+     WHERE r.id = ?`
+  ).get(entityId) as DbResult | undefined;
 
   if (!entity) return null;
 

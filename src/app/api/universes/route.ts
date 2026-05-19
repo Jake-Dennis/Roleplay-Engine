@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from "@/lib/with-auth";
 import { getDb } from "@/lib/db";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
+import type { DbResult } from "@/lib/types";
 
 function parseBoundaries(raw: string | null): string[] {
   if (!raw) return [];
@@ -14,11 +15,9 @@ function parseBoundaries(raw: string | null): string[] {
 }
 
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const db = getDb();
   ensureGroupSupport(db);
@@ -27,10 +26,10 @@ export async function GET(request: NextRequest) {
   const groupId = url.searchParams.get("group_id");
   const scope = url.searchParams.get("scope");
 
-  let universes: any[];
+  let universes: DbResult[];
 
   if (groupId) {
-    if (!isGroupMember(db, groupId, decoded.sub)) {
+    if (!isGroupMember(db, groupId, userId)) {
       return NextResponse.json({ error: "Not a member" }, { status: 403 });
     }
     universes = db.prepare(
@@ -38,7 +37,7 @@ export async function GET(request: NextRequest) {
        FROM universes u
        WHERE u.group_id = ?
        ORDER BY u.created_at DESC`
-    ).all(groupId);
+    ).all(groupId) as DbResult[];
   } else if (scope === "personal") {
     // Only personal universes
     universes = db.prepare(
@@ -46,7 +45,7 @@ export async function GET(request: NextRequest) {
        FROM universes u
        WHERE u.user_id = ? AND u.group_id IS NULL
        ORDER BY u.created_at DESC`
-    ).all(decoded.sub);
+    ).all(userId) as DbResult[];
   } else {
     // Return ALL universes the user has access to (personal + all groups)
     universes = db.prepare(
@@ -56,7 +55,7 @@ export async function GET(request: NextRequest) {
          SELECT group_id FROM group_members WHERE user_id = ?
        )
        ORDER BY u.created_at DESC`
-    ).all(decoded.sub, decoded.sub);
+    ).all(userId, userId) as DbResult[];
   }
 
   const parsed = universes.map((u) => ({
@@ -68,11 +67,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const body = await request.json();
   const { name, canon_mode = "strict", lore_source, tone, boundaries, group_id } = body;
@@ -89,7 +86,7 @@ export async function POST(request: NextRequest) {
   const db = getDb();
   ensureGroupSupport(db);
 
-  if (group_id && !isGroupMember(db, group_id, decoded.sub)) {
+  if (group_id && !isGroupMember(db, group_id, userId)) {
     return NextResponse.json({ error: "Not a member of this group" }, { status: 403 });
   }
 
@@ -103,7 +100,7 @@ export async function POST(request: NextRequest) {
 
   db.prepare(
     "INSERT INTO universes (id, user_id, group_id, name, canon_mode, lore_source, tone, boundaries) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-  ).run(id, decoded.sub, group_id || null, name.trim(), canon_mode, lore_source || null, tone || null, boundariesJson);
+  ).run(id, userId, group_id || null, name.trim(), canon_mode, lore_source || null, tone || null, boundariesJson);
 
   const universe = db
     .prepare(

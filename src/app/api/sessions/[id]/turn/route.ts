@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
+import type { DbDatabase } from "@/lib/types";
 
 // Ensure session_config table exists
-function ensureTable(db: any) {
+function ensureTable(db: DbDatabase) {
   db.exec(`CREATE TABLE IF NOT EXISTS session_config (
     session_id TEXT NOT NULL REFERENCES sessions(id),
     key TEXT NOT NULL,
@@ -24,7 +25,7 @@ function normalizeMode(mode: string): string {
   }
 }
 
-function getTurnConfig(db: any, sessionId: string) {
+function getTurnConfig(db: DbDatabase, sessionId: string) {
   const turnMode = db.prepare(
     "SELECT value FROM session_config WHERE session_id = ? AND key = 'turn_mode'"
   ).get(sessionId) as { value: string } | undefined;

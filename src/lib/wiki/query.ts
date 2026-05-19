@@ -203,7 +203,7 @@ function flexSearchFallback(
   // Search
   const searchResults = index.search(query, { limit: 10 });
   const hits = (Array.isArray(searchResults) ? searchResults : [])
-    .flatMap((r: any) => r.result || []);
+    .flatMap((r: { result?: unknown[] }) => r.result || []) as string[];
 
   // Filter by universeId
   const filtered = hits.filter((hitPath: string) => {

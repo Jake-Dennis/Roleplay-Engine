@@ -32,6 +32,20 @@ interface AppUser {
   username: string;
 }
 
+interface SessionItem {
+  id: string;
+  name: string;
+  type: string;
+  group_id: string | null;
+  universe_id: string | null;
+}
+
+interface UniverseItem {
+  id: string;
+  name: string;
+  group_id: string | null;
+}
+
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/groups", label: "Groups", icon: FolderOpen },
@@ -146,7 +160,7 @@ const GroupSelector = memo(function GroupSelector() {
 const SessionSelector = memo(function SessionSelector() {
   const { activeSession, setActiveSession, activeGroup, loading } = useApp();
   const [open, setOpen] = useState(false);
-  const [localSessions, setLocalSessions] = useState<any[]>([]);
+  const [localSessions, setLocalSessions] = useState<SessionItem[]>([]);
 
   // Fetch sessions when dropdown opens - filtered by active group context
   useEffect(() => {
@@ -196,7 +210,7 @@ const SessionSelector = memo(function SessionSelector() {
           {localSessions.length === 0 ? (
             <div className="px-3 py-2 text-xs text-text-muted">No sessions yet</div>
           ) : (
-            localSessions.map((s: any) => (
+            localSessions.map((s: SessionItem) => (
               <button
                 key={s.id}
                 onClick={() => { setActiveSession(s); setOpen(false); }}
@@ -233,7 +247,7 @@ const SessionSelector = memo(function SessionSelector() {
 const UniverseSelector = memo(function UniverseSelector() {
   const { activeUniverse, setActiveUniverse, activeSession, activeGroup, loading } = useApp();
   const [open, setOpen] = useState(false);
-  const [localUniverses, setLocalUniverses] = useState<any[]>([]);
+  const [localUniverses, setLocalUniverses] = useState<UniverseItem[]>([]);
 
   // Fetch universes when dropdown opens - filtered by active group context
   useEffect(() => {
@@ -279,7 +293,7 @@ const UniverseSelector = memo(function UniverseSelector() {
           {localUniverses.length === 0 ? (
             <div className="px-3 py-2 text-xs text-text-muted">No universes yet</div>
           ) : (
-            localUniverses.map((u: any) => (
+            localUniverses.map((u: UniverseItem) => (
               <button
                 key={u.id}
                 onClick={() => { setActiveUniverse(u); setOpen(false); }}

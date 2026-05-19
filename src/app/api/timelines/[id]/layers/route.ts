@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { rowToJson } from "@/lib/row-to-json";
+import type { DbParams } from "@/lib/types";
 
 const VALID_LAYER_TYPES = ["era", "faction", "active_characters"] as const;
 
@@ -31,9 +32,9 @@ export async function GET(
   }
 
   let query = "SELECT * FROM timeline_layers WHERE timeline_id = ? AND user_id = ?";
-  const queryParams: any[] = [timelineId, decoded.sub];
+  const queryParams: DbParams = [timelineId, decoded.sub];
 
-  if (layerType && VALID_LAYER_TYPES.includes(layerType as any)) {
+  if (layerType && VALID_LAYER_TYPES.includes(layerType as (typeof VALID_LAYER_TYPES)[number])) {
     query += " AND layer_type = ?";
     queryParams.push(layerType);
   }

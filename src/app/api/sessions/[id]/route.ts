@@ -86,7 +86,7 @@ export async function GET(
     sceneState,
     participants,
     turnConfig,
-    isOwner: (session as any).owner_id === decoded.sub,
+    isOwner: (session as Record<string, unknown>).owner_id === decoded.sub,
   });
 }
 

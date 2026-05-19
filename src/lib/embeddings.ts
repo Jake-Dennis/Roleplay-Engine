@@ -15,6 +15,7 @@
 
 import { getDb, isVecAvailable } from "@/lib/db";
 import { generateEmbedding } from "@/lib/ollama";
+import type { DbDatabase } from '@/lib/types';
 
 export interface EmbeddingResult {
   embeddingId: string;
@@ -121,7 +122,7 @@ function getEntityText(entityType: string, entityId: string): string | null {
 /**
  * Ensure the embedding_vectors table exists
  */
-function ensureVectorTable(db: any): void {
+function ensureVectorTable(db: DbDatabase): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS embedding_vectors (
       embedding_id TEXT PRIMARY KEY REFERENCES embedding_index(id),
@@ -218,7 +219,7 @@ export function deleteEmbedding(entityType: string, entityId: string): void {
 /**
  * Store embedding vector in sqlite-vec virtual table
  */
-function storeInVecTable(db: any, entityType: string, embeddingId: string, vector: number[], metadata: string): void {
+function storeInVecTable(db: DbDatabase, entityType: string, embeddingId: string, vector: number[], metadata: string): void {
   const vecTable = getVecTableName(entityType);
   if (!vecTable) return;
 

@@ -27,14 +27,14 @@ export async function PUT(
   // Verify message belongs to session and user owns it (or is session owner)
   const message = db.prepare(
     "SELECT * FROM messages WHERE id = ? AND session_id = ? AND is_deleted = 0"
-  ).get(messageId, sessionId) as { id: string; timestamp: string } | undefined;
+  ).get(messageId, sessionId) as Record<string, unknown> | undefined;
 
   if (!message) {
     return NextResponse.json({ error: "Message not found" }, { status: 404 });
   }
 
   // Capture old content for edit history
-  const oldContent = (message as any).content;
+  const oldContent = message.content as string;
 
   // A1: Create a new version with parent_message_id for conversation branching
   // Soft-delete the original, insert new message pointing to it
@@ -45,7 +45,7 @@ export async function PUT(
 
   db.prepare(
     "INSERT INTO messages (id, session_id, sender_id, content, timestamp, parent_message_id) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?)"
-  ).run(newMessageId, sessionId, (message as any).sender_id, content, messageId);
+  ).run(newMessageId, sessionId, message.sender_id as string, content, messageId);
 
   // Record edit history
   db.prepare(

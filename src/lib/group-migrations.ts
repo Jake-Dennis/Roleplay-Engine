@@ -4,7 +4,9 @@
  * Call this at the start of any API route that needs group support.
  */
 
-function safeMigration(db: any, sql: string, description: string): void {
+import type { DbDatabase } from '@/lib/types';
+
+function safeMigration(db: DbDatabase, sql: string, description: string): void {
   try {
     db.exec(sql);
   } catch (err) {
@@ -15,7 +17,7 @@ function safeMigration(db: any, sql: string, description: string): void {
   }
 }
 
-export function ensureGroupSupport(db: any) {
+export function ensureGroupSupport(db: DbDatabase) {
   try {
     // Disable FK checks during migration
     db.exec("PRAGMA foreign_keys = OFF");
@@ -102,14 +104,14 @@ export function ensureGroupSupport(db: any) {
   }
 }
 
-export function isGroupMember(db: any, groupId: string, userId: string): boolean {
+export function isGroupMember(db: DbDatabase, groupId: string, userId: string): boolean {
   const member = db.prepare(
     "SELECT group_id FROM group_members WHERE group_id = ? AND user_id = ?"
   ).get(groupId, userId);
   return !!member;
 }
 
-export function isGroupOwner(db: any, groupId: string, userId: string): boolean {
+export function isGroupOwner(db: DbDatabase, groupId: string, userId: string): boolean {
   const group = db.prepare(
     "SELECT id FROM groups WHERE id = ? AND owner_id = ?"
   ).get(groupId, userId);

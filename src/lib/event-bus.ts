@@ -6,16 +6,18 @@
  * Tracks event history in-memory (last 100 events per session).
  */
 
-type EventHandler = (data: any) => void;
+import type { DbRow } from '@/lib/types';
+
+type EventHandler<T = unknown> = (data: T) => void;
 
 interface StoredEvent {
   id: number;
   name: string;
-  data: any;
+  data: unknown;
 }
 
 class EventBus {
-  private handlers = new Map<string, Set<EventHandler>>();
+  private handlers = new Map<string, Set<EventHandler<unknown>>>();
   private counter = 0;
   // Store recent events per session for reconnection
   private eventHistory = new Map<string, StoredEvent[]>();
@@ -29,21 +31,21 @@ class EventBus {
    * Subscribe to an event type
    * Returns an unsubscribe function
    */
-  on(event: string, handler: EventHandler): () => void {
+  on<T = unknown>(event: string, handler: EventHandler<T>): () => void {
     if (!this.handlers.has(event)) {
       this.handlers.set(event, new Set());
     }
-    this.handlers.get(event)!.add(handler);
+    this.handlers.get(event)!.add(handler as EventHandler<unknown>);
 
     return () => {
-      this.handlers.get(event)?.delete(handler);
+      this.handlers.get(event)?.delete(handler as EventHandler<unknown>);
     };
   }
 
   /**
    * Emit an event to all subscribers with an auto-incrementing ID
    */
-  emit(event: string, data: any): number {
+  emit<T = unknown>(event: string, data: T): number {
     const id = ++this.counter;
     const handlers = this.handlers.get(event);
     if (handlers) {

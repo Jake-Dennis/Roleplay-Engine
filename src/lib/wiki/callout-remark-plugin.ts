@@ -18,6 +18,9 @@ export interface CalloutNode extends Parent {
       'data-callout': string;
       'data-callout-fold'?: string;
     };
+    calloutType?: string;
+    fold?: '+' | '-';
+    title?: string;
   };
   children: Node[];
 }
@@ -117,8 +120,8 @@ function processChildren(node: Parent): Node[] {
           const remainingParagraphChildren = paragraph.children.slice(1);
           // Check if there's remaining text that should be part of content
           const remainingText = remainingParagraphChildren
-            .filter((n) => n.type === 'text')
-            .map((n) => (n as any).value)
+            .filter((n): n is { type: string; value: string } => n.type === 'text' && 'value' in n)
+            .map((n) => n.value)
             .join('')
             .trim();
 
@@ -158,9 +161,9 @@ function processChildren(node: Parent): Node[] {
         };
 
         // Store metadata for React component
-        (calloutNode.data as any).calloutType = canonicalType;
-        (calloutNode.data as any).fold = fold as '+' | '-' | undefined;
-        (calloutNode.data as any).title = titleText.trim() || undefined;
+        calloutNode.data.calloutType = canonicalType;
+        calloutNode.data.fold = fold as '+' | '-' | undefined;
+        calloutNode.data.title = titleText.trim() || undefined;
 
         return [calloutNode];
       }
@@ -231,9 +234,9 @@ function processCallout(node: Parent): Node[] {
           children: processedChildren,
         };
 
-        (calloutNode.data as any).calloutType = canonicalType;
-        (calloutNode.data as any).fold = fold as '+' | '-' | undefined;
-        (calloutNode.data as any).title = titleText.trim() || undefined;
+        calloutNode.data.calloutType = canonicalType;
+        calloutNode.data.fold = fold as '+' | '-' | undefined;
+        calloutNode.data.title = titleText.trim() || undefined;
 
         return [calloutNode];
       }

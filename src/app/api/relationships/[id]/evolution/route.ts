@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
+import type { DbDatabase, DbResult } from "@/lib/types";
 
-function hasRelationshipAccess(db: any, relationshipId: string, userId: string): any {
+function hasRelationshipAccess(db: DbDatabase, relationshipId: string, userId: string): DbResult | null {
   const rel = db.prepare(
     `SELECT r.*, u.group_id
      FROM relationships r
      LEFT JOIN universes u ON r.universe_id = u.id
      WHERE r.id = ?`
-  ).get(relationshipId);
+  ).get(relationshipId) as DbResult | undefined;
 
   if (!rel) return null;
 
@@ -48,7 +49,7 @@ export async function GET(
   `).all(id);
 
   // Parse emotional states
-  const parsedHistory = history.map((entry: any) => ({
+  const parsedHistory = (history as DbResult[]).map((entry: DbResult) => ({
     ...entry,
     emotional_state: entry.emotional_state ? JSON.parse(entry.emotional_state) : {},
   }));

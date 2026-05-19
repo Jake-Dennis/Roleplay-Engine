@@ -16,7 +16,7 @@ import { useHoverPreview, default as HoverPreview } from '@/components/wiki/hove
 
 interface MarkdownRendererProps {
   content: string;
-  frontmatter?: Record<string, any>;
+  frontmatter?: Record<string, unknown>;
   existingPages?: string[]; // For wikilink exists detection
   wikiRoute?: string; // Base route for wiki pages, default '/wiki'
   isLoading?: boolean;
@@ -24,7 +24,7 @@ interface MarkdownRendererProps {
   pageTitle?: string; // For "Create this page" CTA
   onCreatePage?: (title?: string) => void;
   depth?: number; // Embed nesting depth for circular detection
-  embeds?: Record<string, { content: string | null; frontmatter?: Record<string, any> | null }>; // Embed content lookup
+  embeds?: Record<string, { content: string | null; frontmatter?: Record<string, unknown> | null }>; // Embed content lookup
 }
 
 function SkeletonContent() {
@@ -237,27 +237,27 @@ export default function MarkdownRenderer({
       {frontmatter && (
         <div className="mb-6 p-4 rounded-lg bg-bg-raised border border-border">
           <div className="flex flex-wrap gap-2">
-            {frontmatter.title && (
+            {frontmatter.title != null && (
               <span className="px-2 py-1 rounded bg-primary/10 text-primary text-sm font-medium">
-                {frontmatter.title}
+                {String(frontmatter.title)}
               </span>
             )}
-            {frontmatter.type && (
+            {frontmatter.type != null && (
               <span className="px-2 py-1 rounded bg-accent/10 text-accent text-sm">
-                {frontmatter.type}
+                {String(frontmatter.type)}
               </span>
             )}
-            {frontmatter.status && (
+            {frontmatter.status != null && (
               <span className={`px-2 py-1 rounded text-sm ${
                 frontmatter.status === 'draft' ? 'bg-yellow-500/10 text-yellow-400' :
                 frontmatter.status === 'reviewed' ? 'bg-blue-500/10 text-blue-400' :
                 frontmatter.status === 'locked' ? 'bg-red-500/10 text-red-400' :
                 'bg-gray-500/10 text-gray-400'
               }`}>
-                {frontmatter.status}
+                {String(frontmatter.status)}
               </span>
             )}
-            {frontmatter.tags?.map((tag: string) => (
+            {Array.isArray(frontmatter.tags) && (frontmatter.tags as string[]).map((tag: string) => (
               <span key={tag} className="px-2 py-1 rounded bg-bg-elevated text-text-muted text-sm">
                 #{tag}
               </span>
@@ -282,11 +282,12 @@ export default function MarkdownRenderer({
           components={{
             div: ({ className, children, ...props }) => {
               // Detect embed divs from the remark plugin
-              const embedTarget = (props as any)['data-embed-target'];
+              const propsRecord = props as Record<string, unknown>;
+              const embedTarget = propsRecord['data-embed-target'] as string | undefined;
               if (embedTarget && className?.includes('wiki-embed')) {
-                const section = (props as any)['data-embed-section'] as string | undefined;
-                const blockId = (props as any)['data-embed-block'] as string | undefined;
-                const dimensions = (props as any)['data-embed-dimensions'] as string | undefined;
+                const section = propsRecord['data-embed-section'] as string | undefined;
+                const blockId = propsRecord['data-embed-block'] as string | undefined;
+                const dimensions = propsRecord['data-embed-dimensions'] as string | undefined;
 
                 // Look up embed content from the embeds prop
                 // Normalize target: lowercase, replace spaces with hyphens
@@ -310,8 +311,8 @@ export default function MarkdownRenderer({
 
               // Detect callout divs from the remark plugin
               if (className?.includes('callout') && !className?.includes('wiki-content')) {
-                const calloutType = (props as any)['data-callout'] || 'note';
-                const fold = (props as any)['data-callout-fold'] as '+' | '-' | undefined;
+                const calloutType = (propsRecord['data-callout'] as string) || 'note';
+                const fold = propsRecord['data-callout-fold'] as '+' | '-' | undefined;
                 // Extract title from the first paragraph if it looks like a callout title
                 // The remark plugin stores metadata, but in the HTML output we need to infer
                 return (
@@ -323,7 +324,8 @@ export default function MarkdownRenderer({
               return <div className={className} {...props}>{children}</div>;
             },
             a: (anchorProps) => {
-              const { href, className, children, ...rest } = anchorProps as any;
+              const anchorRecord = anchorProps as Record<string, unknown>;
+              const { href, className, children, ...rest } = anchorRecord as React.AnchorHTMLAttributes<HTMLAnchorElement>;
               const isWikiLink = className?.includes('internal');
               if (isWikiLink) {
                 return (

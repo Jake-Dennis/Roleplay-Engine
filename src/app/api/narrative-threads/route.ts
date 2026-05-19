@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from "@/lib/with-auth";
 import { getDb } from "@/lib/db";
 import { rowToJson } from "@/lib/row-to-json";
+import type { DbParams } from "@/lib/types";
 
 const VALID_STATUSES = ["active", "paused", "resolved", "abandoned"];
 const VALID_ESCALATION = ["low", "medium", "high", "critical"];
 const VALID_ARC_TYPES = ["thread", "arc", "subplot", "main_plot"];
 
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
@@ -26,14 +26,14 @@ export async function GET(request: NextRequest) {
   if (id) {
     const row = db.prepare(
       "SELECT * FROM narrative_threads WHERE id = ? AND user_id = ?"
-    ).get(id, decoded.sub);
+    ).get(id, userId);
     if (!row) return NextResponse.json({ error: "Thread not found" }, { status: 404 });
     return NextResponse.json({ thread: rowToJson(row) });
   }
 
   // List threads with filters
   let query = "SELECT * FROM narrative_threads WHERE user_id = ?";
-  const params: any[] = [decoded.sub];
+  const params: DbParams = [userId];
 
   if (universeId) {
     query += " AND universe_id = ?";
@@ -60,10 +60,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const body = await request.json();
   const { title, description, sessionId, arcType, escalationLevel, unresolvedItems, universe_id } = body;
@@ -93,7 +92,7 @@ export async function POST(request: NextRequest) {
      VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?)`
   ).run(
     id,
-    decoded.sub,
+    userId,
     universe_id || null,
     sessionId || null,
     title.trim(),
@@ -110,10 +109,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const body = await request.json();
   const { id, title, description, status, arcType, escalationLevel, unresolvedItems, universe_id } = body;
@@ -126,7 +124,7 @@ export async function PUT(request: NextRequest) {
   const db = getDb();
   const existing = db.prepare(
     "SELECT * FROM narrative_threads WHERE id = ? AND user_id = ?"
-  ).get(id, decoded.sub) as { status: string; resolved_at: string | null } | undefined;
+  ).get(id, userId) as { status: string; resolved_at: string | null } | undefined;
   if (!existing) return NextResponse.json({ error: "Thread not found" }, { status: 404 });
 
   if (title !== undefined) {
@@ -161,7 +159,7 @@ export async function PUT(request: NextRequest) {
   if (unresolvedItems !== undefined) { updates.push("unresolved_items = ?"); values.push(JSON.stringify(unresolvedItems)); }
   if (universe_id !== undefined) { updates.push("universe_id = ?"); values.push(universe_id || null); }
   updates.push("resolved_at = ?", "updated_at = ?");
-  values.push(resolvedAt, now, id, decoded.sub);
+  values.push(resolvedAt, now, id, userId);
 
   db.prepare(`UPDATE narrative_threads SET ${updates.join(", ")} WHERE id = ? AND user_id = ?`).run(...values);
 
@@ -170,10 +168,9 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const token = request.cookies.get("auth-token")?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ("error" in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
@@ -185,9 +182,9 @@ export async function DELETE(request: NextRequest) {
   const db = getDb();
   const existing = db.prepare(
     "SELECT * FROM narrative_threads WHERE id = ? AND user_id = ?"
-  ).get(id, decoded.sub);
+  ).get(id, userId);
   if (!existing) return NextResponse.json({ error: "Thread not found" }, { status: 404 });
 
-  db.prepare("DELETE FROM narrative_threads WHERE id = ? AND user_id = ?").run(id, decoded.sub);
+  db.prepare("DELETE FROM narrative_threads WHERE id = ? AND user_id = ?").run(id, userId);
   return NextResponse.json({ success: true });
 }

@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
+import type { DbDatabase } from "@/lib/types";
 
 // Ensure session_settings table exists
-function ensureTable(db: any) {
+function ensureTable(db: DbDatabase) {
   db.exec(`CREATE TABLE IF NOT EXISTS session_settings (
     session_id TEXT NOT NULL REFERENCES sessions(id),
     key TEXT NOT NULL,
@@ -33,7 +34,7 @@ const DEFAULT_SETTINGS: SessionSettings = {
   maxResponseLength: null,
 };
 
-function getSettings(db: any, sessionId: string): SessionSettings {
+function getSettings(db: DbDatabase, sessionId: string): SessionSettings {
   ensureTable(db);
 
   const keys = [

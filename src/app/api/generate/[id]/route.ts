@@ -7,8 +7,9 @@ import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { queueJob } from "@/lib/job-processor";
 import { OLLAMA_CONFIG } from "@/lib/config";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
+import type { DbDatabase } from "@/lib/types";
 
-function getSessionSettings(db: any, sessionId: string) {
+function getSessionSettings(db: DbDatabase, sessionId: string) {
   const rows = db.prepare(
     `SELECT key, value FROM session_settings WHERE session_id = ?`
   ).all(sessionId) as { key: string; value: string }[];
