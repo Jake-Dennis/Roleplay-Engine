@@ -1,25 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { rowToJson } from "@/lib/row-to-json";
 
 const VALID_ENTRY_TYPES = ["event", "milestone", "era_start", "era_end", "note"];
 const VALID_IMPORTANCE = ["low", "medium", "high", "critical"];
-
-function rowToJson(row: any) {
-  return {
-    id: row.id,
-    user_id: row.user_id,
-    session_id: row.session_id,
-    thread_id: row.thread_id,
-    title: row.title,
-    description: row.description,
-    occurred_at: row.occurred_at,
-    era: row.era,
-    entry_type: row.entry_type,
-    importance: row.importance,
-    created_at: row.created_at,
-  };
-}
 
 export async function GET(request: NextRequest) {
   const token = request.cookies.get("auth-token")?.value;

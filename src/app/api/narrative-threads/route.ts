@@ -1,28 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { rowToJson } from "@/lib/row-to-json";
 
 const VALID_STATUSES = ["active", "paused", "resolved", "abandoned"];
 const VALID_ESCALATION = ["low", "medium", "high", "critical"];
 const VALID_ARC_TYPES = ["thread", "arc", "subplot", "main_plot"];
-
-function rowToJson(row: any) {
-  return {
-    id: row.id,
-    user_id: row.user_id,
-    universe_id: row.universe_id,
-    session_id: row.session_id,
-    title: row.title,
-    description: row.description,
-    arc_type: row.arc_type,
-    status: row.status,
-    escalation_level: row.escalation_level,
-    unresolved_items: row.unresolved_items ? JSON.parse(row.unresolved_items) : [],
-    resolved_at: row.resolved_at,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-  };
-}
 
 export async function GET(request: NextRequest) {
   const token = request.cookies.get("auth-token")?.value;

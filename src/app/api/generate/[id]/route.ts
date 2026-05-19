@@ -6,6 +6,7 @@ import { getRetrievedContext, assemblePromptWithBudget, type RetrievedContext } 
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { queueJob } from "@/lib/job-processor";
 import { OLLAMA_CONFIG } from "@/lib/config";
+import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 
 function getSessionSettings(db: any, sessionId: string) {
   const rows = db.prepare(
@@ -37,6 +38,10 @@ export async function POST(
 
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+  cleanupExpiredEntries();
+  const limit = checkRateLimit(`generate:${decoded.sub}`, "generate");
+  if (!limit.allowed) return createRateLimitResponse(limit.retryAfter!);
 
   const { id: sessionId } = await params;
   const db = getDb();

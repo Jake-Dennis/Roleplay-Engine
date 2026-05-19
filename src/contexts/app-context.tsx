@@ -188,7 +188,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const state: ActiveState = JSON.parse(raw);
           if (state.universeId) setActiveUniverseState({ id: state.universeId, name: "Unknown", group_id: null });
         }
-      } catch {}
+      } catch (err) {
+        console.warn('[AppProvider] Failed to restore state from DB:', err);
+      }
     }).finally(() => setLoading(false));
   }, [authHeaders]);
 

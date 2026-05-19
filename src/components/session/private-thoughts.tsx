@@ -11,6 +11,7 @@
 
 import { useState, useCallback } from "react";
 import { Plus, Search, Trash2, Clock } from "lucide-react";
+import { formatRelativeTime } from "@/lib/date-formatter";
 
 interface PrivateThought {
   id: string;
@@ -50,21 +51,6 @@ export function PrivateThoughts({ thoughts, onChange }: PrivateThoughtsProps) {
         t.content.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : thoughts;
-
-  function formatTimestamp(ts: string) {
-    const date = new Date(ts);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMin = Math.floor(diffMs / 60000);
-    const diffHr = Math.floor(diffMin / 60);
-    const diffDay = Math.floor(diffHr / 24);
-
-    if (diffMin < 1) return "Just now";
-    if (diffMin < 60) return `${diffMin}m ago`;
-    if (diffHr < 24) return `${diffHr}h ago`;
-    if (diffDay < 7) return `${diffDay}d ago`;
-    return date.toLocaleDateString();
-  }
 
   return (
     <div className="space-y-3">
@@ -135,7 +121,7 @@ export function PrivateThoughts({ thoughts, onChange }: PrivateThoughtsProps) {
               </div>
               <div className="flex items-center gap-1 mt-1 text-text-muted">
                 <Clock className="h-2.5 w-2.5" />
-                <span className="text-xxs">{formatTimestamp(thought.timestamp)}</span>
+                <span className="text-xxs">{formatRelativeTime(thought.timestamp)}</span>
               </div>
             </div>
           ))}

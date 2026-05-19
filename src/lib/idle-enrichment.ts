@@ -23,6 +23,7 @@
 
 import { getDb } from "@/lib/db";
 import { generateText } from "@/lib/ollama";
+import { PROMPTS } from "@/lib/prompts";
 
 // Wiki I/O modules
 import { listWikiPages, writeWikiPage, readWikiPage, WikiFrontmatter } from "@/lib/wiki/file-io";
@@ -73,7 +74,7 @@ async function wikiCompressOldSummaries(userId: string, universeId: string | nul
 
     if (lastActivity > 0 && lastActivity < sevenDaysAgo && page.frontmatter.status === "draft") {
       try {
-        const prompt = `Summarize this wiki page in 2-3 sentences:\n${page.content.slice(0, 500)}`;
+        const prompt = PROMPTS.wikiSummarizePage(page.content.slice(0, 500));
         const summary = await generateText(prompt, { temperature: 0.2, num_ctx: 2048, userId });
 
         const updatedFrontmatter: WikiFrontmatter = {
@@ -141,11 +142,12 @@ async function wikiRefineRelationshipSummaries(userId: string, universeId: strin
              p.frontmatter.title?.toLowerCase().includes(rel.target_entity.toLowerCase())
     );
 
-    const prompt = `Summarize the relationship between ${rel.source_entity} and ${rel.target_entity}.
-Current emotional state: ${emotionSummary || "neutral"}
-Recent history: ${history.slice(-3).map((h: any) => h.summary || h).join("; ")}
-
-Write a 2-3 sentence narrative summary of their current relationship dynamic.`;
+    const prompt = PROMPTS.wikiSummarizeRelationship(
+      rel.source_entity,
+      rel.target_entity,
+      emotionSummary || "neutral",
+      history.slice(-3).map((h: any) => h.summary || h).join("; ")
+    );
 
     try {
       const summary = await generateText(prompt, { userId });
@@ -208,7 +210,7 @@ async function wikiDeepenActiveLocations(userId: string, universeId: string | nu
     const existingContent = page.content;
     if (!existingContent.trim()) continue;
 
-    const prompt = `Expand on this location "${title}". Current description:\n${existingContent.slice(0, 500)}\n\nAdd 2-3 new atmospheric details, historical notes, or sensory descriptions. Do not contradict existing facts.`;
+    const prompt = PROMPTS.wikiExpandLocation(title, existingContent.slice(0, 500));
 
     try {
       const expansion = await generateText(prompt, { userId });
@@ -266,7 +268,7 @@ async function wikiEnrichNPCBackstories(userId: string, universeId: string | nul
 
   for (const page of pagesToEnrich) {
     const title = page.frontmatter.title || path.basename(page.path, ".md");
-    const prompt = `Expand on this wiki entity "${title}". Current content:\n${page.content.slice(0, 1000)}\n\nAdd 2-3 new details about their personality, habits, or hidden motivations. Do not contradict existing facts. Return only the new content as markdown.`;
+    const prompt = PROMPTS.wikiEnrichEntityAlt(title, page.content.slice(0, 1000));
 
     try {
       const enrichment = await generateText(prompt, { userId });
@@ -332,7 +334,7 @@ async function wikiExpandRumors(userId: string, universeId: string | null): Prom
     );
     if (existingRumor) continue;
 
-    const prompt = `Based on this event: "${event.title}" (${event.event_type}, outcome: ${event.outcome || "unknown"}), generate 1-2 rumors that might spread among NPCs. Rumors should be plausible but potentially inaccurate. Return as bullet points.`;
+    const prompt = PROMPTS.wikiGenerateRumors(event.title, event.event_type, event.outcome || "unknown");
 
     try {
       const rumors = await generateText(prompt, { userId });
@@ -383,7 +385,7 @@ async function wikiArchiveLowImportanceMemories(userId: string, universeId: stri
 
   for (const page of archiveCandidates) {
     try {
-      const prompt = `Summarize this wiki page in one sentence: "${page.content.slice(0, 300)}"`;
+      const prompt = PROMPTS.wikiSummarizePageOneSentence(page.content.slice(0, 300));
       const summary = await generateText(prompt, { temperature: 0.2, num_ctx: 2048, userId });
 
       const updatedFrontmatter: WikiFrontmatter = {

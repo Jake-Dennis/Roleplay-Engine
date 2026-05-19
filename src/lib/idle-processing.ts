@@ -33,6 +33,7 @@ import { listWikiPages, writeWikiPage, readWikiPage, WikiFrontmatter } from "@/l
 import { generateIndex } from "@/lib/wiki/index-generator";
 import { appendLog } from "@/lib/wiki/logger";
 import { generateText } from "@/lib/ollama";
+import { PROMPTS } from "@/lib/prompts";
 import path from "path";
 import fs from "fs";
 
@@ -102,7 +103,7 @@ async function wikiCompressSummaries(userId: string, universeId?: string): Promi
     if (lastActivity > 0 && lastActivity < sevenDaysAgo && page.frontmatter.status === "draft") {
       try {
         // Summarize the page content and update frontmatter
-        const prompt = `Summarize this wiki page in 2-3 sentences:\n${page.content.slice(0, 500)}`;
+        const prompt = PROMPTS.wikiSummarizePage(page.content.slice(0, 500));
         const summary = await generateText(prompt, { temperature: 0.2, num_ctx: 2048, userId });
 
         const updatedFrontmatter: WikiFrontmatter = {
@@ -174,11 +175,12 @@ async function wikiRefineRelationships(userId: string, universeId?: string): Pro
              p.frontmatter.title?.toLowerCase().includes(rel.target_entity.toLowerCase())
     );
 
-    const prompt = `Summarize the relationship between ${rel.source_entity} and ${rel.target_entity}.
-Current emotional state: ${emotionSummary || "neutral"}
-Recent history: ${history.slice(-3).map((h: any) => h.summary || h).join("; ")}
-
-Write a 2-3 sentence narrative summary of their current relationship dynamic.`;
+    const prompt = PROMPTS.wikiSummarizeRelationship(
+      rel.source_entity,
+      rel.target_entity,
+      emotionSummary || "neutral",
+      history.slice(-3).map((h: any) => h.summary || h).join("; ")
+    );
 
     try {
       const summary = await generateText(prompt, { userId });
@@ -243,7 +245,7 @@ async function wikiDeepenPages(userId: string, universeId?: string): Promise<{ d
 
   for (const page of pagesToDeepen) {
     const title = page.frontmatter.title || path.basename(page.path, ".md");
-    const prompt = `Deepen this wiki page "${title}" (${page.frontmatter.type}). Current content:\n${page.content.slice(0, 800)}\n\nAdd new details, connections to other wiki entities, or implications. Do not contradict existing facts. Return only the new content as markdown.`;
+    const prompt = PROMPTS.wikiDeepenPage(title, String(page.frontmatter.type), page.content.slice(0, 800));
 
     try {
       const deepening = await generateText(prompt, { userId });
@@ -293,7 +295,7 @@ async function wikiEnrichEntities(userId: string, universeId?: string): Promise<
 
   for (const page of entitiesToEnrich) {
     const title = page.frontmatter.title || path.basename(page.path, ".md");
-    const prompt = `Expand on this wiki entity "${title}". Current content:\n${page.content.slice(0, 1000)}\n\nAdd 2-3 new details about their personality, habits, motivations, or connections to other entities. Do not contradict existing facts. Return only the new content as markdown.`;
+    const prompt = PROMPTS.wikiEnrichEntity(title, page.content.slice(0, 1000));
 
     try {
       const enrichment = await generateText(prompt, { userId });
@@ -361,7 +363,7 @@ async function wikiGenerateRumors(userId: string, universeId?: string): Promise<
     );
     if (existingRumor) continue;
 
-    const prompt = `Based on this event: "${event.title}" (${event.event_type}, outcome: ${event.outcome || "unknown"}), generate 1-2 rumors that might spread among NPCs. Rumors should be plausible but potentially inaccurate. Return as bullet points.`;
+    const prompt = PROMPTS.wikiGenerateRumors(event.title, event.event_type, event.outcome || "unknown");
 
     try {
       const rumors = await generateText(prompt, { userId });
@@ -415,7 +417,7 @@ async function wikiArchive(userId: string, universeId?: string): Promise<{ archi
   for (const page of archiveCandidates) {
     try {
       // Summarize before archiving
-      const prompt = `Summarize this wiki page in one sentence: "${page.content.slice(0, 300)}"`;
+      const prompt = PROMPTS.wikiSummarizePageOneSentence(page.content.slice(0, 300));
       const summary = await generateText(prompt, { temperature: 0.2, num_ctx: 2048, userId });
 
       const updatedFrontmatter: WikiFrontmatter = {

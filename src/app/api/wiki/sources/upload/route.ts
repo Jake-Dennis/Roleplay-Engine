@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { APP_CONFIG } from "@/lib/config";
+import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 import path from "path";
 import fs from "fs";
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_EXTENSIONS = new Set([
+  ".txt", ".md", ".csv", ".json", ".xml", ".pdf",
+]);
 
 export async function POST(request: NextRequest) {
   const token = request.cookies.get("auth-token")?.value;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+  cleanupExpiredEntries();
+  const limit = checkRateLimit(`upload:${decoded.sub}`, "upload");
+  if (!limit.allowed) return createRateLimitResponse(limit.retryAfter!);
 
   const body = await request.json();
   const { filename, content } = body;
@@ -26,6 +36,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: "Invalid filename" },
       { status: 400 }
+    );
+  }
+
+  // Extension check (defense in depth)
+  const ext = path.extname(safeFilename).toLowerCase();
+  if (!ALLOWED_EXTENSIONS.has(ext)) {
+    return NextResponse.json(
+      { error: `File extension not allowed. Allowed: .txt, .md, .csv, .json, .xml, .pdf` },
+      { status: 415 }
+    );
+  }
+
+  // Size check (byte length of content)
+  const contentSize = Buffer.byteLength(String(content), "utf-8");
+  if (contentSize > MAX_FILE_SIZE) {
+    return NextResponse.json(
+      { error: `File too large. Maximum size: ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+      { status: 413 }
     );
   }
 

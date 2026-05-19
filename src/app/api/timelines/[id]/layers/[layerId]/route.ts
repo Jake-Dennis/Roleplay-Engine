@@ -1,22 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
-
-function rowToJson(row: any) {
-  return {
-    id: row.id,
-    user_id: row.user_id,
-    timeline_id: row.timeline_id,
-    universe_id: row.universe_id,
-    layer_type: row.layer_type,
-    name: row.name,
-    description: row.description,
-    start_year: row.start_year,
-    end_year: row.end_year,
-    metadata: row.metadata ? JSON.parse(row.metadata) : null,
-    created_at: row.created_at,
-  };
-}
+import { rowToJson } from "@/lib/row-to-json";
 
 // PUT /api/timelines/[id]/layers/[layerId] — update a layer
 export async function PUT(

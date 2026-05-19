@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
-
-// Ensure character_name column exists in session_participants
-function ensureParticipantColumns(db: any) {
-  try {
-    db.exec("ALTER TABLE session_participants ADD COLUMN character_name TEXT");
-  } catch {
-    // Column already exists
-  }
-}
+import { ensureParticipantColumns } from "@/lib/session-columns";
 
 export async function GET(
   request: NextRequest,

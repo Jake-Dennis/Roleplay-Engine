@@ -4,6 +4,17 @@
  * Call this at the start of any API route that needs group support.
  */
 
+function safeMigration(db: any, sql: string, description: string): void {
+  try {
+    db.exec(sql);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (!message.includes('already exists') && !message.includes('duplicate')) {
+      console.warn(`[group-migrations] ${description}: ${message}`);
+    }
+  }
+}
+
 export function ensureGroupSupport(db: any) {
   try {
     // Disable FK checks during migration
@@ -28,40 +39,24 @@ export function ensureGroupSupport(db: any) {
     )`);
 
     // Add group_id to sessions if not exists
-    try {
-      db.exec("ALTER TABLE sessions ADD COLUMN group_id TEXT");
-    } catch {}
+    safeMigration(db, "ALTER TABLE sessions ADD COLUMN group_id TEXT", "add group_id to sessions");
 
     // Add group_id to universes if not exists
-    try {
-      db.exec("ALTER TABLE universes ADD COLUMN group_id TEXT");
-    } catch {}
+    safeMigration(db, "ALTER TABLE universes ADD COLUMN group_id TEXT", "add group_id to universes");
 
     // Add type to sessions if not exists
-    try {
-      db.exec("ALTER TABLE sessions ADD COLUMN type TEXT DEFAULT 'solo'");
-    } catch {}
+    safeMigration(db, "ALTER TABLE sessions ADD COLUMN type TEXT DEFAULT 'solo'", "add type to sessions");
 
     // Add canon_layer to npcs if not exists
-    try {
-      db.exec("ALTER TABLE npcs ADD COLUMN canon_layer TEXT DEFAULT 'generated_lore'");
-    } catch {}
+    safeMigration(db, "ALTER TABLE npcs ADD COLUMN canon_layer TEXT DEFAULT 'generated_lore'", "add canon_layer to npcs");
 
     // Add canon_layer to locations if not exists
-    try {
-      db.exec("ALTER TABLE locations ADD COLUMN canon_layer TEXT DEFAULT 'generated_lore'");
-    } catch {}
+    safeMigration(db, "ALTER TABLE locations ADD COLUMN canon_layer TEXT DEFAULT 'generated_lore'", "add canon_layer to locations");
 
     // Add active state columns to users if not exists
-    try {
-      db.exec("ALTER TABLE users ADD COLUMN last_active_group_id TEXT");
-    } catch {}
-    try {
-      db.exec("ALTER TABLE users ADD COLUMN last_active_session_id TEXT");
-    } catch {}
-    try {
-      db.exec("ALTER TABLE users ADD COLUMN last_active_universe_id TEXT");
-    } catch {}
+    safeMigration(db, "ALTER TABLE users ADD COLUMN last_active_group_id TEXT", "add last_active_group_id to users");
+    safeMigration(db, "ALTER TABLE users ADD COLUMN last_active_session_id TEXT", "add last_active_session_id to users");
+    safeMigration(db, "ALTER TABLE users ADD COLUMN last_active_universe_id TEXT", "add last_active_universe_id to users");
 
     // Create personas table (SillyTavern-style character cards)
     db.exec(`CREATE TABLE IF NOT EXISTS personas (
@@ -86,24 +81,24 @@ export function ensureGroupSupport(db: any) {
     )`);
 
     // Add persona_id to messages if not exists
-    try {
-      db.exec("ALTER TABLE messages ADD COLUMN persona_id TEXT");
-    } catch {}
+    safeMigration(db, "ALTER TABLE messages ADD COLUMN persona_id TEXT", "add persona_id to messages");
 
     // Add SillyTavern-style fields to personas if not exists
-    try { db.exec("ALTER TABLE personas ADD COLUMN personality TEXT"); } catch {}
-    try { db.exec("ALTER TABLE personas ADD COLUMN scenario TEXT"); } catch {}
-    try { db.exec("ALTER TABLE personas ADD COLUMN first_mes TEXT"); } catch {}
-    try { db.exec("ALTER TABLE personas ADD COLUMN mes_example TEXT"); } catch {}
-    try { db.exec("ALTER TABLE personas ADD COLUMN creator_notes TEXT"); } catch {}
-    try { db.exec("ALTER TABLE personas ADD COLUMN system_prompt TEXT"); } catch {}
-    try { db.exec("ALTER TABLE personas ADD COLUMN post_history_instructions TEXT"); } catch {}
-    try { db.exec("ALTER TABLE personas ADD COLUMN tags TEXT"); } catch {}
+    safeMigration(db, "ALTER TABLE personas ADD COLUMN personality TEXT", "add personality to personas");
+    safeMigration(db, "ALTER TABLE personas ADD COLUMN scenario TEXT", "add scenario to personas");
+    safeMigration(db, "ALTER TABLE personas ADD COLUMN first_mes TEXT", "add first_mes to personas");
+    safeMigration(db, "ALTER TABLE personas ADD COLUMN mes_example TEXT", "add mes_example to personas");
+    safeMigration(db, "ALTER TABLE personas ADD COLUMN creator_notes TEXT", "add creator_notes to personas");
+    safeMigration(db, "ALTER TABLE personas ADD COLUMN system_prompt TEXT", "add system_prompt to personas");
+    safeMigration(db, "ALTER TABLE personas ADD COLUMN post_history_instructions TEXT", "add post_history_instructions to personas");
+    safeMigration(db, "ALTER TABLE personas ADD COLUMN tags TEXT", "add tags to personas");
 
     db.exec("PRAGMA foreign_keys = ON");
   } catch (e) {
     console.error("ensureGroupSupport error:", e);
-    try { db.exec("PRAGMA foreign_keys = ON"); } catch {}
+    try { db.exec("PRAGMA foreign_keys = ON"); } catch (err) {
+      console.warn("[group-migrations] Failed to re-enable foreign keys:", err);
+    }
   }
 }
 

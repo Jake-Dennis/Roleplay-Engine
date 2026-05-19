@@ -22,6 +22,7 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { StatusBadge, statusToVariant } from "@/components/ui/status-badge";
 import { JobProgress } from "@/components/jobs/job-progress";
 import { useActiveUniverse } from "@/contexts/active-universe";
+import { formatRelativeTime } from "@/lib/date-formatter";
 
 const JOB_TYPES = [
   "generate_response",
@@ -218,15 +219,7 @@ export default function JobsPage() {
   }
 
   function formatTime(ts: string): string {
-    const d = new Date(ts);
-    const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const diffMin = Math.floor(diffMs / 60000);
-    if (diffMin < 1) return "just now";
-    if (diffMin < 60) return `${diffMin}m ago`;
-    const diffHr = Math.floor(diffMin / 60);
-    if (diffHr < 24) return `${diffHr}h ago`;
-    return d.toLocaleDateString();
+    return formatRelativeTime(ts);
   }
 
   function parsePayload(payload: string): Record<string, string> {

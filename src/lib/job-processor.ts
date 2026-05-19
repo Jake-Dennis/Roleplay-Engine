@@ -27,6 +27,7 @@ import { getRetrievedContext, assemblePromptWithBudget } from "@/lib/retrieval";
 import { summarizeMessage } from "@/lib/message-summarizer";
 import { applyDecayToAllRelationships } from "@/lib/relationship-decay";
 import { runIdleEnrichment } from "@/lib/idle-enrichment";
+import { PROMPTS } from "@/lib/prompts";
 
 // Wiki I/O modules (Wave 1-3)
 import { ingestSource } from "@/lib/wiki/ingest";
@@ -661,7 +662,7 @@ async function handleCompressMemories(jobId: string, payload: JobPayload): Promi
     const age = (Date.now() - new Date(memory.created_at).getTime()) / (1000 * 60 * 60 * 24);
 
     if (age >= 90) {
-      const prompt = `Summarize in 5-10 words: "${memory.content.slice(0, 200)}"`;
+      const prompt = PROMPTS.memorySummarizeArchived(memory.content.slice(0, 200));
       try {
         const summary = await generateText(prompt, { temperature: 0.2, num_ctx: 2048, userId: userId as string });
         if (summary?.trim()) {
@@ -674,7 +675,7 @@ async function handleCompressMemories(jobId: string, payload: JobPayload): Promi
         }
       } catch { /* skip */ }
     } else if (age >= 30) {
-      const prompt = `Summarize in 1 sentence: "${memory.content.slice(0, 200)}"`;
+      const prompt = PROMPTS.memorySummarizeOneSentence(memory.content.slice(0, 200));
       try {
         const summary = await generateText(prompt, { temperature: 0.2, num_ctx: 2048, userId: userId as string });
         if (summary?.trim()) {
@@ -687,7 +688,7 @@ async function handleCompressMemories(jobId: string, payload: JobPayload): Promi
         }
       } catch { /* skip */ }
     } else if (age >= 7) {
-      const prompt = `Summarize in 2-3 sentences: "${memory.content.slice(0, 200)}"`;
+      const prompt = PROMPTS.memorySummarizeShort(memory.content.slice(0, 200));
       try {
         const summary = await generateText(prompt, { temperature: 0.2, num_ctx: 2048, userId: userId as string });
         if (summary?.trim()) {
@@ -755,11 +756,12 @@ async function handleRefineRelationshipSummary(jobId: string, payload: JobPayloa
       .map(([k, v]) => `${k}: ${(v as number).toFixed(2)}`)
       .join(", ");
 
-    const prompt = `Summarize the relationship between ${rel.source_entity} and ${rel.target_entity}.
-Current emotional state: ${emotionSummary || "neutral"}
-Recent history: ${history.slice(-3).map((h: any) => h.summary || h).join("; ")}
-
-Write a 2-3 sentence narrative summary of their current relationship dynamic.`;
+    const prompt = PROMPTS.wikiSummarizeRelationship(
+      rel.source_entity,
+      rel.target_entity,
+      emotionSummary || "neutral",
+      history.slice(-3).map((h: any) => h.summary || h).join("; ")
+    );
 
     try {
       const summary = await generateText(prompt, { userId: userId as string });
@@ -815,7 +817,7 @@ async function handleArchivalProcessing(jobId: string, payload: JobPayload): Pro
     const score = (imp.emotional || 1) + (imp.local || 1) + (imp.canonical || 1) + (imp.recency || 1);
 
     if (score <= 4) {
-      const prompt = `Summarize this narrative memory in one sentence: "${memory.content.slice(0, 200)}"`;
+      const prompt = PROMPTS.memoryArchiveSummary(memory.content.slice(0, 200));
 
       try {
         const summary = await generateText(prompt, { userId: userId as string });
@@ -886,20 +888,7 @@ async function handleThreadAnalysis(jobId: string, payload: JobPayload): Promise
     .map((m) => `${m.sender_id === null ? "AI" : "Player"}: ${m.content}`)
     .join("\n");
 
-  const prompt = `Analyze this narrative and identify the key story threads/themes. Return JSON:
-{
-  "threads": [
-    {
-      "name": "thread name",
-      "status": "active|resolved|dormant",
-      "summary": "brief description",
-      "keyEntities": ["list of characters/locations involved"]
-    }
-  ]
-}
-
-Narrative:
-${messageText}`;
+  const prompt = PROMPTS.analyzeThreads(messageText);
 
   let threadsFound = 0;
   try {
@@ -1042,7 +1031,7 @@ async function handleWikiEnrichEntity(jobId: string, payload: JobPayload): Promi
     const page = entitiesToEnrich[i];
     const title = page.frontmatter.title || page.path;
 
-    const prompt = `Expand on this wiki entity "${title}". Current content:\n${page.content.slice(0, 1000)}\n\nAdd 2-3 new details about their personality, habits, motivations, or connections to other entities. Do not contradict existing facts. Return only the new content as markdown.`;
+    const prompt = PROMPTS.wikiEnrichEntity(title, page.content.slice(0, 1000));
 
     try {
       const enrichment = await generateText(prompt, { userId: userId as string });
@@ -1150,7 +1139,7 @@ async function handleWikiGenerateRumors(jobId: string, payload: JobPayload): Pro
     );
     if (existingRumor) continue;
 
-    const prompt = `Based on this event: "${event.title}" (${event.event_type}, outcome: ${event.outcome || "unknown"}), generate 1-2 rumors that might spread among NPCs. Rumors should be plausible but potentially inaccurate. Return as bullet points.`;
+    const prompt = PROMPTS.wikiGenerateRumors(event.title, event.event_type, event.outcome || "unknown");
 
     try {
       const rumors = await generateText(prompt, { userId: userId as string });
@@ -1243,7 +1232,7 @@ async function handleWikiDeepenPage(jobId: string, payload: JobPayload): Promise
     const page = pagesToDeepen[i];
     const title = page.frontmatter.title || page.path;
 
-    const prompt = `Deepen this wiki page "${title}" (${page.frontmatter.type}). Current content:\n${page.content.slice(0, 800)}\n\nAdd new details, connections to other wiki entities, or implications. Do not contradict existing facts. Return only the new content as markdown.`;
+    const prompt = PROMPTS.wikiDeepenPage(title, String(page.frontmatter.type), page.content.slice(0, 800));
 
     try {
       const deepening = await generateText(prompt, { userId: userId as string });
@@ -1329,7 +1318,7 @@ async function handleWikiDeepenLocation(jobId: string, payload: JobPayload): Pro
     const existingContent = page.content;
     if (!existingContent.trim()) continue;
 
-    const prompt = `Expand on this location "${title}". Current description:\n${existingContent.slice(0, 500)}\n\nAdd 2-3 new atmospheric details, historical notes, or sensory descriptions. Do not contradict existing facts.`;
+    const prompt = PROMPTS.wikiExpandLocation(title, existingContent.slice(0, 500));
 
     try {
       const expansion = await generateText(prompt, { userId: userId as string });
@@ -1404,20 +1393,7 @@ async function handleWikiExtractEvent(jobId: string, payload: JobPayload): Promi
     .map((m) => `${m.sender_id === null ? "AI" : "Player"}: ${m.content}`)
     .join("\n");
 
-  const prompt = `Analyze these recent messages and extract any significant narrative events. Return JSON:
-{
-  "events": [
-    {
-      "title": "brief event title",
-      "eventType": "conflict|discovery|relationship|journey|decision|other",
-      "outcome": "what happened as a result",
-      "importance": "low|medium|high|critical"
-    }
-  ]
-}
-
-Messages:
-${messageText}`;
+  const prompt = PROMPTS.extractEvents(messageText);
 
   let extracted = 0;
   try {

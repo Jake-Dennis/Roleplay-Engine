@@ -43,7 +43,9 @@ export async function GET(
   let state: any = {};
   try {
     state = participant.private_state ? JSON.parse(participant.private_state) : {};
-  } catch {}
+  } catch (err) {
+    console.warn('[private-state] Failed to parse private state:', err);
+  }
 
   return NextResponse.json({ privateState: state });
 }

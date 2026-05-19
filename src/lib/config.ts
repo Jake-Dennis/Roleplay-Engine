@@ -57,3 +57,20 @@ export const APP_CONFIG = {
   port: parseInt(process.env.PORT || "3000", 10),
   dataDir: process.env.DATA_DIR || "./data",
 };
+
+export const TIME = {
+  ONE_SECOND: 1000,
+  ONE_MINUTE: 60 * 1000,
+  ONE_HOUR: 60 * 60 * 1000,
+  ONE_DAY: 24 * 60 * 60 * 1000,
+  THREE_DAYS: 3 * 24 * 60 * 60 * 1000,
+  SEVEN_DAYS: 7 * 24 * 60 * 60 * 1000,
+  THIRTY_DAYS: 30 * 24 * 60 * 60 * 1000,
+} as const;
+
+export const CONTENT_LIMITS = {
+  SHORT: 200,
+  MEDIUM: 5000,
+  PREVIEW: 300,
+  SUMMARY_CHUNK: 1000,
+} as const;
