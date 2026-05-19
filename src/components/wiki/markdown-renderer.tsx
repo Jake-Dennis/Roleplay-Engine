@@ -5,9 +5,14 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import wikiLinkPlugin from '@flowershow/remark-wiki-link';
 import rehypeRaw from 'rehype-raw';
-import rehypeSanitize from 'rehype-sanitize';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import { checkPageSize } from '@/lib/wiki/page-split';
 import { FilePlus, AlertTriangle, AlertCircle } from 'lucide-react';
+import { remarkCallout } from '@/lib/wiki/callout-remark-plugin';
+import { remarkEmbed } from '@/lib/wiki/embed-remark-plugin';
+import Callout from '@/components/wiki/callout';
+import EmbedTransclusion from '@/components/wiki/embed-transclusion';
+import { useHoverPreview, default as HoverPreview } from '@/components/wiki/hover-preview';
 
 interface MarkdownRendererProps {
   content: string;
@@ -18,6 +23,8 @@ interface MarkdownRendererProps {
   error?: string | null;
   pageTitle?: string; // For "Create this page" CTA
   onCreatePage?: (title?: string) => void;
+  depth?: number; // Embed nesting depth for circular detection
+  embeds?: Record<string, { content: string | null; frontmatter?: Record<string, any> | null }>; // Embed content lookup
 }
 
 function SkeletonContent() {
@@ -97,10 +104,80 @@ function ErrorContent({ error, pageTitle, onCreatePage }: { error: string | null
 }
 
 /**
+ * Custom rehype-sanitize schema that allows callout and embed data attributes on divs.
+ */
+const sanitizeSchema = {
+  ...defaultSchema,
+  attributes: {
+    ...defaultSchema.attributes,
+    div: [
+      ...(defaultSchema.attributes?.div || []),
+      'className',
+      'data-callout',
+      'data-callout-fold',
+      'data-embed-target',
+      'data-embed-section',
+      'data-embed-block',
+      'data-embed-dimensions',
+      'data-embed-type',
+    ],
+  },
+};
+
+/**
+ * WikiLink wrapper that calls useHoverPreview (must be a component to use hooks)
+ * and renders the HoverPreview portal when visible.
+ */
+function WikiLink({
+  href,
+  className,
+  children,
+  existingPages,
+  wikiRoute,
+  ...props
+}: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+  existingPages: string[];
+  wikiRoute: string;
+}) {
+  const isWikiLink = className?.includes('internal');
+  const isNew = className?.includes('new');
+
+  // Extract page name from href (strip wikiRoute prefix)
+  const pageName = href
+    ? href.replace(new RegExp(`^${wikiRoute}/`), '')
+    : '';
+
+  const hover = useHoverPreview(pageName, existingPages, wikiRoute);
+
+  return (
+    <>
+      <a
+        href={href}
+        className={`${isWikiLink ? (isNew ? 'text-red-400 hover:text-red-300' : 'text-blue-400 hover:text-blue-300') : ''}`}
+        onMouseEnter={hover.onMouseEnter}
+        onMouseLeave={hover.onMouseLeave}
+        onMouseMove={hover.onMouseMove}
+        {...props}
+      >
+        {children}
+      </a>
+      <HoverPreview
+        visible={hover.visible}
+        position={hover.position}
+        loading={hover.loading}
+        data={hover.data}
+        error={hover.error}
+      />
+    </>
+  );
+}
+
+/**
  * Renders wiki markdown content with:
  * - Wiki frontmatter badge bar (title, type, status, tags)
  * - GFM tables, strikethrough, task lists
  * - [[wikilinks]] via @flowershow/remark-wiki-link
+ * - Obsidian-style callouts (> [!info], > [!warning], etc.)
  * - Raw HTML (rehype-raw) sanitized via rehype-sanitize
  * - Loading skeleton and error states
  */
@@ -113,6 +190,8 @@ export default function MarkdownRenderer({
   error = null,
   pageTitle,
   onCreatePage,
+  depth = 0,
+  embeds = {},
 }: MarkdownRendererProps) {
   if (isLoading) {
     return <SkeletonContent />;
@@ -190,6 +269,8 @@ export default function MarkdownRenderer({
       <div className="prose prose-invert max-w-none">
         <ReactMarkdown
           remarkPlugins={[
+            remarkEmbed,
+            remarkCallout,
             remarkGfm,
             [wikiLinkPlugin, {
               permalinks: existingPages,
@@ -197,17 +278,68 @@ export default function MarkdownRenderer({
               hrefTemplate: (permalink: string) => `${wikiRoute}/${permalink}`,
             }],
           ]}
-          rehypePlugins={[rehypeRaw, rehypeSanitize]}
+          rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
           components={{
-            a: ({ href, className, children, ...props }) => {
+            div: ({ className, children, ...props }) => {
+              // Detect embed divs from the remark plugin
+              const embedTarget = (props as any)['data-embed-target'];
+              if (embedTarget && className?.includes('wiki-embed')) {
+                const section = (props as any)['data-embed-section'] as string | undefined;
+                const blockId = (props as any)['data-embed-block'] as string | undefined;
+                const dimensions = (props as any)['data-embed-dimensions'] as string | undefined;
+
+                // Look up embed content from the embeds prop
+                // Normalize target: lowercase, replace spaces with hyphens
+                const normalizedTarget = embedTarget.toLowerCase().replace(/\s+/g, '-');
+                const embedData = embeds[normalizedTarget] || embeds[embedTarget];
+                const embedContent = embedData?.content;
+
+                return (
+                  <EmbedTransclusion
+                    target={embedTarget}
+                    section={section}
+                    blockId={blockId}
+                    dimensions={dimensions}
+                    content={embedContent}
+                    depth={depth}
+                    existingPages={existingPages}
+                    wikiRoute={wikiRoute}
+                  />
+                );
+              }
+
+              // Detect callout divs from the remark plugin
+              if (className?.includes('callout') && !className?.includes('wiki-content')) {
+                const calloutType = (props as any)['data-callout'] || 'note';
+                const fold = (props as any)['data-callout-fold'] as '+' | '-' | undefined;
+                // Extract title from the first paragraph if it looks like a callout title
+                // The remark plugin stores metadata, but in the HTML output we need to infer
+                return (
+                  <Callout type={calloutType} fold={fold}>
+                    {children}
+                  </Callout>
+                );
+              }
+              return <div className={className} {...props}>{children}</div>;
+            },
+            a: (anchorProps) => {
+              const { href, className, children, ...rest } = anchorProps as any;
               const isWikiLink = className?.includes('internal');
-              const isNew = className?.includes('new');
+              if (isWikiLink) {
+                return (
+                  <WikiLink
+                    href={href}
+                    className={className}
+                    existingPages={existingPages}
+                    wikiRoute={wikiRoute}
+                    {...rest}
+                  >
+                    {children}
+                  </WikiLink>
+                );
+              }
               return (
-                <a
-                  href={href}
-                  className={`${isWikiLink ? (isNew ? 'text-red-400 hover:text-red-300' : 'text-blue-400 hover:text-blue-300') : ''}`}
-                  {...props}
-                >
+                <a href={href} className={className} {...rest}>
                   {children}
                 </a>
               );

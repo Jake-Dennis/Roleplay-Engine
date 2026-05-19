@@ -4,10 +4,13 @@ import { useParams } from 'next/navigation';
 import FileTree from '@/components/wiki/file-tree';
 import BacklinkPanel from '@/components/wiki/backlink-panel';
 import RevisionHistory from '@/components/wiki/revision-history';
+import OutlinePanel from '@/components/wiki/outline-panel';
+import OutgoingLinksPanel from '@/components/wiki/outgoing-links-panel';
 import MarkdownRenderer from '@/components/wiki/markdown-renderer';
 import type { WikiPage } from '@/lib/wiki/file-io';
 
 type EditMode = 'view' | 'edit' | 'preview';
+type RightPanel = 'backlinks' | 'history' | 'outline' | 'links';
 
 /**
  * Reconstruct raw markdown (frontmatter + body) from page data.
@@ -87,8 +90,11 @@ export default function WikiPageView() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // History panel state
-  const [showHistory, setShowHistory] = useState(false);
+  // Right panel state
+  const [rightPanel, setRightPanel] = useState<RightPanel>('backlinks');
+
+  // Embed data for transclusion
+  const [embeds, setEmbeds] = useState<Record<string, { content: string | null; frontmatter: Record<string, any> | null }>>({});
 
   useEffect(() => {
     const pagePath = slug.join('/');
@@ -105,6 +111,7 @@ export default function WikiPageView() {
         setPage(data.page);
         setAllPages(data.allPages || []);
         setOrphanPaths(data.orphanPaths || []);
+        setEmbeds(data.embeds || {});
         setLoading(false);
       })
       .catch(err => {
@@ -162,6 +169,7 @@ export default function WikiPageView() {
       setPage(refreshData.page);
       setAllPages(refreshData.allPages || []);
       setOrphanPaths(refreshData.orphanPaths || []);
+      setEmbeds(refreshData.embeds || {});
       setMode('view');
     } catch {
       setSaveError('Network error while saving');
@@ -192,14 +200,44 @@ export default function WikiPageView() {
             {mode === 'view' ? (
               <>
                 <button
-                  onClick={() => setShowHistory(!showHistory)}
+                  onClick={() => setRightPanel('backlinks')}
                   className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                    showHistory
+                    rightPanel === 'backlinks'
+                      ? 'bg-accent/20 text-accent border border-accent/30'
+                      : 'bg-bg-base text-text-secondary border border-border-default hover:text-text-primary'
+                  }`}
+                >
+                  Backlinks
+                </button>
+                <button
+                  onClick={() => setRightPanel('history')}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    rightPanel === 'history'
                       ? 'bg-accent/20 text-accent border border-accent/30'
                       : 'bg-bg-base text-text-secondary border border-border-default hover:text-text-primary'
                   }`}
                 >
                   History
+                </button>
+                <button
+                  onClick={() => setRightPanel('outline')}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    rightPanel === 'outline'
+                      ? 'bg-accent/20 text-accent border border-accent/30'
+                      : 'bg-bg-base text-text-secondary border border-border-default hover:text-text-primary'
+                  }`}
+                >
+                  Outline
+                </button>
+                <button
+                  onClick={() => setRightPanel('links')}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    rightPanel === 'links'
+                      ? 'bg-accent/20 text-accent border border-accent/30'
+                      : 'bg-bg-base text-text-secondary border border-border-default hover:text-text-primary'
+                  }`}
+                >
+                  Links
                 </button>
                 <button
                   onClick={handleEditStart}
@@ -253,7 +291,7 @@ export default function WikiPageView() {
         {/* Content area */}
         <div className="flex-1 overflow-y-auto p-8">
           {mode === 'view' && (
-            <MarkdownRenderer content={page.content} frontmatter={page.frontmatter} />
+            <MarkdownRenderer content={page.content} frontmatter={page.frontmatter} existingPages={allPages?.map(p => p.path) || []} wikiRoute="/wiki" embeds={embeds} />
           )}
 
           {mode === 'edit' && (
@@ -282,7 +320,7 @@ export default function WikiPageView() {
               {(() => {
                 const { content, frontmatter } = parseRawMarkdown(editContent);
                 return (
-                  <MarkdownRenderer content={content} frontmatter={frontmatter} />
+                  <MarkdownRenderer content={content} frontmatter={frontmatter} existingPages={allPages?.map(p => p.path) || []} wikiRoute="/wiki" embeds={embeds} />
                 );
               })()}
             </div>
@@ -292,14 +330,26 @@ export default function WikiPageView() {
 
       {/* Right sidebar */}
       <div className="w-64 border-l border-border-default p-4 overflow-y-auto shrink-0">
-        {showHistory ? (
+        {rightPanel === 'backlinks' && (
+          <BacklinkPanel currentPage={page.path} allPages={allPages} />
+        )}
+        {rightPanel === 'history' && (
           <RevisionHistory
             slug={slug}
             currentContent={page.content}
             currentFrontmatter={page.frontmatter}
           />
-        ) : (
-          <BacklinkPanel currentPage={page.path} allPages={allPages} />
+        )}
+        {rightPanel === 'outline' && (
+          <OutlinePanel content={page.content} />
+        )}
+        {rightPanel === 'links' && (
+          <OutgoingLinksPanel
+            content={page.content}
+            allPages={allPages}
+            basePath="/wiki"
+            universe={page.frontmatter?.universe}
+          />
         )}
       </div>
     </div>
