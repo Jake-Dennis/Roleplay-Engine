@@ -106,37 +106,6 @@ function main() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Locations
-    CREATE TABLE IF NOT EXISTS locations (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id),
-      universe_id TEXT REFERENCES universes(id),
-      name TEXT NOT NULL,
-      file_path TEXT NOT NULL,
-      importance TEXT DEFAULT 'medium',
-      canon_layer TEXT DEFAULT 'generated_lore',
-      parent_location_id TEXT REFERENCES locations(id),
-      known_info TEXT,
-      hidden_info TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    -- NPCs
-    CREATE TABLE IF NOT EXISTS npcs (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id),
-      universe_id TEXT REFERENCES universes(id),
-      name TEXT NOT NULL,
-      file_path TEXT NOT NULL,
-      canon_status TEXT DEFAULT 'generated',
-      canon_tier TEXT DEFAULT 'generated_lore',
-      canon_layer TEXT DEFAULT 'generated_lore',
-      location_id TEXT REFERENCES locations(id),
-      importance TEXT DEFAULT 'medium',
-      tags TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
     -- Relationships
     CREATE TABLE IF NOT EXISTS relationships (
       id TEXT PRIMARY KEY,
@@ -149,20 +118,6 @@ function main() {
       relationship_stage TEXT,
       decay_rates TEXT,
       updated_at DATETIME
-    );
-
-    -- Narrative memories
-    CREATE TABLE IF NOT EXISTS narrative_memories (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id),
-      universe_id TEXT REFERENCES universes(id),
-      session_id TEXT REFERENCES sessions(id),
-      type TEXT NOT NULL,
-      content TEXT NOT NULL,
-      importance TEXT,
-      canon_layer TEXT DEFAULT 'generated_lore',
-      related_entities TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
     -- Messages
@@ -200,24 +155,6 @@ function main() {
       status TEXT DEFAULT 'active',
       escalation_level TEXT DEFAULT 'low',
       unresolved_items TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    -- Events
-    CREATE TABLE IF NOT EXISTS events (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id),
-      universe_id TEXT REFERENCES universes(id),
-      session_id TEXT REFERENCES sessions(id),
-      title TEXT NOT NULL,
-      event_type TEXT NOT NULL,
-      location_id TEXT REFERENCES locations(id),
-      participants TEXT,
-      outcome TEXT,
-      consequences TEXT,
-      importance TEXT,
-      canon_layer TEXT DEFAULT 'generated_lore',
-      occurred_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -264,7 +201,7 @@ function main() {
     );
 
     -- Lore validations
-    CREATE TABLE IF NOT EXISTS lore_validations (
+    CREATE TABLE IF NOT EXISTS entity_validations (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),
       universe_id TEXT REFERENCES universes(id),
@@ -320,16 +257,10 @@ function main() {
     CREATE INDEX IF NOT EXISTS idx_embedding_universe ON embedding_index(universe_id);
     CREATE INDEX IF NOT EXISTS idx_relationships_user ON relationships(user_id);
     CREATE INDEX IF NOT EXISTS idx_relationships_universe ON relationships(universe_id);
-    CREATE INDEX IF NOT EXISTS idx_narrative_memories_user ON narrative_memories(user_id, session_id);
-    CREATE INDEX IF NOT EXISTS idx_narrative_memories_universe ON narrative_memories(universe_id);
-    CREATE INDEX IF NOT EXISTS idx_events_user ON events(user_id, session_id);
-    CREATE INDEX IF NOT EXISTS idx_events_universe ON events(universe_id);
     CREATE INDEX IF NOT EXISTS idx_voice_assignments_entity ON voice_assignments(user_id, entity_type, entity_id);
     CREATE INDEX IF NOT EXISTS idx_tts_cache_hash ON tts_cache(user_id, text_hash);
-    CREATE INDEX IF NOT EXISTS idx_locations_universe ON locations(universe_id);
-    CREATE INDEX IF NOT EXISTS idx_npcs_universe ON npcs(universe_id);
     CREATE INDEX IF NOT EXISTS idx_narrative_threads_universe ON narrative_threads(universe_id);
-    CREATE INDEX IF NOT EXISTS idx_lore_validations_universe ON lore_validations(universe_id);
+    CREATE INDEX IF NOT EXISTS idx_entity_validations_universe ON entity_validations(universe_id);
     CREATE INDEX IF NOT EXISTS idx_backlinks_universe ON backlinks(universe_id);
     CREATE INDEX IF NOT EXISTS idx_timelines_universe ON timelines(universe_id);
   `);
@@ -341,11 +272,6 @@ function main() {
       -- Vector search tables (sqlite-vec)
       -- bge-m3 produces 1024-dimensional embeddings
       CREATE VIRTUAL TABLE IF NOT EXISTS vec_messages USING vec0(
-        embedding float[1024],
-        metadata TEXT
-      );
-
-      CREATE VIRTUAL TABLE IF NOT EXISTS vec_lore USING vec0(
         embedding float[1024],
         metadata TEXT
       );

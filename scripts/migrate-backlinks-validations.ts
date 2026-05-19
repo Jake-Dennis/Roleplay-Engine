@@ -7,7 +7,7 @@
  *   This script validates that backlinks can be rebuilt and reports stats.
  *
  * LORE VALIDATIONS:
- *   Reads lore_validations from the DB and updates the corresponding wiki page
+ *   Reads entity_validations from the DB and updates the corresponding wiki page
  *   frontmatter status field based on the validation state:
  *
  *     generated_unverified → draft   (default, no change needed)
@@ -299,7 +299,7 @@ function main(): void {
 
     const validations = db
       .prepare(
-        "SELECT id, user_id, universe_id, entity_type, entity_id, state, validation_notes, validated_by, validated_at, created_at FROM lore_validations WHERE user_id = ? ORDER BY entity_type, entity_id"
+        "SELECT id, user_id, universe_id, entity_type, entity_id, state, validation_notes, validated_by, validated_at, created_at FROM entity_validations WHERE user_id = ? ORDER BY entity_type, entity_id"
       )
       .all(user.id) as any[];
 

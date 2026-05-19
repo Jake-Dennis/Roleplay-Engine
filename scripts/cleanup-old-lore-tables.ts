@@ -7,9 +7,12 @@
  * 3. Drops content tables that have been migrated to the wiki
  *
  * Content tables to drop:
- *   locations, npcs, events, relationships,
- *   narrative_memories, lore_validations, lore_edits,
- *   backlinks, embedding_index, embedding_vectors
+ *   locations, npcs, events, narrative_memories, lore_edits
+ *
+ * Tables kept (active wiki/relationship systems):
+ *   backlinks, embedding_index, embedding_vectors — wiki
+ *   relationships — relationship-markdown.ts
+ *   entity_validations — contradiction detection + semantic scanner
  *
  * Operational tables preserved:
  *   users, sessions, job_queue, universes, scene_states, personas
@@ -36,18 +39,18 @@ const DB_PATH = path.join(DATA_DIR, "global.db");
 /**
  * Content tables that are safe to drop after wiki migration is verified.
  * These tables held lore data that has been migrated to wiki pages.
+ *
+ * KEPT tables (used by active wiki/relationship systems):
+ *   backlinks, embedding_index, embedding_vectors — wiki backlinks + retrieval
+ *   relationships — relationship-markdown.ts depends on this
+ *   entity_validations — used by contradiction detection + semantic scanner
  */
 const CONTENT_TABLES = [
   "locations",
   "npcs",
   "events",
-  "relationships",
   "narrative_memories",
-  "lore_validations",
   "lore_edits",
-  "backlinks",
-  "embedding_index",
-  "embedding_vectors",
 ] as const;
 
 /**
@@ -83,9 +86,12 @@ What this script does:
   3. Drops deprecated content tables from the database
 
 Content tables DROPPED:
-  locations, npcs, events, relationships,
-  narrative_memories, lore_validations, lore_edits,
-  backlinks, embedding_index, embedding_vectors
+  locations, npcs, events, narrative_memories, lore_edits
+
+Tables KEPT (active systems):
+  backlinks, embedding_index, embedding_vectors — wiki
+  relationships — relationship-markdown.ts
+  entity_validations — contradiction detection + semantic scanner
 
 Operational tables KEPT:
   users, sessions, job_queue, universes, scene_states, personas

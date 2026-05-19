@@ -7,8 +7,6 @@
  *   <ImportanceMeter scores={{ emotional: "high", local: "medium", canonical: "critical", recency: "low" }} />
  */
 
-"use client";
-
 import { calculateImportance, type ImportanceScores } from "@/lib/importance";
 
 interface ImportanceMeterProps {
