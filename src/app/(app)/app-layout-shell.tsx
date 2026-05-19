@@ -352,7 +352,7 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
               });
             }
           })
-          .catch(() => {});
+          .catch((err) => console.warn("[app-layout] session URL sync failed:", err));
       }
     }
   }, [pathname]);

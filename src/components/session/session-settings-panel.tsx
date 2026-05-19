@@ -54,7 +54,7 @@ export function SessionSettingsPanel({ sessionId, onClose }: SessionSettingsPane
     fetch("/api/ollama/models")
       .then((res) => res.json())
       .then((data) => setAvailableModels(data.models || []))
-      .catch(() => {});
+      .catch((err) => console.warn("[session-settings] model list fetch failed:", err));
   }, [sessionId]);
 
   async function handleSave() {

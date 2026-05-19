@@ -86,7 +86,7 @@ export async function GET(
       turnOrder: turnOrder ? JSON.parse(turnOrder.value) : [],
       currentTurn: currentTurn?.value || null,
     };
-  } catch {}
+  } catch (err) { console.warn("[sessions] turn config parse failed:", err); }
 
   return NextResponse.json({
     session,

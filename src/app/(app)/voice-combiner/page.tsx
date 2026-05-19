@@ -46,7 +46,7 @@ export default function VoiceCombinerPage() {
       .then((data) => {
         setVoices(data.voiceDetails || []);
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[voice-combiner] voices fetch failed:", err));
   }, []);
 
   // Load profiles when universe changes

@@ -90,7 +90,7 @@ export default function SettingsPage() {
       .then((data) => {
         setVoices(data.voiceDetails || []);
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[settings] TTS voices fetch failed:", err));
 
     // Load narrator voice assignment
     fetch("/api/voice-assignments?entityType=narrator&entityId=default")
@@ -100,7 +100,7 @@ export default function SettingsPage() {
           setNarratorVoice(data.assignment.voice_name);
         }
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[settings] voice assignments fetch failed:", err));
 
     // Load TTS settings from localStorage
     const savedSpeed = localStorage.getItem("tts-speed");
@@ -178,7 +178,7 @@ export default function SettingsPage() {
       .then((data) => {
         setLocalModels(data.models || []);
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[settings] ollama models fetch failed:", err));
   }, []);
 
   async function handleNarratorVoice() {

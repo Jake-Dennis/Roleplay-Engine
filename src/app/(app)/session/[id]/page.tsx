@@ -84,7 +84,7 @@ export default function SessionChatPage() {
         const active = list.find((p: { is_active: number }) => p.is_active === 1);
         if (active) setActivePersonaId(active.id);
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[session] persona list load failed:", err));
   }, []);
 
   const [input, setInput] = useState("");

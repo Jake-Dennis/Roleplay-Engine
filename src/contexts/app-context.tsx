@@ -84,7 +84,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       method: "PUT",
       headers,
       body: JSON.stringify(updates),
-    }).catch(() => {});
+    }).catch((err) => console.warn("[app-context] active state sync failed:", err));
   }, []);
 
   const loadData = useCallback(() => {
@@ -244,7 +244,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setGroups(groupList);
       setUniverses(universeList.filter((u: Universe) => u.group_id === targetGroupId));
       setSessions(sessionList.filter((s: Session) => s.group_id === targetGroupId));
-    }).catch(() => {});
+    }).catch((err) => console.warn("[app-context] refreshAll fetch failed:", err));
   }, [authHeaders, activeGroup]);
 
   return (
