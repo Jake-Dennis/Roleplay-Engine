@@ -187,7 +187,7 @@ function flexSearchFallback(
       store: ["title", "type", "path", "universe"],
     },
     tokenize: "forward",
-  }) as any;
+  });
 
   // Index all pages
   for (const page of pages) {

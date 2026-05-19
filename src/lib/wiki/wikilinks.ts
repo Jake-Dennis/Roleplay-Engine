@@ -11,6 +11,12 @@ export interface Wikilink {
 export interface LinkGraph {
   nodes: Map<string, string[]>; // pagePath -> [targetPagePaths]
   edges: Array<{ source: string; target: string; linkType: string }>;
+  collisions: Array<{ name: string; pages: string[] }>; // duplicate titles across universes
+}
+
+export interface CollisionInfo {
+  name: string;
+  pages: string[];
 }
 
 /**
@@ -47,18 +53,27 @@ export function resolveWikilink(
   pages: WikiPage[],
   universeId?: string,
 ): string | null {
-  const normalizedName = name.toLowerCase().replace(/\s+/g, "-");
+  // Normalize: trim, lowercase, convert whitespace to hyphens
+  const normalizedName = name.trim().toLowerCase().replace(/\s+/g, "-");
 
-  // Check for cross-universe format: Universe::Page
+  // Check for cross-universe format: Universe::Page or Universe :: Page
   let searchName = normalizedName;
   let targetUniverse: string | undefined;
-  if (name.includes("::")) {
-    const parts = name.split("::");
+  if (/::/.test(name)) {
+    // Split on first :: with whitespace tolerance
+    const parts = name.split("::").map((s) => s.trim());
     targetUniverse = parts[0].toLowerCase();
     searchName = parts.slice(1).join("::").toLowerCase().replace(/\s+/g, "-");
+    // Skip empty universe prefix (treat as un-namespaced link)
+    if (!targetUniverse) {
+      targetUniverse = undefined;
+    }
   }
 
-  // First pass: exact match (prefer same universe)
+  // Skip empty page names
+  if (!searchName) return null;
+
+  // First pass: exact match (prefer same/target universe)
   for (const page of pages) {
     const pageTitle = (page.frontmatter.title || "")
       .toLowerCase()
@@ -67,12 +82,12 @@ export function resolveWikilink(
 
     if (pageTitle === searchName) {
       if (targetUniverse && pageUniverse === targetUniverse) return page.path;
-      if (!targetUniverse && (!universeId || pageUniverse === universeId))
+      if (!targetUniverse && (!universeId || pageUniverse === universeId?.toLowerCase()))
         return page.path;
     }
   }
 
-  // Second pass: any match
+  // Second pass: any exact match (fallback)
   for (const page of pages) {
     const pageTitle = (page.frontmatter.title || "")
       .toLowerCase()
@@ -80,7 +95,7 @@ export function resolveWikilink(
     if (pageTitle === searchName) return page.path;
   }
 
-  // Third pass: partial match (filename without .md)
+  // Third pass: partial match (filename without .md extension)
   for (const page of pages) {
     const filename = path.basename(page.path, ".md").toLowerCase();
     if (filename === searchName) return page.path;
@@ -90,12 +105,108 @@ export function resolveWikilink(
 }
 
 /**
+ * Detect page title collisions across universes.
+ * Returns an array of entries where the same page title exists in multiple universes.
+ */
+export function detectCollisions(
+  pages: WikiPage[],
+): Array<{ name: string; pages: string[] }> {
+  const titleMap = new Map<
+    string,
+    Array<{ path: string; universe: string }>
+  >();
+
+  for (const page of pages) {
+    const title = (page.frontmatter.title || path.basename(page.path, ".md"))
+      .toLowerCase()
+      .replace(/\s+/g, "-");
+    const universe = (page.frontmatter.universe || "").toLowerCase();
+
+    if (!titleMap.has(title)) {
+      titleMap.set(title, []);
+    }
+    titleMap.get(title)!.push({ path: page.path, universe });
+  }
+
+  const collisions: Array<{ name: string; pages: string[] }> = [];
+
+  for (const [name, entries] of titleMap) {
+    if (entries.length < 2) continue;
+    // Only flag as collision if entries span multiple distinct universes
+    const universes = new Set(entries.map((e) => e.universe));
+    if (universes.size >= 2) {
+      collisions.push({
+        name: entries[0].path, // use first page's path as identifier
+        pages: entries.map((e) => e.path),
+      });
+    }
+  }
+
+  return collisions;
+}
+
+/**
+ * Resolve a wikilink with full metadata about the resolution.
+ * Returns whether the resolution crossed universes and whether the name collides.
+ *
+ * - Parses [[Universe::Page]] format
+ * - Prefers same-universe matches when contextUniverse is provided
+ * - Falls back to any-universe match
+ */
+export function resolveWithNamespace(
+  name: string,
+  pages: WikiPage[],
+  contextUniverse?: string,
+): { resolved: string | null; isCrossUniverse: boolean; collision: boolean } {
+  const resolved = resolveWikilink(name, pages, contextUniverse);
+
+  // Determine if this name has collisions across universes
+  const normalizedName = name
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-");
+
+  // Extract page name for collision check (strip universe prefix)
+  const collisionCheckName = name.includes("::")
+    ? name.split("::").slice(1).join("::").trim().toLowerCase().replace(/\s+/g, "-")
+    : normalizedName;
+
+  const matchingPages = pages.filter((page) => {
+    const pageTitle = (page.frontmatter.title || "")
+      .toLowerCase()
+      .replace(/\s+/g, "-");
+    return pageTitle === collisionCheckName;
+  });
+  const hasCollision =
+    matchingPages.length > 1 &&
+    new Set(matchingPages.map((p) => (p.frontmatter.universe || "").toLowerCase()))
+      .size >= 2;
+
+  // Determine if resolved page is in a different universe than context
+  let isCrossUniverse = false;
+  if (resolved && contextUniverse) {
+    const resolvedPage = pages.find((p) => p.path === resolved);
+    if (resolvedPage) {
+      const resolvedUniverse = (
+        resolvedPage.frontmatter.universe || ""
+      ).toLowerCase();
+      isCrossUniverse =
+        resolvedUniverse !== "" &&
+        resolvedUniverse !== contextUniverse.toLowerCase();
+    }
+  }
+
+  return { resolved, isCrossUniverse, collision: hasCollision };
+}
+
+/**
  * Build a link graph from wiki pages.
  * Returns adjacency map: { sourcePath: [targetPaths] }
  */
 export function buildLinkGraph(pages: WikiPage[]): LinkGraph {
   const nodes = new Map<string, string[]>();
   const edges: Array<{ source: string; target: string; linkType: string }> = [];
+  const collisions = detectCollisions(pages);
 
   for (const page of pages) {
     const links = parseWikilinks(page.content);
@@ -120,7 +231,7 @@ export function buildLinkGraph(pages: WikiPage[]): LinkGraph {
     nodes.set(page.path, targets);
   }
 
-  return { nodes, edges };
+  return { nodes, edges, collisions };
 }
 
 /**

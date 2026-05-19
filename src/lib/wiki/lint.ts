@@ -3,9 +3,9 @@ import { listWikiPages, WikiPage } from "./file-io";
 import {
   parseWikilinks,
   resolveWikilink,
-  buildLinkGraph,
   validateWikilinks,
 } from "./wikilinks";
+import { findOrphans } from "./orphans";
 import { generateText } from "../ollama";
 
 // ---------------------------------------------------------------------------
@@ -430,27 +430,7 @@ export async function lintWiki(
   // -----------------------------------------------------------------------
   // 2. Orphan Pages (no inbound AND no outbound wikilinks)
   // -----------------------------------------------------------------------
-  const linkGraph = buildLinkGraph(pages);
-
-  // Build set of all targets (inbound links)
-  const inboundTargets = new Set<string>();
-  for (const [, targets] of linkGraph.nodes) {
-    for (const target of targets) {
-      inboundTargets.add(target);
-    }
-  }
-
-  for (const page of pages) {
-    const pagePath = page.path;
-    const outbound = linkGraph.nodes.get(pagePath) || [];
-    const hasOutbound = outbound.length > 0;
-    const hasInbound = inboundTargets.has(pagePath);
-
-    // Orphan: no inbound AND no outbound
-    if (!hasInbound && !hasOutbound) {
-      report.orphans.push(relativePath(wikiRoot, pagePath));
-    }
-  }
+  report.orphans = findOrphans(wikiRoot);
 
   // -----------------------------------------------------------------------
   // 3. Stale Claims

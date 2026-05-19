@@ -67,8 +67,8 @@ export async function rejectPage(
   }
 
   fm.status = "rejected";
-  (fm as Record<string, any>).rejection_reason = reason;
-  (fm as Record<string, any>).rejected_at = new Date().toISOString();
+  fm.rejection_reason = reason;
+  fm.rejected_at = new Date().toISOString();
 
   try {
     writeWikiPage(pagePath, page.content, fm);

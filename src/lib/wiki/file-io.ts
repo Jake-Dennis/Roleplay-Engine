@@ -23,6 +23,55 @@ export interface WikiFrontmatter {
   tags?: string[];
   created?: string;
   updated?: string;
+  /** Reason for rejection (set when status is "rejected"). */
+  rejection_reason?: string;
+  /** ISO timestamp when the page was rejected. */
+  rejected_at?: string;
+}
+
+/**
+ * Options for writeWikiPage conflict detection.
+ */
+export interface WriteWikiPageOptions {
+  /**
+   * If provided, compare with existing file's `updated` field.
+   * A mismatch indicates a concurrent edit conflict.
+   */
+  expectedLastModified?: string;
+  /**
+   * How to handle conflicts.
+   * - "fail" (default): throw ConflictError
+   * - "save-diff": save a diff file to _review/conflicts/ and continue
+   */
+  onConflict?: "fail" | "save-diff";
+}
+
+/**
+ * Error thrown when a concurrent edit conflict is detected.
+ */
+export class ConflictError extends Error {
+  public readonly filePath: string;
+  public readonly existingLastModified: string;
+  public readonly expectedLastModified: string;
+  public readonly diff: string;
+
+  constructor(
+    filePath: string,
+    existingLastModified: string,
+    expectedLastModified: string,
+    diff: string
+  ) {
+    super(
+      `Concurrent edit conflict on "${filePath}": ` +
+        `expected updated=${expectedLastModified}, ` +
+        `but file has updated=${existingLastModified}`
+    );
+    this.name = "ConflictError";
+    this.filePath = filePath;
+    this.existingLastModified = existingLastModified;
+    this.expectedLastModified = expectedLastModified;
+    this.diff = diff;
+  }
 }
 
 /**
@@ -63,6 +112,112 @@ export function unlockFile(filePath: string): void {
  */
 export function isFileLocked(filePath: string): boolean {
   return fileLocks.get(filePath) ?? false;
+}
+
+// ---------------------------------------------------------------------------
+// Conflict Detection Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Read the `updated` (lastModified) timestamp from an existing wiki page.
+ *
+ * Returns the ISO timestamp string, or null if the file doesn't exist
+ * or has no `updated` frontmatter field.
+ */
+export function getWikiPageLastModified(filePath: string): string | null {
+  if (!fs.existsSync(filePath)) return null;
+  try {
+    const raw = fs.readFileSync(filePath, "utf-8");
+    const { data } = matter(raw);
+    return (data.updated as string) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Simple line-by-line diff between two strings.
+ *
+ * Returns a unified-diff-style string with:
+ *   - lines prefixed with `-` for removed lines
+ *   - lines prefixed with `+` for added lines
+ *   - lines prefixed with ` ` for unchanged context
+ */
+export function lineDiff(oldText: string, newText: string): string {
+  const oldLines = oldText.split("\n");
+  const newLines = newText.split("\n");
+  const maxLen = Math.max(oldLines.length, newLines.length);
+  const lines: string[] = [];
+
+  for (let i = 0; i < maxLen; i++) {
+    const oldLine = i < oldLines.length ? oldLines[i] : undefined;
+    const newLine = i < newLines.length ? newLines[i] : undefined;
+
+    if (oldLine === newLine) {
+      lines.push(` ${oldLine}`);
+    } else {
+      if (oldLine !== undefined) lines.push(`-${oldLine}`);
+      if (newLine !== undefined) lines.push(`+${newLine}`);
+    }
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Save a conflict diff file to the `_review/conflicts/` directory.
+ *
+ * Filename format: `{ISO-timestamp}-{original-filename}.diff`
+ */
+function saveConflictDiff(
+  filePath: string,
+  diff: string
+): string {
+  const wikiRoot = findWikiRoot(filePath);
+  const conflictsDir = path.join(wikiRoot, "_review", "conflicts");
+  if (!fs.existsSync(conflictsDir)) {
+    fs.mkdirSync(conflictsDir, { recursive: true });
+  }
+
+  const baseName = path.basename(filePath, ".md");
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const diffFilename = `${timestamp}-${baseName}.diff`;
+  const diffPath = path.join(conflictsDir, diffFilename);
+
+  const header = [
+    `# Concurrent Edit Conflict`,
+    `# File: ${filePath}`,
+    `# Generated: ${new Date().toISOString()}`,
+    `#`,
+    `# Legend:`,
+    `#   - line removed`,
+    `#   + line added`,
+    `#   (space) unchanged context`,
+    ``,
+  ].join("\n");
+
+  fs.writeFileSync(diffPath, header + diff, "utf-8");
+  return diffPath;
+}
+
+/**
+ * Walk up from a file path to find the wiki root (the folder containing
+ * entities/, concepts/, sources/, etc.). Falls back to the file's directory.
+ */
+function findWikiRoot(filePath: string): string {
+  let current = path.dirname(filePath);
+  const maxDepth = 10;
+  for (let i = 0; i < maxDepth; i++) {
+    const hasWikiStructure = SCAN_FOLDERS.some((f) =>
+      fs.existsSync(path.join(current, f))
+    );
+    if (hasWikiStructure) return current;
+    const parent = path.dirname(current);
+    if (parent === current) break; // reached filesystem root
+    current = parent;
+  }
+  // Fallback: use the immediate parent of the file
+  return path.dirname(filePath);
 }
 
 // ---------------------------------------------------------------------------
@@ -120,13 +275,22 @@ export function readWikiPage(filePath: string): WikiPage {
  * - Validates required frontmatter fields: title, type, status
  * - Auto-sets updated timestamp (and created if missing)
  * - Locks the file to prevent concurrent writes
+ * - Optionally detects concurrent edit conflicts via timestamp comparison
+ *
+ * @param filePath - Absolute path to write the file
+ * @param content - Markdown body content
+ * @param frontmatter - YAML frontmatter fields
+ * @param options - Optional conflict detection settings
+ *   - expectedLastModified: if provided, compare with existing file's `updated`
+ *   - onConflict: "fail" (default) throws ConflictError, "save-diff" saves diff
  *
  * Returns the absolute file path written.
  */
 export function writeWikiPage(
   filePath: string,
   content: string,
-  frontmatter: WikiFrontmatter
+  frontmatter: WikiFrontmatter,
+  options?: WriteWikiPageOptions
 ): string {
   // Check lock
   if (fileLocks.get(filePath)) {
@@ -142,6 +306,42 @@ export function writeWikiPage(
   }
   if (!frontmatter.status) {
     throw new Error("Frontmatter missing required field: status");
+  }
+
+  // Conflict detection: compare expectedLastModified with existing file
+  if (options?.expectedLastModified) {
+    const existingLastModified = getWikiPageLastModified(filePath);
+    if (existingLastModified !== null) {
+      // Parse timestamps for comparison — a newer existing file means conflict
+      const existingTime = new Date(existingLastModified).getTime();
+      const expectedTime = new Date(options.expectedLastModified).getTime();
+
+      if (existingTime > expectedTime) {
+        // Conflict: file has been modified since the caller last read it
+        const existingRaw = fs.readFileSync(filePath, "utf-8");
+        const diff = lineDiff(existingRaw, "");
+
+        const onConflict = options.onConflict ?? "fail";
+
+        if (onConflict === "save-diff") {
+          // Save the diff and proceed with the write
+          const diffPath = saveConflictDiff(filePath, diff);
+          // Log the conflict for observability
+          console.warn(
+            `[wiki] Concurrent edit conflict on "${filePath}", ` +
+              `diff saved to ${diffPath}`
+          );
+        } else {
+          // "fail" — throw ConflictError with full diff
+          throw new ConflictError(
+            filePath,
+            existingLastModified,
+            options.expectedLastModified,
+            diff
+          );
+        }
+      }
+    }
   }
 
   // Auto-set timestamps
