@@ -1,8 +1,0 @@
-{
-  "track_id": "phase8_stabilization_20260518",
-  "type": "feature",
-  "status": "new",
-  "created_at": "2026-05-18T20:50:00Z",
-  "updated_at": "2026-05-18T20:50:00Z",
-  "description": "Stabilize and complete Phase 8 features (30fps render loop, idle detection, narrative threads UI, timeline management, markdown lore editor)"
-}
