@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { getAuthToken } from '@/lib/auth-token';
 
-import type { DecodedToken } from '@/lib/types';
+import type { AuthToken } from '@/lib/auth';
 
 export interface AuthContext {
   userId: string;
-  decoded: DecodedToken;
+  decoded: AuthToken;
 }
 
 export async function withAuth(
