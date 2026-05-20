@@ -13,6 +13,7 @@
  */
 
 import { getDb } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 export interface Wikilink {
   name: string;
@@ -205,7 +206,8 @@ export function storeBacklinks(
           link.context.substring(0, 200)
         );
         stored++;
-      } catch {
+      } catch (err) {
+        logger.warn("Skipped backlink DB insert", { sourceId, linkName: link.name, error: String(err) });
         // Skip duplicates or errors
       }
     }

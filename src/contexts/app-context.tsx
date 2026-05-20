@@ -78,7 +78,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       method: "PUT",
       headers,
       body: JSON.stringify(updates),
-    }).catch((err) => console.warn("[app-context] active state sync failed:", err));
+    }).catch((err) => logger.warn("active state sync failed", err));
   }, []);
 
   const loadData = useCallback(() => {
@@ -179,9 +179,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         session: restoredSession?.name || 'none',
         universe: restoredUniverse?.name || 'none',
       });
-    }).catch((err) => {
-      console.warn('[AppProvider] Failed to load data:', err);
-    }).finally(() => setLoading(false));
+    }).catch((err) => logger.error("Failed to load app data", err)).finally(() => setLoading(false));
   }, [authHeaders]);
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -233,7 +231,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setGroups(groupList);
       setUniverses(universeList.filter((u: Universe) => u.group_id === targetGroupId));
       setSessions(sessionList.filter((s: Session) => s.group_id === targetGroupId));
-    }).catch((err) => console.warn("[app-context] refreshAll fetch failed:", err));
+    }).catch((err) => logger.warn("refreshAll fetch failed", err));
   }, [authHeaders, activeGroup]);
 
   return (

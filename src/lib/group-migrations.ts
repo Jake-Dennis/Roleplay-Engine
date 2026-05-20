@@ -98,7 +98,7 @@ export function ensureGroupSupport(db: DbDatabase) {
 
     db.exec("PRAGMA foreign_keys = ON");
   } catch (e) {
-    console.error("ensureGroupSupport error:", e);
+    logger.error("ensureGroupSupport error:", e);
     try { db.exec("PRAGMA foreign_keys = ON"); } catch (err) {
       logger.warn("[group-migrations] Failed to re-enable foreign keys:", err);
     }

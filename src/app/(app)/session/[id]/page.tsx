@@ -28,6 +28,7 @@ import { classifyIntent, type Intent } from "@/lib/intent-analyzer";
 import { useRenderLoop } from "@/hooks/use-render-loop";
 import { useSession } from "@/hooks/use-session";
 import { useApp } from "@/contexts/app-context";
+import { safeParse } from "@/lib/safe-json";
 import type { Message } from "@/hooks/use-session";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { ChatWindow } from "@/components/chat/chat-window";
@@ -37,6 +38,7 @@ import { CharacterDeclarationModal } from "@/components/session/character-declar
 import { SceneStatePanel } from "@/components/session/scene-state-panel";
 import { PrivateStatePanel } from "@/components/session/private-state-panel";
 import { SessionSettingsPanel } from "@/components/session/session-settings-panel";
+import { logger } from "@/lib/logger";
 
 export default function SessionChatPage() {
   const params = useParams();
@@ -84,7 +86,7 @@ export default function SessionChatPage() {
         const active = list.find((p: { is_active: number }) => p.is_active === 1);
         if (active) setActivePersonaId(active.id);
       })
-      .catch((err) => console.warn("[session] persona list load failed:", err));
+      .catch((err) => logger.warn("persona list load failed", err));
   }, []);
 
   const [input, setInput] = useState("");
@@ -305,24 +307,20 @@ export default function SessionChatPage() {
 
         for (const line of lines) {
           if (!line.trim()) continue;
-          try {
-            const parsed = JSON.parse(line);
-            if (parsed.chunk) {
-              setStreamContent((prev) => prev + parsed.chunk);
-            }
-            if (parsed.done) {
-              doneReceived = true;
-              await refreshSession();
-              setStreaming(false);
-              setStreamContent("");
-            }
-            if (parsed.error) {
-              doneReceived = true;
-              setGenerationError(parsed.error);
-              setStreaming(false);
-            }
-          } catch {
-            // skip incomplete lines
+          const parsed = safeParse<Record<string, unknown>>(line);
+          if (parsed?.chunk) {
+            setStreamContent((prev) => prev + parsed.chunk);
+          }
+          if (parsed?.done) {
+            doneReceived = true;
+            await refreshSession();
+            setStreaming(false);
+            setStreamContent("");
+          }
+          if (parsed?.error) {
+            doneReceived = true;
+            setGenerationError(parsed.error as string);
+            setStreaming(false);
           }
         }
       }

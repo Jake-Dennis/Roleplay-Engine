@@ -6,7 +6,7 @@
  * Supports re-discovery and caching.
  */
 
-import { TTS_CONFIG } from "./config";
+import { TTS_CONFIG, TIMEOUTS } from "./config";
 
 export interface VoiceInfo {
   id: string;
@@ -59,7 +59,7 @@ export function parseVoiceInfo(voiceId: string): VoiceInfo {
 export async function discoverVoices(): Promise<VoiceInfo[]> {
   try {
     const response = await fetch(`${TTS_CONFIG.baseUrl}/v1/audio/voices`, {
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(TIMEOUTS.VOICE_DISCOVERY),
     });
 
     if (response.ok) {

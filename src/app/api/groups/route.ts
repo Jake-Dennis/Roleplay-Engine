@@ -4,6 +4,7 @@ import { withAuth } from "@/lib/with-auth";
 import { ensureGroupSupport } from "@/lib/group-migrations";
 import type { DbRow } from "@/lib/types";
 import { badRequestError, internalError } from "@/lib/error-response";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ groups: result });
   } catch (e) {
-    console.error("Groups GET error:", e);
+    logger.error("Groups GET error:", e);
     return internalError();
   }
 }
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ group }, { status: 201 });
   } catch (e) {
-    console.error("Groups POST error:", e);
+    logger.error("Groups POST error:", e);
     return internalError();
   }
 }

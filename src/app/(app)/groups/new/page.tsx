@@ -40,7 +40,7 @@ export default function NewGroupPage() {
       refreshAll();
       router.push("/groups");
     } catch (err) {
-      console.error("Create group error:", err);
+      logger.error("Create group error:", err);
       setError("Failed to create group");
     } finally {
       setLoading(false);

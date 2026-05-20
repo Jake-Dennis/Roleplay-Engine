@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef } from "react";
 import { Plus, User, Pencil, Trash2, Check, X, Sparkles, Save, Image, Tag, BookOpen, MessageSquare, Settings2, FileText, ChevronDown, ChevronUp, Eye, EyeOff } from "lucide-react";
+import { safeParse } from "@/lib/safe-json";
+import { logger } from "@/lib/logger";
 
 interface Persona {
   id: string;
@@ -57,8 +59,8 @@ export default function PersonasPage() {
       const res = await fetch("/api/personas");
       const data = await res.json();
       setPersonas(data.personas || []);
-    } catch {
-      // silent
+    } catch (err) {
+      logger.warn("Failed to load personas", err);
     } finally {
       setLoading(false);
     }
@@ -94,7 +96,7 @@ export default function PersonasPage() {
     setFormCreatorNotes(p.creator_notes || "");
     setFormSystemPrompt(p.system_prompt || "");
     setFormPostHistory(p.post_history_instructions || "");
-    setFormTags(p.tags ? (() => { try { return JSON.parse(p.tags).join(", "); } catch { return p.tags; } })() : "");
+    setFormTags(p.tags ? (() => { const parsed = safeParse<string[]>(p.tags); return parsed ? parsed.join(", ") : p.tags; })() : "");
     setFormWritingStyle(p.writing_style || "");
     setFormLlmModel(p.llm_model || "");
     setActiveTab("description");

@@ -5,6 +5,8 @@ import { writeWikiPage, sanitizeWikiFilename, WikiFrontmatter } from "./file-io"
 import { generateIndex } from "./index-generator";
 import { appendLog } from "./logger";
 import { generateText } from "@/lib/ollama";
+import { logger } from '@/lib/logger';
+import { safeParseWarn } from "@/lib/safe-json";
 
 /**
  * Result of an ingest operation.
@@ -122,7 +124,8 @@ Rules:
       jsonStr = jsonMatch[0];
     }
 
-    const parsed = JSON.parse(jsonStr) as ExtractionResult;
+    const parsed = safeParseWarn<ExtractionResult>(jsonStr, "LLM extraction response");
+    if (!parsed) return { entities: [], concepts: [] };
 
     // Validate and normalize
     const entities = (parsed.entities || [])
@@ -144,7 +147,7 @@ Rules:
     return { entities, concepts };
   } catch (error) {
     // LLM failed — return empty extraction, caller handles gracefully
-    console.error("[ingest] LLM extraction failed:", error);
+    logger.error("[ingest] LLM extraction failed:", error);
     return { entities: [], concepts: [] };
   }
 }
@@ -224,7 +227,7 @@ function createWikiPageForItem(
     writeWikiPage(pagePath, body, frontmatter);
     return { action: "created", pagePath };
   } catch (error) {
-    console.error(`[ingest] Failed to create page for "${item.title}":`, error);
+    logger.error(`[ingest] Failed to create page for "${item.title}":`, error);
     return null;
   }
 }
@@ -266,7 +269,7 @@ function createSourcePage(
     writeWikiPage(pagePath, body, frontmatter);
     return { pagePath };
   } catch (error) {
-    console.error(`[ingest] Failed to create source page for "${sourcePath}":`, error);
+    logger.error(`[ingest] Failed to create source page for "${sourcePath}":`, error);
     return null;
   }
 }

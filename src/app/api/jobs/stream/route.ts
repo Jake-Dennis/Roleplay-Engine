@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { getAuthToken } from '@/lib/auth-token';
+import { TIMEOUTS } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest) {
 
   const stream = new ReadableStream({
     start(controller) {
+      eventBus.registerController(controller);
       // Send initial connected event
       controller.enqueue(
         encoder.encode(
@@ -76,13 +78,14 @@ export async function GET(request: NextRequest) {
         } catch {
           // Connection may be closed
         }
-      }, 30000);
+      }, TIMEOUTS.LLM_FETCH);
 
       // Cleanup on connection close
       request.signal.addEventListener("abort", () => {
         clearInterval(heartbeat);
         unsubProgress();
         unsubCompleted();
+        eventBus.unregisterController(controller);
       });
     },
   });

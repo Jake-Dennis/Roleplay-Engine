@@ -4,6 +4,7 @@ import { useState, FormEvent, useEffect } from "react";
 import { Save, Sparkles, Server, Key, Check, Volume2, Wifi, WifiOff, RefreshCw, Cpu } from "lucide-react";
 import { OllamaSettingsSection } from "./ollama-settings";
 import { TTSSettingsSection } from "./tts-settings";
+import { logger } from "@/lib/logger";
 
 interface ServerSettings {
   ollama: {
@@ -92,7 +93,7 @@ export default function SettingsPage() {
       .then((data) => {
         setVoices(data.voiceDetails || []);
       })
-      .catch((err) => console.warn("[settings] TTS voices fetch failed:", err));
+      .catch((err) => logger.warn("TTS voices fetch failed", err));
 
     // Load narrator voice assignment
     fetch("/api/voice-assignments?entityType=narrator&entityId=default")
@@ -102,7 +103,7 @@ export default function SettingsPage() {
           setNarratorVoice(data.assignment.voice_name);
         }
       })
-      .catch((err) => console.warn("[settings] voice assignments fetch failed:", err));
+      .catch((err) => logger.warn("voice assignments fetch failed", err));
 
     // Load TTS settings from localStorage
     const savedSpeed = localStorage.getItem("tts-speed");
@@ -180,7 +181,7 @@ export default function SettingsPage() {
       .then((data) => {
         setLocalModels(data.models || []);
       })
-      .catch((err) => console.warn("[settings] ollama models fetch failed:", err));
+      .catch((err) => logger.warn("ollama models fetch failed", err));
   }, []);
 
   async function handleNarratorVoice() {

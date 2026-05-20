@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { OLLAMA_CONFIG } from "@/lib/config";
+import { OLLAMA_CONFIG, TIMEOUTS } from "@/lib/config";
 
 export interface OllamaModelInfo {
   name: string;
@@ -17,7 +17,7 @@ export interface OllamaModelInfo {
 export async function GET() {
   try {
     const response = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/tags`, {
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(TIMEOUTS.MODEL_FETCH),
     });
 
     if (!response.ok) {

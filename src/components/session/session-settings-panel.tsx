@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, Settings, RotateCcw } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 interface SessionSettings {
   llmModel: string | null;
@@ -54,7 +55,7 @@ export function SessionSettingsPanel({ sessionId, onClose }: SessionSettingsPane
     fetch("/api/ollama/models")
       .then((res) => res.json())
       .then((data) => setAvailableModels(data.models || []))
-      .catch((err) => console.warn("[session-settings] model list fetch failed:", err));
+      .catch((err) => logger.warn("model list fetch failed", err));
   }, [sessionId]);
 
   async function handleSave() {

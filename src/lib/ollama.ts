@@ -1,5 +1,7 @@
-import { OLLAMA_CONFIG } from "./config";
+import { OLLAMA_CONFIG, TIMEOUTS } from "./config";
 import { getDb } from "./db";
+import { safeParseWarn } from "@/lib/safe-json";
+import { logger } from "@/lib/logger";
 
 export interface OllamaGenerateRequest {
   model: string;
@@ -69,7 +71,7 @@ export function getActivePersonaContext(userId: string): PersonaContext | null {
 
     let tags: string[] | null = null;
     if (persona.tags) {
-      try { tags = JSON.parse(persona.tags); } catch { tags = null; }
+      tags = safeParseWarn<string[]>(persona.tags, "persona tags");
     }
 
     return {
@@ -86,7 +88,8 @@ export function getActivePersonaContext(userId: string): PersonaContext | null {
       writingStyle: persona.writing_style,
       llmModel: persona.llm_model,
     };
-  } catch {
+  } catch (err) {
+    logger.debug("Failed to get active persona context", { userId, error: String(err) });
     return null;
   }
 }
@@ -154,7 +157,7 @@ let localModels: string[] = [];
 export async function fetchLocalModels(): Promise<string[]> {
   try {
     const response = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/tags`, {
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(TIMEOUTS.LLM_FETCH),
     });
     if (!response.ok) {
       ollamaAvailable = false;
@@ -194,7 +197,8 @@ export function getUserModels(userId: string): UserModels {
     const db = getDb();
     const row = db.prepare("SELECT settings FROM users WHERE id = ?").get(userId) as { settings: string | null } | undefined;
     if (row?.settings) {
-      const settings = JSON.parse(row.settings);
+      const settings = safeParseWarn<Record<string, string>>(row.settings, "user settings");
+      if (!settings) throw new Error("Invalid user settings");
       return {
         llmModel: settings.llmModel || OLLAMA_CONFIG.model,
         embeddingModel: settings.embeddingModel || OLLAMA_CONFIG.embeddingModel,
@@ -212,7 +216,7 @@ export function getUserModels(userId: string): UserModels {
 export async function checkOllamaConnection(): Promise<boolean> {
   try {
     const response = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/tags`, {
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(TIMEOUTS.LLM_FETCH),
     });
     ollamaAvailable = response.ok;
     return response.ok;
@@ -328,15 +332,11 @@ export async function generateTextStream(
 
     for (const line of lines) {
       if (line.trim()) {
-        try {
-          const data = JSON.parse(line);
-          if (data.response) {
-            onChunk(data.response);
-          }
-          if (data.done) return;
-        } catch {
-          // Skip malformed JSON
+        const data = safeParseWarn<Record<string, unknown>>(line, "streaming JSON line");
+        if (data?.response) {
+          onChunk(data.response as string);
         }
+        if (data?.done) return;
       }
     }
   }

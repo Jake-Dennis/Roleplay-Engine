@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { OLLAMA_CONFIG, TTS_CONFIG } from "@/lib/config";
+import { OLLAMA_CONFIG, TTS_CONFIG, TIMEOUTS } from "@/lib/config";
 import { getAuthToken } from "@/lib/auth-token";
 import { getDb } from "@/lib/db";
 
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 async function checkOllama() {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
+    const timeout = setTimeout(() => controller.abort(), TIMEOUTS.HEALTH_CHECK);
 
     const response = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/tags`, {
       signal: controller.signal,
@@ -63,7 +63,7 @@ async function checkOllama() {
 async function checkKokoro() {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
+    const timeout = setTimeout(() => controller.abort(), TIMEOUTS.HEALTH_CHECK);
 
     const response = await fetch(`${TTS_CONFIG.baseUrl}/v1/audio/voices`, {
       signal: controller.signal,

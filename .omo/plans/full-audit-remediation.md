@@ -984,7 +984,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 9-16)
   - Message: `types: eliminate Record<string, any> in relationship subsystem`
 
-- [ ] 17. Protect All 58 JSON.parse() Calls
+- [x] 17. Protect All 58 JSON.parse() Calls
 
   **What to do**:
   - Create `src/lib/safe-json.ts` with `safeParse(raw: string | null, fallback?: T): T | null`
@@ -1046,7 +1046,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 17-22)
   - Message: `fix: protect all 58 JSON.parse() calls with safeParse utility`
 
-- [ ] 18. Fix Empty Catch Blocks
+- [x] 18. Fix Empty Catch Blocks
 
   **What to do**:
   - `src/lib/backlinks.ts:208-210` — add `logger.warn()` for skipped DB insert failures
@@ -1090,7 +1090,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 17-22)
   - Message: `fix: add logging to empty catch blocks`
 
-- [ ] 19. Fix Swallowed Errors in .catch()
+- [x] 19. Fix Swallowed Errors in .catch()
 
   **What to do**:
   - Update all 19 `.catch((err) => console.warn(...))` patterns to use `logger.warn()` or `logger.error()`
@@ -1138,7 +1138,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 17-22)
   - Message: `fix: replace console.warn in catch blocks with structured logger`
 
-- [ ] 20. Fix Unhandled Promise Chains
+- [x] 20. Fix Unhandled Promise Chains
 
   **What to do**:
   - Add `.catch()` to all 18 `.then()` chains without error handling
@@ -1185,7 +1185,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 17-22)
   - Message: `fix: add .catch() to all unhandled promise chains`
 
-- [ ] 21. Route All console.log/warn Through Logger
+- [x] 21. Route All console.log/warn Through Logger
 
   **What to do**:
   - Replace all `console.error/warn` in business logic and API routes with `logger.error/warn`
@@ -1232,7 +1232,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 17-22)
   - Message: `quality: route all console calls through structured logger`
 
-- [ ] 22. Fix Hardcoded Timeouts to Use Config
+- [x] 22. Fix Hardcoded Timeouts to Use Config
 
   **What to do**:
   - Add missing timeout constants to `src/lib/config.ts`:

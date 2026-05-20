@@ -6,6 +6,7 @@ import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { ensureGroupSupport } from "@/lib/group-migrations";
 import { unauthorizedError, notFoundError, forbiddenError, badRequestError, internalError } from "@/lib/error-response";
 import { getAuthToken } from '@/lib/auth-token';
+import { logger } from '@/lib/logger';
 
 export async function GET(
   request: NextRequest,
@@ -43,7 +44,7 @@ export async function GET(
 
     return NextResponse.json({ messages });
   } catch (err) {
-    console.error("GET /api/sessions/[id]/messages error:", err);
+    logger.error("GET /api/sessions/[id]/messages error:", err);
     return internalError();
   }
 }
@@ -146,7 +147,7 @@ export async function POST(
 
     return NextResponse.json({ message }, { status: 201 });
   } catch (err) {
-    console.error("POST /api/sessions/[id]/messages error:", err);
+    logger.error("POST /api/sessions/[id]/messages error:", err);
     return internalError();
   }
 }

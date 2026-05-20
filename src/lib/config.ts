@@ -76,6 +76,15 @@ export const CONTENT_LIMITS = {
   SUMMARY_CHUNK: 1000,
 } as const;
 
+export const TIMEOUTS = {
+  HEALTH_CHECK: 3000,
+  VOICE_DISCOVERY: 5000,
+  TTS_CONNECTION: 5000,
+  MODEL_FETCH: 10000,
+  LLM_FETCH: 30000,
+  HEALTH_CHECK_INTERVAL: 30000,
+} as const;
+
 export const IDLE_TIERS = {
   TIER_1: 5 * 60 * 1000,
   TIER_2: 10 * 60 * 1000,

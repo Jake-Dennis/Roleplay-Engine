@@ -3,6 +3,7 @@ import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { getAuthToken } from '@/lib/auth-token';
+import { TIMEOUTS } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -84,6 +85,7 @@ export async function GET(
 
   const stream = new ReadableStream({
     start(controller) {
+      eventBus.registerController(controller);
       // Replay missed events if reconnecting
       if (lastEventId > 0) {
         const missedEvents = eventBus.getEventsSince(sessionId, lastEventId);
@@ -182,13 +184,14 @@ export async function GET(
         } catch {
           // Connection may be closed
         }
-      }, 30000);
+      }, TIMEOUTS.LLM_FETCH);
 
       // Cleanup on connection close
       request.signal.addEventListener("abort", () => {
         clearInterval(heartbeat);
         unsubscribers.forEach((unsub) => unsub());
         eventBus.removeConnection(sessionId);
+        eventBus.unregisterController(controller);
       });
     },
   });

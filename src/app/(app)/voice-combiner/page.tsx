@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { Volume2, Plus, Trash2, Play, Save, Sparkles, Check, Mic } from "lucide-react";
 import { useActiveUniverse } from "@/contexts/active-universe";
+import { safeParse } from "@/lib/safe-json";
+import { logger } from "@/lib/logger";
 
 interface Voice {
   id: string;
@@ -46,7 +48,7 @@ export default function VoiceCombinerPage() {
       .then((data) => {
         setVoices(data.voiceDetails || []);
       })
-      .catch((err) => console.warn("[voice-combiner] voices fetch failed:", err));
+      .catch((err) => logger.warn("voices fetch failed", err));
   }, []);
 
   // Load profiles when universe changes
@@ -55,7 +57,7 @@ export default function VoiceCombinerPage() {
     try {
       const stored = localStorage.getItem(getStorageKey(activeUniverse?.id || null));
       if (stored) {
-        setSavedProfiles(JSON.parse(stored));
+        setSavedProfiles(safeParse<SavedProfile[]>(stored) ?? []);
       } else {
         setSavedProfiles([]);
       }
