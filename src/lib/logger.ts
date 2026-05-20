@@ -10,28 +10,28 @@ const COLORS = {
 
 const isDev = process.env.NODE_ENV === 'development';
 
-// AsyncLocalStorage for correlation IDs (server-side only)
+// AsyncLocalStorage for request IDs (server-side only)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let correlationStorage: any = null;
+let requestStorage: any = null;
 
 if (!isDev && typeof window === 'undefined') {
   try {
     const ah = require('async_hooks');
-    correlationStorage = new ah.AsyncLocalStorage();
+    requestStorage = new ah.AsyncLocalStorage();
   } catch {
-    // async_hooks unavailable — correlation IDs fall back to explicit passing
+    // async_hooks unavailable — request IDs fall back to explicit passing
   }
 }
 
-function getCorrelationId(): string | undefined {
-  return correlationStorage?.getStore()?.correlationId;
+export function getCorrelationId(): string | undefined {
+  return requestStorage?.getStore()?.requestId;
 }
 
 function formatTimestamp(): string {
   return new Date().toISOString();
 }
 
-function formatDev(level: string, message: string, correlationId?: string): string {
+function formatDev(level: string, message: string, requestId?: string): string {
   const colorMap: Record<string, string> = {
     DEBUG: COLORS.gray,
     INFO: COLORS.blue,
@@ -39,16 +39,16 @@ function formatDev(level: string, message: string, correlationId?: string): stri
     ERROR: COLORS.red,
   };
   const color = colorMap[level] ?? COLORS.reset;
-  const correlation = correlationId ? ` ${COLORS.cyan}[${correlationId}]${COLORS.reset}` : '';
+  const correlation = requestId ? ` ${COLORS.cyan}[${requestId}]${COLORS.reset}` : '';
   return `${color}[${level}]${COLORS.reset}${correlation} ${message}`;
 }
 
-function buildEntry(level: string, message: string, metadata: Record<string, unknown>, correlationId?: string) {
+function buildEntry(level: string, message: string, metadata: Record<string, unknown>, requestId?: string) {
   return {
     timestamp: formatTimestamp(),
     level,
     message,
-    ...(correlationId && { correlationId }),
+    ...(requestId && { requestId }),
     ...metadata,
   };
 }
@@ -76,10 +76,10 @@ function extractMetadata(args: unknown[]): { message: string; metadata: Record<s
 
 function log(level: string, ...args: unknown[]) {
   const { message, metadata } = extractMetadata(args);
-  const correlationId = getCorrelationId();
+  const requestId = getCorrelationId();
 
   if (isDev) {
-    const formatted = formatDev(level, message, correlationId);
+    const formatted = formatDev(level, message, requestId);
     const consoleMethod = level === 'ERROR' ? console.error : level === 'WARN' ? console.warn : console.log;
     if (Object.keys(metadata).length > 0) {
       consoleMethod(formatted, metadata);
@@ -87,7 +87,7 @@ function log(level: string, ...args: unknown[]) {
       consoleMethod(formatted);
     }
   } else {
-    const entry = buildEntry(level, message, metadata, correlationId);
+    const entry = buildEntry(level, message, metadata, requestId);
     const consoleMethod = level === 'ERROR' ? console.error : level === 'WARN' ? console.warn : console.log;
     consoleMethod(JSON.stringify(entry));
   }
@@ -166,20 +166,20 @@ export const logger: StructuredLogger = createLogger();
  * Only effective in production (uses AsyncLocalStorage).
  */
 export function setCorrelationId(id: string): () => void {
-  if (correlationStorage) {
-    correlationStorage.enterWith({ correlationId: id });
+  if (requestStorage) {
+    requestStorage.enterWith({ requestId: id });
     return () => {}; // no-op cleanup — scope is managed by AsyncLocalStorage
   }
   return () => {};
 }
 
 /**
- * Run a function with a correlation ID in its async context.
+ * Run a function with a request ID in its async context.
  * Only effective in production (uses AsyncLocalStorage).
  */
 export function runWithCorrelation<T>(id: string, fn: () => T): T {
-  if (correlationStorage) {
-    return correlationStorage.run({ correlationId: id }, fn);
+  if (requestStorage) {
+    return requestStorage.run({ requestId: id }, fn);
   }
   return fn();
 }

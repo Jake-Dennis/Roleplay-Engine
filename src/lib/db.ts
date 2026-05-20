@@ -19,6 +19,7 @@ export function getDb(): Database.Database {
 
   // Enable WAL mode for better concurrency
   db.pragma("journal_mode = WAL");
+  db.pragma("wal_autocheckpoint = 1000"); // checkpoint after 1000 WAL pages
   db.pragma("foreign_keys = ON");
   db.pragma("cache_size = -64000"); // 64MB cache
 
@@ -59,8 +60,15 @@ export function isVecAvailable(): boolean {
   return vecLoaded;
 }
 
+export function checkpointDb(): void {
+  if (db) {
+    db.pragma("wal_checkpoint(TRUNCATE)");
+  }
+}
+
 export function closeDb(): void {
   if (db) {
+    checkpointDb();
     db.close();
     db = null;
     vecLoaded = false;

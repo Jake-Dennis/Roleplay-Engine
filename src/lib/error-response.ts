@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
+import { getCorrelationId } from './logger';
 
 const isDev = process.env.NODE_ENV === 'development';
 
+function getRequestId(): string {
+  return getCorrelationId() ?? crypto.randomUUID();
+}
+
 export function errorResponse(message: string, status: number, details?: unknown): Response {
-  const body: Record<string, unknown> = { error: message };
+  const body: Record<string, unknown> = { error: message, requestId: getRequestId() };
   if (isDev && details) {
     body.details = details instanceof Error ? details.message : String(details);
   }

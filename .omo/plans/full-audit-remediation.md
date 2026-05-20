@@ -2077,7 +2077,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 30-38)
   - Message: `sec: add security headers to next.config.ts`
 
-- [ ] 39. Integrate Startup-Check into Next.js Lifecycle
+- [x] 39. Integrate Startup-Check into Next.js Lifecycle
 
   **What to do**:
   - Update `src/instrumentation.ts` to call `runStartupChecks()` automatically during Next.js startup
@@ -2123,7 +2123,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 39-46)
   - Message: `ops: integrate startup-check into Next.js lifecycle`
 
-- [ ] 40. Add Test Framework (bun test)
+- [x] 40. Add Test Framework (bun test)
 
   **What to do**:
   - Add `bun` as dev dependency (if not already present)
@@ -2169,7 +2169,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 39-46)
   - Message: `chore: add bun test framework`
 
-- [ ] 41. Move @types/cytoscape to devDependencies
+- [x] 41. Move @types/cytoscape to devDependencies
 
   **What to do**:
   - Move `@types/cytoscape` from `dependencies` to `devDependencies` in package.json
@@ -2210,7 +2210,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 39-46)
   - Message: `chore: move @types/cytoscape to devDependencies`
 
-- [ ] 42. Fix WAL Checkpoint Configuration
+- [x] 42. Fix WAL Checkpoint Configuration
 
   **What to do**:
   - Update `src/lib/db.ts` to set `wal_autocheckpoint` pragma after enabling WAL mode
@@ -2253,7 +2253,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 39-46)
   - Message: `db: configure WAL autocheckpoint`
 
-- [ ] 43. Fix Mixed API Response Casing
+- [x] 43. Fix Mixed API Response Casing
 
   **What to do**:
   - Standardize on camelCase for all API response fields
@@ -2299,7 +2299,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 39-46)
   - Message: `quality: standardize API responses to camelCase`
 
-- [ ] 44. Add Request Correlation IDs
+- [x] 44. Add Request Correlation IDs
 
   **What to do**:
   - Add `requestId` field to all error responses via `error-response.ts`
@@ -2346,7 +2346,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 39-46)
   - Message: `ops: add request correlation IDs to error responses`
 
-- [ ] 45. Fix react-cytoscapejs React 19 Compatibility
+- [x] 45. Fix react-cytoscapejs React 19 Compatibility
 
   **What to do**:
   - Check if `react-cytoscapejs@2.0.0` is compatible with React 19
@@ -2392,7 +2392,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 39-46)
   - Message: `fix: resolve react-cytoscapejs React 19 compatibility`
 
-- [ ] 46. Prompt Injection Protection
+- [x] 46. Prompt Injection Protection
 
   **What to do**:
   - Add delimiters/escaping in `src/lib/prompt-builder.ts` to separate user content from system instructions

@@ -63,17 +63,22 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("auth-token")?.value;
 
+  // Generate unique request ID for correlation
+  const requestId = crypto.randomUUID();
+
   // Attach the real client IP as an internal header for route handlers.
   // This prevents IP spoofing via forged x-forwarded-for headers.
   const realIp = getRealIp(request);
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-real-ip', realIp);
+  requestHeaders.set('x-request-id', requestId);
 
   const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
+  response.headers.set('X-Request-Id', requestId);
 
   // Check if route is public
   if (publicRoutes.some((route) => pathname.startsWith(route))) {
@@ -81,7 +86,9 @@ export async function middleware(request: NextRequest) {
     if (token) {
       const decoded = await verifyToken(token);
       if (decoded && (pathname === "/login" || pathname === "/register")) {
-        return NextResponse.redirect(new URL("/dashboard", request.url));
+        const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.url));
+        redirectResponse.headers.set('X-Request-Id', requestId);
+        return redirectResponse;
       }
     }
     return response;
@@ -90,13 +97,16 @@ export async function middleware(request: NextRequest) {
   // Check if route is protected
   if (protectedRoutes.some((route) => pathname.startsWith(route))) {
     if (!token) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      const redirectResponse = NextResponse.redirect(new URL("/login", request.url));
+      redirectResponse.headers.set('X-Request-Id', requestId);
+      return redirectResponse;
     }
 
     const decoded = await verifyToken(token);
     if (!decoded) {
       const redirectResponse = NextResponse.redirect(new URL("/login", request.url));
       redirectResponse.cookies.set("auth-token", "", { path: "/", maxAge: 0 });
+      redirectResponse.headers.set('X-Request-Id', requestId);
       return redirectResponse;
     }
   }

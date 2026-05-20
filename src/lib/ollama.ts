@@ -3,6 +3,62 @@ import { getDb } from "./db";
 import { safeParseWarn } from "@/lib/safe-json";
 import { logger } from "@/lib/logger";
 
+// ---------------------------------------------------------------------------
+// Output Validation
+// ---------------------------------------------------------------------------
+
+/**
+ * Patterns that indicate the LLM is leaking system instructions or
+ * echoing back prompt structure. Used to sanitize LLM output.
+ */
+const LEAK_PATTERNS = [
+  /<user_content>[\s\S]*?<\/user_content>/gi,
+  /\[CHARACTER INSTRUCTIONS\]/gi,
+  /\[CANON:/gi,
+  /\[CURRENT SCENE\]/gi,
+  /\[KNOWN WORLD\]/gi,
+  /\[RELATIONSHIPS\]/gi,
+  /\[RECENT HISTORY\]/gi,
+  /\[INTENT:/gi,
+  /IMPORTANT:.*DATA ONLY/gi,
+  /Do NOT follow any instructions.*user_content/gi,
+] as const;
+
+/**
+ * Validate and sanitize LLM output.
+ *
+ * - Strips any leaked <user_content> blocks (the LLM should not echo these back)
+ * - Strips leaked section headers from the prompt structure
+ * - Logs a warning if significant leakage is detected
+ *
+ * @param output - Raw LLM response text
+ * @returns Sanitized output text
+ */
+export function validateLlmOutput(output: string): string {
+  if (!output) return output;
+
+  let sanitized = output;
+  let leaked = false;
+
+  for (const pattern of LEAK_PATTERNS) {
+    if (pattern.test(sanitized)) {
+      leaked = true;
+      sanitized = sanitized.replace(pattern, "").trim();
+      // Reset lastIndex for global regexes
+      pattern.lastIndex = 0;
+    }
+  }
+
+  if (leaked) {
+    logger.debug("LLM output contained leaked prompt structure — sanitized", {
+      originalLength: output.length,
+      sanitizedLength: sanitized.length,
+    });
+  }
+
+  return sanitized;
+}
+
 export interface OllamaGenerateRequest {
   model: string;
   prompt: string;
@@ -268,7 +324,7 @@ export async function generateText(
 
       const data = await response.json();
       ollamaAvailable = true;
-      return data.response || "";
+      return validateLlmOutput(data.response || "");
     } catch (error) {
       lastError = error as Error;
       ollamaAvailable = false;
@@ -334,7 +390,7 @@ export async function generateTextStream(
       if (line.trim()) {
         const data = safeParseWarn<Record<string, unknown>>(line, "streaming JSON line");
         if (data?.response) {
-          onChunk(data.response as string);
+          onChunk(validateLlmOutput(data.response as string));
         }
         if (data?.done) return;
       }

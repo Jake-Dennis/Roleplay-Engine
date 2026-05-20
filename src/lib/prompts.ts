@@ -3,6 +3,10 @@
  *
  * All prompt templates used across idle-enrichment, job-processor, and idle-processing.
  * Single source of truth — edit here to update all consumers.
+ *
+ * Security: User-provided content (wiki pages, messages, etc.) is wrapped in
+ * <user_content> XML tags. The system prompt instructs the LLM to treat content
+ * within these tags as data only and ignore any instructions found inside.
  */
 
 export const PROMPTS = {
@@ -12,11 +16,11 @@ export const PROMPTS = {
 
   /** Summarize a wiki page in 2-3 sentences (compression/archival) */
   wikiSummarizePage: (content: string) =>
-    `Summarize this wiki page in 2-3 sentences:\n${content}`,
+    `Summarize this wiki page in 2-3 sentences:\n<user_content>\n${content}\n</user_content>`,
 
   /** Summarize a wiki page in one sentence (archival) */
   wikiSummarizePageOneSentence: (content: string) =>
-    `Summarize this wiki page in one sentence: "${content}"`,
+    `Summarize this wiki page in one sentence:\n<user_content>\n${content}\n</user_content>`,
 
   // -----------------------------------------------------------------------
   // Wiki: Entity Expansion
@@ -24,11 +28,11 @@ export const PROMPTS = {
 
   /** Expand on a wiki entity with personality/habits/motivations details */
   wikiEnrichEntity: (title: string, content: string) =>
-    `Expand on this wiki entity "${title}". Current content:\n${content}\n\nAdd 2-3 new details about their personality, habits, motivations, or connections to other entities. Do not contradict existing facts. Return only the new content as markdown.`,
+    `Expand on this wiki entity "${title}". Current content:\n<user_content>\n${content}\n</user_content>\n\nAdd 2-3 new details about their personality, habits, motivations, or connections to other entities. Do not contradict existing facts. Return only the new content as markdown.`,
 
   /** Expand on a wiki entity with personality/habits/hidden motivations (idle-enrichment variant) */
   wikiEnrichEntityAlt: (title: string, content: string) =>
-    `Expand on this wiki entity "${title}". Current content:\n${content}\n\nAdd 2-3 new details about their personality, habits, or hidden motivations. Do not contradict existing facts. Return only the new content as markdown.`,
+    `Expand on this wiki entity "${title}". Current content:\n<user_content>\n${content}\n</user_content>\n\nAdd 2-3 new details about their personality, habits, or hidden motivations. Do not contradict existing facts. Return only the new content as markdown.`,
 
   // -----------------------------------------------------------------------
   // Wiki: Location Expansion
@@ -36,7 +40,7 @@ export const PROMPTS = {
 
   /** Expand on a location with atmospheric/historical/sensory details */
   wikiExpandLocation: (title: string, content: string) =>
-    `Expand on this location "${title}". Current description:\n${content}\n\nAdd 2-3 new atmospheric details, historical notes, or sensory descriptions. Do not contradict existing facts.`,
+    `Expand on this location "${title}". Current description:\n<user_content>\n${content}\n</user_content>\n\nAdd 2-3 new atmospheric details, historical notes, or sensory descriptions. Do not contradict existing facts.`,
 
   // -----------------------------------------------------------------------
   // Wiki: Page Deepening
@@ -44,7 +48,7 @@ export const PROMPTS = {
 
   /** Deepen a wiki page with new details and connections */
   wikiDeepenPage: (title: string, pageType: string, content: string) =>
-    `Deepen this wiki page "${title}" (${pageType}). Current content:\n${content}\n\nAdd new details, connections to other wiki entities, or implications. Do not contradict existing facts. Return only the new content as markdown.`,
+    `Deepen that wiki page "${title}" (${pageType}). Current content:\n<user_content>\n${content}\n</user_content>\n\nAdd new details, connections to other wiki entities, or implications. Do not contradict existing facts. Return only the new content as markdown.`,
 
   // -----------------------------------------------------------------------
   // Wiki: Relationship Summarization
@@ -59,7 +63,10 @@ export const PROMPTS = {
   ) =>
     `Summarize the relationship between ${sourceEntity} and ${targetEntity}.
 Current emotional state: ${emotionSummary || "neutral"}
-Recent history: ${history}
+Recent history:
+<user_content>
+${history}
+</user_content>
 
 Write a 2-3 sentence narrative summary of their current relationship dynamic.`,
 
@@ -81,19 +88,19 @@ Write a 2-3 sentence narrative summary of their current relationship dynamic.`,
 
   /** Summarize narrative memory in 5-10 words (90+ days old) */
   memorySummarizeArchived: (content: string) =>
-    `Summarize in 5-10 words: "${content}"`,
+    `Summarize in 5-10 words:\n<user_content>\n${content}\n</user_content>`,
 
   /** Summarize narrative memory in 1 sentence (30+ days old) */
   memorySummarizeOneSentence: (content: string) =>
-    `Summarize in 1 sentence: "${content}"`,
+    `Summarize in 1 sentence:\n<user_content>\n${content}\n</user_content>`,
 
   /** Summarize narrative memory in 2-3 sentences (7+ days old) */
   memorySummarizeShort: (content: string) =>
-    `Summarize in 2-3 sentences: "${content}"`,
+    `Summarize in 2-3 sentences:\n<user_content>\n${content}\n</user_content>`,
 
   /** Summarize narrative memory for archival processing */
   memoryArchiveSummary: (content: string) =>
-    `Summarize this narrative memory in one sentence: "${content}"`,
+    `Summarize this narrative memory in one sentence:\n<user_content>\n${content}\n</user_content>`,
 
   // -----------------------------------------------------------------------
   // Narrative: Thread Analysis
@@ -114,7 +121,9 @@ Write a 2-3 sentence narrative summary of their current relationship dynamic.`,
 }
 
 Narrative:
-${messageText}`,
+<user_content>
+${messageText}
+</user_content>`,
 
   // -----------------------------------------------------------------------
   // Narrative: Event Extraction
@@ -135,5 +144,7 @@ ${messageText}`,
 }
 
 Messages:
-${messageText}`,
+<user_content>
+${messageText}
+</user_content>`,
 } as const;
