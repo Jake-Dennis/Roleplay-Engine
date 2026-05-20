@@ -57,14 +57,14 @@ Build a persistent, LLM-maintained wiki system that replaces the current lore da
 - Migration scripts — Convert existing lore files to wiki pages
 
 ### Definition of Done
-- [ ] All existing lore content migrated to wiki files and viewable in new wiki viewer
-- [ ] `npm run build` passes with zero errors
-- [ ] `npm test` passes (existing tests updated for new system)
-- [ ] Wiki viewer renders markdown with wikilinks, shows graph view, displays backlinks, supports search
-- [ ] LLM ingest job processes a new source and creates/updates wiki pages
-- [ ] LLM query retrieves from wiki and synthesizes answers
-- [ ] LLM lint pass detects contradictions, orphan pages, stale claims
-- [ ] Old lore API routes return 410 Gone or redirect to wiki equivalents
+- [x] All existing lore content migrated to wiki files and viewable in new wiki viewer
+- [x] `npm run build` passes with zero errors
+- [x] `npm test` passes (existing tests updated for new system)
+- [x] Wiki viewer renders markdown with wikilinks, shows graph view, displays backlinks, supports search
+- [x] LLM ingest job processes a new source and creates/updates wiki pages
+- [x] LLM query retrieves from wiki and synthesizes answers
+- [x] LLM lint pass detects contradictions, orphan pages, stale claims
+- [x] Old lore API routes return 410 Gone or redirect to wiki equivalents
 
 ### Must Have
 - Markdown-first wiki files (readable without app, valid markdown)
@@ -210,9 +210,9 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/entity-constants.ts`, `data/` directory structure, LLM Wiki pattern doc
 
   **Acceptance Criteria**:
-  - [ ] `data/{userId}/wiki/` created with all subfolders
-  - [ ] `WIKI_SCHEMA.md`, `index.md`, `log.md` templates exist
-  - [ ] `entity-constants.ts` updated
+  - [x] `data/{userId}/wiki/` created with all subfolders
+  - [x] `WIKI_SCHEMA.md`, `index.md`, `log.md` templates exist
+  - [x] `entity-constants.ts` updated
 
   **QA Scenarios**:
   ```
@@ -239,12 +239,12 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/lore-markdown.ts`, gray-matter package
 
   **Acceptance Criteria**:
-  - [ ] readWikiPage returns { content, frontmatter }
-  - [ ] writeWikiPage creates markdown with frontmatter
-  - [ ] deleteWikiPage removes file
-  - [ ] listWikiPages returns array of { path, frontmatter }
-  - [ ] sanitizeWikiFilename handles Windows-invalid chars, truncates to 100
-  - [ ] File locking prevents concurrent writes
+  - [x] readWikiPage returns { content, frontmatter }
+  - [x] writeWikiPage creates markdown with frontmatter
+  - [x] deleteWikiPage removes file
+  - [x] listWikiPages returns array of { path, frontmatter }
+  - [x] sanitizeWikiFilename handles Windows-invalid chars, truncates to 100
+  - [x] File locking prevents concurrent writes
 
   **QA Scenarios**:
   ```
@@ -269,11 +269,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/backlinks.ts`, regex `/\[\[([^\[\]]+?)(?:\|([^\[\]]+))?\]\]/g`
 
   **Acceptance Criteria**:
-  - [ ] parseWikilinks extracts all [[links]] and [[links|aliases]]
-  - [ ] resolveWikilink returns full path for valid link
-  - [ ] buildLinkGraph returns adjacency map
-  - [ ] validateWikilinks returns broken links with context
-  - [ ] Handles ![[embed]] syntax
+  - [x] parseWikilinks extracts all [[links]] and [[links|aliases]]
+  - [x] resolveWikilink returns full path for valid link
+  - [x] buildLinkGraph returns adjacency map
+  - [x] validateWikilinks returns broken links with context
+  - [x] Handles ![[embed]] syntax
 
   **QA Scenarios**:
   ```
@@ -302,12 +302,12 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: react-markdown, @flowershow/remark-wiki-link, remark-gfm, gray-matter, `src/lib/markdown-renderer.ts`
 
   **Acceptance Criteria**:
-  - [ ] Renders markdown with GFM extensions
-  - [ ] Wikilinks styled as internal links (blue=exists, red=broken)
-  - [ ] [[link|alias]] renders alias text with correct href
-  - [ ] ![[embed]] renders as embedded file link
-  - [ ] Frontmatter metadata displayed above content
-  - [ ] Loading/error states present
+  - [x] Renders markdown with GFM extensions
+  - [x] Wikilinks styled as internal links (blue=exists, red=broken)
+  - [x] [[link|alias]] renders alias text with correct href
+  - [x] ![[embed]] renders as embedded file link
+  - [x] Frontmatter metadata displayed above content
+  - [x] Loading/error states present
 
   **QA Scenarios**:
   ```
@@ -333,11 +333,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/wiki/file-io.ts` (listWikiPages), existing file tree patterns in codebase
 
   **Acceptance Criteria**:
-  - [ ] Tree renders folder structure from wiki directory
-  - [ ] Folders expand/collapse on click
-  - [ ] Clicking file navigates to wiki page route
-  - [ ] Current page highlighted in tree
-  - [ ] File type icons shown based on frontmatter type
+  - [x] Tree renders folder structure from wiki directory
+  - [x] Folders expand/collapse on click
+  - [x] Clicking file navigates to wiki page route
+  - [x] Current page highlighted in tree
+  - [x] File type icons shown based on frontmatter type
 
   **QA Scenarios**:
   ```
@@ -362,10 +362,10 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/wiki/wikilinks.ts`, `src/lib/backlinks.ts` (for reference only)
 
   **Acceptance Criteria**:
-  - [ ] Panel shows all pages linking to current page
-  - [ ] Each backlink shows context snippet
-  - [ ] Click backlink navigates to source page
-  - [ ] Backlink count displayed
+  - [x] Panel shows all pages linking to current page
+  - [x] Each backlink shows context snippet
+  - [x] Click backlink navigates to source page
+  - [x] Backlink count displayed
 
   **QA Scenarios**:
   ```
@@ -391,12 +391,12 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: Cytoscape.js docs, react-cytoscapejs wrapper, `src/lib/wiki/wikilinks.ts` (buildLinkGraph)
 
   **Acceptance Criteria**:
-  - [ ] Graph renders with force-directed layout
-  - [ ] Nodes colored by page type
-  - [ ] Edges represent wikilinks
-  - [ ] Click node navigates to page
-  - [ ] Zoom/pan works
-  - [ ] Filter by universe hides unrelated nodes
+  - [x] Graph renders with force-directed layout
+  - [x] Nodes colored by page type
+  - [x] Edges represent wikilinks
+  - [x] Click node navigates to page
+  - [x] Zoom/pan works
+  - [x] Filter by universe hides unrelated nodes
 
   **QA Scenarios**:
   ```
@@ -422,11 +422,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: FlexSearch docs, `src/lib/wiki/file-io.ts` (listWikiPages for index building)
 
   **Acceptance Criteria**:
-  - [ ] Search bar renders with autocomplete
-  - [ ] Index built from all wiki pages (title, content, tags)
-  - [ ] Results show title, snippet with highlight, type badge
-  - [ ] Click result navigates to page
-  - [ ] Keyboard navigation works (arrows, Enter, Escape)
+  - [x] Search bar renders with autocomplete
+  - [x] Index built from all wiki pages (title, content, tags)
+  - [x] Results show title, snippet with highlight, type badge
+  - [x] Click result navigates to page
+  - [x] Keyboard navigation works (arrows, Enter, Escape)
 
   **QA Scenarios**:
   ```
@@ -451,11 +451,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/components/wiki/markdown-renderer.tsx`, `src/components/wiki/file-tree.tsx`, `src/components/wiki/backlink-panel.tsx`, existing app layout patterns
 
   **Acceptance Criteria**:
-  - [ ] /wiki route shows wiki home with file tree
-  - [ ] /wiki/[...slug] renders individual wiki page
-  - [ ] Layout: left sidebar (tree), main (content), right (backlinks)
-  - [ ] Wiki nav item in app shell
-  - [ ] Wikilinks in content navigate to other wiki pages
+  - [x] /wiki route shows wiki home with file tree
+  - [x] /wiki/[...slug] renders individual wiki page
+  - [x] Layout: left sidebar (tree), main (content), right (backlinks)
+  - [x] Wiki nav item in app shell
+  - [x] Wikilinks in content navigate to other wiki pages
 
   **QA Scenarios**:
   ```
@@ -481,12 +481,12 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/wiki/file-io.ts`, `src/lib/wiki/index-generator.ts`, `src/lib/wiki/logger.ts`, `src/lib/wiki/wikilinks.ts`, existing job processor patterns
 
   **Acceptance Criteria**:
-  - [ ] ingestSource reads source file and extracts entities/concepts
-  - [ ] Creates new wiki pages for extracted entities
-  - [ ] Updates existing pages with new information
-  - [ ] Updates index.md after ingest
-  - [ ] Appends ingest entry to log.md
-  - [ ] New pages have status: draft (pending review)
+  - [x] ingestSource reads source file and extracts entities/concepts
+  - [x] Creates new wiki pages for extracted entities
+  - [x] Updates existing pages with new information
+  - [x] Updates index.md after ingest
+  - [x] Appends ingest entry to log.md
+  - [x] New pages have status: draft (pending review)
 
   **QA Scenarios**:
   ```
@@ -512,11 +512,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/wiki/index-generator.ts`, `src/lib/wiki/file-io.ts`, `src/components/wiki/search.tsx` (FlexSearch integration), existing retrieval.ts patterns
 
   **Acceptance Criteria**:
-  - [ ] queryWiki reads index for first-pass filtering
-  - [ ] Reads full pages for relevant entries
-  - [ ] LLM synthesizes answer with citations
-  - [ ] Returns { answer, citations } structure
-  - [ ] FlexSearch fallback when index doesn't match
+  - [x] queryWiki reads index for first-pass filtering
+  - [x] Reads full pages for relevant entries
+  - [x] LLM synthesizes answer with citations
+  - [x] Returns { answer, citations } structure
+  - [x] FlexSearch fallback when index doesn't match
 
   **QA Scenarios**:
   ```
@@ -542,11 +542,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/contradiction-detector.ts`, `src/lib/semantic-contradiction.ts`, `src/lib/wiki/wikilinks.ts`, `src/lib/wiki/file-io.ts`
 
   **Acceptance Criteria**:
-  - [ ] lintWiki scans all wiki pages
-  - [ ] Detects contradictions between pages
-  - [ ] Identifies orphan pages (no backlinks)
-  - [ ] Finds broken wikilinks
-  - [ ] Returns structured report with suggestions
+  - [x] lintWiki scans all wiki pages
+  - [x] Detects contradictions between pages
+  - [x] Identifies orphan pages (no backlinks)
+  - [x] Finds broken wikilinks
+  - [x] Returns structured report with suggestions
 
   **QA Scenarios**:
   ```
@@ -571,11 +571,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/wiki/query.ts`, `src/lib/wiki/file-io.ts`, `src/lib/wiki/index-generator.ts`, `src/lib/wiki/logger.ts`
 
   **Acceptance Criteria**:
-  - [ ] fileAnswer creates synthesis page with answer content
-  - [ ] Page includes citations and links to source pages
-  - [ ] Index.md updated
-  - [ ] Log.md appended
-  - [ ] Cross-references added from source pages
+  - [x] fileAnswer creates synthesis page with answer content
+  - [x] Page includes citations and links to source pages
+  - [x] Index.md updated
+  - [x] Log.md appended
+  - [x] Cross-references added from source pages
 
   **QA Scenarios**:
   ```
@@ -600,11 +600,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/wiki/file-io.ts`, existing lore_validations table patterns, `src/components/wiki/markdown-renderer.tsx`
 
   **Acceptance Criteria**:
-  - [ ] validatePage changes status from draft to reviewed
-  - [ ] rejectPage changes status and records reason
-  - [ ] lockPage prevents LLM modifications
-  - [ ] Validation status badge shown in renderer
-  - [ ] Wiki can be filtered by status
+  - [x] validatePage changes status from draft to reviewed
+  - [x] rejectPage changes status and records reason
+  - [x] lockPage prevents LLM modifications
+  - [x] Validation status badge shown in renderer
+  - [x] Wiki can be filtered by status
 
   **QA Scenarios**:
   ```
@@ -629,12 +629,12 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/wiki/file-io.ts`, `src/lib/wiki/wikilinks.ts`, `src/lib/wiki/index-generator.ts`, `src/lib/lore-markdown.ts`, locations DB schema
 
   **Acceptance Criteria**:
-  - [ ] Script reads all locations from DB
-  - [ ] Creates wiki pages in entities/ folder
-  - [ ] Frontmatter mapped correctly (canon_tier→status, etc.)
-  - [ ] Wikilinks preserved in content
-  - [ ] Dry-run mode shows what would be created
-  - [ ] Old files/DB entries untouched
+  - [x] Script reads all locations from DB
+  - [x] Creates wiki pages in entities/ folder
+  - [x] Frontmatter mapped correctly (canon_tier→status, etc.)
+  - [x] Wikilinks preserved in content
+  - [x] Dry-run mode shows what would be created
+  - [x] Old files/DB entries untouched
 
   **QA Scenarios**:
   ```
@@ -659,11 +659,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/wiki/file-io.ts`, `src/lib/wiki/wikilinks.ts`, `src/lib/wiki/index-generator.ts`, NPCs DB schema
 
   **Acceptance Criteria**:
-  - [ ] Script reads all NPCs from DB
-  - [ ] Creates wiki pages in entities/ folder
-  - [ ] location_id converted to [[wikilink]] to location page
-  - [ ] Frontmatter mapped correctly
-  - [ ] Old files/DB entries untouched
+  - [x] Script reads all NPCs from DB
+  - [x] Creates wiki pages in entities/ folder
+  - [x] location_id converted to [[wikilink]] to location page
+  - [x] Frontmatter mapped correctly
+  - [x] Old files/DB entries untouched
 
   **QA Scenarios**:
   ```
@@ -688,11 +688,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/wiki/file-io.ts`, `src/lib/wiki/wikilinks.ts`, events DB schema
 
   **Acceptance Criteria**:
-  - [ ] Script reads all events from DB
-  - [ ] Creates wiki pages in entities/ folder
-  - [ ] location_id, participants converted to wikilinks
-  - [ ] occurred_at mapped to date tag
-  - [ ] Old files/DB entries untouched
+  - [x] Script reads all events from DB
+  - [x] Creates wiki pages in entities/ folder
+  - [x] location_id, participants converted to wikilinks
+  - [x] occurred_at mapped to date tag
+  - [x] Old files/DB entries untouched
 
   **QA Scenarios**:
   ```
@@ -717,11 +717,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/wiki/file-io.ts`, `src/lib/wiki/wikilinks.ts`, relationships DB schema
 
   **Acceptance Criteria**:
-  - [ ] Script reads all relationships from DB
-  - [ ] Creates wiki pages in entities/ folder
-  - [ ] source/target entities converted to wikilinks
-  - [ ] Emotional state and stage preserved in frontmatter
-  - [ ] Old files/DB entries untouched
+  - [x] Script reads all relationships from DB
+  - [x] Creates wiki pages in entities/ folder
+  - [x] source/target entities converted to wikilinks
+  - [x] Emotional state and stage preserved in frontmatter
+  - [x] Old files/DB entries untouched
 
   **QA Scenarios**:
   ```
@@ -746,11 +746,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/wiki/wikilinks.ts`, `src/lib/wiki/index-generator.ts`, backlinks DB schema, lore_validations DB schema
 
   **Acceptance Criteria**:
-  - [ ] Backlinks rebuilt from wiki page content
-  - [ ] Validation states converted to frontmatter status
-  - [ ] Rejected pages marked or removed
-  - [ ] Index updated
-  - [ ] Old DB entries untouched
+  - [x] Backlinks rebuilt from wiki page content
+  - [x] Validation states converted to frontmatter status
+  - [x] Rejected pages marked or removed
+  - [x] Index updated
+  - [x] Old DB entries untouched
 
   **QA Scenarios**:
   ```
@@ -776,11 +776,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/retrieval.ts`, `src/lib/wiki/query.ts`, `src/lib/wiki/index-generator.ts`, `src/lib/wiki/file-io.ts`, `src/lib/prompt-builder.ts`
 
   **Acceptance Criteria**:
-  - [ ] getWikiContext returns same shape as getLoreContext
-  - [ ] Uses index.md for first-pass filtering
-  - [ ] Reads full pages for relevant entries
-  - [ ] DB fallback works if wiki not available
-  - [ ] Token budget respected (same as existing)
+  - [x] getWikiContext returns same shape as getLoreContext
+  - [x] Uses index.md for first-pass filtering
+  - [x] Reads full pages for relevant entries
+  - [x] DB fallback works if wiki not available
+  - [x] Token budget respected (same as existing)
 
   **QA Scenarios**:
   ```
@@ -806,11 +806,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/job-processor.ts`, `src/lib/wiki/ingest.ts`, `src/lib/wiki/file-io.ts`, existing job handler patterns
 
   **Acceptance Criteria**:
-  - [ ] All lore-related job types remapped to wiki equivalents
-  - [ ] Job handlers use wiki I/O instead of DB
-  - [ ] Old job handlers kept as fallback
-  - [ ] Job queue schema unchanged
-  - [ ] Progress reporting still works
+  - [x] All lore-related job types remapped to wiki equivalents
+  - [x] Job handlers use wiki I/O instead of DB
+  - [x] Old job handlers kept as fallback
+  - [x] Job queue schema unchanged
+  - [x] Progress reporting still works
 
   **QA Scenarios**:
   ```
@@ -835,10 +835,10 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/idle-processing.ts`, `src/lib/idle-enrichment.ts`, `src/lib/wiki/ingest.ts`, `src/lib/wiki/lint.ts`
 
   **Acceptance Criteria**:
-  - [ ] All idle tiers use wiki enrichment functions
-  - [ ] Tier thresholds unchanged (5/10/15/30 min)
-  - [ ] Old functions kept as fallback
-  - [ ] No DB writes during idle processing (wiki-only)
+  - [x] All idle tiers use wiki enrichment functions
+  - [x] Tier thresholds unchanged (5/10/15/30 min)
+  - [x] Old functions kept as fallback
+  - [x] No DB writes during idle processing (wiki-only)
 
   **QA Scenarios**:
   ```
@@ -863,11 +863,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/wiki/file-io.ts`, existing API route patterns, `src/app/api/lore-files/route.ts`
 
   **Acceptance Criteria**:
-  - [ ] GET /api/wiki/[slug] returns wiki page content + frontmatter
-  - [ ] PUT /api/wiki/[slug] updates wiki page
-  - [ ] DELETE /api/wiki/[slug] deletes wiki page
-  - [ ] POST /api/wiki creates new wiki page
-  - [ ] Old lore routes return 410 Gone with migration guide
+  - [x] GET /api/wiki/[slug] returns wiki page content + frontmatter
+  - [x] PUT /api/wiki/[slug] updates wiki page
+  - [x] DELETE /api/wiki/[slug] deletes wiki page
+  - [x] POST /api/wiki creates new wiki page
+  - [x] Old lore routes return 410 Gone with migration guide
 
   **QA Scenarios**:
   ```
@@ -892,10 +892,10 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `app-layout-shell.tsx`, `src/app/(app)/wiki/page.tsx`, existing nav patterns
 
   **Acceptance Criteria**:
-  - [ ] Wiki nav item in app shell
-  - [ ] Old lore nav items removed or renamed
-  - [ ] Nav links point to wiki routes
-  - [ ] Old lore pages still accessible via direct URL
+  - [x] Wiki nav item in app shell
+  - [x] Old lore nav items removed or renamed
+  - [x] Nav links point to wiki routes
+  - [x] Old lore pages still accessible via direct URL
 
   **QA Scenarios**:
   ```
@@ -920,10 +920,10 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/wiki/wikilinks.ts`, `src/lib/wiki/file-io.ts`, existing universe scoping patterns
 
   **Acceptance Criteria**:
-  - [ ] resolveWikilink prefers same-universe matches
-  - [ ] `[[Universe::Page]]` format resolves cross-universe links
-  - [ ] Collision detection warns on duplicate names
-  - [ ] Existing single-universe wikilinks unchanged
+  - [x] resolveWikilink prefers same-universe matches
+  - [x] `[[Universe::Page]]` format resolves cross-universe links
+  - [x] Collision detection warns on duplicate names
+  - [x] Existing single-universe wikilinks unchanged
 
   **QA Scenarios**:
   ```
@@ -948,10 +948,10 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/wiki/wikilinks.ts`, `src/lib/wiki/lint.ts`, `src/lib/wiki/file-io.ts`
 
   **Acceptance Criteria**:
-  - [ ] findOrphans returns pages with no inbound AND no outbound links
-  - [ ] Orphans flagged in lint report
-  - [ ] Orphan badge shown in file tree
-  - [ ] Suggested actions provided for each orphan
+  - [x] findOrphans returns pages with no inbound AND no outbound links
+  - [x] Orphans flagged in lint report
+  - [x] Orphan badge shown in file tree
+  - [x] Suggested actions provided for each orphan
 
   **QA Scenarios**:
   ```
@@ -977,11 +977,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/wiki/file-io.ts`, existing lore edit history patterns
 
   **Acceptance Criteria**:
-  - [ ] File locking prevents concurrent writes
-  - [ ] Conflict detected via lastModified timestamp
-  - [ ] Diff saved on conflict
-  - [ ] UI shows conflict dialog with merge options
-  - [ ] Concurrent reads not blocked
+  - [x] File locking prevents concurrent writes
+  - [x] Conflict detected via lastModified timestamp
+  - [x] Diff saved on conflict
+  - [x] UI shows conflict dialog with merge options
+  - [x] Concurrent reads not blocked
 
   **QA Scenarios**:
   ```
@@ -1006,10 +1006,10 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/wiki/file-io.ts`, `src/lib/wiki/wikilinks.ts` (for creating subpage links)
 
   **Acceptance Criteria**:
-  - [ ] Max page size enforced (configurable)
-  - [ ] suggestSplit returns subpage structure suggestion
-  - [ ] Warning shown when page approaches limit
-  - [ ] No auto-split without user confirmation
+  - [x] Max page size enforced (configurable)
+  - [x] suggestSplit returns subpage structure suggestion
+  - [x] Warning shown when page approaches limit
+  - [x] No auto-split without user confirmation
 
   **QA Scenarios**:
   ```
@@ -1035,10 +1035,10 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/components/wiki/` all components, existing empty state patterns in codebase
 
   **Acceptance Criteria**:
-  - [ ] All wiki components have empty states with helpful messages
-  - [ ] All wiki components have error states with actionable messages
-  - [ ] All wiki components have loading states (spinners/skeletons)
-  - [ ] Empty states include CTAs where appropriate
+  - [x] All wiki components have empty states with helpful messages
+  - [x] All wiki components have error states with actionable messages
+  - [x] All wiki components have loading states (spinners/skeletons)
+  - [x] Empty states include CTAs where appropriate
 
   **QA Scenarios**:
   ```
@@ -1063,11 +1063,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: DB schema, `src/lib/wiki/file-io.ts`, existing migration patterns
 
   **Acceptance Criteria**:
-  - [ ] Script verifies all wiki pages exist before dropping tables
-  - [ ] Old tables dropped (content tables only)
-  - [ ] Old lore files archived to lore-archive/
-  - [ ] Operational tables untouched
-  - [ ] spec.md updated
+  - [x] Script verifies all wiki pages exist before dropping tables
+  - [x] Old tables dropped (content tables only)
+  - [x] Old lore files archived to lore-archive/
+  - [x] Operational tables untouched
+  - [x] spec.md updated
 
   **QA Scenarios**:
   ```
@@ -1092,10 +1092,10 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: `src/lib/wiki/` all files, existing performance patterns in codebase
 
   **Acceptance Criteria**:
-  - [ ] Benchmarks measured for all wiki operations
-  - [ ] All targets met (render < 200ms, graph < 1s, search < 100ms, index < 500ms)
-  - [ ] Optimizations documented
-  - [ ] No correctness regressions
+  - [x] Benchmarks measured for all wiki operations
+  - [x] All targets met (render < 200ms, graph < 1s, search < 100ms, index < 500ms)
+  - [x] Optimizations documented
+  - [x] No correctness regressions
 
   **QA Scenarios**:
   ```
@@ -1120,11 +1120,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   **References**: All wiki files, LLM Wiki pattern document, existing docs patterns
 
   **Acceptance Criteria**:
-  - [ ] Migration guide covers all steps
-  - [ ] Wiki schema reference complete
-  - [ ] LLM operations guide covers ingest/query/lint
-  - [ ] README updated
-  - [ ] Troubleshooting section included
+  - [x] Migration guide covers all steps
+  - [x] Wiki schema reference complete
+  - [x] LLM operations guide covers ingest/query/lint
+  - [x] README updated
+  - [x] Troubleshooting section included
 
   **QA Scenarios**:
   ```
@@ -1182,10 +1182,10 @@ npm test       # Expected: all tests pass
 ```
 
 ### Final Checklist
-- [ ] All "Must Have" present
-- [ ] All "Must NOT Have" absent
-- [ ] All tests pass
-- [ ] All QA scenarios executed with evidence files
-- [ ] Migration verified — no data loss
-- [ ] Performance targets met
-- [ ] Documentation complete
+- [x] All "Must Have" present
+- [x] All "Must NOT Have" absent
+- [x] All tests pass
+- [x] All QA scenarios executed with evidence files
+- [x] Migration verified — no data loss
+- [x] Performance targets met
+- [x] Documentation complete

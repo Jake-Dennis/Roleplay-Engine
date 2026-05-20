@@ -63,9 +63,9 @@ Add 5 Obsidian-style features to the wiki: callouts, embeds, outline, hover prev
 - `src/app/api/wiki/[...slug]/route.ts` — Modified to include inline embed content
 
 ### Definition of Done
-- [ ] All 5 features work in wiki page view
-- [ ] `npx next build` passes
-- [ ] No new external dependencies
+- [x] All 5 features work in wiki page view
+- [x] `npx next build` passes
+- [x] No new external dependencies
 
 ### Must Have
 - Callouts: 12 types (note, abstract, info, todo, tip, success, question, warning, failure, danger, bug, example, quote)
@@ -178,9 +178,9 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   - `src/app/(app)/wiki/[...slug]/page.tsx` — WikiPageView component to pass props
 
   **Acceptance Criteria**:
-  - [ ] Wikilinks to existing pages render blue, non-existing render red
-  - [ ] `[[Page|alias]]` displays "alias" text, links to "page"
-  - [ ] `npx next build` passes
+  - [x] Wikilinks to existing pages render blue, non-existing render red
+  - [x] `[[Page|alias]]` displays "alias" text, links to "page"
+  - [x] `npx next build` passes
 
   **QA Scenarios**:
   ```
@@ -239,11 +239,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   - `obsidian-docs/en/Reference/CSS variables/Editor/Callout.md` — CSS variable reference
 
   **Acceptance Criteria**:
-  - [ ] `> [!info] Title` renders as styled callout with info icon
-  - [ ] `> [!warning]- Collapsed` renders as collapsed callout
-  - [ ] Nested callouts render correctly
-  - [ ] Markdown inside callouts renders (bold, links, lists)
-  - [ ] `npx next build` passes
+  - [x] `> [!info] Title` renders as styled callout with info icon
+  - [x] `> [!warning]- Collapsed` renders as collapsed callout
+  - [x] Nested callouts render correctly
+  - [x] Markdown inside callouts renders (bold, links, lists)
+  - [x] `npx next build` passes
 
   **QA Scenarios**:
   ```
@@ -295,11 +295,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   - `obsidian-docs/en/Plugins/Outline.md` — Obsidian outline spec
 
   **Acceptance Criteria**:
-  - [ ] Outline panel shows all headings from current page
-  - [ ] Headings are nested by level (h1 > h2 > h3)
-  - [ ] Clicking a heading scrolls to that section
-  - [ ] Current section is highlighted
-  - [ ] `npx next build` passes
+  - [x] Outline panel shows all headings from current page
+  - [x] Headings are nested by level (h1 > h2 > h3)
+  - [x] Clicking a heading scrolls to that section
+  - [x] Current section is highlighted
+  - [x] `npx next build` passes
 
   **QA Scenarios**:
   ```
@@ -348,11 +348,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   - `obsidian-docs/en/Linking notes and files/Embed files.md` — Obsidian embed spec
 
   **Acceptance Criteria**:
-  - [ ] `![[Page]]` renders full page content inline
-  - [ ] `![[Page#Heading]]` renders section content
-  - [ ] `![[Page#^block-id]]` renders specific block
-  - [ ] Circular embeds show placeholder (not infinite loop)
-  - [ ] `npx next build` passes
+  - [x] `![[Page]]` renders full page content inline
+  - [x] `![[Page#Heading]]` renders section content
+  - [x] `![[Page#^block-id]]` renders specific block
+  - [x] Circular embeds show placeholder (not infinite loop)
+  - [x] `npx next build` passes
 
   **QA Scenarios**:
   ```
@@ -404,9 +404,9 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   - `src/lib/wiki/file-io.ts` — readWikiPage function to fetch embed targets
 
   **Acceptance Criteria**:
-  - [ ] API response includes `embeds` field with target page content
-  - [ ] Missing embed targets return null content
-  - [ ] `npx next build` passes
+  - [x] API response includes `embeds` field with target page content
+  - [x] Missing embed targets return null content
+  - [x] `npx next build` passes
 
   **QA Scenarios**:
   ```
@@ -454,11 +454,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   - `obsidian-docs/en/Plugins/Page preview.md` — Obsidian page preview spec
 
   **Acceptance Criteria**:
-  - [ ] Hovering wikilink shows preview popover after 300ms
-  - [ ] Preview shows page title, first 200 chars, type badge
-  - [ ] Loading state shows spinner
-  - [ ] Error state shows "Page not found"
-  - [ ] `npx next build` passes
+  - [x] Hovering wikilink shows preview popover after 300ms
+  - [x] Preview shows page title, first 200 chars, type badge
+  - [x] Loading state shows spinner
+  - [x] Error state shows "Page not found"
+  - [x] `npx next build` passes
 
   **QA Scenarios**:
   ```
@@ -506,10 +506,10 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   - `obsidian-docs/en/Plugins/Outgoing links.md` — Obsidian outgoing links spec
 
   **Acceptance Criteria**:
-  - [ ] Panel shows all wikilinks from current page
-  - [ ] Existing links render blue, non-existing render red
-  - [ ] Clicking a link navigates to the page
-  - [ ] `npx next build` passes
+  - [x] Panel shows all wikilinks from current page
+  - [x] Existing links render blue, non-existing render red
+  - [x] Clicking a link navigates to the page
+  - [x] `npx next build` passes
 
   **QA Scenarios**:
   ```
@@ -563,13 +563,13 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   - All previous task files
 
   **Acceptance Criteria**:
-  - [ ] Wiki page renders with all 5 features working
-  - [ ] Callouts render correctly in page content
-  - [ ] Embeds render inline content
-  - [ ] Outline panel shows headings
-  - [ ] Hover preview works on wikilinks
-  - [ ] Outgoing links panel shows all links
-  - [ ] `npx next build` passes
+  - [x] Wiki page renders with all 5 features working
+  - [x] Callouts render correctly in page content
+  - [x] Embeds render inline content
+  - [x] Outline panel shows headings
+  - [x] Hover preview works on wikilinks
+  - [x] Outgoing links panel shows all links
+  - [x] `npx next build` passes
 
   **QA Scenarios**:
   ```
@@ -659,7 +659,7 @@ npx next build  # Expected: ✓ Compiled successfully
 ```
 
 ### Final Checklist
-- [ ] All "Must Have" present (callouts, embeds, outline, hover preview, outgoing links)
-- [ ] All "Must NOT Have" absent (no new deps, no file format changes, no DB changes)
-- [ ] All builds pass
-- [ ] All QA scenarios pass
+- [x] All "Must Have" present (callouts, embeds, outline, hover preview, outgoing links)
+- [x] All "Must NOT Have" absent (no new deps, no file format changes, no DB changes)
+- [x] All builds pass
+- [x] All QA scenarios pass

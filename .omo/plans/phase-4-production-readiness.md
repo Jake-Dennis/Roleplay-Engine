@@ -878,12 +878,12 @@ Remove startup checks. Low risk.
 
 ## Success Criteria
 
-- [ ] `npx next build` passes
-- [ ] Events flow across multiple processes via Redis
-- [ ] File locks work across processes
-- [ ] PostgreSQL adapter passes all tests (SQLite still works)
-- [ ] React Query caches and invalidates correctly
-- [ ] `SIGTERM` → graceful shutdown within 5 seconds
-- [ ] Errors appear in Sentry dashboard
-- [ ] Startup health check prints on server start
-- [ ] No new TypeScript errors
+- [x] `npx next build` passes
+- [ ] ~~Events flow across multiple processes via Redis~~ — DEFERRED (4.1): Requires Redis infrastructure
+- [ ] ~~File locks work across processes~~ — DEFERRED (4.2): Requires distributed locking (Redis/proper-lockfile)
+- [ ] ~~PostgreSQL adapter passes all tests (SQLite still works)~~ — DEFERRED (4.3): Requires PostgreSQL migration
+- [ ] ~~React Query caches and invalidates correctly~~ — DEFERRED (4.4): Requires @tanstack/react-query
+- [x] `SIGTERM` → graceful shutdown within 5 seconds
+- [ ] ~~Errors appear in Sentry dashboard~~ — DEFERRED (4.6): Requires @sentry/nextjs
+- [x] Startup health check prints on server start
+- [x] No new TypeScript errors

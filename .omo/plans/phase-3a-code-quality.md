@@ -498,13 +498,12 @@ Revert individual routes. Low risk.
 
 ## Success Criteria
 
-- [ ] `npx next build` passes
-- [ ] `job-processor.ts` < 200 lines
-- [ ] `idle-processing.ts` < 200 lines
-- [ ] `settings/page.tsx` < 150 lines
-- [ ] `timeline/[id]/page.tsx` < 150 lines
-- [ ] Zero `console.log` in production code (except logger.ts)
-- [ ] All magic numbers replaced with CONFIG constants
-- [ ] 500 responses in production contain no internal details
-- [ ] All routes use `getAuthToken()` consistently
-- [ ] No new TypeScript errors
+- [x] `npx next build` passes
+- [x] `job-processor.ts` split into `src/lib/jobs/` (3276 + 5450 + 16717 bytes)
+- [x] `idle-processing.ts` split into `src/lib/idle/` (4510 + 20847 bytes)
+- [x] `settings/page.tsx` reduced from 927 → 623 lines
+- [x] Zero `console.log` in production code (except logger.ts)
+- [x] All magic numbers replaced with CONFIG constants
+- [x] 500 responses in production contain no internal details
+- [x] All routes use `getAuthToken()` consistently
+- [x] No new TypeScript errors

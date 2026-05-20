@@ -622,11 +622,11 @@ Revert to circular imports. Medium risk.
 
 ## Success Criteria
 
-- [ ] `npx next build` passes
-- [ ] Zero `db.prepare()` calls in route handlers (only in services)
-- [ ] `src/lib/` organized by domain subdirectories
-- [ ] All 15+ route groups have `error.tsx`
-- [ ] `AppLayoutShell` makes zero independent API fetches
-- [ ] Network tab shows 1x API calls on page load (not 2x)
-- [ ] No circular imports (`madge --circular` returns clean)
-- [ ] No new TypeScript errors
+- [x] `npx next build` passes
+- [ ] ~~Zero `db.prepare()` calls in route handlers (only in services)~~ — DEFERRED (3B.1): Requires service layer extraction, major refactoring beyond audit scope
+- [ ] ~~`src/lib/` organized by domain subdirectories~~ — DEFERRED (3B.2): Requires domain grouping, major refactoring beyond audit scope
+- [x] All 15+ route groups have `error.tsx` (16 files created)
+- [x] `AppLayoutShell` makes zero independent API fetches
+- [x] Network tab shows 1x API calls on page load (not 2x)
+- [x] No circular imports (`madge --circular` returns clean)
+- [x] No new TypeScript errors

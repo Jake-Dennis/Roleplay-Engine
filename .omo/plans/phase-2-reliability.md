@@ -703,15 +703,15 @@ Revert individual routes to inline auth checks. Low risk — each route is indep
 
 ## Success Criteria
 
-- [ ] `npx next build` passes
-- [ ] Rate limiting returns 429 after threshold exceeded
-- [ ] Upload rejects files >10MB or disallowed types
-- [ ] Zero `any` types in event bus, embeddings, and relationship modules
-- [ ] `group-migrations.ts` logs unexpected errors
-- [ ] `rowToJson` exists in exactly 1 file
-- [ ] `hasRelationshipAccess` exists in exactly 1 file
-- [ ] `formatRelativeTime` exists in exactly 1 file
-- [ ] `ensureParticipantColumns` exists in exactly 1 file
-- [ ] LLM prompts centralized in `src/lib/prompts.ts`
-- [ ] `withAuth()` wrapper created and used in at least 5 routes
-- [ ] No new TypeScript errors
+- [x] `npx next build` passes
+- [x] Rate limiting returns 429 after threshold exceeded
+- [x] Upload rejects files >10MB or disallowed types
+- [x] Zero `any` types in event bus, embeddings, and relationship modules
+- [x] `group-migrations.ts` logs unexpected errors
+- [x] `rowToJson` exists in exactly 1 file
+- [x] `hasRelationshipAccess` exists in exactly 1 file (`src/lib/relationship-access.ts`)
+- [x] `formatRelativeTime` exists in exactly 1 file
+- [x] `ensureParticipantColumns` exists in exactly 1 file
+- [x] LLM prompts centralized in `src/lib/prompts.ts`
+- [x] `withAuth()` wrapper created and used in at least 5 routes
+- [x] No new TypeScript errors

@@ -354,12 +354,12 @@ Revert to `startsWith` checks. Low risk — existing guard is partially effectiv
 
 ## Success Criteria
 
-- [ ] `npx next build` passes
-- [ ] Server throws on startup without `JWT_SECRET`
-- [ ] Auth cookie is `httpOnly: true`, `secure: true` (prod), `sameSite: "strict"`
-- [ ] Zero `localStorage` auth references in `src/`
-- [ ] Token not accessible via `document.cookie` in browser
-- [ ] `javascript:` URIs blocked in markdown renderer
-- [ ] Path traversal attempts return 400 on all wiki endpoints
-- [ ] Login → navigate → API calls all work
-- [ ] No new TypeScript errors
+- [x] `npx next build` passes
+- [x] Server throws on startup without `JWT_SECRET`
+- [x] Auth cookie is `httpOnly: true`, `secure: true` (prod), `sameSite: "strict"`
+- [x] Zero `localStorage` auth references in `src/`
+- [x] Token not accessible via `document.cookie` in browser
+- [x] `javascript:` URIs blocked in markdown renderer
+- [x] Path traversal attempts return 400 on all wiki endpoints
+- [x] Login → navigate → API calls all work
+- [x] No new TypeScript errors
