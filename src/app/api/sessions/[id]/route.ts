@@ -1,12 +1,14 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { ensureParticipantColumns } from "@/lib/session-columns";
 import { getAuthToken } from '@/lib/auth-token';
-import { unauthorizedError, notFoundError } from '@/lib/error-response';
+import { unauthorizedError, notFoundError, requireJson } from '@/lib/error-response';
 import { logger } from '@/lib/logger';
 import { safeParseWarn } from "@/lib/safe-json";
 import type { DbRow } from "@/lib/types";
+import { validateLength } from '@/lib/validation';
 
 export async function GET(
   request: NextRequest,
@@ -109,10 +111,10 @@ export async function GET(
   } catch (err) { logger.warn("[sessions] turn config parse failed:", err); }
 
   return NextResponse.json({
-    session,
-    messages,
-    sceneState,
-    participants,
+    session: camelizeKeys(session),
+    messages: camelizeKeys(messages),
+    sceneState: sceneState ? camelizeKeys(sceneState) : null,
+    participants: camelizeKeys(participants),
     turnConfig,
     isOwner: (session as Record<string, unknown>).owner_id === decoded.sub,
   });
@@ -140,8 +142,14 @@ export async function PUT(
     return NextResponse.json({ error: "Session not found or not owner" }, { status: 404 });
   }
 
+  requireJson(request);
   const body = await request.json();
   const { name, status } = body;
+
+  if (name !== undefined) {
+    const nameError = validateLength(name, 200, "Name");
+    if (nameError) return NextResponse.json({ error: nameError }, { status: 400 });
+  }
 
   db.prepare(
     "UPDATE sessions SET name = COALESCE(?, name), status = COALESCE(?, status), updated_at = CURRENT_TIMESTAMP WHERE id = ?"
@@ -149,7 +157,7 @@ export async function PUT(
 
   const updated = db.prepare("SELECT * FROM sessions WHERE id = ?").get(id);
 
-  return NextResponse.json({ session: updated });
+  return NextResponse.json({ session: camelizeKeys(updated) });
 }
 
 export async function DELETE(

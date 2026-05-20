@@ -87,8 +87,8 @@ export async function PUT(request: NextRequest) {
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
-    requireJson(request);
-    const body = await request.json();
+  requireJson(request);
+  const body = await request.json();
   const { entityType, entityId, voiceName, voiceSpeed = 1.0, volume = 0.8 } = body;
 
   if (!entityType || !entityId || !voiceName) {
@@ -133,8 +133,8 @@ export async function POST(request: NextRequest) {
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
-    requireJson(request);
-    const body = await request.json();
+  requireJson(request);
+  const body = await request.json();
   const { id, name, slots } = body;
 
   if (!id || !name || !slots || !Array.isArray(slots)) {

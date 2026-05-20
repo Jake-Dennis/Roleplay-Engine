@@ -1,9 +1,11 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { getAuthToken } from "@/lib/auth-token";
-import { unauthorizedError, badRequestError } from "@/lib/error-response";
+import { unauthorizedError, badRequestError, requireJson } from "@/lib/error-response";
 import { ensureGroupSupport, isGroupMember, isGroupOwner } from "@/lib/group-migrations";
+import { validateLength } from "@/lib/validation";
 
 export async function GET(
   request: NextRequest,
@@ -39,7 +41,12 @@ export async function GET(
     "SELECT * FROM universes WHERE group_id = ? ORDER BY created_at DESC"
   ).all(id);
 
-  return NextResponse.json({ group, members, sessions, universes });
+  return NextResponse.json({
+    group: camelizeKeys(group),
+    members: camelizeKeys(members),
+    sessions: camelizeKeys(sessions),
+    universes: camelizeKeys(universes),
+  });
 }
 
 export async function PUT(
@@ -60,8 +67,18 @@ export async function PUT(
     return NextResponse.json({ error: "Not owner" }, { status: 403 });
   }
 
+  requireJson(request);
   const body = await request.json();
   const { name, description } = body;
+
+  if (name !== undefined) {
+    const nameError = validateLength(name, 200, "Name");
+    if (nameError) return NextResponse.json({ error: nameError }, { status: 400 });
+  }
+  if (description !== undefined) {
+    const descError = validateLength(description, 5000, "Description");
+    if (descError) return NextResponse.json({ error: descError }, { status: 400 });
+  }
 
   const updates: string[] = [];
   const values: unknown[] = [];
@@ -77,7 +94,7 @@ export async function PUT(
   db.prepare(`UPDATE groups SET ${updates.join(", ")} WHERE id = ?`).run(...values);
 
   const group = db.prepare("SELECT * FROM groups WHERE id = ?").get(id);
-  return NextResponse.json({ group });
+  return NextResponse.json({ group: camelizeKeys(group) });
 }
 
 export async function DELETE(
