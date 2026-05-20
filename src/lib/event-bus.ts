@@ -26,6 +26,19 @@ class EventBus {
   private connectionCount = new Map<string, number>();
   // D6: Max concurrent connections per session
   private readonly MAX_CONNECTIONS = 50;
+  // Track active SSE stream controllers for graceful shutdown
+  private activeControllers = new Set<ReadableStreamDefaultController>();
+  // Periodic cleanup interval for abandoned session data
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null;
+
+  constructor() {
+    // Start periodic cleanup every 60 seconds
+    this.cleanupInterval = setInterval(() => this.cleanup(), 60_000);
+    // Prevent the interval from keeping the process alive
+    if (typeof this.cleanupInterval === "object" && "unref" in this.cleanupInterval) {
+      (this.cleanupInterval as { unref: () => void }).unref();
+    }
+  }
 
   /**
    * Subscribe to an event type
@@ -144,6 +157,76 @@ class EventBus {
     } else {
       this.handlers.clear();
     }
+  }
+
+  /**
+   * Register a ReadableStream controller for tracking.
+   * Used by SSE routes so shutdown can close all active streams.
+   */
+  registerController(controller: ReadableStreamDefaultController): void {
+    this.activeControllers.add(controller);
+  }
+
+  /**
+   * Unregister a ReadableStream controller.
+   * Call when an SSE connection closes normally.
+   */
+  unregisterController(controller: ReadableStreamDefaultController): void {
+    this.activeControllers.delete(controller);
+  }
+
+  /**
+   * Remove stale entries from eventHistory and connectionCount
+   * for sessions that have no active connections.
+   */
+  cleanup(): void {
+    const activeSessions = new Set(this.connectionCount.keys());
+
+    // Clean eventHistory: remove sessions with no active connections
+    for (const sessionId of this.eventHistory.keys()) {
+      if (!activeSessions.has(sessionId)) {
+        this.eventHistory.delete(sessionId);
+      }
+    }
+
+    // Clean connectionCount: remove sessions with zero connections
+    // (shouldn't happen normally since removeConnection deletes at 0,
+    // but guards against abnormal disconnects)
+    for (const [sessionId, count] of this.connectionCount.entries()) {
+      if (count <= 0) {
+        this.connectionCount.delete(sessionId);
+      }
+    }
+  }
+
+  /**
+   * Drain all active SSE streams and clear all handlers.
+   * Closes every tracked controller, then removes all event subscriptions.
+   * Returns the number of streams that were closed.
+   */
+  drainAll(): number {
+    const count = this.activeControllers.size;
+    for (const controller of this.activeControllers) {
+      try {
+        controller.close();
+      } catch {
+        // Controller may already be closed
+      }
+    }
+    this.activeControllers.clear();
+    this.handlers.clear();
+
+    // Stop the periodic cleanup interval
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+
+    // Clean up all session data
+    this.eventHistory.clear();
+    this.connectionCount.clear();
+
+    return count;
   }
 }
 

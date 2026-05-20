@@ -3,6 +3,10 @@ import { OLLAMA_CONFIG, TTS_CONFIG } from "@/lib/config";
 import { getAuthToken } from "@/lib/auth-token";
 import { getDb } from "@/lib/db";
 
+/**
+ * Readiness probe — returns 200 only when all critical dependencies are reachable.
+ * Returns 503 if any service is down. Restricted to localhost or authenticated.
+ */
 export async function GET(request: NextRequest) {
   if (!await isAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -24,9 +28,8 @@ export async function GET(request: NextRequest) {
     db.status === "connected";
 
   return NextResponse.json({
-    ollama,
-    kokoro,
-    db,
+    status: allHealthy ? "ready" : "not_ready",
+    services: { ollama, kokoro, db },
     timestamp: Date.now(),
   }, { status: allHealthy ? 200 : 503 });
 }
@@ -48,11 +51,7 @@ async function checkOllama() {
     const data = await response.json();
     const models = (data.models || []).map((m: { name: string }) => m.name);
 
-    return {
-      status: "connected",
-      models,
-      modelCount: models.length,
-    };
+    return { status: "connected", modelCount: models.length };
   } catch (err) {
     return {
       status: "unavailable",
@@ -78,11 +77,7 @@ async function checkKokoro() {
     const data = await response.json();
     const voices = data.voices || [];
 
-    return {
-      status: "connected",
-      voices,
-      voiceCount: voices.length,
-    };
+    return { status: "connected", voiceCount: voices.length };
   } catch (err) {
     return {
       status: "unavailable",
@@ -105,14 +100,12 @@ async function checkDb() {
 }
 
 async function isAuthorized(request: NextRequest): Promise<boolean> {
-  // Allow localhost access
   const forwarded = request.headers.get("x-forwarded-for");
   const ip = forwarded?.split(",")[0]?.trim() || "unknown";
   if (ip === "127.0.0.1" || ip === "::1") {
     return true;
   }
 
-  // Allow authenticated requests
   const token = getAuthToken(request);
   if (token) {
     return true;

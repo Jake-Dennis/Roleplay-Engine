@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 
 export interface WikiRevision {
   id: string;
@@ -18,7 +19,11 @@ function getRevisionsDir(
   slug: string[]
 ): string {
   const slugPath = slug.join("/");
-  return path.join(wikiRoot, ".revisions", slugPath);
+  const resolved = path.join(wikiRoot, ".revisions", slugPath);
+  if (!isPathWithinRoot(resolved, wikiRoot)) {
+    throw new Error("Invalid path");
+  }
+  return resolved;
 }
 
 /**
@@ -93,6 +98,7 @@ export function getRevision(
   const revisionsDir = getRevisionsDir(wikiRoot, slug);
   const revisionPath = path.join(revisionsDir, `${revisionId}.json`);
 
+  if (!isPathWithinRoot(revisionPath, wikiRoot)) return null;
   if (!fs.existsSync(revisionPath)) return null;
 
   try {

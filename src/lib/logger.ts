@@ -1,16 +1,185 @@
+// ANSI color codes for development
+const COLORS = {
+  reset: '\x1b[0m',
+  gray: '\x1b[90m',
+  blue: '\x1b[34m',
+  yellow: '\x1b[33m',
+  red: '\x1b[31m',
+  cyan: '\x1b[36m',
+} as const;
+
 const isDev = process.env.NODE_ENV === 'development';
 
-export const logger = {
-  debug: (...args: unknown[]) => {
-    if (isDev) console.log('[DEBUG]', ...args);
-  },
-  info: (...args: unknown[]) => {
-    console.log('[INFO]', ...args);
-  },
-  warn: (...args: unknown[]) => {
-    console.warn('[WARN]', ...args);
-  },
-  error: (...args: unknown[]) => {
-    console.error('[ERROR]', ...args);
-  },
-};
+// AsyncLocalStorage for correlation IDs (server-side only)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let correlationStorage: any = null;
+
+if (!isDev && typeof window === 'undefined') {
+  try {
+    const ah = require('async_hooks');
+    correlationStorage = new ah.AsyncLocalStorage();
+  } catch {
+    // async_hooks unavailable — correlation IDs fall back to explicit passing
+  }
+}
+
+function getCorrelationId(): string | undefined {
+  return correlationStorage?.getStore()?.correlationId;
+}
+
+function formatTimestamp(): string {
+  return new Date().toISOString();
+}
+
+function formatDev(level: string, message: string, correlationId?: string): string {
+  const colorMap: Record<string, string> = {
+    DEBUG: COLORS.gray,
+    INFO: COLORS.blue,
+    WARN: COLORS.yellow,
+    ERROR: COLORS.red,
+  };
+  const color = colorMap[level] ?? COLORS.reset;
+  const correlation = correlationId ? ` ${COLORS.cyan}[${correlationId}]${COLORS.reset}` : '';
+  return `${color}[${level}]${COLORS.reset}${correlation} ${message}`;
+}
+
+function buildEntry(level: string, message: string, metadata: Record<string, unknown>, correlationId?: string) {
+  return {
+    timestamp: formatTimestamp(),
+    level,
+    message,
+    ...(correlationId && { correlationId }),
+    ...metadata,
+  };
+}
+
+function extractMetadata(args: unknown[]): { message: string; metadata: Record<string, unknown> } {
+  if (args.length === 0) return { message: '', metadata: {} };
+
+  const message = String(args[0]);
+  const metadata: Record<string, unknown> = {};
+
+  for (let i = 1; i < args.length; i++) {
+    const arg = args[i];
+    if (arg instanceof Error) {
+      metadata.error = arg.message;
+      metadata.stack = arg.stack;
+    } else if (typeof arg === 'object' && arg !== null) {
+      Object.assign(metadata, arg as Record<string, unknown>);
+    } else {
+      metadata[`arg${i}`] = arg;
+    }
+  }
+
+  return { message, metadata };
+}
+
+function log(level: string, ...args: unknown[]) {
+  const { message, metadata } = extractMetadata(args);
+  const correlationId = getCorrelationId();
+
+  if (isDev) {
+    const formatted = formatDev(level, message, correlationId);
+    const consoleMethod = level === 'ERROR' ? console.error : level === 'WARN' ? console.warn : console.log;
+    if (Object.keys(metadata).length > 0) {
+      consoleMethod(formatted, metadata);
+    } else {
+      consoleMethod(formatted);
+    }
+  } else {
+    const entry = buildEntry(level, message, metadata, correlationId);
+    const consoleMethod = level === 'ERROR' ? console.error : level === 'WARN' ? console.warn : console.log;
+    consoleMethod(JSON.stringify(entry));
+  }
+}
+
+export interface StructuredLogger {
+  debug(...args: unknown[]): void;
+  info(...args: unknown[]): void;
+  warn(...args: unknown[]): void;
+  error(...args: unknown[]): void;
+  withCorrelationId(id: string): StructuredLogger;
+}
+
+function createLogger(correlationId?: string): StructuredLogger {
+  return {
+    debug: (...args: unknown[]) => log('DEBUG', ...args),
+    info: (...args: unknown[]) => log('INFO', ...args),
+    warn: (...args: unknown[]) => log('WARN', ...args),
+    error: (...args: unknown[]) => log('ERROR', ...args),
+    withCorrelationId(id: string) {
+      return createLogger(id);
+    },
+  };
+}
+
+// Override log methods to inject correlationId when set
+function createLoggerWithCorrelation(cid: string): StructuredLogger {
+  return {
+    debug: (...args: unknown[]) => {
+      const { message, metadata } = extractMetadata(args);
+      if (isDev) {
+        const formatted = formatDev('DEBUG', message, cid);
+        Object.keys(metadata).length > 0 ? console.log(formatted, metadata) : console.log(formatted);
+      } else {
+        console.log(JSON.stringify(buildEntry('DEBUG', message, metadata, cid)));
+      }
+    },
+    info: (...args: unknown[]) => {
+      const { message, metadata } = extractMetadata(args);
+      if (isDev) {
+        const formatted = formatDev('INFO', message, cid);
+        Object.keys(metadata).length > 0 ? console.log(formatted, metadata) : console.log(formatted);
+      } else {
+        console.log(JSON.stringify(buildEntry('INFO', message, metadata, cid)));
+      }
+    },
+    warn: (...args: unknown[]) => {
+      const { message, metadata } = extractMetadata(args);
+      if (isDev) {
+        const formatted = formatDev('WARN', message, cid);
+        Object.keys(metadata).length > 0 ? console.warn(formatted, metadata) : console.warn(formatted);
+      } else {
+        console.warn(JSON.stringify(buildEntry('WARN', message, metadata, cid)));
+      }
+    },
+    error: (...args: unknown[]) => {
+      const { message, metadata } = extractMetadata(args);
+      if (isDev) {
+        const formatted = formatDev('ERROR', message, cid);
+        Object.keys(metadata).length > 0 ? console.error(formatted, metadata) : console.error(formatted);
+      } else {
+        console.error(JSON.stringify(buildEntry('ERROR', message, metadata, cid)));
+      }
+    },
+    withCorrelationId(id: string) {
+      return createLoggerWithCorrelation(id);
+    },
+  };
+}
+
+export const logger: StructuredLogger = createLogger();
+
+/**
+ * Set correlation ID for the current async context.
+ * Returns a cleanup function to call when the request is done.
+ * Only effective in production (uses AsyncLocalStorage).
+ */
+export function setCorrelationId(id: string): () => void {
+  if (correlationStorage) {
+    correlationStorage.enterWith({ correlationId: id });
+    return () => {}; // no-op cleanup — scope is managed by AsyncLocalStorage
+  }
+  return () => {};
+}
+
+/**
+ * Run a function with a correlation ID in its async context.
+ * Only effective in production (uses AsyncLocalStorage).
+ */
+export function runWithCorrelation<T>(id: string, fn: () => T): T {
+  if (correlationStorage) {
+    return correlationStorage.run({ correlationId: id }, fn);
+  }
+  return fn();
+}

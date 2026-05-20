@@ -262,6 +262,30 @@ export function getJobStats(userId: string): Record<string, number> {
   return stats;
 }
 
+/**
+ * Recover stale jobs that were left in 'processing' state due to server crash.
+ * Jobs stuck processing for more than 5 minutes are marked as failed.
+ * Returns the number of jobs recovered.
+ */
+export function recoverStaleJobs(): number {
+  const db = getDb();
+  const result = db.prepare(
+    `UPDATE job_queue 
+     SET status = 'failed', 
+         error = 'Server crashed during processing', 
+         processed_at = CURRENT_TIMESTAMP 
+     WHERE status = 'processing' 
+       AND updated_at < datetime('now', '-5 minutes')`
+  ).run();
+  
+  const recovered = result.changes;
+  if (recovered > 0) {
+    console.log(`[JobProcessor] Recovered ${recovered} stale job(s) — marked as failed.`);
+  }
+  
+  return recovered;
+}
+
 // ---------------------------------------------------------------------------
 // Job Processing
 // ---------------------------------------------------------------------------

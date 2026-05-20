@@ -14,6 +14,9 @@
 
 import { getDb } from "@/lib/db";
 import { syncRelationshipToFilesystem } from "@/lib/relationship-markdown";
+import { EMOTION_HALF_LIVES } from "@/lib/relationship-constants";
+
+export { EMOTION_HALF_LIVES };
 
 export interface DecayResult {
   decayedCount: number;
@@ -33,17 +36,6 @@ const DEFAULT_DECAY_RATES = {
   emotionalHalfLifeDays: 7,
   stageRegressionDays: 14,
   minEmotionalState: "neutral",
-};
-
-// Per-emotion half-life rates (from spec)
-export const EMOTION_HALF_LIVES: Record<string, number> = {
-  trust: 30,
-  suspicion: 60,
-  loyalty: 30,
-  resentment: 90,
-  attraction: 14,
-  respect: 30,
-  fear: 14,
 };
 
 /**

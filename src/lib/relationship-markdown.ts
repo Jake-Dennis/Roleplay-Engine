@@ -17,7 +17,7 @@ import path from "path";
 import { APP_CONFIG } from "@/lib/config";
 import { getDb } from "@/lib/db";
 import { buildMarkdown, parseFrontmatter, LoreFrontmatter } from "@/lib/markdown-utils";
-import { EMOTION_HALF_LIVES } from "@/lib/relationship-decay";
+import { EMOTION_HALF_LIVES } from "@/lib/relationship-constants";
 
 export interface RelationshipRecord {
   id: string;

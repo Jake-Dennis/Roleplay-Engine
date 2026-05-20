@@ -45,7 +45,6 @@ export async function POST(request: NextRequest) {
         id: result.user.id,
         username: result.user.username,
       },
-      token: result.token,
     });
 
     // Set secure httpOnly cookie — XSS-resistant, MITM-resistant
