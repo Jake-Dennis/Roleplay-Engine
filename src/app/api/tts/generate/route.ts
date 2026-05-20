@@ -3,11 +3,12 @@ import { generateSpeech, getCachedAudio, cacheAudio } from "@/lib/tts";
 import { TTS_CONFIG } from "@/lib/config";
 import { verifyToken } from "@/lib/auth";
 import { getAuthToken } from '@/lib/auth-token';
+import { unauthorizedError, badRequestError } from '@/lib/error-response';
 
 export async function POST(request: NextRequest) {
   const token = getAuthToken(request);
   if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedError();
   }
 
   const decoded = await verifyToken(token);
@@ -19,17 +20,11 @@ export async function POST(request: NextRequest) {
   const { text, voice, speed = 1.0, format = TTS_CONFIG.defaultFormat } = body;
 
   if (!text || !voice) {
-    return NextResponse.json(
-      { error: "Text and voice are required" },
-      { status: 400 }
-    );
+    return badRequestError("Text and voice are required");
   }
 
   if (text.length > TTS_CONFIG.maxTextLength) {
-    return NextResponse.json(
-      { error: `Text exceeds maximum length of ${TTS_CONFIG.maxTextLength} characters` },
-      { status: 400 }
-    );
+    return badRequestError(`Text exceeds maximum length of ${TTS_CONFIG.maxTextLength} characters`);
   }
 
   // Check cache first

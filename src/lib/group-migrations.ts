@@ -5,6 +5,7 @@
  */
 
 import type { DbDatabase } from '@/lib/types';
+import { logger } from '@/lib/logger';
 
 function safeMigration(db: DbDatabase, sql: string, description: string): void {
   try {
@@ -12,7 +13,7 @@ function safeMigration(db: DbDatabase, sql: string, description: string): void {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     if (!message.includes('already exists') && !message.includes('duplicate')) {
-      console.warn(`[group-migrations] ${description}: ${message}`);
+      logger.warn(`[group-migrations] ${description}: ${message}`);
     }
   }
 }
@@ -99,7 +100,7 @@ export function ensureGroupSupport(db: DbDatabase) {
   } catch (e) {
     console.error("ensureGroupSupport error:", e);
     try { db.exec("PRAGMA foreign_keys = ON"); } catch (err) {
-      console.warn("[group-migrations] Failed to re-enable foreign keys:", err);
+      logger.warn("[group-migrations] Failed to re-enable foreign keys:", err);
     }
   }
 }

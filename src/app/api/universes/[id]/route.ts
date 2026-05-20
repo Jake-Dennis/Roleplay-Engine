@@ -3,6 +3,7 @@ import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import type { DbDatabase } from "@/lib/types";
 import { getAuthToken } from '@/lib/auth-token';
+import { unauthorizedError, notFoundError, badRequestError } from '@/lib/error-response';
 
 function parseBoundaries(raw: string | null): string[] {
   if (!raw) return [];
@@ -33,7 +34,7 @@ export async function GET(
 ) {
   const token = getAuthToken(request);
   if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedError();
   }
 
   const decoded = await verifyToken(token);
@@ -46,7 +47,7 @@ export async function GET(
   const db = getDb();
 
   if (!hasUniverseAccess(db, id, decoded.sub)) {
-    return NextResponse.json({ error: "Universe not found" }, { status: 404 });
+    return notFoundError("Universe");
   }
 
   const universe = db
@@ -56,7 +57,7 @@ export async function GET(
     .get(id) as Record<string, unknown> | undefined;
 
   if (!universe) {
-    return NextResponse.json({ error: "Universe not found" }, { status: 404 });
+    return notFoundError("Universe");
   }
 
   const parsed = { ...universe, boundaries: parseBoundaries(universe.boundaries as string | null) };
@@ -70,7 +71,7 @@ export async function PUT(
 ) {
   const token = getAuthToken(request);
   if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedError();
   }
 
   const decoded = await verifyToken(token);
@@ -93,24 +94,18 @@ export async function PUT(
   ).get(id, decoded.sub, decoded.sub);
 
   if (!existing) {
-    return NextResponse.json({ error: "Universe not found" }, { status: 404 });
+    return notFoundError("Universe");
   }
 
   const { name, canon_mode, lore_source, tone, boundaries } = body;
 
   if (name !== undefined && (!name || !name.trim())) {
-    return NextResponse.json(
-      { error: "Universe name cannot be empty" },
-      { status: 400 }
-    );
+    return badRequestError("Universe name cannot be empty");
   }
 
   const validModes = ["strict", "loose", "custom"];
   if (canon_mode !== undefined && !validModes.includes(canon_mode)) {
-    return NextResponse.json(
-      { error: `Invalid canon_mode. Must be one of: ${validModes.join(", ")}` },
-      { status: 400 }
-    );
+    return badRequestError(`Invalid canon_mode. Must be one of: ${validModes.join(", ")}`);
   }
 
   let boundariesJson: string | null = null;
@@ -133,7 +128,7 @@ export async function PUT(
   if (boundaries !== undefined) { updates.push("boundaries = ?"); values.push(boundariesJson); }
 
   if (updates.length === 0) {
-    return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+    return badRequestError("No fields to update");
   }
 
   values.push(id);
@@ -160,7 +155,7 @@ export async function DELETE(
 ) {
   const token = getAuthToken(request);
   if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedError();
   }
 
   const decoded = await verifyToken(token);
@@ -182,7 +177,7 @@ export async function DELETE(
   ).get(id, decoded.sub, decoded.sub);
 
   if (!existing) {
-    return NextResponse.json({ error: "Universe not found" }, { status: 404 });
+    return notFoundError("Universe");
   }
 
   // Check for dependent sessions

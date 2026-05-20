@@ -3,6 +3,7 @@ import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import type { DbDatabase } from "@/lib/types";
 import { getAuthToken } from '@/lib/auth-token';
+import { logger } from '@/lib/logger';
 
 // Add private_state column to session_participants if not exists
 function ensureColumn(db: DbDatabase) {
@@ -46,7 +47,7 @@ export async function GET(
   try {
     state = participant.private_state ? JSON.parse(participant.private_state) : {};
   } catch (err) {
-    console.warn('[private-state] Failed to parse private state:', err);
+    logger.warn('[private-state] Failed to parse private state:', err);
   }
 
   return NextResponse.json({ privateState: state });

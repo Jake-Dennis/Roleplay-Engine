@@ -281,32 +281,21 @@ const UniverseSelector = memo(function UniverseSelector() {
 export function AppLayoutShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, loading, activeSession, setActiveSession, refreshAll } = useApp();
+  const { user, loading, activeSession, setActiveSession, sessions, refreshAll } = useApp();
 
-  // Sync session from URL
+  // Sync session from URL — use context data instead of independent fetch
   useEffect(() => {
     const match = pathname?.match(/^\/session\/([a-f0-9-]+)$/i);
     if (match) {
       const sessionId = match[1];
       if (!activeSession || activeSession.id !== sessionId) {
-        // Browser automatically sends httpOnly cookies with same-origin requests
-        fetch(`/api/sessions/${sessionId}`)
-          .then((res) => res.ok ? res.json() : null)
-          .then((data) => {
-            if (data?.session) {
-              setActiveSession({
-                id: data.session.id,
-                name: data.session.name,
-                type: data.session.type || "solo",
-                group_id: data.session.group_id || null,
-                universe_id: data.session.universe_id || null,
-              });
-            }
-          })
-          .catch((err) => console.warn("[app-layout] session URL sync failed:", err));
+        const found = sessions.find((s) => s.id === sessionId);
+        if (found) {
+          setActiveSession(found);
+        }
       }
     }
-  }, [pathname]);
+  }, [pathname, activeSession, sessions, setActiveSession]);
 
   useEffect(() => {
     renderLoop.start();

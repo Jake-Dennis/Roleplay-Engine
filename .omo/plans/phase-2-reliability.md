@@ -705,7 +705,7 @@ Revert individual routes to inline auth checks. Low risk — each route is indep
 
 - [x] `npx next build` passes
 - [x] Rate limiting returns 429 after threshold exceeded
-- [x] Upload rejects files >10MB or disallowed types
+- [x] Upload rejects files >10MB or disallowed types (size limit, extension allowlist, filename sanitization)
 - [x] Zero `any` types in event bus, embeddings, and relationship modules
 - [x] `group-migrations.ts` logs unexpected errors
 - [x] `rowToJson` exists in exactly 1 file

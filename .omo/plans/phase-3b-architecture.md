@@ -626,7 +626,8 @@ Revert to circular imports. Medium risk.
 - [ ] ~~Zero `db.prepare()` calls in route handlers (only in services)~~ — DEFERRED (3B.1): Requires service layer extraction, major refactoring beyond audit scope
 - [ ] ~~`src/lib/` organized by domain subdirectories~~ — DEFERRED (3B.2): Requires domain grouping, major refactoring beyond audit scope
 - [x] All 15+ route groups have `error.tsx` (16 files created)
-- [x] `AppLayoutShell` makes zero independent API fetches
+- [x] `AppLayoutShell` makes zero independent API data fetches (only logout mutation remains)
 - [x] Network tab shows 1x API calls on page load (not 2x)
 - [x] No circular imports (`madge --circular` returns clean)
+- [x] Zero `localStorage` references in `app-context.tsx` (state caching removed)
 - [x] No new TypeScript errors

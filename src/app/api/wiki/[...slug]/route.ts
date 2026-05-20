@@ -18,6 +18,7 @@ import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import path from "path";
 import fs from "fs";
 import { getAuthToken } from '@/lib/auth-token';
+import { unauthorizedError, notFoundError, badRequestError } from '@/lib/error-response';
 
 /**
  * Resolve the slug array to a relative file path within the wiki root.
@@ -167,7 +168,7 @@ export async function GET(
   { params }: { params: Promise<{ slug: string[] }> }
 ) {
   const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) return unauthorizedError();
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
@@ -178,11 +179,11 @@ export async function GET(
 
   // Security: prevent path traversal
   if (!isPathWithinRoot(fullPath, wikiRoot)) {
-    return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+    return badRequestError("Invalid path");
   }
 
   if (!fs.existsSync(fullPath)) {
-    return NextResponse.json({ error: "Wiki page not found" }, { status: 404 });
+    return notFoundError("Wiki page");
   }
 
   try {
@@ -273,7 +274,7 @@ export async function PUT(
   { params }: { params: Promise<{ slug: string[] }> }
 ) {
   const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) return unauthorizedError();
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
@@ -284,11 +285,11 @@ export async function PUT(
 
   // Security: prevent path traversal
   if (!isPathWithinRoot(fullPath, wikiRoot)) {
-    return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+    return badRequestError("Invalid path");
   }
 
   if (!fs.existsSync(fullPath)) {
-    return NextResponse.json({ error: "Wiki page not found" }, { status: 404 });
+    return notFoundError("Wiki page");
   }
 
   const body = await request.json();
@@ -341,7 +342,7 @@ export async function DELETE(
   { params }: { params: Promise<{ slug: string[] }> }
 ) {
   const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) return unauthorizedError();
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
@@ -352,11 +353,11 @@ export async function DELETE(
 
   // Security: prevent path traversal
   if (!isPathWithinRoot(fullPath, wikiRoot)) {
-    return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+    return badRequestError("Invalid path");
   }
 
   if (!fs.existsSync(fullPath)) {
-    return NextResponse.json({ error: "Wiki page not found" }, { status: 404 });
+    return notFoundError("Wiki page");
   }
 
   try {

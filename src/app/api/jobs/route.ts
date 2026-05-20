@@ -14,6 +14,7 @@ import {
   type JobStatus,
 } from "@/lib/job-processor";
 import { queueIdleJobs, processIdleTime, shouldProcessIdleTime } from "@/lib/idle-processing";
+import { badRequestError } from "@/lib/error-response";
 
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
 
     case "cancel": {
       if (!jobId) {
-        return NextResponse.json({ error: "jobId required" }, { status: 400 });
+        return badRequestError("jobId required");
       }
       const cancelled = cancelJob(jobId);
       return NextResponse.json({ success: cancelled });
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
     }
 
     default:
-      return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+      return badRequestError("Invalid action");
   }
 }
 

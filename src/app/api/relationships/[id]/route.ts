@@ -4,6 +4,7 @@ import { getDb } from "@/lib/db";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
 import type { DbDatabase, DbResult } from "@/lib/types";
 import { getAuthToken } from '@/lib/auth-token';
+import { unauthorizedError, notFoundError } from '@/lib/error-response';
 
 function hasEntityAccess(db: DbDatabase, entityType: string, entityId: string, userId: string): DbResult | null {
   const entity = db.prepare(
@@ -30,7 +31,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) return unauthorizedError();
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
@@ -39,7 +40,7 @@ export async function GET(
   ensureGroupSupport(db);
 
   const rel = hasEntityAccess(db, "relationships", id, decoded.sub);
-  if (!rel) return NextResponse.json({ error: "Relationship not found" }, { status: 404 });
+  if (!rel) return notFoundError("Relationship");
   return NextResponse.json({ relationship: rel });
 }
 
@@ -48,7 +49,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) return unauthorizedError();
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
@@ -58,7 +59,7 @@ export async function PUT(
   ensureGroupSupport(db);
 
   const existing = hasEntityAccess(db, "relationships", id, decoded.sub);
-  if (!existing) return NextResponse.json({ error: "Relationship not found" }, { status: 404 });
+  if (!existing) return notFoundError("Relationship");
 
   const { emotionalState, sharedHistory, relationshipStage, decayRates } = body;
   db.prepare(
@@ -80,7 +81,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) return unauthorizedError();
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
@@ -89,7 +90,7 @@ export async function DELETE(
   ensureGroupSupport(db);
 
   const existing = hasEntityAccess(db, "relationships", id, decoded.sub);
-  if (!existing) return NextResponse.json({ error: "Relationship not found" }, { status: 404 });
+  if (!existing) return notFoundError("Relationship");
 
   db.prepare("DELETE FROM relationships WHERE id = ?").run(id);
   return NextResponse.json({ success: true });

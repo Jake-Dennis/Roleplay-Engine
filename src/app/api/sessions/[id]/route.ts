@@ -3,13 +3,15 @@ import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { ensureParticipantColumns } from "@/lib/session-columns";
 import { getAuthToken } from '@/lib/auth-token';
+import { unauthorizedError, notFoundError } from '@/lib/error-response';
+import { logger } from '@/lib/logger';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) return unauthorizedError();
 
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
@@ -28,7 +30,7 @@ export async function GET(
   `).get(id, decoded.sub, decoded.sub);
 
   if (!session) {
-    return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    return notFoundError("Session");
   }
 
   // Get messages (A1: include has_siblings for branch indicator)
@@ -79,7 +81,7 @@ export async function GET(
       turnOrder: turnOrder ? JSON.parse(turnOrder.value) : [],
       currentTurn: currentTurn?.value || null,
     };
-  } catch (err) { console.warn("[sessions] turn config parse failed:", err); }
+  } catch (err) { logger.warn("[sessions] turn config parse failed:", err); }
 
   return NextResponse.json({
     session,
@@ -96,7 +98,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) return unauthorizedError();
 
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
@@ -130,7 +132,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) return unauthorizedError();
 
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });

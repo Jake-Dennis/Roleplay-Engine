@@ -48,8 +48,6 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | null>(null);
 
-const ACTIVE_STATE_KEY = "active-app-state";
-
 interface ActiveState {
   groupId: string | null; // null = personal
   sessionId: string | null;
@@ -73,16 +71,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const saveStateToDb = useCallback((updates: Partial<ActiveState>) => {
     const headers: HeadersInit = { "Content-Type": "application/json" };
 
-    // Update localStorage cache immediately
-    const current: ActiveState = (() => {
-      try {
-        const raw = localStorage.getItem(ACTIVE_STATE_KEY);
-        return raw ? JSON.parse(raw) : { groupId: null, sessionId: null, universeId: null };
-      } catch { return { groupId: null, sessionId: null, universeId: null }; }
-    })();
-    const merged = { ...current, ...updates };
-    localStorage.setItem(ACTIVE_STATE_KEY, JSON.stringify(merged));
-    logger.debug('saveStateToDb:', updates, '→ merged:', merged);
+    logger.debug('saveStateToDb:', updates);
 
     // Sync to DB (fire-and-forget)
     fetch("/api/settings/active-state", {
@@ -110,9 +99,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (authData?.user) {
         setUser({ id: authData.user.id, username: authData.user.username });
       }
-
-      // Sync DB state to localStorage cache
-      localStorage.setItem(ACTIVE_STATE_KEY, JSON.stringify(dbState));
 
       const universeList: Universe[] = (universeData.universes || []).map((u: { id: string; name: string; group_id: string | null }) => ({
         id: u.id,
@@ -193,17 +179,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         session: restoredSession?.name || 'none',
         universe: restoredUniverse?.name || 'none',
       });
-    }).catch(() => {
-      // Fallback: restore from localStorage cache
-      try {
-        const raw = localStorage.getItem(ACTIVE_STATE_KEY);
-        if (raw) {
-          const state: ActiveState = JSON.parse(raw);
-          if (state.universeId) setActiveUniverseState({ id: state.universeId, name: "Unknown", group_id: null });
-        }
-      } catch (err) {
-        console.warn('[AppProvider] Failed to restore state from DB:', err);
-      }
+    }).catch((err) => {
+      console.warn('[AppProvider] Failed to load data:', err);
     }).finally(() => setLoading(false));
   }, [authHeaders]);
 

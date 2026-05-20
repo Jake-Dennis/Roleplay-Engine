@@ -1,6 +1,7 @@
 import matter from "gray-matter";
 import fs from "fs";
 import path from "path";
+import { logger } from "@/lib/logger";
 
 /**
  * Represents a wiki page with its frontmatter and body content.
@@ -327,7 +328,7 @@ export function writeWikiPage(
           // Save the diff and proceed with the write
           const diffPath = saveConflictDiff(filePath, diff);
           // Log the conflict for observability
-          console.warn(
+          logger.warn(
             `[wiki] Concurrent edit conflict on "${filePath}", ` +
               `diff saved to ${diffPath}`
           );

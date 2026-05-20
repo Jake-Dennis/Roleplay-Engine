@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { getAuthToken } from "@/lib/auth-token";
+import { unauthorizedError, badRequestError } from "@/lib/error-response";
 import { ensureGroupSupport, isGroupMember, isGroupOwner } from "@/lib/group-migrations";
 
 export async function GET(
@@ -9,7 +10,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) return unauthorizedError();
 
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
@@ -46,7 +47,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) return unauthorizedError();
 
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
@@ -69,7 +70,7 @@ export async function PUT(
   if (description !== undefined) { updates.push("description = ?"); values.push(description || null); }
 
   if (updates.length === 0) {
-    return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+    return badRequestError("No fields to update");
   }
 
   values.push(id);
@@ -84,7 +85,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) return unauthorizedError();
 
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });

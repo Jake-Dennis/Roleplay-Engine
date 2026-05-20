@@ -6,13 +6,14 @@ import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import path from "path";
 import fs from "fs";
 import { getAuthToken } from '@/lib/auth-token';
+import { unauthorizedError, notFoundError, badRequestError } from '@/lib/error-response';
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string[] }> }
 ) {
   const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) return unauthorizedError();
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
@@ -24,17 +25,17 @@ export async function PUT(
 
   // Security: prevent path traversal
   if (!isPathWithinRoot(fullPath, wikiRoot)) {
-    return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+    return badRequestError("Invalid path");
   }
 
   if (!fs.existsSync(fullPath)) {
-    return NextResponse.json({ error: "Wiki page not found" }, { status: 404 });
+    return notFoundError("Wiki page");
   }
 
   try {
     const result = await validatePage(fullPath);
     if (!result) {
-      return NextResponse.json({ error: "Page is not in draft state" }, { status: 400 });
+      return badRequestError("Page is not in draft state");
     }
     return NextResponse.json({ success: true, status: "reviewed" });
   } catch (err: unknown) {

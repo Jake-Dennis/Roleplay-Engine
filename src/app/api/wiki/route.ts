@@ -10,6 +10,7 @@ import {
 import { generateIndex } from "@/lib/wiki/index-generator";
 import { findOrphans, getOrphanSuggestions } from "@/lib/wiki/orphans";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
+import { badRequestError } from "@/lib/error-response";
 import path from "path";
 import fs from "fs";
 
@@ -52,10 +53,7 @@ export async function POST(request: NextRequest) {
   const { path: pagePath, content, frontmatter } = body;
 
   if (!pagePath || content === undefined || !frontmatter) {
-    return NextResponse.json(
-      { error: "path, content, and frontmatter are required" },
-      { status: 400 }
-    );
+    return badRequestError("path, content, and frontmatter are required");
   }
 
   const wikiRoot = path.join(APP_CONFIG.dataDir, userId, "wiki");
@@ -71,7 +69,7 @@ export async function POST(request: NextRequest) {
 
   // Security: prevent path traversal
   if (!isPathWithinRoot(fullPath, wikiRoot)) {
-    return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+    return badRequestError("Invalid path");
   }
 
   writeWikiPage(fullPath, content, frontmatter as WikiFrontmatter);
