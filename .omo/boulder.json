@@ -8,7 +8,7 @@
       "plan_name": "persona-selection",
       "status": "active",
       "started_at": "2026-05-20T14:36:24.930Z",
-      "updated_at": "2026-05-20T14:56:52.016Z",
+      "updated_at": "2026-05-20T15:36:41.777Z",
       "session_ids": [
         "ses_1c53eff67ffeCdr0YX3P28JlBj"
       ],
@@ -42,6 +42,42 @@
           "status": "completed",
           "ended_at": "2026-05-20T14:43:21.074Z",
           "elapsed_ms": 26082
+        },
+        "final-wave:f1": {
+          "task_key": "final-wave:f1",
+          "task_label": "F1",
+          "task_title": "**Plan Compliance Audit** — `oracle`",
+          "session_id": "ses_1ba1943b2ffe4BcbrZ37LF8uli",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "updated_at": "2026-05-20T15:02:10.414Z",
+          "started_at": "2026-05-20T15:01:48.122Z",
+          "status": "completed",
+          "ended_at": "2026-05-20T15:02:10.414Z",
+          "elapsed_ms": 22292
+        },
+        "final-wave:f2": {
+          "task_key": "final-wave:f2",
+          "task_label": "F2",
+          "task_title": "**Code Quality Review** — `unspecified-high`",
+          "session_id": "ses_1ba170342ffeuCYpHsuAS9pJLl",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "updated_at": "2026-05-20T15:04:38.672Z",
+          "started_at": "2026-05-20T15:04:24.682Z",
+          "status": "completed",
+          "ended_at": "2026-05-20T15:04:38.672Z",
+          "elapsed_ms": 13990
+        },
+        "final-wave:f3": {
+          "task_key": "final-wave:f3",
+          "task_label": "F3",
+          "task_title": "**Real Manual QA** — `unspecified-high` (+ `playwright` skill if UI)",
+          "session_id": "ses_1ba14d5e4ffeBK4HI0vnWqFmlv",
+          "agent": "Sisyphus-Junior",
+          "started_at": "2026-05-20T15:25:23.000Z",
+          "status": "running",
+          "updated_at": "2026-05-20T15:36:41.777Z"
         }
       }
     }
@@ -49,7 +85,7 @@
   "active_plan": "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\persona-selection.md",
   "started_at": "2026-05-20T14:36:24.930Z",
   "status": "active",
-  "updated_at": "2026-05-20T14:56:52.016Z",
+  "updated_at": "2026-05-20T15:36:41.777Z",
   "session_ids": [
     "ses_1c53eff67ffeCdr0YX3P28JlBj"
   ],
@@ -83,6 +119,42 @@
       "status": "completed",
       "ended_at": "2026-05-20T14:43:21.074Z",
       "elapsed_ms": 26082
+    },
+    "final-wave:f1": {
+      "task_key": "final-wave:f1",
+      "task_label": "F1",
+      "task_title": "**Plan Compliance Audit** — `oracle`",
+      "session_id": "ses_1ba1943b2ffe4BcbrZ37LF8uli",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-05-20T15:02:10.414Z",
+      "started_at": "2026-05-20T15:01:48.122Z",
+      "status": "completed",
+      "ended_at": "2026-05-20T15:02:10.414Z",
+      "elapsed_ms": 22292
+    },
+    "final-wave:f2": {
+      "task_key": "final-wave:f2",
+      "task_label": "F2",
+      "task_title": "**Code Quality Review** — `unspecified-high`",
+      "session_id": "ses_1ba170342ffeuCYpHsuAS9pJLl",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-05-20T15:04:38.672Z",
+      "started_at": "2026-05-20T15:04:24.682Z",
+      "status": "completed",
+      "ended_at": "2026-05-20T15:04:38.672Z",
+      "elapsed_ms": 13990
+    },
+    "final-wave:f3": {
+      "task_key": "final-wave:f3",
+      "task_label": "F3",
+      "task_title": "**Real Manual QA** — `unspecified-high` (+ `playwright` skill if UI)",
+      "session_id": "ses_1ba14d5e4ffeBK4HI0vnWqFmlv",
+      "agent": "Sisyphus-Junior",
+      "started_at": "2026-05-20T15:25:23.000Z",
+      "status": "running",
+      "updated_at": "2026-05-20T15:36:41.777Z"
     }
   },
   "agent": "atlas"

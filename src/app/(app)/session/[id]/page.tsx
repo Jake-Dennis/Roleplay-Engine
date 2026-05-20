@@ -90,12 +90,16 @@ export default function SessionChatPage() {
       .then((data) => {
         const list = data.personas || [];
         setPersonas(list);
-        const active = list.find((p: { is_active: number }) => p.is_active === 1);
-        if (active) setActivePersonaId(active.id);
+        // Only set global active persona if session doesn't have its own personaId
+        // (session.personaId takes precedence — set by the restore effect below)
+        if (!session?.personaId) {
+          const active = list.find((p: { isActive: number }) => p.isActive === 1);
+          if (active) setActivePersonaId(active.id);
+        }
       })
       .catch((err) => logger.warn("persona list load failed", err))
       .finally(() => setPersonasLoading(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps — only on mount
 
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -130,10 +134,10 @@ export default function SessionChatPage() {
 
   // Restore session's selected persona on mount
   useEffect(() => {
-    if (session?.persona_id) {
-      setActivePersonaId(session.persona_id);
+    if (session?.personaId) {
+      setActivePersonaId(session.personaId);
     }
-  }, [session?.persona_id]);
+  }, [session?.personaId]);
 
   // Persist persona change to session
   const handlePersonaChange = async (personaId: string | null) => {
