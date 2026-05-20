@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
-import { generateTextStream, isOllamaAvailable, checkOllamaConnection, getUserModels, getActivePersonaContext, buildPersonaPrompt } from "@/lib/ollama";
+import { generateTextStream, isOllamaAvailable, checkOllamaConnection, getUserModels, getActivePersonaContext, buildPersonaPrompt, type PersonaContext } from "@/lib/ollama";
 import { getRetrievedContext, assemblePromptWithBudget, type RetrievedContext } from "@/lib/retrieval";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { queueJob } from "@/lib/job-processor";
@@ -82,7 +82,50 @@ export async function POST(
 
   // System prompt base
   const sessionSettings = getSessionSettings(db, sessionId);
-  const persona = getActivePersonaContext(decoded.sub);
+  // Session-aware persona: session persona → global active → undefined
+  let persona: PersonaContext | null = null;
+  const sessionPersonaId = (session as Record<string, unknown>).persona_id as string | undefined;
+  if (sessionPersonaId) {
+    const row = db.prepare(
+      "SELECT name, description, personality, scenario, first_mes, mes_example, creator_notes, system_prompt, post_history_instructions, tags, writing_style, llm_model FROM personas WHERE id = ? AND user_id = ?"
+    ).get(sessionPersonaId, decoded.sub) as {
+      name: string;
+      description: string | null;
+      personality: string | null;
+      scenario: string | null;
+      first_mes: string | null;
+      mes_example: string | null;
+      creator_notes: string | null;
+      system_prompt: string | null;
+      post_history_instructions: string | null;
+      tags: string | null;
+      writing_style: string | null;
+      llm_model: string | null;
+    } | undefined;
+    if (row) {
+      let tags: string[] | null = null;
+      if (row.tags) {
+        try { tags = JSON.parse(row.tags); } catch { /* ignore */ }
+      }
+      persona = {
+        name: row.name,
+        description: row.description,
+        personality: row.personality,
+        scenario: row.scenario,
+        firstMes: row.first_mes,
+        mesExample: row.mes_example,
+        creatorNotes: row.creator_notes,
+        systemPrompt: row.system_prompt,
+        postHistoryInstructions: row.post_history_instructions,
+        tags,
+        writingStyle: row.writing_style,
+        llmModel: row.llm_model,
+      };
+    }
+  }
+  if (!persona) {
+    persona = getActivePersonaContext(decoded.sub);
+  }
   const baseSystemPrompt = sessionSettings.systemPrompt || `You are a narrative roleplay engine. You narrate immersive, character-driven stories in response to user actions. Write in a literary style with vivid description. Stay in character and maintain story consistency. Keep responses to 2-4 paragraphs unless the situation demands more.`;
   const systemPrompt = buildPersonaPrompt(persona, baseSystemPrompt);
 

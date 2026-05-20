@@ -173,4 +173,50 @@ export function runSchemaMigrations(): void {
   } catch {
     // Column already exists — safe to ignore
   }
+
+  // Migration: Add personas table (Personas - Wave 6)
+  try {
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS personas (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        name TEXT NOT NULL,
+        description TEXT,
+        personality TEXT,
+        scenario TEXT,
+        first_mes TEXT,
+        mes_example TEXT,
+        creator_notes TEXT,
+        system_prompt TEXT,
+        post_history_instructions TEXT,
+        tags TEXT,
+        writing_style TEXT,
+        avatar_url TEXT,
+        llm_model TEXT,
+        tts_voice TEXT,
+        is_active INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+  } catch {
+    // Table already exists — safe to ignore
+  }
+
+  // Migration: Add index on personas(user_id) for fast lookups
+  try {
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS idx_personas_user ON personas(user_id)"
+    ).run();
+  } catch {
+    // Index already exists — safe to ignore
+  }
+
+  // Migration: Add persona_id column to sessions (Personas - Wave 6)
+  try {
+    db.prepare(
+      "ALTER TABLE sessions ADD COLUMN persona_id TEXT REFERENCES personas(id) ON DELETE SET NULL"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
 }

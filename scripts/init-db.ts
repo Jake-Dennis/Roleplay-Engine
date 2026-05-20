@@ -41,6 +41,7 @@ function main() {
       name TEXT NOT NULL,
       universe_id TEXT,
       timeline_id TEXT,
+      persona_id TEXT REFERENCES personas(id) ON DELETE SET NULL,
       status TEXT DEFAULT 'active',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME

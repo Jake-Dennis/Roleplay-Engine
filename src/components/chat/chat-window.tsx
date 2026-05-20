@@ -22,7 +22,7 @@
 
 "use client";
 
-import { memo, useState } from "react";
+import { memo } from "react";
 import {
   Send,
   Loader2,
@@ -37,8 +37,6 @@ import {
   Trash2,
   GitBranch,
   User,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import { StreamingText } from "@/components/chat/streaming-text";
 import { EditHistory } from "@/components/chat/edit-history";
@@ -211,10 +209,6 @@ interface ChatWindowProps {
   editHistoryMessageId: string | null;
   onEditHistoryClose: () => void;
   disabled?: boolean;
-  // Persona props
-  personas?: { id: string; name: string }[];
-  activePersonaId?: string | null;
-  onPersonaChange?: (id: string | null) => void;
 }
 
 export function ChatWindow({
@@ -245,12 +239,7 @@ export function ChatWindow({
   editHistoryMessageId,
   onEditHistoryClose,
   disabled = false,
-  personas = [],
-  activePersonaId = null,
-  onPersonaChange,
 }: ChatWindowProps) {
-  const [showPersonaDropdown, setShowPersonaDropdown] = useState(false);
-  const activePersona = personas.find(p => p.id === activePersonaId);
   return (
     <>
       {/* Messages */}
@@ -330,43 +319,6 @@ export function ChatWindow({
           </div>
         ) : (
           <div className="space-y-2">
-            {/* Persona selector */}
-            {personas.length > 0 && (
-              <div className="relative">
-                <button
-                  onClick={() => setShowPersonaDropdown(!showPersonaDropdown)}
-                  className="flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-raised px-2.5 py-1.5 text-xs text-text-secondary hover:bg-bg-highlight"
-                >
-                  <User className="h-3 w-3" />
-                  <span>{activePersona?.name || "No persona"}</span>
-                  {showPersonaDropdown ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                </button>
-                {showPersonaDropdown && (
-                  <div className="absolute bottom-full mb-1 left-0 min-w-[180px] rounded-lg border border-border-default bg-bg-elevated shadow-lg z-10">
-                    <button
-                      onClick={() => { onPersonaChange?.(null); setShowPersonaDropdown(false); }}
-                      className={`w-full text-left px-3 py-2 text-xs transition-colors ${
-                        !activePersonaId ? "bg-accent/10 text-accent" : "text-text-secondary hover:bg-bg-raised"
-                      }`}
-                    >
-                      No persona (username)
-                    </button>
-                    {personas.map(p => (
-                      <button
-                        key={p.id}
-                        onClick={() => { onPersonaChange?.(p.id); setShowPersonaDropdown(false); }}
-                        className={`w-full text-left px-3 py-2 text-xs transition-colors ${
-                          p.id === activePersonaId ? "bg-accent/10 text-accent" : "text-text-secondary hover:bg-bg-raised"
-                        }`}
-                      >
-                        {p.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
             <div className="flex gap-2">
             <textarea
               ref={inputRef}

@@ -1,0 +1,89 @@
+{
+  "schema_version": 2,
+  "active_work_id": "persona-selection-bfa2db98",
+  "works": {
+    "persona-selection-bfa2db98": {
+      "work_id": "persona-selection-bfa2db98",
+      "active_plan": "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\persona-selection.md",
+      "plan_name": "persona-selection",
+      "status": "active",
+      "started_at": "2026-05-20T14:36:24.930Z",
+      "updated_at": "2026-05-20T14:56:52.016Z",
+      "session_ids": [
+        "ses_1c53eff67ffeCdr0YX3P28JlBj"
+      ],
+      "session_origins": {
+        "ses_1c53eff67ffeCdr0YX3P28JlBj": "direct"
+      },
+      "agent": "atlas",
+      "task_sessions": {
+        "todo:1": {
+          "task_key": "todo:1",
+          "task_label": "1",
+          "task_title": "**Session page** (`src/app/(app)/session/[id]/page.tsx`):",
+          "session_id": "ses_1ba23db9affe66rsYWNoq8S3pF",
+          "agent": "Sisyphus-Junior",
+          "category": "visual-engineering",
+          "started_at": "2026-05-20T14:39:33.258Z",
+          "ended_at": "2026-05-20T14:56:52.016Z",
+          "elapsed_ms": 1038758,
+          "status": "completed",
+          "updated_at": "2026-05-20T14:56:52.016Z"
+        },
+        "todo:2": {
+          "task_key": "todo:2",
+          "task_label": "2",
+          "task_title": "PUT /api/sessions/[id]/persona Endpoint",
+          "session_id": "ses_1ba2a2b7effe3YNbHzVT0T2URq",
+          "agent": "Sisyphus-Junior",
+          "category": "quick",
+          "updated_at": "2026-05-20T14:43:21.074Z",
+          "started_at": "2026-05-20T14:42:54.992Z",
+          "status": "completed",
+          "ended_at": "2026-05-20T14:43:21.074Z",
+          "elapsed_ms": 26082
+        }
+      }
+    }
+  },
+  "active_plan": "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\persona-selection.md",
+  "started_at": "2026-05-20T14:36:24.930Z",
+  "status": "active",
+  "updated_at": "2026-05-20T14:56:52.016Z",
+  "session_ids": [
+    "ses_1c53eff67ffeCdr0YX3P28JlBj"
+  ],
+  "session_origins": {
+    "ses_1c53eff67ffeCdr0YX3P28JlBj": "direct"
+  },
+  "plan_name": "persona-selection",
+  "task_sessions": {
+    "todo:1": {
+      "task_key": "todo:1",
+      "task_label": "1",
+      "task_title": "**Session page** (`src/app/(app)/session/[id]/page.tsx`):",
+      "session_id": "ses_1ba23db9affe66rsYWNoq8S3pF",
+      "agent": "Sisyphus-Junior",
+      "category": "visual-engineering",
+      "started_at": "2026-05-20T14:39:33.258Z",
+      "ended_at": "2026-05-20T14:56:52.016Z",
+      "elapsed_ms": 1038758,
+      "status": "completed",
+      "updated_at": "2026-05-20T14:56:52.016Z"
+    },
+    "todo:2": {
+      "task_key": "todo:2",
+      "task_label": "2",
+      "task_title": "PUT /api/sessions/[id]/persona Endpoint",
+      "session_id": "ses_1ba2a2b7effe3YNbHzVT0T2URq",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-05-20T14:43:21.074Z",
+      "started_at": "2026-05-20T14:42:54.992Z",
+      "status": "completed",
+      "ended_at": "2026-05-20T14:43:21.074Z",
+      "elapsed_ms": 26082
+    }
+  },
+  "agent": "atlas"
+}

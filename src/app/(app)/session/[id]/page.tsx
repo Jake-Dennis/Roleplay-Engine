@@ -22,6 +22,9 @@ import {
   Lock,
   Settings,
   User,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 import { classifyIntent, type Intent } from "@/lib/intent-analyzer";
@@ -81,6 +84,7 @@ export default function SessionChatPage() {
 
   // Load personas
   useEffect(() => {
+    setPersonasLoading(true);
     fetch("/api/personas")
       .then((res) => res.json())
       .then((data) => {
@@ -89,7 +93,8 @@ export default function SessionChatPage() {
         const active = list.find((p: { is_active: number }) => p.is_active === 1);
         if (active) setActivePersonaId(active.id);
       })
-      .catch((err) => logger.warn("persona list load failed", err));
+      .catch((err) => logger.warn("persona list load failed", err))
+      .finally(() => setPersonasLoading(false));
   }, []);
 
   const [input, setInput] = useState("");
@@ -118,8 +123,44 @@ export default function SessionChatPage() {
 
   // Persona state
   const [personas, setPersonas] = useState<{ id: string; name: string }[]>([]);
+  const [personasLoading, setPersonasLoading] = useState(true);
   const [activePersonaId, setActivePersonaId] = useState<string | null>(null);
   const [showPersonaSelector, setShowPersonaSelector] = useState(false);
+  const personaDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Restore session's selected persona on mount
+  useEffect(() => {
+    if (session?.persona_id) {
+      setActivePersonaId(session.persona_id);
+    }
+  }, [session?.persona_id]);
+
+  // Persist persona change to session
+  const handlePersonaChange = async (personaId: string | null) => {
+    try {
+      await fetch(`/api/sessions/${sessionId}/persona`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ persona_id: personaId }),
+      });
+      setActivePersonaId(personaId);
+    } catch (err) {
+      logger.warn("persona change failed", err);
+    }
+  };
+
+  // Click-outside handler for persona dropdown
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (personaDropdownRef.current && !personaDropdownRef.current.contains(e.target as Node)) {
+        setShowPersonaSelector(false);
+      }
+    }
+    if (showPersonaSelector) {
+      document.addEventListener("click", handleClickOutside);
+      return () => document.removeEventListener("click", handleClickOutside);
+    }
+  }, [showPersonaSelector]);
 
   const isGroup = session?.type === "group";
 
@@ -610,6 +651,63 @@ export default function SessionChatPage() {
               <h1 className="text-sm font-semibold text-text-primary">
                 {session.name}
               </h1>
+              {/* Persona selector */}
+              <div ref={personaDropdownRef} className="relative">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowPersonaSelector(!showPersonaSelector); }}
+                  className="flex items-center gap-1 rounded p-1 text-text-muted transition-colors hover:bg-bg-raised hover:text-accent"
+                  title="Change persona"
+                >
+                  <User className="h-3 w-3" />
+                  {personasLoading ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <span className="text-xxs max-w-[120px] truncate">
+                      {personas.find(p => p.id === activePersonaId)?.name || "No persona"}
+                    </span>
+                  )}
+                  {showPersonaSelector ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                </button>
+                {showPersonaSelector && (
+                  <div className="absolute left-0 top-full mt-1 min-w-[180px] rounded-lg border border-border-default bg-bg-elevated shadow-lg z-10">
+                    {personasLoading ? (
+                      <div className="flex items-center gap-2 px-3 py-2 text-xs text-text-muted">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Loading...
+                      </div>
+                    ) : personas.length === 0 ? (
+                      <div className="px-3 py-2 text-xs text-text-muted">
+                        No personas.{" "}
+                        <Link href="/personas" className="text-accent hover:underline">
+                          Create persona
+                        </Link>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => { handlePersonaChange(null); setShowPersonaSelector(false); }}
+                          className={`w-full text-left px-3 py-2 text-xs transition-colors ${
+                            !activePersonaId ? "bg-accent/10 text-accent" : "text-text-secondary hover:bg-bg-raised"
+                          }`}
+                        >
+                          No persona (username)
+                        </button>
+                        {personas.map(p => (
+                          <button
+                            key={p.id}
+                            onClick={() => { handlePersonaChange(p.id); setShowPersonaSelector(false); }}
+                            className={`w-full text-left px-3 py-2 text-xs transition-colors ${
+                              p.id === activePersonaId ? "bg-accent/10 text-accent" : "text-text-secondary hover:bg-bg-raised"
+                            }`}
+                          >
+                            {p.name}
+                          </button>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
               {sceneState && (
                 <button
                   onClick={() => setShowScenePanel(!showScenePanel)}
@@ -764,9 +862,6 @@ export default function SessionChatPage() {
         editHistoryMessageId={editHistoryMessageId}
         onEditHistoryClose={() => setEditHistoryMessageId(null)}
         disabled={isObserver}
-        personas={personas}
-        activePersonaId={activePersonaId}
-        onPersonaChange={setActivePersonaId}
       />
 
       {/* Confirmation Dialogs */}

@@ -31,6 +31,7 @@ interface Session {
   group_id: string | null;
   status: string;
   type: string;
+  persona_id: string | null;
 }
 
 export interface Message {
