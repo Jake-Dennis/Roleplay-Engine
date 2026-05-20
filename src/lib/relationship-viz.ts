@@ -4,6 +4,8 @@
  * Provides graph data building and force-directed layout for the relationship web.
  */
 
+import type { EmotionalState } from "@/lib/relationship-types";
+
 export interface VizNode {
   id: string;
   name: string;
@@ -18,7 +20,7 @@ export interface VizEdge {
   target: string;
   strength: number;
   dominantEmotion: string;
-  emotions: Record<string, number>;
+  emotions: EmotionalState;
   stage: string;
 }
 
@@ -191,26 +193,26 @@ export function layoutForceDirected(
  */
 export function calculateEmotionVectors(
   emotionalState: string | null
-): Record<string, number> {
+): EmotionalState {
   return parseEmotions(emotionalState);
 }
 
-function parseEmotions(emotionalState: string | null): Record<string, number> {
+function parseEmotions(emotionalState: string | null): EmotionalState {
   try {
-    return emotionalState ? JSON.parse(emotionalState) : {};
+    return emotionalState ? JSON.parse(emotionalState) as EmotionalState : {};
   } catch {
     return {};
   }
 }
 
-function calculateStrength(emotions: Record<string, number>): number {
+function calculateStrength(emotions: EmotionalState): number {
   const values = Object.values(emotions);
   if (values.length === 0) return 0.5;
   const sum = values.reduce((a, b) => a + Math.abs(b), 0);
   return Math.min(1, sum / (values.length * 0.5));
 }
 
-function getDominantEmotion(emotions: Record<string, number>): string {
+function getDominantEmotion(emotions: EmotionalState): string {
   let maxVal = 0;
   let maxKey = "neutral";
   for (const [key, val] of Object.entries(emotions)) {

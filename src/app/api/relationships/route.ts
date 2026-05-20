@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/with-auth";
 import { getDb } from "@/lib/db";
-import { writeRelationshipFiles } from "@/lib/relationship-markdown";
+import { writeRelationshipFiles, type RelationshipRow } from "@/lib/relationship-markdown";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
 import type { DbDatabase, DbResult } from "@/lib/types";
 
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
 
   // Write relationship markdown files (directory-per-relationship)
   try {
-    writeRelationshipFiles(relationship as import("@/lib/relationship-markdown").RelationshipRecord);
+    writeRelationshipFiles(relationship as RelationshipRow);
   } catch {
     // Filesystem errors should not break API response
   }

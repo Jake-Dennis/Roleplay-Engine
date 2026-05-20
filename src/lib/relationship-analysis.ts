@@ -14,6 +14,7 @@
 import { getDb } from "@/lib/db";
 import { generateText } from "@/lib/ollama";
 import { syncRelationshipToFilesystem } from "@/lib/relationship-markdown";
+import type { RelationshipRow } from "@/lib/relationship-types";
 
 export interface RelationshipAnalysisResult {
   analyzedCount: number;
@@ -58,14 +59,7 @@ export async function processRelationshipAnalysis(
     SELECT id, source_entity, target_entity, emotional_state, relationship_stage, shared_history
     FROM relationships
     WHERE user_id = ?
-  `).all(userId) as {
-    id: string;
-    source_entity: string;
-    target_entity: string;
-    emotional_state: string | null;
-    relationship_stage: string | null;
-    shared_history: string | null;
-  }[];
+  `).all(userId) as Pick<RelationshipRow, "id" | "source_entity" | "target_entity" | "emotional_state" | "relationship_stage" | "shared_history">[];
 
   // Extract entity names from messages and existing relationships
   const entityNames = extractEntityNames(messages, existingRels);

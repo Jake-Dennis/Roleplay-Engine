@@ -1,14 +1,15 @@
 import { isGroupMember } from "@/lib/group-migrations";
-import type { DbDatabase, DbResult } from "@/lib/types";
+import type { DbDatabase } from "@/lib/types";
+import type { RelationshipRowWithGroup } from "@/lib/relationship-types";
 
-export function hasRelationshipAccess(db: DbDatabase, relationshipId: string, userId: string): DbResult | null {
+export function hasRelationshipAccess(db: DbDatabase, relationshipId: string, userId: string): RelationshipRowWithGroup | null {
   const rel = db.prepare(
     `SELECT r.*, u.group_id, g.owner_id as group_owner_id
      FROM relationships r
      LEFT JOIN universes u ON r.universe_id = u.id
      LEFT JOIN groups g ON u.group_id = g.id
      WHERE r.id = ?`
-  ).get(relationshipId) as DbResult | undefined;
+  ).get(relationshipId) as RelationshipRowWithGroup | undefined;
 
   if (!rel) return null;
 

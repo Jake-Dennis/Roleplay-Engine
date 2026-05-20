@@ -1,14 +1,8 @@
 import fs from "fs";
 import path from "path";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
-
-export interface WikiRevision {
-  id: string;
-  timestamp: string;
-  content: string;
-  frontmatter: Record<string, any>;
-  lastModified: string;
-}
+import type { WikiRevision, WikiFrontmatter } from "./types";
+export type { WikiRevision } from "./types";
 
 /**
  * Get the revisions directory for a given slug path.
@@ -34,7 +28,7 @@ export function saveRevision(
   wikiRoot: string,
   slug: string[],
   content: string,
-  frontmatter: Record<string, any>
+  frontmatter: WikiFrontmatter
 ): WikiRevision {
   const revisionsDir = getRevisionsDir(wikiRoot, slug);
   if (!fs.existsSync(revisionsDir)) {

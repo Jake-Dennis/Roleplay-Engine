@@ -16,43 +16,22 @@ import fs from "fs";
 import path from "path";
 import { APP_CONFIG } from "@/lib/config";
 import { getDb } from "@/lib/db";
+import { parseEmotionalState } from "@/lib/emotion-utils";
 import { buildMarkdown, parseFrontmatter, LoreFrontmatter } from "@/lib/markdown-utils";
 import { EMOTION_HALF_LIVES } from "@/lib/relationship-constants";
+import type {
+  RelationshipRow,
+  EmotionalState,
+  SharedHistoryEntry,
+  DecayConfig,
+  RelationshipFrontmatter,
+  RelationshipMarkdownData,
+} from "@/lib/relationship-types";
 
-export interface RelationshipRecord {
-  id: string;
-  user_id: string;
-  universe_id: string | null;
-  source_entity: string;
-  target_entity: string;
-  emotional_state: string | null; // JSON: { trust: 0.62, suspicion: 0.31, ... }
-  shared_history: string | null;  // JSON: [{ type, summary, at }, ...]
-  relationship_stage: string | null;
-  decay_rates: string | null;     // JSON: { emotionalHalfLifeDays, stageRegressionDays, minEmotionalState }
-  updated_at: string | null;
-  created_at: string | null;
-}
-
-export interface RelationshipMarkdownData {
-  frontmatter: LoreFrontmatter & {
-    source: string;
-    target: string;
-    universe_id?: string;
-    relationship_stage: string;
-    updated_at: string;
-  };
-  emotionalState: Record<string, number>;
-  sharedHistory: Array<{ type: string; summary: string; at: string }>;
-  decayConfig: {
-    emotionalHalfLifeDays: number;
-    stageRegressionDays: number;
-    minEmotionalState: string;
-  };
-  notes: string;
-}
+export type { RelationshipRow, RelationshipMarkdownData };
 
 // Default decay configuration
-const DEFAULT_DECAY_CONFIG = {
+const DEFAULT_DECAY_CONFIG: DecayConfig = {
   emotionalHalfLifeDays: 7,
   stageRegressionDays: 14,
   minEmotionalState: "neutral",
@@ -108,15 +87,15 @@ export function getHistoryFilePath(
 /**
  * Build the markdown content for a relationship file.
  */
-export function buildRelationshipMarkdown(rel: RelationshipRecord): string {
-  const emotionalState = rel.emotional_state ? JSON.parse(rel.emotional_state) : {};
-  const decayRates = rel.decay_rates ? JSON.parse(rel.decay_rates) : DEFAULT_DECAY_CONFIG;
+export function buildRelationshipMarkdown(rel: RelationshipRow): string {
+  const emotionalState = parseEmotionalState(rel.emotional_state);
+  const decayRates = rel.decay_rates ? JSON.parse(rel.decay_rates) as DecayConfig : DEFAULT_DECAY_CONFIG;
 
   // Build emotional state table
   const emotionRows = Object.entries(emotionalState)
     .map(([emotion, value]) => {
       const halfLife = EMOTION_HALF_LIVES[emotion] || decayRates.emotionalHalfLifeDays;
-      return `| ${emotion} | ${(value as number).toFixed(2)} | ${halfLife} days |`;
+      return `| ${emotion} | ${value.toFixed(2)} | ${halfLife} days |`;
     })
     .join("\n");
 
@@ -125,9 +104,9 @@ export function buildRelationshipMarkdown(rel: RelationshipRecord): string {
     : "";
 
   // Build shared history with wikilinks
-  const sharedHistory = rel.shared_history ? JSON.parse(rel.shared_history) : [];
+  const sharedHistory = rel.shared_history ? JSON.parse(rel.shared_history) as SharedHistoryEntry[] : [];
   const historyItems = sharedHistory
-    .map((entry: { type: string; summary: string; at: string }) => {
+    .map((entry) => {
       // Convert event references to wikilinks if they look like event names
       const summaryWithLinks = entry.summary.replace(
         /\[\[([^\]]+)\]\]/g,
@@ -159,11 +138,11 @@ export function buildRelationshipMarkdown(rel: RelationshipRecord): string {
 /**
  * Build the markdown content for the shared history file.
  */
-export function buildHistoryMarkdown(rel: RelationshipRecord): string {
-  const sharedHistory = rel.shared_history ? JSON.parse(rel.shared_history) : [];
+export function buildHistoryMarkdown(rel: RelationshipRow): string {
+  const sharedHistory = rel.shared_history ? JSON.parse(rel.shared_history) as SharedHistoryEntry[] : [];
 
   const historyEntries = sharedHistory
-    .map((entry: { type: string; summary: string; at: string }) => {
+    .map((entry) => {
       const date = new Date(entry.at).toLocaleDateString();
       const time = new Date(entry.at).toLocaleTimeString();
       return `### ${entry.type} — ${date} ${time}\n\n${entry.summary}\n`;
@@ -180,7 +159,7 @@ export function parseRelationshipMarkdown(content: string): RelationshipMarkdown
   const { frontmatter: rawFm, body } = parseFrontmatter(content);
 
   // Extract emotional state from body table
-  const emotionalState: Record<string, number> = {};
+  const emotionalState: EmotionalState = {};
   const emotionTableMatch = body.match(/\| Emotion \| Value \| Half-Life \|\n\|[-| ]+\|\n([\s\S]*?)(?:\n\n|$)/);
   if (emotionTableMatch) {
     const rows = emotionTableMatch[1].trim().split("\n");
@@ -193,7 +172,7 @@ export function parseRelationshipMarkdown(content: string): RelationshipMarkdown
   }
 
   // Extract shared history from body
-  const sharedHistory: Array<{ type: string; summary: string; at: string }> = [];
+  const sharedHistory: SharedHistoryEntry[] = [];
   const historyLines = body.split("\n").filter((line: string) => line.startsWith("- "));
   for (const line of historyLines) {
     const match = line.match(/^- (.+?) — (\w+) \((.+?)\)$/);
@@ -207,7 +186,7 @@ export function parseRelationshipMarkdown(content: string): RelationshipMarkdown
   }
 
   // Extract decay config from body
-  const decayConfig = { ...DEFAULT_DECAY_CONFIG };
+  const decayConfig: DecayConfig = { ...DEFAULT_DECAY_CONFIG };
   const halfLifeMatch = body.match(/Emotional half-life:\s*(\d+)/);
   const regressionMatch = body.match(/Stage regression:\s*(\d+)/);
   const minStateMatch = body.match(/Minimum emotional state:\s*(\w+)/);
@@ -221,16 +200,16 @@ export function parseRelationshipMarkdown(content: string): RelationshipMarkdown
 
   return {
     frontmatter: {
-      id: rawFm.id as string || "",
-      name: rawFm.name as string || "",
+      id: String(rawFm.id ?? ""),
+      name: String(rawFm.name ?? ""),
       type: "relationship",
-      source: rawFm.source as string || "",
-      target: rawFm.target as string || "",
-      universe_id: rawFm.universe_id as string | undefined,
-      relationship_stage: rawFm.relationship_stage as string || "acquaintances",
-      updated_at: rawFm.updated_at as string || "",
-      importance: rawFm.importance as string | undefined,
-      created_at: rawFm.created_at as string | undefined,
+      source: String(rawFm.source ?? ""),
+      target: String(rawFm.target ?? ""),
+      universe_id: rawFm.universe_id !== undefined ? String(rawFm.universe_id) : undefined,
+      relationship_stage: String(rawFm.relationship_stage ?? "acquaintances"),
+      updated_at: String(rawFm.updated_at ?? ""),
+      importance: rawFm.importance !== undefined ? String(rawFm.importance) : undefined,
+      created_at: rawFm.created_at !== undefined ? String(rawFm.created_at) : undefined,
     },
     emotionalState,
     sharedHistory,
@@ -243,7 +222,7 @@ export function parseRelationshipMarkdown(content: string): RelationshipMarkdown
  * Write a relationship's markdown files to the filesystem.
  * Creates the directory if it doesn't exist.
  */
-export function writeRelationshipFiles(rel: RelationshipRecord): string {
+export function writeRelationshipFiles(rel: RelationshipRow): string {
   const dirPath = getRelationshipDirPath(rel.user_id, rel.source_entity, rel.target_entity);
 
   // Create directory if needed
@@ -313,7 +292,7 @@ export function syncRelationshipToFilesystem(relId: string): void {
     const db = getDb();
     const rel = db.prepare(
       "SELECT * FROM relationships WHERE id = ?"
-    ).get(relId) as RelationshipRecord | undefined;
+    ).get(relId) as RelationshipRow | undefined;
 
     if (rel) {
       writeRelationshipFiles(rel);
@@ -349,12 +328,12 @@ export function appendSharedHistory(
     const db = getDb();
     const rel = db.prepare(
       "SELECT * FROM relationships WHERE id = ?"
-    ).get(relId) as RelationshipRecord | undefined;
+    ).get(relId) as RelationshipRow | undefined;
 
     if (!rel) return;
 
     // Update DB
-    const existingHistory = rel.shared_history ? JSON.parse(rel.shared_history) : [];
+    const existingHistory = rel.shared_history ? JSON.parse(rel.shared_history) as SharedHistoryEntry[] : [];
     existingHistory.push(entry);
 
     db.prepare(

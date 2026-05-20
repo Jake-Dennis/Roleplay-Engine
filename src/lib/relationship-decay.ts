@@ -13,8 +13,10 @@
  */
 
 import { getDb } from "@/lib/db";
+import { parseEmotionalState } from "@/lib/emotion-utils";
 import { syncRelationshipToFilesystem } from "@/lib/relationship-markdown";
 import { EMOTION_HALF_LIVES } from "@/lib/relationship-constants";
+import type { RelationshipRow, EmotionalState, DecayConfig } from "@/lib/relationship-types";
 
 export { EMOTION_HALF_LIVES };
 
@@ -32,7 +34,7 @@ export interface DecayResult {
 }
 
 // Default decay configuration
-const DEFAULT_DECAY_RATES = {
+const DEFAULT_DECAY_RATES: DecayConfig = {
   emotionalHalfLifeDays: 7,
   stageRegressionDays: 14,
   minEmotionalState: "neutral",
@@ -89,21 +91,13 @@ export function processRelationshipDecay(userId: string): DecayResult {
            r.decay_rates, r.updated_at
     FROM relationships r
     WHERE r.user_id = ?
-  `).all(userId) as {
-    id: string;
-    source_entity: string;
-    target_entity: string;
-    emotional_state: string | null;
-    relationship_stage: string | null;
-    decay_rates: string | null;
-    updated_at: string | null;
-  }[];
+  `).all(userId) as Pick<RelationshipRow, "id" | "source_entity" | "target_entity" | "emotional_state" | "relationship_stage" | "decay_rates" | "updated_at">[];
 
   const decayedRelationships: DecayResult["decayedRelationships"] = [];
 
   for (const rel of relationships) {
     // Parse decay rates
-    const rates = rel.decay_rates
+    const rates: DecayConfig = rel.decay_rates
       ? { ...DEFAULT_DECAY_RATES, ...JSON.parse(rel.decay_rates) }
       : DEFAULT_DECAY_RATES;
 
@@ -311,22 +305,14 @@ export async function applyDecayToAllRelationships(
     params.push(universeId);
   }
 
-  const relationships = db.prepare(query).all(...params) as {
-    id: string;
-    source_entity: string;
-    target_entity: string;
-    emotional_state: string | null;
-    relationship_stage: string | null;
-    decay_rates: string | null;
-    updated_at: string | null;
-  }[];
+  const relationships = db.prepare(query).all(...params) as Pick<RelationshipRow, "id" | "source_entity" | "target_entity" | "emotional_state" | "relationship_stage" | "decay_rates" | "updated_at">[];
 
   const decayed: {
     id: string;
     source: string;
     target: string;
-    previousEmotions: Record<string, number>;
-    newEmotions: Record<string, number>;
+    previousEmotions: EmotionalState;
+    newEmotions: EmotionalState;
   }[] = [];
 
   for (const rel of relationships) {
@@ -337,16 +323,16 @@ export async function applyDecayToAllRelationships(
     if (daysSinceUpdate < 1) continue;
 
     // Parse emotional state
-    const emotions = rel.emotional_state ? JSON.parse(rel.emotional_state) : {};
+    const emotions = parseEmotionalState(rel.emotional_state);
     if (Object.keys(emotions).length === 0) continue;
 
     const previousEmotions = { ...emotions };
-    const newEmotions: Record<string, number> = {};
+    const newEmotions: EmotionalState = {};
 
     // Apply per-emotion decay
     for (const [emotion, value] of Object.entries(emotions)) {
       const halfLife = EMOTION_HALF_LIVES[emotion] || DEFAULT_DECAY_RATES.emotionalHalfLifeDays;
-      const decayedValue = applyEmotionDecay(value as number, daysSinceUpdate, halfLife);
+      const decayedValue = applyEmotionDecay(value, daysSinceUpdate, halfLife);
       newEmotions[emotion] = Math.round(decayedValue * 100) / 100;
     }
 

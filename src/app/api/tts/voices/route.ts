@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAvailableVoices, parseVoiceInfo, checkTTSConnection } from "@/lib/tts";
+import { getAvailableVoices, checkTTSConnection } from "@/lib/tts";
 
 export async function GET() {
   // Try to refresh voices if not yet loaded
@@ -11,11 +11,8 @@ export async function GET() {
   const updatedVoices = getAvailableVoices();
 
   return NextResponse.json({
-    voices: updatedVoices,
-    voiceDetails: updatedVoices.map((v) => ({
-      id: v,
-      ...parseVoiceInfo(v),
-    })),
+    voices: updatedVoices.map((v) => v.id),
+    voiceDetails: updatedVoices,
   });
 }
 
@@ -24,10 +21,7 @@ export async function POST() {
   const voices = getAvailableVoices();
 
   return NextResponse.json({
-    voices,
-    voiceDetails: voices.map((v) => ({
-      id: v,
-      ...parseVoiceInfo(v),
-    })),
+    voices: voices.map((v) => v.id),
+    voiceDetails: voices,
   });
 }

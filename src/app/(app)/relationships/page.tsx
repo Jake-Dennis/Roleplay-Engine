@@ -10,6 +10,7 @@ import { EmotionBar } from "@/components/relationship/emotion-bar";
 import { RelationshipHistory } from "@/components/relationship/relationship-history";
 import { useActiveUniverse } from "@/contexts/active-universe";
 import { useApp } from "@/contexts/app-context";
+import type { EmotionalState } from "@/lib/relationship-types";
 
 interface Relationship {
   id: string;
@@ -22,7 +23,7 @@ interface Relationship {
 
 interface EvolutionEntry {
   id: string;
-  emotional_state: Record<string, number>;
+  emotional_state: EmotionalState;
   relationship_stage: string | null;
   trigger_event: string | null;
   recorded_at: string;
@@ -127,9 +128,9 @@ export default function RelationshipsPage() {
     }
   }
 
-  function parseEmotions(emotionalState: string | null): Record<string, number> {
+  function parseEmotions(emotionalState: string | null): EmotionalState {
     try {
-      return emotionalState ? JSON.parse(emotionalState) : {};
+      return emotionalState ? JSON.parse(emotionalState) as EmotionalState : {};
     } catch {
       return {};
     }
@@ -147,7 +148,7 @@ export default function RelationshipsPage() {
         if (rel) {
           const emotions = parseEmotions(rel.emotional_state);
           const emotionTable = Object.entries(emotions)
-            .map(([k, v]) => `| ${k} | ${(v as number).toFixed(2)} |`)
+            .map(([k, v]) => `| ${k} | ${v.toFixed(2)} |`)
             .join("\n");
           const history = data.history || "";
           const notes = data.relationship.notes || "";
@@ -329,7 +330,7 @@ export default function RelationshipsPage() {
                         <DecayIndicator updatedAt={rel.updated_at} compact />
                         {Object.entries(emotions).slice(0, 3).map(([key, val]) => (
                           <span key={key} className="rounded-full bg-bg-raised px-1.5 py-0.5">
-                            {key}: {(val as number).toFixed(2)}
+                            {key}: {val.toFixed(2)}
                           </span>
                         ))}
                       </div>
@@ -385,9 +386,9 @@ export default function RelationshipsPage() {
                         <h4 className="text-xs font-medium text-text-primary mb-3">Current Emotions</h4>
                         <div className="space-y-1.5">
                           {Object.entries(emotions)
-                            .sort(([, a], [, b]) => (b as number) - (a as number))
+                            .sort(([, a], [, b]) => b - a)
                             .map(([key, val]) => (
-                              <EmotionBar key={key} label={key} value={val as number} />
+                              <EmotionBar key={key} label={key} value={val} />
                             ))}
                         </div>
                       </div>

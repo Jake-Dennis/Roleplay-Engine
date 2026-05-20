@@ -3,8 +3,21 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import { getDb } from "./db";
+import { discoverVoices } from "./voice-discovery";
 
 export { TTS_CONFIG };
+export {
+  isTTSAvailable,
+  getAvailableVoices,
+  parseVoiceInfo,
+  discoverVoices,
+  getVoiceById,
+  getVoicesByLanguage,
+  getVoicesByGender,
+  getLastDiscovery,
+  needsRediscovery,
+} from "./voice-discovery";
+export type { VoiceInfo } from "./voice-discovery";
 
 export interface TTSGenerateRequest {
   model: string;
@@ -14,70 +27,9 @@ export interface TTSGenerateRequest {
   speed?: number;
 }
 
-export interface VoiceInfo {
-  id: string;
-  name: string;
-  language: string;
-  gender: string;
-}
-
-let availableVoices: string[] = [];
-let ttsAvailable = false;
-
 export async function checkTTSConnection(): Promise<boolean> {
-  try {
-    const response = await fetch(`${TTS_CONFIG.baseUrl}/v1/audio/voices`, {
-      signal: AbortSignal.timeout(5000),
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      availableVoices = data.voices || [];
-      ttsAvailable = true;
-      return true;
-    }
-
-    ttsAvailable = false;
-    return false;
-  } catch {
-    ttsAvailable = false;
-    return false;
-  }
-}
-
-export function isTTSAvailable(): boolean {
-  return ttsAvailable;
-}
-
-export function getAvailableVoices(): string[] {
-  return availableVoices;
-}
-
-export function parseVoiceInfo(voiceId: string): {
-  language: string;
-  gender: string;
-} {
-  const prefix = voiceId.substring(0, 2).toLowerCase();
-  const genderChar = voiceId.charAt(2).toLowerCase();
-
-  const languageMap: Record<string, string> = {
-    af: "American English",
-    am: "American English",
-    bf: "British English",
-    bm: "British English",
-    ef: "Spanish",
-    ff: "French",
-    if: "Italian",
-    pf: "Portuguese",
-    hf: "Hindi",
-    jf: "Japanese",
-    zf: "Chinese",
-  };
-
-  return {
-    language: languageMap[prefix] || "Unknown",
-    gender: genderChar === "f" ? "Female" : genderChar === "m" ? "Male" : "Unknown",
-  };
+  const voices = await discoverVoices();
+  return voices.length > 0;
 }
 
 export async function generateSpeech(
@@ -110,11 +62,9 @@ export async function generateSpeech(
       }
 
       const buffer = Buffer.from(await response.arrayBuffer());
-      ttsAvailable = true;
       return buffer;
     } catch (error) {
       lastError = error as Error;
-      ttsAvailable = false;
 
       if (attempt < TTS_CONFIG.retryAttempts) {
         await new Promise((resolve) =>

@@ -606,7 +606,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 1-8)
   - Message: `feat: add proper health check endpoints with status codes`
 
-- [ ] 9. Extract Shared getWikiRoot Utility
+- [x] 9. Extract Shared getWikiRoot Utility
 
   **What to do**:
   - Create `src/lib/wiki/wiki-root.ts` with a single `getWikiRoot(userId, universeId?)` function
@@ -652,7 +652,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 9-16)
   - Message: `quality: extract shared getWikiRoot utility`
 
-- [ ] 10. Extract Shared parseBoundaries Utility
+- [x] 10. Extract Shared parseBoundaries Utility
 
   **What to do**:
   - Create `src/lib/universe-utils.ts` with `parseBoundaries(raw: string | null): string[]`
@@ -696,7 +696,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 9-16)
   - Message: `quality: extract shared parseBoundaries utility`
 
-- [ ] 11. Consolidate Duplicate TTS Functions
+- [x] 11. Consolidate Duplicate TTS Functions
 
   **What to do**:
   - `src/lib/voice-discovery.ts` has the better implementations (`isTTSAvailable`, `getAvailableVoices`, `parseVoiceInfo` with proper types)
@@ -741,7 +741,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 9-16)
   - Message: `quality: consolidate duplicate TTS functions`
 
-- [ ] 12. Consolidate Duplicate vectorSearch
+- [x] 12. Consolidate Duplicate vectorSearch
 
   **What to do**:
   - `src/lib/vector-search.ts` has the better implementation (wrapper with fallback logic)
@@ -786,7 +786,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 9-16)
   - Message: `quality: consolidate duplicate vectorSearch`
 
-- [ ] 13. Extract Shared Emotion Parsing Utility
+- [x] 13. Extract Shared Emotion Parsing Utility
 
   **What to do**:
   - Create `src/lib/emotion-utils.ts` with `parseEmotionalState(raw: string | null): Record<string, number>`
@@ -837,7 +837,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 9-16)
   - Message: `quality: extract shared emotion parsing utility`
 
-- [ ] 14. Fix parseWikilinks Naming Collision
+- [x] 14. Fix parseWikilinks Naming Collision
 
   **What to do**:
   - Rename `parseWikilinks` in `src/lib/backlinks.ts` to `parseWikilinksFromContent` (or similar)
@@ -883,7 +883,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 9-16)
   - Message: `quality: fix parseWikilinks naming collision`
 
-- [ ] 15. Eliminate Record<string, any> — Wiki Types
+- [x] 15. Eliminate Record<string, any> — Wiki Types
 
   **What to do**:
   - Create `src/lib/wiki/types.ts` with proper interfaces:
@@ -935,7 +935,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 9-16)
   - Message: `types: eliminate Record<string, any> in wiki subsystem`
 
-- [ ] 16. Eliminate Record<string, any> — Relationship Types
+- [x] 16. Eliminate Record<string, any> — Relationship Types
 
   **What to do**:
   - Create `src/lib/relationship-types.ts` with proper interfaces:

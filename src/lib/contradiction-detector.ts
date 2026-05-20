@@ -10,6 +10,7 @@
 
 import { getDb } from "./db";
 import { detectSemanticContradictions, SemanticContradiction } from "./semantic-contradiction";
+import type { CanonEntity, EntityRow } from "./relationship-types";
 
 export interface Contradiction {
   type: string;
@@ -21,7 +22,7 @@ export interface Contradiction {
 export interface ContradictionRule {
   id: string;
   name: string;
-  check: (entity: Record<string, any>, canon: Record<string, any>[]) => Contradiction | null;
+  check: (entity: CanonEntity, canon: CanonEntity[]) => Contradiction | null;
 }
 
 /**
@@ -49,11 +50,12 @@ const aliveDeadRule: ContradictionRule = {
     const isAliveInLore = status !== "dead" && status !== "deceased";
 
     if (isDeadInCanon && isAliveInLore) {
+      const name = entity.name || entity.title || "Unknown";
       return {
         type: "alive_dead",
         severity: "critical" as const,
-        description: `${entity.name || entity.title} appears in a death event but is not marked as dead`,
-        conflictingEntity: entity.name || entity.title,
+        description: `${name} appears in a death event but is not marked as dead`,
+        conflictingEntity: name,
       };
     }
 
@@ -81,11 +83,12 @@ const temporalRule: ContradictionRule = {
       const startDate = new Date(timelineStart.occurred_at).getTime();
 
       if (entityDate < startDate) {
+        const name = entity.title || entity.name || "Unknown";
         return {
           type: "temporal",
           severity: "high" as const,
-          description: `Event "${entity.title || entity.name}" occurred before timeline start (${timelineStart.occurred_at})`,
-          conflictingEntity: entity.title || entity.name,
+          description: `Event "${name}" occurred before timeline start (${timelineStart.occurred_at})`,
+          conflictingEntity: name,
         };
       }
     }
@@ -115,11 +118,12 @@ const locationRule: ContradictionRule = {
     if (locations.length > 1) {
       const uniqueLocations = [...new Set(locations.map((l) => l.location_id))];
       if (uniqueLocations.length > 1) {
+        const name = entity.name || "Unknown";
         return {
           type: "location",
           severity: "medium" as const,
-          description: `${entity.name} appears in multiple locations: ${uniqueLocations.join(", ")}`,
-          conflictingEntity: entity.name,
+          description: `${name} appears in multiple locations: ${uniqueLocations.join(", ")}`,
+          conflictingEntity: name,
         };
       }
     }
@@ -145,19 +149,19 @@ export function detectContradictions(
   const db = getDb();
 
   // Get entity data
-  let entity: Record<string, any> | undefined;
+  let entity: EntityRow | undefined;
   if (entityType === "npcs" || entityType === "npc") {
     entity = db.prepare(
       "SELECT * FROM npcs WHERE id = ? AND user_id = ?"
-    ).get(entityId, userId) as Record<string, any> | undefined;
+    ).get(entityId, userId) as EntityRow | undefined;
   } else if (entityType === "events" || entityType === "event") {
     entity = db.prepare(
       "SELECT * FROM events WHERE id = ? AND user_id = ?"
-    ).get(entityId, userId) as Record<string, any> | undefined;
+    ).get(entityId, userId) as EntityRow | undefined;
   } else if (entityType === "locations" || entityType === "location") {
     entity = db.prepare(
       "SELECT * FROM locations WHERE id = ? AND user_id = ?"
-    ).get(entityId, userId) as Record<string, any> | undefined;
+    ).get(entityId, userId) as EntityRow | undefined;
   }
 
   if (!entity) return [];
@@ -165,12 +169,12 @@ export function detectContradictions(
   // Get validated canon entries for comparison
   const canon = db.prepare(
     "SELECT * FROM entity_validations WHERE user_id = ? AND state = 'validated'"
-  ).all(userId) as Record<string, any>[];
+  ).all(userId) as CanonEntity[];
 
   // Also get events for alive/dead checks
   const events = db.prepare(
     "SELECT * FROM events WHERE user_id = ?"
-  ).all(userId) as Record<string, any>[];
+  ).all(userId) as CanonEntity[];
 
   const allCanon = [...canon, ...events];
   const contradictions: Contradiction[] = [];

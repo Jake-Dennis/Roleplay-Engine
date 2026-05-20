@@ -40,7 +40,7 @@ export interface Backlink {
  * Parse [[wikilinks]] from markdown content
  * Returns array of links with surrounding context
  */
-export function parseWikilinks(content: string): Wikilink[] {
+export function parseWikilinksFromContent(content: string): Wikilink[] {
   const links: Wikilink[] = [];
   const regex = /\[\[([^\]]+)\]\]/g;
   let match;
@@ -109,7 +109,7 @@ export function inferLinkType(name: string, context: string, entityType?: string
 /**
  * Resolve a wikilink name to an entity ID by name lookup
  */
-export function resolveWikilink(
+export function resolveWikilinkFromDB(
   userId: string,
   name: string
 ): { entityType: string | null; entityId: string | null } {
@@ -153,10 +153,10 @@ export function parseAndResolveLinks(
   userId: string,
   content: string
 ): ResolvedLink[] {
-  const wikilinks = parseWikilinks(content);
+  const wikilinks = parseWikilinksFromContent(content);
 
   return wikilinks.map((link) => {
-    const resolved = resolveWikilink(userId, link.name);
+    const resolved = resolveWikilinkFromDB(userId, link.name);
     const linkType = inferLinkType(link.name, link.context, resolved.entityType || undefined);
 
     return {

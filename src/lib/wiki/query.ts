@@ -4,22 +4,8 @@ import FlexSearch from "flexsearch";
 import { generateText } from "@/lib/ollama";
 import { readWikiPage, listWikiPages, WikiPage } from "@/lib/wiki/file-io";
 import { parseWikilinks } from "@/lib/wiki/wikilinks";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-/**
- * Result of a wiki query.
- */
-export interface QueryResult {
-  /** Synthesized answer text from the LLM. */
-  answer: string;
-  /** Source pages cited in the answer. */
-  citations: Array<{ pagePath: string; relevantSection: string }>;
-  /** Whether FlexSearch full-text fallback was used. */
-  usedFallback: boolean;
-}
+import type { QueryResult } from "./types";
+export type { QueryResult } from "./types";
 
 /**
  * Parsed entry from index.md.
@@ -276,7 +262,7 @@ function extractRelevantSection(
  */
 function buildSynthesisPrompt(
   query: string,
-  pages: Array<{ path: string; content: string; frontmatter: Record<string, any> }>
+  pages: WikiPage[]
 ): string {
   const pageContexts = pages
     .map((p, i) => {
@@ -310,7 +296,7 @@ ANSWER:`;
  */
 function extractCitationsFromResponse(
   response: string,
-  pages: Array<{ path: string; content: string; frontmatter: Record<string, any> }>
+  pages: WikiPage[]
 ): Array<{ pagePath: string; relevantSection: string }> {
   const citations: Array<{ pagePath: string; relevantSection: string }> = [];
   const seen = new Set<string>();
@@ -451,11 +437,7 @@ export async function queryWiki(
   // -----------------------------------------------------------------------
   // Step 4: Read full content of candidate pages
   // -----------------------------------------------------------------------
-  const candidatePages: Array<{
-    path: string;
-    content: string;
-    frontmatter: Record<string, any>;
-  }> = [];
+  const candidatePages: WikiPage[] = [];
 
   for (const pagePath of candidatePaths) {
     try {
@@ -509,11 +491,7 @@ async function queryWikiFlexSearch(
   }
 
   // Read full content of hit pages
-  const hitPages: Array<{
-    path: string;
-    content: string;
-    frontmatter: Record<string, any>;
-  }> = [];
+  const hitPages: WikiPage[] = [];
 
   for (const pagePath of hitPaths.slice(0, 5)) {
     try {
@@ -544,7 +522,7 @@ async function queryWikiFlexSearch(
  */
 async function synthesizeAnswer(
   query: string,
-  pages: Array<{ path: string; content: string; frontmatter: Record<string, any> }>,
+  pages: WikiPage[],
   usedFallback: boolean
 ): Promise<QueryResult> {
   try {

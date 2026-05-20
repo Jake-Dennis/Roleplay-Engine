@@ -7,6 +7,8 @@
  */
 
 import { getDb } from "@/lib/db";
+import { parseEmotionalState } from "@/lib/emotion-utils";
+import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import { listWikiPages, writeWikiPage, WikiFrontmatter } from "@/lib/wiki/file-io";
 import { generateIndex } from "@/lib/wiki/index-generator";
 import { appendLog } from "@/lib/wiki/logger";
@@ -15,20 +17,6 @@ import { PROMPTS } from "@/lib/prompts";
 import { TIME, CONTENT_LIMITS } from "@/lib/config";
 import path from "path";
 import fs from "fs";
-
-// ---------------------------------------------------------------------------
-// Shared Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Resolve the wiki root directory for a user/universe.
- */
-export function getWikiRoot(userId: string, universeId?: string): string {
-  const dataDir = process.env.DATA_DIR || "./data";
-  return universeId
-    ? `${dataDir}/${userId}/wiki/${universeId}`
-    : `${dataDir}/${userId}/wiki`;
-}
 
 // ---------------------------------------------------------------------------
 // Wiki Idle Task Functions
@@ -113,7 +101,7 @@ export async function wikiRefineRelationships(userId: string, universeId?: strin
   const errors: string[] = [];
 
   for (const rel of relationships) {
-    const emotions = rel.emotional_state ? JSON.parse(rel.emotional_state) : {};
+    const emotions = parseEmotionalState(rel.emotional_state);
     const history = rel.shared_history ? JSON.parse(rel.shared_history) : [];
 
     const emotionSummary = Object.entries(emotions)

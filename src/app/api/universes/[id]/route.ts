@@ -4,16 +4,7 @@ import { getDb } from "@/lib/db";
 import type { DbDatabase } from "@/lib/types";
 import { getAuthToken } from '@/lib/auth-token';
 import { unauthorizedError, notFoundError, badRequestError } from '@/lib/error-response';
-
-function parseBoundaries(raw: string | null): string[] {
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [raw];
-  } catch {
-    return raw.split("\n").map((s) => s.trim()).filter(Boolean);
-  }
-}
+import { parseBoundaries } from '@/lib/universe-utils';
 
 function hasUniverseAccess(db: DbDatabase, universeId: string, userId: string): boolean {
   const universe = db.prepare(

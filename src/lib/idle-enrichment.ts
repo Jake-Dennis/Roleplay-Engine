@@ -22,11 +22,13 @@
  */
 
 import { getDb } from "@/lib/db";
+import { parseEmotionalState } from "@/lib/emotion-utils";
 import { generateText } from "@/lib/ollama";
 import { PROMPTS } from "@/lib/prompts";
 import { TIME, CONTENT_LIMITS } from "@/lib/config";
 
 // Wiki I/O modules
+import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import { listWikiPages, writeWikiPage, readWikiPage, WikiFrontmatter } from "@/lib/wiki/file-io";
 import { generateIndex } from "@/lib/wiki/index-generator";
 import { appendLog } from "@/lib/wiki/logger";
@@ -46,16 +48,6 @@ export interface EnrichmentResult {
 // ---------------------------------------------------------------------------
 // Wiki Helpers
 // ---------------------------------------------------------------------------
-
-/**
- * Resolve the wiki root directory for a user/universe.
- */
-function getWikiRoot(userId: string, universeId?: string): string {
-  const dataDir = process.env.DATA_DIR || "./data";
-  return universeId
-    ? `${dataDir}/${userId}/wiki/${universeId}`
-    : `${dataDir}/${userId}/wiki`;
-}
 
 /**
  * Tier 1 (wiki): Compress old wiki summaries by summarizing stale draft pages.
@@ -130,7 +122,7 @@ async function wikiRefineRelationshipSummaries(userId: string, universeId: strin
   const pages = listWikiPages(wikiRoot);
 
   for (const rel of relationships) {
-    const emotions = rel.emotional_state ? JSON.parse(rel.emotional_state) : {};
+    const emotions = parseEmotionalState(rel.emotional_state);
     const history = rel.shared_history ? JSON.parse(rel.shared_history) : [];
 
     const emotionSummary = Object.entries(emotions)

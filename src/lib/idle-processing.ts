@@ -30,8 +30,8 @@ import { needsMemoryCompression } from "@/lib/memory-compression";
 import { IDLE_TIERS } from "@/lib/config";
 
 // Extracted idle task modules
+import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import {
-  getWikiRoot,
   wikiCompressSummaries,
   wikiRefineRelationships,
   wikiDeepenPages,

@@ -4,16 +4,7 @@ import { getDb } from "@/lib/db";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
 import type { DbResult } from "@/lib/types";
 import { forbiddenError, badRequestError, internalError } from "@/lib/error-response";
-
-function parseBoundaries(raw: string | null): string[] {
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [raw];
-  } catch {
-    return raw.split("\n").map((s) => s.trim()).filter(Boolean);
-  }
-}
+import { parseBoundaries } from '@/lib/universe-utils';
 
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);

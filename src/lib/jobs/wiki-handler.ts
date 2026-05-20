@@ -15,26 +15,12 @@ import { generateText } from "@/lib/ollama";
 import { PROMPTS } from "@/lib/prompts";
 import { CONTENT_LIMITS, TIME } from "@/lib/config";
 import { ingestSource } from "@/lib/wiki/ingest";
+import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import { listWikiPages, writeWikiPage, readWikiPage, WikiFrontmatter } from "@/lib/wiki/file-io";
 import { generateIndex } from "@/lib/wiki/index-generator";
 import { appendLog } from "@/lib/wiki/logger";
 import type { JobPayload, JobResult } from "@/lib/job-processor";
 import { updateJobProgress, markJobCompleted } from "@/lib/job-processor";
-
-// ---------------------------------------------------------------------------
-// Shared Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Resolve the wiki root directory for a user/universe.
- */
-function getWikiRoot(userId: string, universeId?: string): string {
-  const dataDir = process.env.DATA_DIR || "./data";
-  const basePath = universeId
-    ? `${dataDir}/${userId}/wiki/${universeId}`
-    : `${dataDir}/${userId}/wiki`;
-  return basePath;
-}
 
 // ---------------------------------------------------------------------------
 // Job Handlers

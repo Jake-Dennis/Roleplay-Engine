@@ -13,8 +13,9 @@ import fs from "fs";
 import type { DbResult } from "@/lib/types";
 import { getAuthToken } from '@/lib/auth-token';
 import { hasRelationshipAccess } from '@/lib/relationship-access';
+import type { RelationshipRowWithGroup } from '@/lib/relationship-types';
 
-function getFileOwnerId(entity: DbResult, fallbackUserId: string): string {
+function getFileOwnerId(entity: RelationshipRowWithGroup, fallbackUserId: string): string {
   if (entity.group_id && entity.group_owner_id) return entity.group_owner_id;
   return fallbackUserId;
 }

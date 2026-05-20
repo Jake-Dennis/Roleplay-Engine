@@ -1,23 +1,6 @@
-import { WikiPage } from "./file-io";
+import type { WikiPage, Wikilink, LinkGraph, CollisionInfo } from "./types";
+export type { Wikilink, LinkGraph, CollisionInfo } from "./types";
 import path from "path";
-
-export interface Wikilink {
-  name: string;
-  alias?: string;
-  isEmbed: boolean;
-  context: string;
-}
-
-export interface LinkGraph {
-  nodes: Map<string, string[]>; // pagePath -> [targetPagePaths]
-  edges: Array<{ source: string; target: string; linkType: string }>;
-  collisions: Array<{ name: string; pages: string[] }>; // duplicate titles across universes
-}
-
-export interface CollisionInfo {
-  name: string;
-  pages: string[];
-}
 
 /**
  * Parse [[wikilinks]] from markdown content.

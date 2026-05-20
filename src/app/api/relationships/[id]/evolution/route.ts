@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { parseEmotionalState } from "@/lib/emotion-utils";
 import { ensureGroupSupport } from "@/lib/group-migrations";
 import type { DbResult } from "@/lib/types";
 import { getAuthToken } from '@/lib/auth-token';
 import { hasRelationshipAccess } from '@/lib/relationship-access';
+import type { RelationshipEvolutionRow, RelationshipEvolutionEntry } from '@/lib/relationship-types';
 
 export async function GET(
   request: NextRequest,
@@ -32,9 +34,9 @@ export async function GET(
   `).all(id);
 
   // Parse emotional states
-  const parsedHistory = (history as DbResult[]).map((entry: DbResult) => ({
+  const parsedHistory: RelationshipEvolutionEntry[] = (history as RelationshipEvolutionRow[]).map((entry) => ({
     ...entry,
-    emotional_state: entry.emotional_state ? JSON.parse(entry.emotional_state) : {},
+    emotional_state: parseEmotionalState(entry.emotional_state),
   }));
 
   return NextResponse.json({ history: parsedHistory });
@@ -90,7 +92,7 @@ export async function POST(
   return NextResponse.json({
     entry: {
       ...entry,
-      emotional_state: entry.emotional_state ? JSON.parse(entry.emotional_state) : {},
+      emotional_state: parseEmotionalState(entry.emotional_state),
     },
   }, { status: 201 });
 }

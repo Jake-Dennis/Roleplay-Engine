@@ -22,9 +22,6 @@ export interface EmbeddingResult {
   vector: number[];
 }
 
-/**
- * Generate and store an embedding for an entity
- */
 export async function processEmbeddings(
   userId: string,
   entityType: string,
@@ -256,39 +253,4 @@ function packVector(vector: number[]): Buffer {
   return Buffer.from(float32.buffer);
 }
 
-/**
- * Perform vector similarity search using sqlite-vec
- * Returns entities ranked by cosine similarity to the query vector
- */
-export function vectorSearch(
-  entityType: string,
-  queryVector: number[],
-  universeId: string,
-  limit: number = 10
-): { entityId: string; similarity: number; metadata: string }[] {
-  const db = getDb();
 
-  // Fall back to empty results if vec not available
-  if (!isVecAvailable()) return [];
-
-  const vecTable = getVecTableName(entityType);
-  if (!vecTable) return [];
-
-  try {
-    const packedVector = packVector(queryVector);
-    const results = db.prepare(`
-      SELECT rowid as entity_id, metadata, distance
-      FROM ${vecTable}
-      WHERE embedding MATCH ? AND k = ?
-    `).all(packedVector, limit) as { entity_id: string; metadata: string; distance: number }[];
-
-    // sqlite-vec returns distance (lower = more similar), convert to similarity
-    return results.map((r) => ({
-      entityId: r.entity_id,
-      similarity: 1 - r.distance,
-      metadata: r.metadata,
-    }));
-  } catch {
-    return [];
-  }
-}

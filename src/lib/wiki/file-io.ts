@@ -2,78 +2,10 @@ import matter from "gray-matter";
 import fs from "fs";
 import path from "path";
 import { logger } from "@/lib/logger";
-
-/**
- * Represents a wiki page with its frontmatter and body content.
- */
-export interface WikiPage {
-  path: string;
-  content: string;
-  frontmatter: Record<string, any>;
-}
-
-/**
- * Frontmatter fields for wiki markdown pages.
- * Follows WIKI_SCHEMA.md conventions.
- */
-export interface WikiFrontmatter {
-  title: string;
-  type: "entity" | "concept" | "source" | "synthesis";
-  status: "draft" | "reviewed" | "locked" | "rejected";
-  universe?: string;
-  tags?: string[];
-  created?: string;
-  updated?: string;
-  /** Reason for rejection (set when status is "rejected"). */
-  rejection_reason?: string;
-  /** ISO timestamp when the page was rejected. */
-  rejected_at?: string;
-}
-
-/**
- * Options for writeWikiPage conflict detection.
- */
-export interface WriteWikiPageOptions {
-  /**
-   * If provided, compare with existing file's `updated` field.
-   * A mismatch indicates a concurrent edit conflict.
-   */
-  expectedLastModified?: string;
-  /**
-   * How to handle conflicts.
-   * - "fail" (default): throw ConflictError
-   * - "save-diff": save a diff file to _review/conflicts/ and continue
-   */
-  onConflict?: "fail" | "save-diff";
-}
-
-/**
- * Error thrown when a concurrent edit conflict is detected.
- */
-export class ConflictError extends Error {
-  public readonly filePath: string;
-  public readonly existingLastModified: string;
-  public readonly expectedLastModified: string;
-  public readonly diff: string;
-
-  constructor(
-    filePath: string,
-    existingLastModified: string,
-    expectedLastModified: string,
-    diff: string
-  ) {
-    super(
-      `Concurrent edit conflict on "${filePath}": ` +
-        `expected updated=${expectedLastModified}, ` +
-        `but file has updated=${existingLastModified}`
-    );
-    this.name = "ConflictError";
-    this.filePath = filePath;
-    this.existingLastModified = existingLastModified;
-    this.expectedLastModified = expectedLastModified;
-    this.diff = diff;
-  }
-}
+import type { WikiFrontmatter, WikiPage, WriteWikiPageOptions } from "./types";
+export type { WikiFrontmatter, WikiPage, WriteWikiPageOptions } from "./types";
+export { ConflictError } from "./types";
+import { ConflictError } from "./types";
 
 /**
  * The wiki folders scanned by listWikiPages.
@@ -267,7 +199,7 @@ export function readWikiPage(filePath: string): WikiPage {
   }
   const raw = fs.readFileSync(filePath, "utf-8");
   const { data, content } = matter(raw);
-  return { path: filePath, content, frontmatter: data };
+  return { path: filePath, content, frontmatter: data as WikiFrontmatter };
 }
 
 /**
