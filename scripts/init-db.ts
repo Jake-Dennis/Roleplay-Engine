@@ -132,6 +132,22 @@ function main() {
       updated_at DATETIME
     );
 
+    -- NPCs
+    CREATE TABLE IF NOT EXISTS npcs (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      universe_id TEXT REFERENCES universes(id),
+      name TEXT NOT NULL,
+      description TEXT,
+      personality_traits TEXT,
+      behavior_patterns TEXT,
+      voice_id TEXT,
+      is_canon BOOLEAN DEFAULT 0,
+      evolution_log TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME
+    );
+
     -- Messages
     CREATE TABLE IF NOT EXISTS messages (
       id TEXT PRIMARY KEY,
@@ -145,6 +161,26 @@ function main() {
       is_deleted INTEGER DEFAULT 0,
       deleted_at DATETIME
     );
+
+    -- Full-text search for messages (FTS5)
+    CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(content, session_id, sender_id);
+
+    CREATE TRIGGER IF NOT EXISTS messages_fts_insert AFTER INSERT ON messages
+    BEGIN
+      INSERT INTO messages_fts(rowid, content, session_id, sender_id)
+      VALUES (new.rowid, new.content, new.session_id, new.sender_id);
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS messages_fts_update AFTER UPDATE ON messages
+    BEGIN
+      UPDATE messages_fts SET content = new.content, session_id = new.session_id, sender_id = new.sender_id
+      WHERE rowid = new.rowid;
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS messages_fts_delete AFTER DELETE ON messages
+    BEGIN
+      DELETE FROM messages_fts WHERE rowid = old.rowid;
+    END;
 
     -- Message summaries
     CREATE TABLE IF NOT EXISTS message_summaries (
@@ -212,6 +248,19 @@ function main() {
       UNIQUE(source_type, source_id, target_type, target_id)
     );
 
+    -- Wiki versions
+    CREATE TABLE IF NOT EXISTS wiki_versions (
+      id TEXT PRIMARY KEY,
+      page_path TEXT NOT NULL,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      version_number INTEGER NOT NULL,
+      change_summary TEXT,
+      file_snapshot_path TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_wiki_versions_page ON wiki_versions(page_path, user_id);
+
     -- Lore validations
     CREATE TABLE IF NOT EXISTS entity_validations (
       id TEXT PRIMARY KEY,
@@ -278,6 +327,8 @@ function main() {
     CREATE INDEX IF NOT EXISTS idx_embedding_universe ON embedding_index(universe_id);
     CREATE INDEX IF NOT EXISTS idx_relationships_user ON relationships(user_id);
     CREATE INDEX IF NOT EXISTS idx_relationships_universe ON relationships(universe_id);
+    CREATE INDEX IF NOT EXISTS idx_npcs_user ON npcs(user_id);
+    CREATE INDEX IF NOT EXISTS idx_npcs_universe ON npcs(universe_id);
     CREATE INDEX IF NOT EXISTS idx_voice_assignments_entity ON voice_assignments(user_id, entity_type, entity_id);
     CREATE INDEX IF NOT EXISTS idx_tts_cache_hash ON tts_cache(user_id, text_hash);
     CREATE INDEX IF NOT EXISTS idx_narrative_threads_universe ON narrative_threads(universe_id);

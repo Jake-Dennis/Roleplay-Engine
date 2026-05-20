@@ -27,7 +27,7 @@ export function ConnectionIndicator() {
 
   return (
     <div
-      className="fixed bottom-0 left-56 right-0 z-30 flex items-center justify-between border-t border-border-default bg-bg-elevated/95 px-4 py-1.5 text-xxs backdrop-blur-sm"
+      className="flex items-center justify-between border-b border-border-default bg-bg-elevated px-4 py-1.5 text-xxs"
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
     >

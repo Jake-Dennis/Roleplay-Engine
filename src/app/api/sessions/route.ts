@@ -72,6 +72,10 @@ export async function POST(request: NextRequest) {
     return badRequestError("Session name is required");
   }
 
+  if (!universe_id) {
+    return badRequestError("universe_id is required");
+  }
+
   const nameError = validateLength(name, 200, "Name");
   if (nameError) return badRequestError(nameError);
 

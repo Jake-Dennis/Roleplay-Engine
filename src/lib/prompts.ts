@@ -147,4 +147,54 @@ Messages:
 <user_content>
 ${messageText}
 </user_content>`,
+
+  // -----------------------------------------------------------------------
+  // Lore: Comprehensive Extraction
+  // -----------------------------------------------------------------------
+
+  /** Extract entities, events, and relationships from message batches for wiki page creation */
+  extractLoreComprehensive: (messageText: string) =>
+    `Analyze these roleplay messages and extract all significant lore: characters, locations, organizations, objects, concepts, events, and relationships.
+
+Return JSON in this exact format:
+{
+  "entities": [
+    {
+      "name": "entity name",
+      "entityType": "character|location|organization|object|concept",
+      "description": "detailed description of the entity",
+      "traits": ["trait1", "trait2"],
+      "relationships": ["related to X because..."]
+    }
+  ],
+  "events": [
+    {
+      "title": "event title",
+      "description": "what happened",
+      "participants": ["character1", "character2"],
+      "outcome": "result of the event",
+      "importance": "low|medium|high|critical"
+    }
+  ],
+  "relationships": [
+    {
+      "source": "entity name",
+      "target": "entity name",
+      "nature": "friendly|hostile|romantic|professional|familial|rivalry|other",
+      "description": "description of the relationship"
+    }
+  ]
+}
+
+Rules:
+- Extract ONLY entities that are clearly named and described in the text
+- Do not invent entities not present in the messages
+- Use wikilink format [[Name]] when referencing other entities in descriptions
+- Keep descriptions concise but informative
+- Return empty arrays if nothing is found for a category
+
+Messages:
+<user_content>
+${messageText}
+</user_content>`,
 } as const;

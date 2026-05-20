@@ -32,12 +32,15 @@ import { safeParse } from "@/lib/safe-json";
 import type { Message } from "@/hooks/use-session";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { ChatWindow } from "@/components/chat/chat-window";
+import { ChatSearch } from "@/components/chat/chat-search";
+import { ChatExport } from "@/components/chat/chat-export";
 import { TypingIndicator } from "@/components/chat/typing-indicator";
 import { ParticipantList } from "@/components/session/participant-list";
 import { CharacterDeclarationModal } from "@/components/session/character-declaration-modal";
 import { SceneStatePanel } from "@/components/session/scene-state-panel";
 import { PrivateStatePanel } from "@/components/session/private-state-panel";
 import { SessionSettingsPanel } from "@/components/session/session-settings-panel";
+import { SessionRecapPanel } from "@/components/session/session-recap-panel";
 import { logger } from "@/lib/logger";
 
 export default function SessionChatPage() {
@@ -106,6 +109,7 @@ export default function SessionChatPage() {
     return false;
   });
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [showRecapPanel, setShowRecapPanel] = useState(false);
   const [inviteUsername, setInviteUsername] = useState("");
   const [editHistoryMessageId, setEditHistoryMessageId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ type: "leave" | "delete"; id?: string } | null>(null);
@@ -646,6 +650,16 @@ export default function SessionChatPage() {
                   <Settings className="h-3 w-3" />
                 </button>
               )}
+              <button
+                onClick={() => setShowRecapPanel(!showRecapPanel)}
+                className={`rounded p-1 transition-colors hover:bg-bg-raised ${
+                  showRecapPanel ? "text-accent" : "text-text-muted hover:text-accent"
+                }`}
+                title="Session Recap"
+              >
+                <Sparkles className="h-3 w-3" />
+              </button>
+              <ChatExport sessionId={sessionId} />
             </div>
             <p className="text-xxs text-text-muted">
               {allMessages.length} message{allMessages.length !== 1 ? "s" : ""}
@@ -654,9 +668,8 @@ export default function SessionChatPage() {
             </p>
           </div>
         </div>
+        <ChatSearch sessionId={sessionId} />
       </div>
-
-      {/* Scene State Panel */}
       {showScenePanel && (
         <SceneStatePanel
           scene={sceneState}
@@ -695,6 +708,14 @@ export default function SessionChatPage() {
         <SessionSettingsPanel
           sessionId={sessionId}
           onClose={() => setShowSettingsPanel(false)}
+        />
+      )}
+
+      {/* Session Recap Panel */}
+      {showRecapPanel && (
+        <SessionRecapPanel
+          sessionId={sessionId}
+          onClose={() => setShowRecapPanel(false)}
         />
       )}
 

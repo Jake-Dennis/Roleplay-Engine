@@ -28,7 +28,7 @@ export default function NewSessionPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: data.name,
-        universe_id: data.universe_id || activeUniverse?.id || null,
+        universe_id: data.universe_id,
         type: data.type,
         group_id: activeGroup?.id || null,
       }),

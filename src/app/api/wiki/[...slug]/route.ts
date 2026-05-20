@@ -11,6 +11,7 @@ import {
   ConflictError,
 } from "@/lib/wiki/file-io";
 import { saveRevision } from "@/lib/wiki/revisions";
+import { recordVersion, createSnapshotFile, getNextVersionNumber } from "@/lib/wiki/history";
 import { generateIndex } from "@/lib/wiki/index-generator";
 import { findOrphans } from "@/lib/wiki/orphans";
 import { parseWikilinks } from "@/lib/wiki/wikilinks";
@@ -324,6 +325,16 @@ export async function PUT(
       expectedLastModified,
       onConflict: "fail",
     });
+
+    // Record version in DB-backed history
+    try {
+      const rawContent = fs.readFileSync(fullPath, "utf-8");
+      const snapshotPath = createSnapshotFile(wikiRoot, slug, rawContent);
+      const versionNumber = getNextVersionNumber(relativePath, decoded.sub);
+      recordVersion(relativePath, decoded.sub, versionNumber, "", snapshotPath);
+    } catch {
+      // Non-critical: version history failure should not block the save
+    }
 
     // Regenerate index
     generateIndex(wikiRoot);

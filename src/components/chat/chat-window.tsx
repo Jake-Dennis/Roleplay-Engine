@@ -98,7 +98,7 @@ const MessageItem = memo(function MessageItem({
   const intent = isAI ? null : classifyIntent(message.content);
 
   return (
-    <div className={`group flex ${isAI ? "" : "flex-row-reverse"}`}>
+    <div id={`msg-${message.id}`} className={`group flex ${isAI ? "" : "flex-row-reverse"}`}>
       <div className={`max-w-[75%] rounded-xl px-4 py-3 ${isAI ? "border border-border-default bg-bg-elevated" : "bg-accent/10"}`}>
         <p className="text-xxs font-medium text-text-muted mb-1 flex items-center gap-1.5">
           <span>{isAI ? "AI Narrator" : (message.persona_name || message.sender_name || "You")}</span>
@@ -302,7 +302,7 @@ export function ChatWindow({
 
             {/* Streaming message */}
             {isStreaming && (
-              <div className="flex">
+              <div id="msg-streaming" className="flex">
                 <div className="max-w-[75%] rounded-xl border border-border-default bg-bg-elevated px-4 py-3">
                   <p className="text-xxs font-medium text-text-muted mb-1">
                     AI Narrator

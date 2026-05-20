@@ -49,7 +49,7 @@ export const AUTH_CONFIG = {
   bcryptRounds: 12,
   usernameMinLength: 3,
   usernameMaxLength: 20,
-  usernamePattern: /^[a-zA-Z0-9_]+$/,
+  usernamePattern: /^[a-zA-Z0-9_\-@.!#$%^&*()+=]+$/,
   passwordMinLength: 8,
 };
 

@@ -74,4 +74,94 @@ export function runSchemaMigrations(): void {
   } catch {
     // Column already exists — safe to ignore
   }
+
+  // Migration: Add npcs table (NPCs - Wave 5)
+  try {
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS npcs (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        universe_id TEXT REFERENCES universes(id),
+        name TEXT NOT NULL,
+        description TEXT,
+        personality_traits TEXT,
+        behavior_patterns TEXT,
+        voice_id TEXT,
+        is_canon BOOLEAN DEFAULT 0,
+        evolution_log TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME
+      )
+    `).run();
+  } catch {
+    // Table already exists — safe to ignore
+  }
+
+  // Migration: Add indexes for npcs table
+  try {
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS idx_npcs_user ON npcs(user_id)"
+    ).run();
+  } catch {
+    // Index already exists — safe to ignore
+  }
+
+  try {
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS idx_npcs_universe ON npcs(universe_id)"
+    ).run();
+  } catch {
+    // Index already exists — safe to ignore
+  }
+
+  // Migration: Add wiki_versions table (Wiki Versioning)
+  try {
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS wiki_versions (
+        id TEXT PRIMARY KEY,
+        page_path TEXT NOT NULL,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        version_number INTEGER NOT NULL,
+        change_summary TEXT,
+        file_snapshot_path TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+  } catch {
+    // Table already exists — safe to ignore
+  }
+
+  // Migration: Add FTS5 virtual table for message search with sync triggers
+  try {
+    db.exec(`
+      CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(content, session_id, sender_id)
+    `);
+    db.exec(`
+      CREATE TRIGGER IF NOT EXISTS messages_fts_insert AFTER INSERT ON messages
+      BEGIN
+        INSERT INTO messages_fts(rowid, content, session_id, sender_id)
+        VALUES (new.rowid, new.content, new.session_id, new.sender_id);
+      END
+    `);
+    db.exec(`
+      CREATE TRIGGER IF NOT EXISTS messages_fts_update AFTER UPDATE ON messages
+      BEGIN
+        UPDATE messages_fts SET content = new.content, session_id = new.session_id, sender_id = new.sender_id
+        WHERE rowid = new.rowid;
+      END
+    `);
+    db.exec(`
+      CREATE TRIGGER IF NOT EXISTS messages_fts_delete AFTER DELETE ON messages
+      BEGIN
+        DELETE FROM messages_fts WHERE rowid = old.rowid;
+      END
+    `);
+    // Backfill existing messages into FTS5 index
+    db.exec(`
+      INSERT OR IGNORE INTO messages_fts(rowid, content, session_id, sender_id)
+      SELECT rowid, content, session_id, sender_id FROM messages
+    `);
+  } catch {
+    // FTS5 table or triggers already exist — safe to ignore
+  }
 }

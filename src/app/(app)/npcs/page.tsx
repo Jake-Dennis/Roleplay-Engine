@@ -1,0 +1,195 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { NpcList } from "@/components/npcs/npc-list";
+import { NpcEditor } from "@/components/npcs/npc-editor";
+import { logger } from "@/lib/logger";
+
+interface Npc {
+  id: string;
+  name: string;
+  description: string | null;
+  personalityTraits: string | null;
+  behaviorPatterns: string | null;
+  voiceId: string | null;
+  isCanon: number;
+  universeId: string | null;
+  createdAt: string;
+}
+
+interface Universe {
+  id: string;
+  name: string;
+}
+
+export default function NpcsPage() {
+  const [npcs, setNpcs] = useState<Npc[]>([]);
+  const [universes, setUniverses] = useState<Universe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [universeFilter, setUniverseFilter] = useState("");
+
+  // Form state
+  const [formName, setFormName] = useState("");
+  const [formDescription, setFormDescription] = useState("");
+  const [formPersonalityTraits, setFormPersonalityTraits] = useState("");
+  const [formBehaviorPatterns, setFormBehaviorPatterns] = useState("");
+  const [formVoiceId, setFormVoiceId] = useState("");
+  const [formIsCanon, setFormIsCanon] = useState(false);
+  const [formUniverseId, setFormUniverseId] = useState("");
+
+  useEffect(() => {
+    loadNpcs();
+    loadUniverses();
+  }, []);
+
+  async function loadNpcs() {
+    try {
+      const res = await fetch("/api/npcs");
+      const data = await res.json();
+      setNpcs(data.npcs || []);
+    } catch (err) {
+      logger.warn("Failed to load NPCs", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadUniverses() {
+    try {
+      const res = await fetch("/api/universes");
+      const data = await res.json();
+      setUniverses(data.universes || []);
+    } catch (err) {
+      logger.warn("Failed to load universes", err);
+    }
+  }
+
+  function startCreate() {
+    setFormName("");
+    setFormDescription("");
+    setFormPersonalityTraits("");
+    setFormBehaviorPatterns("");
+    setFormVoiceId("");
+    setFormIsCanon(false);
+    setFormUniverseId(universeFilter || "");
+    setCreating(true);
+    setSelectedId(null);
+  }
+
+  function selectNpc(npc: Npc) {
+    setSelectedId(npc.id);
+    setCreating(false);
+    setFormName(npc.name);
+    setFormDescription(npc.description || "");
+    setFormPersonalityTraits(npc.personalityTraits || "");
+    setFormBehaviorPatterns(npc.behaviorPatterns || "");
+    setFormVoiceId(npc.voiceId || "");
+    setFormIsCanon(npc.isCanon === 1);
+    setFormUniverseId(npc.universeId || "");
+  }
+
+  function cancelEdit() {
+    setCreating(false);
+    setSelectedId(null);
+  }
+
+  async function handleSave() {
+    if (!formName.trim()) return;
+
+    setSaving(true);
+    try {
+      const body = {
+        name: formName,
+        description: formDescription || null,
+        personalityTraits: formPersonalityTraits || null,
+        behaviorPatterns: formBehaviorPatterns || null,
+        voiceId: formVoiceId || null,
+        isCanon: formIsCanon,
+        universeId: formUniverseId || null,
+      };
+
+      if (creating) {
+        const res = await fetch("/api/npcs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (res.ok) {
+          await loadNpcs();
+          const data = await res.json();
+          setSelectedId(data.npc.id);
+          setCreating(false);
+        }
+      } else if (selectedId) {
+        const res = await fetch(`/api/npcs/${selectedId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (res.ok) {
+          await loadNpcs();
+        }
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    await fetch(`/api/npcs/${id}`, { method: "DELETE" });
+    setNpcs((prev) => prev.filter((n) => n.id !== id));
+    if (selectedId === id) setSelectedId(null);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-text-muted">
+        <span className="text-xs">Loading NPCs...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-[calc(100vh-7rem)] gap-4">
+      <NpcList
+        npcs={npcs}
+        universes={universes}
+        selectedId={selectedId}
+        searchQuery={searchQuery}
+        universeFilter={universeFilter}
+        onSelect={selectNpc}
+        onSearchChange={setSearchQuery}
+        onUniverseFilterChange={setUniverseFilter}
+        onCreateNew={startCreate}
+      />
+
+      <NpcEditor
+        selectedId={selectedId}
+        creating={creating}
+        formName={formName}
+        formDescription={formDescription}
+        formPersonalityTraits={formPersonalityTraits}
+        formBehaviorPatterns={formBehaviorPatterns}
+        formVoiceId={formVoiceId}
+        formIsCanon={formIsCanon}
+        formUniverseId={formUniverseId}
+        universes={universes}
+        saving={saving}
+        onNameChange={setFormName}
+        onDescriptionChange={setFormDescription}
+        onPersonalityTraitsChange={setFormPersonalityTraits}
+        onBehaviorPatternsChange={setFormBehaviorPatterns}
+        onVoiceIdChange={setFormVoiceId}
+        onIsCanonChange={setFormIsCanon}
+        onUniverseIdChange={setFormUniverseId}
+        onSave={handleSave}
+        onDelete={handleDelete}
+        onCancel={cancelEdit}
+      />
+    </div>
+  );
+}

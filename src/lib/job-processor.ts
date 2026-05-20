@@ -31,6 +31,9 @@ import { safeParseWarn } from "@/lib/safe-json";
 import { handleResponseJob } from "./jobs/response-handler";
 import { handleSummarizationJob } from "./jobs/summarization-handler";
 import { handleWikiJob } from "./jobs/wiki-handler";
+import { handleNpcEvolutionJob } from "./jobs/npc-evolution";
+import { handleLoreExtractionJob } from "./jobs/lore-extraction";
+import { handleSessionRecapJob } from "./jobs/session-recap";
 
 export type JobType =
   | "generate_response"
@@ -50,7 +53,10 @@ export type JobType =
   | "wiki_generate_rumors"
   | "wiki_deepen_page"
   | "wiki_deepen_location"
-  | "wiki_extract_event";
+  | "wiki_extract_event"
+  | "generate_session_recap"
+  | "npc_evolution"
+  | "extract_lore_comprehensive";
 
 export type JobPriority = "high" | "medium" | "low" | "idle";
 export type JobStatus = "queued" | "processing" | "completed" | "failed" | "cancelled";
@@ -330,6 +336,12 @@ export async function processJob(job: QueuedJob): Promise<JobResult> {
       case "wiki_deepen_location":
       case "wiki_extract_event":
         return await handleWikiJob(job.id, payload, job.type);
+      case "npc_evolution":
+        return await handleNpcEvolutionJob(job.id, payload);
+      case "extract_lore_comprehensive":
+        return await handleLoreExtractionJob(job.id, payload);
+      case "generate_session_recap":
+        return await handleSessionRecapJob(job.id, payload);
       default:
         throw new Error(`Unknown job type: ${job.type}`);
     }

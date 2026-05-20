@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
+import RecentChangesWidget from "@/components/wiki/recent-changes-widget";
 
 interface Session {
   id: string;
@@ -153,6 +154,9 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Recent Wiki Changes */}
+      <RecentChangesWidget />
     </div>
   );
 }

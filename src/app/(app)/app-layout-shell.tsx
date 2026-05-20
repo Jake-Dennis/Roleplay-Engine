@@ -34,6 +34,7 @@ const navItems = [
   { href: "/universe", label: "Universes", icon: Globe },
   { href: "/wiki", label: "Wiki", icon: BookOpen },
   { href: "/personas", label: "Personas", icon: User },
+  { href: "/npcs", label: "NPCs", icon: UsersIcon },
   { href: "/relationships", label: "Relationships", icon: Heart },
   { href: "/narrative-threads", label: "Threads", icon: GitBranch },
   { href: "/timeline", label: "Timeline", icon: Clock },
@@ -371,23 +372,26 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="ml-56 flex-1 pb-8">
-        <div className="mx-auto max-w-5xl px-6 py-6">{children}</div>
-      </main>
+      {/* Main content area */}
+      <div className="ml-56 flex flex-1 flex-col">
+        {/* Connection Status Bar */}
+        <ConnectionIndicator />
 
-      {/* Idle status indicator */}
-      {isIdle && (
-        <div className="fixed bottom-2 left-58 z-40 rounded-md bg-bg-raised/90 px-2.5 py-1 text-xxs text-text-muted backdrop-blur-sm">
-          Idle {Math.floor(idleTime / 60000)}m · Tier {currentTier}
-        </div>
-      )}
+        {/* Page content */}
+        <main className="relative flex-1">
+          <div className="mx-auto max-w-5xl px-6 py-6">{children}</div>
 
-      {/* FPS Counter overlay (toggle with Ctrl+Shift+F) */}
-      <FPSCounter />
+          {/* Idle status indicator */}
+          {isIdle && (
+            <div className="fixed bottom-2 left-58 z-40 rounded-md bg-bg-raised/90 px-2.5 py-1 text-xxs text-text-muted backdrop-blur-sm">
+              Idle {Math.floor(idleTime / 60000)}m · Tier {currentTier}
+            </div>
+          )}
 
-      {/* Connection Status Footer */}
-      <ConnectionIndicator />
+          {/* FPS Counter overlay (toggle with Ctrl+Shift+F) */}
+          <FPSCounter />
+        </main>
+      </div>
     </div>
   );
 }

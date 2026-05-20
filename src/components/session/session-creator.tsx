@@ -50,6 +50,10 @@ export function SessionCreator({ universes, onCreate, onCancel }: SessionCreator
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
+    if (!universeId) {
+      setError("Please select a universe");
+      return;
+    }
 
     setLoading(true);
     setError("");
@@ -57,7 +61,7 @@ export function SessionCreator({ universes, onCreate, onCancel }: SessionCreator
     try {
       await onCreate({
         name: name.trim(),
-        universe_id: universeId || null,
+        universe_id: universeId,
         type,
       });
     } catch {
@@ -92,14 +96,15 @@ export function SessionCreator({ universes, onCreate, onCancel }: SessionCreator
 
         <div>
           <label className="mb-1.5 block text-xs text-text-secondary">
-            Universe (optional)
+            Universe <span className="text-error">*</span>
           </label>
           <select
             value={universeId}
             onChange={(e) => setUniverseId(e.target.value)}
             className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary transition-colors focus:border-accent"
+            required
           >
-            <option value="">No universe</option>
+            <option value="">Select Universe</option>
             {filteredUniverses.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.name}
@@ -144,7 +149,7 @@ export function SessionCreator({ universes, onCreate, onCancel }: SessionCreator
 
         <button
           type="submit"
-          disabled={loading || !name.trim()}
+          disabled={loading || !name.trim() || !universeId}
           className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? (

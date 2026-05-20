@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import FileTree from '@/components/wiki/file-tree';
 import BacklinkPanel from '@/components/wiki/backlink-panel';
-import RevisionHistory from '@/components/wiki/revision-history';
+import VersionHistory from '@/components/wiki/version-history';
 import OutlinePanel from '@/components/wiki/outline-panel';
 import OutgoingLinksPanel from '@/components/wiki/outgoing-links-panel';
 import MarkdownRenderer from '@/components/wiki/markdown-renderer';
@@ -334,10 +334,21 @@ export default function WikiPageView() {
           <BacklinkPanel currentPage={page.path} allPages={allPages} />
         )}
         {rightPanel === 'history' && (
-          <RevisionHistory
+          <VersionHistory
             slug={slug}
-            currentContent={page.content}
-            currentFrontmatter={page.frontmatter}
+            onRestore={() => {
+              const pagePath = slug.join('/');
+              fetch(`/api/wiki/${pagePath}`)
+                .then(res => res.ok ? res.json() : null)
+                .then(data => {
+                  if (data) {
+                    setPage(data.page);
+                    setAllPages(data.allPages || []);
+                    setOrphanPaths(data.orphanPaths || []);
+                    setEmbeds(data.embeds || {});
+                  }
+                });
+            }}
           />
         )}
         {rightPanel === 'outline' && (

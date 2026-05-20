@@ -91,7 +91,7 @@ export function validateUsername(username: string): string | null {
     return `Username must be ${AUTH_CONFIG.usernameMinLength}-${AUTH_CONFIG.usernameMaxLength} characters`;
   }
   if (!AUTH_CONFIG.usernamePattern.test(username)) {
-    return "Username can only contain letters, numbers, and underscores";
+    return "Username can only contain letters, numbers, underscores, and symbols (@.!#$%^&*()+=)";
   }
   return null;
 }
@@ -140,7 +140,7 @@ export async function createUser(
   // Check if username already exists (case-insensitive)
   const existing = db
     .prepare("SELECT id FROM users WHERE LOWER(username) = LOWER(?)")
-    .get(username.toLowerCase());
+    .get(username);
 
   if (existing) return null;
 
@@ -149,7 +149,7 @@ export async function createUser(
 
   db.prepare(
     "INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)"
-  ).run(id, username.toLowerCase(), passwordHash);
+  ).run(id, username, passwordHash);
 
   // Create user data directories
   initializeUserDataDirectory(id);
@@ -167,7 +167,7 @@ export async function authenticateUser(
     .prepare(
       "SELECT id, username, password_hash, created_at, last_login, settings, password_changed_at FROM users WHERE LOWER(username) = LOWER(?)"
     )
-    .get(username.toLowerCase()) as
+    .get(username) as
     | {
         id: string;
         username: string;
@@ -177,7 +177,7 @@ export async function authenticateUser(
         settings: string;
         password_changed_at: string | null;
       }
-    | undefined;
+      | undefined;
 
   if (!row) return null;
 
@@ -238,7 +238,7 @@ export function getUserByUsername(username: string): User | null {
     .prepare(
       "SELECT id, username, created_at, last_login, settings, password_changed_at FROM users WHERE LOWER(username) = LOWER(?)"
     )
-    .get(username.toLowerCase()) as
+    .get(username) as
     | {
         id: string;
         username: string;
@@ -247,7 +247,7 @@ export function getUserByUsername(username: string): User | null {
         settings: string;
         password_changed_at: string | null;
       }
-    | undefined;
+      | undefined;
 
   if (!row) return null;
 
