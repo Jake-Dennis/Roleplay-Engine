@@ -14,6 +14,15 @@ export type DbRow = Record<string, unknown>;
 export type DbParams = (string | number | null)[];
 
 /**
+ * Typed interface for paginated database rows.
+ * All pagination routes return rows with at least an `id` column.
+ */
+export interface PaginatedRow {
+  id: string;
+  [key: string]: unknown;
+}
+
+/**
  * Flexible database result type for rows accessed with dot notation.
  * Use this for helper functions that return raw query results with
  * arbitrary columns (e.g., access checks, migration utilities).

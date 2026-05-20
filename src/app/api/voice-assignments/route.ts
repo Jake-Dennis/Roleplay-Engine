@@ -1,7 +1,10 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { getAuthToken } from '@/lib/auth-token';
+import { safeParse } from '@/lib/safe-json';
 
 /**
  * GET /api/voice-assignments
@@ -36,16 +39,13 @@ export async function GET(request: NextRequest) {
     }[];
 
     const profiles = rows.map((row) => {
-      try {
-        const data = JSON.parse(row.voice_name);
-        return {
-          id: row.entity_id,
-          name: data.name as string,
-          slots: data.slots as Array<{ voiceId: string; weight: number }>,
-        };
-      } catch {
-        return null;
-      }
+      const data = safeParse<{ name: string; slots: Array<{ voiceId: string; weight: number }> }>(row.voice_name);
+      if (!data) return null;
+      return {
+        id: row.entity_id,
+        name: data.name,
+        slots: data.slots,
+      };
     }).filter(Boolean);
 
     return NextResponse.json({ profiles });
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ assignment: null });
   }
 
-  return NextResponse.json({ assignment });
+  return NextResponse.json({ assignment: camelizeKeys(assignment) });
 }
 
 /**
@@ -87,7 +87,8 @@ export async function PUT(request: NextRequest) {
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { entityType, entityId, voiceName, voiceSpeed = 1.0, volume = 0.8 } = body;
 
   if (!entityType || !entityId || !voiceName) {
@@ -132,7 +133,8 @@ export async function POST(request: NextRequest) {
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { id, name, slots } = body;
 
   if (!id || !name || !slots || !Array.isArray(slots)) {

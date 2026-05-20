@@ -1,8 +1,10 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { withAuth } from "@/lib/with-auth";
 import { detectAllContradictionsWithSemantic } from "@/lib/contradiction-detector";
 import { scanUnverifiedLoreForContradictions } from "@/lib/semantic-contradiction";
-import type { DbParams } from "@/lib/types";
+import type { DbParams, PaginatedRow } from "@/lib/types";
 
 /**
  * POST /api/contradictions/check
@@ -15,7 +17,8 @@ export async function POST(request: NextRequest) {
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { entityType, entityId } = body;
 
   if (!entityType || !entityId) {
@@ -108,7 +111,7 @@ export async function GET(request: NextRequest) {
      LIMIT ?`;
   params.push(limit + 1);
 
-  const rows = db.prepare(query).all(...params) as any[];
+  const rows = db.prepare(query).all(...params) as PaginatedRow[];
 
   let nextCursor: string | null = null;
   let resultItems = rows;
@@ -117,5 +120,5 @@ export async function GET(request: NextRequest) {
     resultItems = rows.slice(0, limit);
   }
 
-  return NextResponse.json({ contradictions: resultItems, nextCursor });
+  return NextResponse.json({ contradictions: camelizeKeys(resultItems), nextCursor });
 }

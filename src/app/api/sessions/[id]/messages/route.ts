@@ -1,12 +1,15 @@
+import type { PaginatedRow } from '@/lib/types';
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { queueJob } from "@/lib/job-processor";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { ensureGroupSupport } from "@/lib/group-migrations";
-import { unauthorizedError, notFoundError, forbiddenError, badRequestError, internalError } from "@/lib/error-response";
+import { unauthorizedError, notFoundError, forbiddenError, badRequestError, internalError, requireJson } from "@/lib/error-response";
 import { getAuthToken } from '@/lib/auth-token';
 import { logger } from '@/lib/logger';
+import { validateLength } from '@/lib/validation';
 
 export async function GET(
   request: NextRequest,
@@ -62,16 +65,16 @@ export async function GET(
     query += " ORDER BY m.timestamp ASC, m.id ASC LIMIT ?";
     queryParams.push(limit + 1);
 
-    const messages = db.prepare(query).all(...queryParams) as unknown[];
+    const messages = db.prepare(query).all(...queryParams) as PaginatedRow[];
 
     let nextCursor: string | null = null;
     let resultMessages = messages;
-    if ((messages as any[]).length > limit) {
-      nextCursor = (messages as any[])[limit].id;
-      resultMessages = (messages as any[]).slice(0, limit);
+    if (messages.length > limit) {
+      nextCursor = messages[limit].id;
+      resultMessages = messages.slice(0, limit);
     }
 
-    return NextResponse.json({ messages: resultMessages, nextCursor });
+    return NextResponse.json({ messages: camelizeKeys(resultMessages), nextCursor });
   } catch (err) {
     logger.error("GET /api/sessions/[id]/messages error:", err);
     return internalError();
@@ -112,12 +115,16 @@ export async function POST(
       return forbiddenError();
     }
 
+    requireJson(request);
     const body = await request.json();
     const { content, personaId } = body;
 
     if (!content) {
       return badRequestError("Content is required");
     }
+
+    const contentError = validateLength(content, 100000, "Content");
+    if (contentError) return badRequestError(contentError);
 
     // Verify persona belongs to user if provided
     if (personaId) {
@@ -174,7 +181,7 @@ export async function POST(
       WHERE m.id = ?
     `).get(messageId);
 
-    return NextResponse.json({ message }, { status: 201 });
+    return NextResponse.json({ message: camelizeKeys(message) }, { status: 201 });
   } catch (err) {
     logger.error("POST /api/sessions/[id]/messages error:", err);
     return internalError();

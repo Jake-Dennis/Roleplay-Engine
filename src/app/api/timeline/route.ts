@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { withAuth } from "@/lib/with-auth";
 import { getDb } from "@/lib/db";
 import { rowToJson } from "@/lib/row-to-json";
-import type { DbParams } from "@/lib/types";
+import type { DbParams, PaginatedRow } from "@/lib/types";
 
 const VALID_ENTRY_TYPES = ["event", "milestone", "era_start", "era_end", "note"];
 const VALID_IMPORTANCE = ["low", "medium", "high", "critical"];
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
   query += ` ORDER BY occurred_at ${order}, id ${idOrder} LIMIT ?`;
   params.push(limit + 1);
 
-  const rows = db.prepare(query).all(...params) as any[];
+  const rows = db.prepare(query).all(...params) as PaginatedRow[];
 
   let nextCursor: string | null = null;
   let resultEntries = rows;
@@ -95,7 +96,8 @@ export async function POST(request: NextRequest) {
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { title, description, sessionId, threadId, occurredAt, era, entryType, importance } = body;
 
   if (!title || title.trim().length === 0) {
@@ -145,7 +147,8 @@ export async function PUT(request: NextRequest) {
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { id, title, description, occurredAt, era, entryType, importance } = body;
 
   if (!id) {

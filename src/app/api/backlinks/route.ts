@@ -1,7 +1,9 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { withAuth } from "@/lib/with-auth";
 import { getDb } from "@/lib/db";
-import type { DbParams } from "@/lib/types";
+import type { DbParams, PaginatedRow } from "@/lib/types";
 
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);
@@ -53,7 +55,7 @@ export async function GET(request: NextRequest) {
   const query = `SELECT id, user_id, universe_id, source_type, source_id, target_type, target_id, link_type, context_snippet, created_at FROM backlinks WHERE ${where} ORDER BY created_at DESC, id DESC LIMIT ?`;
   params.push(limit + 1);
 
-  const rows = db.prepare(query).all(...params) as any[];
+  const rows = db.prepare(query).all(...params) as PaginatedRow[];
 
   let nextCursor: string | null = null;
   let resultItems = rows;
@@ -62,7 +64,7 @@ export async function GET(request: NextRequest) {
     resultItems = rows.slice(0, limit);
   }
 
-  return NextResponse.json({ backlinks: resultItems, nextCursor });
+  return NextResponse.json({ backlinks: camelizeKeys(resultItems), nextCursor });
 }
 
 export async function POST(request: NextRequest) {
@@ -70,7 +72,8 @@ export async function POST(request: NextRequest) {
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { sourceType, sourceId, targetType, targetId, linkType, contextSnippet, universe_id } = body;
 
   if (!sourceType || !sourceId || !targetType || !targetId) {
@@ -93,7 +96,7 @@ export async function POST(request: NextRequest) {
   }
 
   const backlink = db.prepare("SELECT * FROM backlinks WHERE id = ?").get(id);
-  return NextResponse.json({ backlink }, { status: 201 });
+  return NextResponse.json({ backlink: camelizeKeys(backlink) }, { status: 201 });
 }
 
 export async function DELETE(request: NextRequest) {

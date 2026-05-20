@@ -1,7 +1,12 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { getAuthToken } from '@/lib/auth-token';
+import { validateLength } from '@/lib/validation';
+
+interface PaginatedRow { id: string; [key: string]: unknown }
 
 export async function GET(request: NextRequest) {
   const token = getAuthToken(request);
@@ -39,7 +44,7 @@ export async function GET(request: NextRequest) {
   query += " ORDER BY created_at DESC, id DESC LIMIT ?";
   params.push(limit + 1);
 
-  const memories = db.prepare(query).all(...params) as any[];
+  const memories = db.prepare(query).all(...params) as PaginatedRow[];
 
   let nextCursor: string | null = null;
   let resultMemories = memories;
@@ -48,7 +53,7 @@ export async function GET(request: NextRequest) {
     resultMemories = memories.slice(0, limit);
   }
 
-  return NextResponse.json({ memories: resultMemories, nextCursor });
+  return NextResponse.json({ memories: camelizeKeys(resultMemories), nextCursor });
 }
 
 export async function POST(request: NextRequest) {
@@ -57,12 +62,16 @@ export async function POST(request: NextRequest) {
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { sessionId, type, content, importance, relatedEntities } = body;
 
   if (!type || !content) {
     return NextResponse.json({ error: "type and content are required" }, { status: 400 });
   }
+
+  const contentError = validateLength(content, 100000, "Content");
+  if (contentError) return NextResponse.json({ error: contentError }, { status: 400 });
 
   const db = getDb();
   const id = crypto.randomUUID();
@@ -85,5 +94,5 @@ export async function POST(request: NextRequest) {
   );
 
   const memory = db.prepare("SELECT * FROM narrative_memories WHERE id = ?").get(id);
-  return NextResponse.json({ memory }, { status: 201 });
+  return NextResponse.json({ memory: camelizeKeys(memory) }, { status: 201 });
 }
