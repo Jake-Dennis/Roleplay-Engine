@@ -1286,7 +1286,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 17-22)
   - Message: `quality: replace hardcoded timeouts with config constants`
 
-- [ ] 23. Add Pagination to List Endpoints (Batch 1)
+- [x] 23. Add Pagination to List Endpoints (Batch 1)
 
   **What to do**:
   - Add cursor-based pagination to these endpoints:
@@ -1348,7 +1348,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 23-29)
   - Message: `feat: add pagination to messages, memories, timeline, threads endpoints`
 
-- [ ] 24. Add Pagination to List Endpoints (Batch 2)
+- [x] 24. Add Pagination to List Endpoints (Batch 2)
 
   **What to do**:
   - Add cursor-based pagination to these endpoints:
@@ -1398,7 +1398,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 23-29)
   - Message: `feat: add pagination to backlinks, users, tts-cache, contradictions endpoints`
 
-- [ ] 25. Fix N+1 Query Patterns
+- [x] 25. Fix N+1 Query Patterns
 
   **What to do**:
   - `src/app/api/groups/route.ts:27-39` — Replace 3 separate COUNT queries per group with a single JOIN query
@@ -1445,7 +1445,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 23-29)
   - Message: `perf: fix N+1 query patterns in groups and sessions routes`
 
-- [ ] 26. Add Missing Database Indexes
+- [x] 26. Add Missing Database Indexes
 
   **What to do**:
   - Create `scripts/add-missing-indexes.ts` migration script
@@ -1501,7 +1501,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 23-29)
   - Message: `db: add missing indexes for common query patterns`
 
-- [ ] 27. Dynamic Import Cytoscape
+- [x] 27. Dynamic Import Cytoscape
 
   **What to do**:
   - Update `src/components/wiki/graph-view.tsx` to use `next/dynamic` for cytoscape import
@@ -1549,7 +1549,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 23-29)
   - Message: `perf: dynamic import cytoscape to reduce initial bundle`
 
-- [ ] 28. Consolidate Dual State — TTS Settings
+- [x] 28. Consolidate Dual State — TTS Settings
 
   **What to do**:
   - Remove localStorage TTS settings from `src/app/(app)/settings/page.tsx`
@@ -1598,7 +1598,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 23-29)
   - Message: `fix: consolidate TTS settings from localStorage to DB`
 
-- [ ] 29. Consolidate Dual State — Voice Assignments
+- [x] 29. Consolidate Dual State — Voice Assignments
 
   **What to do**:
   - Remove localStorage voice assignments from `src/app/(app)/voice-combiner/page.tsx`

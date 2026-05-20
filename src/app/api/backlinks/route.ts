@@ -13,43 +13,56 @@ export async function GET(request: NextRequest) {
   const entityId = searchParams.get("entityId");
   const targetType = searchParams.get("targetType");
   const universeId = searchParams.get("universe_id");
+  const cursor = searchParams.get("cursor");
+  const limitParam = searchParams.get("limit");
+  const limit = limitParam ? Math.min(parseInt(limitParam, 10), 100) : 20;
 
   const db = getDb();
-  let backlinks;
+
+  // Build base query parts
+  let whereClauses: string[] = ["user_id = ?"];
+  const params: DbParams = [userId];
 
   if (entityType && entityId) {
-    // Get backlinks pointing TO this entity
-    let query = "SELECT id, user_id, universe_id, source_type, source_id, target_type, target_id, link_type, context_snippet, created_at FROM backlinks WHERE target_type = ? AND target_id = ?";
-    const params: DbParams = [entityType, entityId];
-    if (universeId) {
-      query += " AND universe_id = ?";
-      params.push(universeId);
-    }
-    query += " ORDER BY created_at DESC";
-    backlinks = db.prepare(query).all(...params);
-  } else if (targetType) {
-    // Get all backlinks of a specific target type
-    let query = "SELECT id, user_id, universe_id, source_type, source_id, target_type, target_id, link_type, context_snippet, created_at FROM backlinks WHERE user_id = ? AND target_type = ?";
-    const params: DbParams = [userId, targetType];
-    if (universeId) {
-      query += " AND universe_id = ?";
-      params.push(universeId);
-    }
-    query += " ORDER BY created_at DESC LIMIT 100";
-    backlinks = db.prepare(query).all(...params);
-  } else {
-    // Get all recent backlinks (with limit)
-    let query = "SELECT id, user_id, universe_id, source_type, source_id, target_type, target_id, link_type, context_snippet, created_at FROM backlinks WHERE user_id = ?";
-    const params: DbParams = [userId];
-    if (universeId) {
-      query += " AND universe_id = ?";
-      params.push(universeId);
-    }
-    query += " ORDER BY created_at DESC LIMIT 100";
-    backlinks = db.prepare(query).all(...params);
+    whereClauses = ["target_type = ?", "target_id = ?"];
+    params.length = 0;
+    params.push(entityType, entityId);
+  }
+  if (targetType && !entityType) {
+    whereClauses.push("target_type = ?");
+    params.push(targetType);
+  }
+  if (universeId) {
+    whereClauses.push("universe_id = ?");
+    params.push(universeId);
   }
 
-  return NextResponse.json({ backlinks });
+  // Cursor pagination
+  if (cursor) {
+    const cursorRow = db.prepare(
+      "SELECT created_at FROM backlinks WHERE id = ? AND user_id = ?"
+    ).get(cursor, userId) as { created_at: string } | undefined;
+
+    if (cursorRow) {
+      whereClauses.push("(created_at, id) < (?, ?)");
+      params.push(cursorRow.created_at, cursor);
+    }
+  }
+
+  const where = whereClauses.join(" AND ");
+  const query = `SELECT id, user_id, universe_id, source_type, source_id, target_type, target_id, link_type, context_snippet, created_at FROM backlinks WHERE ${where} ORDER BY created_at DESC, id DESC LIMIT ?`;
+  params.push(limit + 1);
+
+  const rows = db.prepare(query).all(...params) as any[];
+
+  let nextCursor: string | null = null;
+  let resultItems = rows;
+  if (rows.length > limit) {
+    nextCursor = rows[limit].id;
+    resultItems = rows.slice(0, limit);
+  }
+
+  return NextResponse.json({ backlinks: resultItems, nextCursor });
 }
 
 export async function POST(request: NextRequest) {

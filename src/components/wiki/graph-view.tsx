@@ -1,10 +1,21 @@
 'use client';
 import { useRef, useState, useEffect } from 'react';
-import CytoscapeComponent from 'react-cytoscapejs';
+import dynamic from 'next/dynamic';
 import { buildLinkGraph } from '@/lib/wiki/wikilinks';
 import type { WikiPage } from '@/lib/wiki/file-io';
 import { useRouter } from 'next/navigation';
 import { Loader2, AlertTriangle, GitBranch, RefreshCw } from 'lucide-react';
+
+const CytoscapeLoadingState = () => (
+  <div className="w-full h-[500px] border border-border-default rounded-lg flex items-center justify-center bg-bg-elevated" role="status" aria-label="Loading graph visualization">
+    <Loader2 size={24} className="animate-spin text-accent" />
+  </div>
+);
+
+const CytoscapeComponent = dynamic(() => import('react-cytoscapejs'), {
+  ssr: false,
+  loading: () => <CytoscapeLoadingState />,
+});
 
 interface GraphViewProps {
   pages: WikiPage[];

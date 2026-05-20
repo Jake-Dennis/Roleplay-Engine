@@ -5,7 +5,8 @@ import { getAuthToken } from '@/lib/auth-token';
 
 /**
  * GET /api/voice-assignments
- * Query: ?entityType=npc&entityId=xxx
+ * Query: ?entityType=npc&entityId=xxx  → single entity assignment
+ * Query: ?entityType=voice_profile     → all voice profiles for user
  * Returns the voice assignment for an entity, or null
  */
 export async function GET(request: NextRequest) {
@@ -19,11 +20,41 @@ export async function GET(request: NextRequest) {
   const entityType = searchParams.get("entityType");
   const entityId = searchParams.get("entityId");
 
+  const db = getDb();
+
+  // List all voice profiles
+  if (entityType === "voice_profile") {
+    const rows = db.prepare(
+      `SELECT id, entity_id, voice_name
+       FROM voice_assignments
+       WHERE user_id = ? AND entity_type = 'voice_profile'
+       ORDER BY created_at DESC`
+    ).all(decoded.sub) as {
+      id: string;
+      entity_id: string;
+      voice_name: string;
+    }[];
+
+    const profiles = rows.map((row) => {
+      try {
+        const data = JSON.parse(row.voice_name);
+        return {
+          id: row.entity_id,
+          name: data.name as string,
+          slots: data.slots as Array<{ voiceId: string; weight: number }>,
+        };
+      } catch {
+        return null;
+      }
+    }).filter(Boolean);
+
+    return NextResponse.json({ profiles });
+  }
+
+  // Single entity assignment (existing behavior)
   if (!entityType || !entityId) {
     return NextResponse.json({ error: "entityType and entityId are required" }, { status: 400 });
   }
-
-  const db = getDb();
 
   const assignment = db.prepare(
     `SELECT id, entity_type, entity_id, voice_name, voice_speed, volume
@@ -91,8 +122,40 @@ export async function PUT(request: NextRequest) {
 }
 
 /**
+ * POST /api/voice-assignments
+ * Create a new voice profile
+ */
+export async function POST(request: NextRequest) {
+  const token = getAuthToken(request);
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const decoded = await verifyToken(token);
+  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+  const body = await request.json();
+  const { id, name, slots } = body;
+
+  if (!id || !name || !slots || !Array.isArray(slots)) {
+    return NextResponse.json(
+      { error: "id, name, and slots are required" },
+      { status: 400 }
+    );
+  }
+
+  const db = getDb();
+
+  db.prepare(
+    `INSERT INTO voice_assignments (id, user_id, entity_type, entity_id, voice_name, voice_speed, volume)
+     VALUES (?, ?, 'voice_profile', ?, ?, 0, 0)`
+  ).run(crypto.randomUUID(), decoded.sub, id, JSON.stringify({ name, slots }));
+
+  return NextResponse.json({ success: true });
+}
+
+/**
  * DELETE /api/voice-assignments
- * Query: ?entityType=npc&entityId=xxx
+ * Query: ?entityType=npc&entityId=xxx        → delete entity assignment
+ * Query: ?profileId=xxx                       → delete voice profile
  */
 export async function DELETE(request: NextRequest) {
   const token = getAuthToken(request);
@@ -102,6 +165,19 @@ export async function DELETE(request: NextRequest) {
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
+  const profileId = searchParams.get("profileId");
+
+  // Delete voice profile
+  if (profileId) {
+    const db = getDb();
+    db.prepare(
+      "DELETE FROM voice_assignments WHERE user_id = ? AND entity_type = 'voice_profile' AND entity_id = ?"
+    ).run(decoded.sub, profileId);
+
+    return NextResponse.json({ success: true });
+  }
+
+  // Delete entity assignment (existing behavior)
   const entityType = searchParams.get("entityType");
   const entityId = searchParams.get("entityId");
 

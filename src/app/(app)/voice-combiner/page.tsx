@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Volume2, Plus, Trash2, Play, Save, Sparkles, Check, Mic } from "lucide-react";
 import { useActiveUniverse } from "@/contexts/active-universe";
-import { safeParse } from "@/lib/safe-json";
 import { logger } from "@/lib/logger";
 
 interface Voice {
@@ -22,10 +21,6 @@ interface SavedProfile {
   id: string;
   name: string;
   slots: VoiceSlot[];
-}
-
-function getStorageKey(universeId: string | null): string {
-  return universeId ? `voice-profiles-${universeId}` : "voice-profiles";
 }
 
 export default function VoiceCombinerPage() {
@@ -54,18 +49,18 @@ export default function VoiceCombinerPage() {
   // Load profiles when universe changes
   useEffect(() => {
     setLoadingProfiles(true);
-    try {
-      const stored = localStorage.getItem(getStorageKey(activeUniverse?.id || null));
-      if (stored) {
-        setSavedProfiles(safeParse<SavedProfile[]>(stored) ?? []);
-      } else {
+    fetch("/api/voice-assignments?entityType=voice_profile")
+      .then((res) => res.json())
+      .then((data) => {
+        setSavedProfiles(data.profiles ?? []);
+      })
+      .catch((err) => {
+        logger.warn("voice profiles fetch failed", err);
         setSavedProfiles([]);
-      }
-    } catch {
-      setSavedProfiles([]);
-    } finally {
-      setLoadingProfiles(false);
-    }
+      })
+      .finally(() => {
+        setLoadingProfiles(false);
+      });
     // Reset form on universe switch
     setProfileName("");
     setSlots([{ voiceId: "", weight: 50 }]);
@@ -176,13 +171,25 @@ export default function VoiceCombinerPage() {
     };
 
     try {
-      const updated = [...savedProfiles, profile];
-      setSavedProfiles(updated);
-      localStorage.setItem(getStorageKey(activeUniverse?.id || null), JSON.stringify(updated));
+      const res = await fetch("/api/voice-assignments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Save failed");
+        return;
+      }
+
+      setSavedProfiles((prev) => [...prev, profile]);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
       setProfileName("");
       setSlots([{ voiceId: "", weight: 50 }]);
+    } catch {
+      setError("Connection failed");
     } finally {
       setSaving(false);
     }
@@ -193,10 +200,22 @@ export default function VoiceCombinerPage() {
     setSlots(profile.slots.length > 0 ? profile.slots : [{ voiceId: "", weight: 50 }]);
   }
 
-  function deleteProfile(id: string) {
-    const updated = savedProfiles.filter((p) => p.id !== id);
-    setSavedProfiles(updated);
-    localStorage.setItem(getStorageKey(activeUniverse?.id || null), JSON.stringify(updated));
+  async function deleteProfile(id: string) {
+    try {
+      const res = await fetch(`/api/voice-assignments?profileId=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Delete failed");
+        return;
+      }
+
+      setSavedProfiles((prev) => prev.filter((p) => p.id !== id));
+    } catch {
+      setError("Connection failed");
+    }
   }
 
   return (

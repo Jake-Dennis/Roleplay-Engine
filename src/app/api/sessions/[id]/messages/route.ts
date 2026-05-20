@@ -20,6 +20,7 @@ export async function GET(
     if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
     const { id: sessionId } = await params;
+    const { searchParams } = new URL(request.url);
     const db = getDb();
 
     // Verify session access
@@ -33,16 +34,44 @@ export async function GET(
       return notFoundError("Session");
     }
 
-    const messages = db.prepare(`
+    // Cursor-based pagination
+    const limitParam = searchParams.get("limit");
+    const cursor = searchParams.get("cursor");
+    const limit = limitParam ? Math.min(parseInt(limitParam, 10), 500) : 100;
+
+    let query = `
       SELECT m.*, u.username as sender_name, p.name as persona_name, p.avatar_url as persona_avatar
       FROM messages m
       LEFT JOIN users u ON m.sender_id = u.id
       LEFT JOIN personas p ON m.persona_id = p.id
       WHERE m.session_id = ? AND m.is_deleted = 0
-      ORDER BY m.timestamp ASC
-    `).all(sessionId);
+    `;
+    const queryParams: unknown[] = [sessionId];
 
-    return NextResponse.json({ messages });
+    if (cursor) {
+      const cursorMsg = db.prepare(
+        "SELECT timestamp FROM messages WHERE id = ? AND session_id = ?"
+      ).get(cursor, sessionId) as { timestamp: string } | undefined;
+
+      if (cursorMsg) {
+        query += " AND (m.timestamp, m.id) > (?, ?)";
+        queryParams.push(cursorMsg.timestamp, cursor);
+      }
+    }
+
+    query += " ORDER BY m.timestamp ASC, m.id ASC LIMIT ?";
+    queryParams.push(limit + 1);
+
+    const messages = db.prepare(query).all(...queryParams) as unknown[];
+
+    let nextCursor: string | null = null;
+    let resultMessages = messages;
+    if ((messages as any[]).length > limit) {
+      nextCursor = (messages as any[])[limit].id;
+      resultMessages = (messages as any[]).slice(0, limit);
+    }
+
+    return NextResponse.json({ messages: resultMessages, nextCursor });
   } catch (err) {
     logger.error("GET /api/sessions/[id]/messages error:", err);
     return internalError();

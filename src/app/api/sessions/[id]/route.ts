@@ -5,6 +5,8 @@ import { ensureParticipantColumns } from "@/lib/session-columns";
 import { getAuthToken } from '@/lib/auth-token';
 import { unauthorizedError, notFoundError } from '@/lib/error-response';
 import { logger } from '@/lib/logger';
+import { safeParseWarn } from "@/lib/safe-json";
+import type { DbRow } from "@/lib/types";
 
 export async function GET(
   request: NextRequest,
@@ -46,11 +48,6 @@ export async function GET(
     ORDER BY m.rowid ASC
   `).all(id);
 
-  // Get scene state (L4: no side effects — return null if missing)
-  const sceneState = db.prepare(
-    "SELECT * FROM scene_states WHERE session_id = ? ORDER BY updated_at DESC LIMIT 1"
-  ).get(id) || null;
-
   // Get participants
   const participants = db.prepare(`
     SELECT u.id, u.username, sp.role, sp.character_name, sp.joined_at
@@ -60,26 +57,54 @@ export async function GET(
     ORDER BY sp.joined_at ASC
   `).all(id);
 
-  // Get turn config
+  // Get scene state + turn config in single query (eliminates 4 separate queries)
+  const combined = db.prepare(`
+    SELECT
+      ss.id as ss_id,
+      ss.session_id as ss_session_id,
+      ss.active_location_id,
+      ss.current_goal,
+      ss.emotional_tone,
+      ss.active_npcs,
+      ss.active_threads,
+      ss.scene_summary,
+      ss.updated_at as ss_updated_at,
+      tm.value as turn_mode_value,
+      tov.value as turn_order_value,
+      ct.value as current_turn_value
+    FROM (SELECT 1) AS dummy
+    LEFT JOIN scene_states ss ON ss.session_id = ?
+    LEFT JOIN session_config tm ON tm.session_id = ? AND tm.key = 'turn_mode'
+    LEFT JOIN session_config tov ON tov.session_id = ? AND tov.key = 'turn_order'
+    LEFT JOIN session_config ct ON ct.session_id = ? AND ct.key = 'current_turn'
+    ORDER BY ss.updated_at DESC
+    LIMIT 1
+  `).get(id, id, id, id, id) as DbRow | undefined;
+
+  const sceneState = combined && (combined as Record<string, unknown>).ss_id
+    ? {
+        id: (combined as Record<string, unknown>).ss_id,
+        session_id: (combined as Record<string, unknown>).ss_session_id,
+        active_location_id: (combined as Record<string, unknown>).active_location_id,
+        current_goal: (combined as Record<string, unknown>).current_goal,
+        emotional_tone: (combined as Record<string, unknown>).emotional_tone,
+        active_npcs: (combined as Record<string, unknown>).active_npcs,
+        active_threads: (combined as Record<string, unknown>).active_threads,
+        scene_summary: (combined as Record<string, unknown>).scene_summary,
+        updated_at: (combined as Record<string, unknown>).ss_updated_at,
+      }
+    : null;
+
   let turnConfig: { turnMode: string; turnOrder: string[]; currentTurn: string | null } = {
     turnMode: "freeform",
     turnOrder: [],
     currentTurn: null,
   };
   try {
-    const turnMode = db.prepare(
-      "SELECT value FROM session_config WHERE session_id = ? AND key = 'turn_mode'"
-    ).get(id) as { value: string } | undefined;
-    const turnOrder = db.prepare(
-      "SELECT value FROM session_config WHERE session_id = ? AND key = 'turn_order'"
-    ).get(id) as { value: string } | undefined;
-    const currentTurn = db.prepare(
-      "SELECT value FROM session_config WHERE session_id = ? AND key = 'current_turn'"
-    ).get(id) as { value: string } | undefined;
     turnConfig = {
-      turnMode: turnMode?.value || "freeform",
-      turnOrder: turnOrder ? JSON.parse(turnOrder.value) : [],
-      currentTurn: currentTurn?.value || null,
+      turnMode: ((combined as Record<string, unknown>)?.turn_mode_value as string) || "freeform",
+      turnOrder: safeParseWarn<string[]>((combined as Record<string, unknown>)?.turn_order_value as string, "turn order", []) ?? [],
+      currentTurn: ((combined as Record<string, unknown>)?.current_turn_value as string) || null,
     };
   } catch (err) { logger.warn("[sessions] turn config parse failed:", err); }
 

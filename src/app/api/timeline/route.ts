@@ -19,6 +19,9 @@ export async function GET(request: NextRequest) {
   const era = searchParams.get("era");
   const entryType = searchParams.get("entryType");
   const sortOrder = searchParams.get("sort") || "desc"; // "asc" or "desc"
+  const limitParam = searchParams.get("limit");
+  const cursor = searchParams.get("cursor");
+  const limit = limitParam ? Math.min(parseInt(limitParam, 10), 500) : 200;
 
   const db = getDb();
 
@@ -52,12 +55,39 @@ export async function GET(request: NextRequest) {
     params.push(entryType);
   }
 
-  const order = sortOrder === "asc" ? "ASC" : "DESC";
-  query += ` ORDER BY occurred_at ${order} LIMIT 200`;
+  // Cursor-based pagination
+  if (cursor) {
+    const cursorEntry = db.prepare(
+      "SELECT occurred_at FROM timeline_entries WHERE id = ? AND user_id = ?"
+    ).get(cursor, userId) as { occurred_at: string } | undefined;
 
-  const rows = db.prepare(query).all(...params);
-  const entries = rows.map(rowToJson);
-  return NextResponse.json({ entries });
+    if (cursorEntry) {
+      if (sortOrder === "asc") {
+        query += " AND (occurred_at, id) > (?, ?)";
+        params.push(cursorEntry.occurred_at, cursor);
+      } else {
+        query += " AND (occurred_at, id) < (?, ?)";
+        params.push(cursorEntry.occurred_at, cursor);
+      }
+    }
+  }
+
+  const order = sortOrder === "asc" ? "ASC" : "DESC";
+  const idOrder = sortOrder === "asc" ? "ASC" : "DESC";
+  query += ` ORDER BY occurred_at ${order}, id ${idOrder} LIMIT ?`;
+  params.push(limit + 1);
+
+  const rows = db.prepare(query).all(...params) as any[];
+
+  let nextCursor: string | null = null;
+  let resultEntries = rows;
+  if (rows.length > limit) {
+    nextCursor = rows[limit].id;
+    resultEntries = rows.slice(0, limit);
+  }
+
+  const entries = resultEntries.map(rowToJson);
+  return NextResponse.json({ entries, nextCursor });
 }
 
 export async function POST(request: NextRequest) {

@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const db = getDb();
+  const url = new URL(request.url);
 
   // Get cache stats
   const stats = db.prepare(`
@@ -53,23 +54,52 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Get recent entries
-  const recentEntries = db.prepare(`
+  // Get recent entries with cursor pagination
+  const cursor = url.searchParams.get("cursor");
+  const limitParam = url.searchParams.get("limit");
+  const limit = limitParam ? Math.min(parseInt(limitParam, 10), 100) : 20;
+
+  let recentQuery = `
     SELECT id, text_content, voice_name, audio_format, duration_ms, use_count, created_at, last_used
     FROM tts_cache
     WHERE user_id = ?
-    ORDER BY last_used DESC
-    LIMIT 20
-  `).all(decoded.sub) as {
-    id: string;
-    text_content: string | null;
-    voice_name: string;
-    audio_format: string;
-    duration_ms: number | null;
-    use_count: number;
-    created_at: string;
-    last_used: string | null;
-  }[];
+  `;
+  const recentParams: unknown[] = [decoded.sub];
+
+  if (cursor) {
+    const cursorRow = db.prepare(
+      "SELECT last_used FROM tts_cache WHERE id = ? AND user_id = ?"
+    ).get(cursor, decoded.sub) as { last_used: string | null } | undefined;
+
+    if (cursorRow) {
+      // Handle NULL last_used: use COALESCE for consistent ordering
+      recentQuery += " AND (COALESCE(last_used, '1970-01-01'), id) < (?, ?)";
+      recentParams.push(cursorRow.last_used || "1970-01-01", cursor);
+    }
+  }
+
+  recentQuery += " ORDER BY COALESCE(last_used, '1970-01-01') DESC, id DESC LIMIT ?";
+  recentParams.push(limit + 1);
+
+  const recentRows = recentQuery
+    ? db.prepare(recentQuery).all(...recentParams) as {
+        id: string;
+        text_content: string | null;
+        voice_name: string;
+        audio_format: string;
+        duration_ms: number | null;
+        use_count: number;
+        created_at: string;
+        last_used: string | null;
+      }[]
+    : [];
+
+  let nextCursor: string | null = null;
+  let recentEntries = recentRows;
+  if (recentRows.length > limit) {
+    nextCursor = recentRows[limit].id;
+    recentEntries = recentRows.slice(0, limit);
+  }
 
   return NextResponse.json({
     stats: {
@@ -83,6 +113,7 @@ export async function GET(request: NextRequest) {
       fileCount,
     },
     recentEntries,
+    nextCursor,
   });
 }
 

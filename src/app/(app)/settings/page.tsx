@@ -105,20 +105,6 @@ export default function SettingsPage() {
       })
       .catch((err) => logger.warn("voice assignments fetch failed", err));
 
-    // Load TTS settings from localStorage
-    const savedSpeed = localStorage.getItem("tts-speed");
-    const savedVolume = localStorage.getItem("tts-volume");
-    const savedFormat = localStorage.getItem("tts-format");
-    const savedAutoPlay = localStorage.getItem("tts-autoplay");
-    const savedSkipLong = localStorage.getItem("tts-skip-long");
-    const savedThreshold = localStorage.getItem("tts-long-threshold");
-    if (savedSpeed) setTtsSpeed(parseFloat(savedSpeed));
-    if (savedVolume) setTtsVolume(parseFloat(savedVolume));
-    if (savedFormat) setTtsFormat(savedFormat);
-    if (savedAutoPlay !== null) setTtsAutoPlay(savedAutoPlay === "true");
-    if (savedSkipLong !== null) setTtsSkipLong(savedSkipLong === "true");
-    if (savedThreshold) setTtsLongThreshold(parseInt(savedThreshold, 10));
-
     // Load cache stats
     fetch("/api/tts/cache")
       .then((res) => res.json())
@@ -151,6 +137,12 @@ export default function SettingsPage() {
         if (data.user) {
           setSelectedLLM(data.user.llmModel);
           setSelectedEmbedding(data.user.embeddingModel);
+          if (data.user.ttsSpeed !== undefined) setTtsSpeed(data.user.ttsSpeed);
+          if (data.user.ttsVolume !== undefined) setTtsVolume(data.user.ttsVolume);
+          if (data.user.ttsFormat) setTtsFormat(data.user.ttsFormat);
+          if (data.user.ttsAutoPlay !== undefined) setTtsAutoPlay(data.user.ttsAutoPlay);
+          if (data.user.ttsSkipLong !== undefined) setTtsSkipLong(data.user.ttsSkipLong);
+          if (data.user.ttsLongThreshold !== undefined) setTtsLongThreshold(data.user.ttsLongThreshold);
         }
         setLoading(false);
       })
@@ -206,14 +198,22 @@ export default function SettingsPage() {
   async function handleTTSSettings() {
     setTtsSaving(true);
     try {
-      localStorage.setItem("tts-speed", ttsSpeed.toString());
-      localStorage.setItem("tts-volume", ttsVolume.toString());
-      localStorage.setItem("tts-format", ttsFormat);
-      localStorage.setItem("tts-autoplay", ttsAutoPlay.toString());
-      localStorage.setItem("tts-skip-long", ttsSkipLong.toString());
-      localStorage.setItem("tts-long-threshold", ttsLongThreshold.toString());
-      setTtsSuccess(true);
-      setTimeout(() => setTtsSuccess(false), 3000);
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ttsSpeed,
+          ttsVolume,
+          ttsFormat,
+          ttsAutoPlay,
+          ttsSkipLong,
+          ttsLongThreshold,
+        }),
+      });
+      if (res.ok) {
+        setTtsSuccess(true);
+        setTimeout(() => setTtsSuccess(false), 3000);
+      }
     } finally {
       setTtsSaving(false);
     }

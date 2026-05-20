@@ -77,6 +77,9 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const entityType = searchParams.get("entityType");
   const entityId = searchParams.get("entityId");
+  const cursor = searchParams.get("cursor");
+  const limitParam = searchParams.get("limit");
+  const limit = limitParam ? Math.min(parseInt(limitParam, 10), 100) : 20;
 
   const db = require("@/lib/db").getDb();
 
@@ -87,12 +90,32 @@ export async function GET(request: NextRequest) {
   if (entityType) { conditions += " AND entity_type = ?"; params.push(entityType); }
   if (entityId) { conditions += " AND entity_id = ?"; params.push(entityId); }
 
-  const validations = db.prepare(
-    `SELECT id, entity_type, entity_id, validation_notes, created_at
-     FROM entity_validations ${conditions}
-     ORDER BY created_at DESC
-     LIMIT 50`
-  ).all(...params);
+  // Cursor pagination
+  if (cursor) {
+    const cursorRow = db.prepare(
+      "SELECT created_at FROM entity_validations WHERE id = ? AND user_id = ?"
+    ).get(cursor, userId) as { created_at: string } | undefined;
 
-  return NextResponse.json({ contradictions: validations });
+    if (cursorRow) {
+      conditions += " AND (created_at, id) < (?, ?)";
+      params.push(cursorRow.created_at, cursor);
+    }
+  }
+
+  const query = `SELECT id, entity_type, entity_id, validation_notes, created_at
+     FROM entity_validations ${conditions}
+     ORDER BY created_at DESC, id DESC
+     LIMIT ?`;
+  params.push(limit + 1);
+
+  const rows = db.prepare(query).all(...params) as any[];
+
+  let nextCursor: string | null = null;
+  let resultItems = rows;
+  if (rows.length > limit) {
+    nextCursor = rows[limit].id;
+    resultItems = rows.slice(0, limit);
+  }
+
+  return NextResponse.json({ contradictions: resultItems, nextCursor });
 }

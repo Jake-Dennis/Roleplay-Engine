@@ -19,6 +19,9 @@ export async function GET(request: NextRequest) {
   const universeId = searchParams.get("universe_id");
   const status = searchParams.get("status");
   const arcType = searchParams.get("arcType");
+  const limitParam = searchParams.get("limit");
+  const cursor = searchParams.get("cursor");
+  const limit = limitParam ? Math.min(parseInt(limitParam, 10), 500) : 100;
 
   const db = getDb();
 
@@ -52,11 +55,32 @@ export async function GET(request: NextRequest) {
     params.push(arcType);
   }
 
-  query += " ORDER BY updated_at DESC LIMIT 100";
+  // Cursor-based pagination
+  if (cursor) {
+    const cursorThread = db.prepare(
+      "SELECT updated_at FROM narrative_threads WHERE id = ? AND user_id = ?"
+    ).get(cursor, userId) as { updated_at: string } | undefined;
 
-  const rows = db.prepare(query).all(...params);
-  const threads = rows.map(rowToJson);
-  return NextResponse.json({ threads });
+    if (cursorThread) {
+      query += " AND (updated_at, id) < (?, ?)";
+      params.push(cursorThread.updated_at, cursor);
+    }
+  }
+
+  query += " ORDER BY updated_at DESC, id DESC LIMIT ?";
+  params.push(limit + 1);
+
+  const rows = db.prepare(query).all(...params) as any[];
+
+  let nextCursor: string | null = null;
+  let resultThreads = rows;
+  if (rows.length > limit) {
+    nextCursor = rows[limit].id;
+    resultThreads = rows.slice(0, limit);
+  }
+
+  const threads = resultThreads.map(rowToJson);
+  return NextResponse.json({ threads, nextCursor });
 }
 
 export async function POST(request: NextRequest) {

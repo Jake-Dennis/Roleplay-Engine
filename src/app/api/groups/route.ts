@@ -15,10 +15,13 @@ export async function GET(request: NextRequest) {
     const db = getDb();
     ensureGroupSupport(db);
 
-    // Get groups the user owns or is a member of
+    // Single query with correlated subqueries for counts (eliminates N+1)
     const groups = db.prepare(`
       SELECT g.id, g.owner_id, g.name, g.description, g.created_at,
-        u.username as owner_name
+        u.username as owner_name,
+        (SELECT COUNT(*) FROM group_members gm WHERE gm.group_id = g.id) as member_count,
+        (SELECT COUNT(*) FROM sessions s WHERE s.group_id = g.id) as session_count,
+        (SELECT COUNT(*) FROM universes u2 WHERE u2.group_id = g.id) as universe_count
       FROM groups g
       JOIN users u ON g.owner_id = u.id
       WHERE g.owner_id = ? OR g.id IN (
@@ -27,27 +30,7 @@ export async function GET(request: NextRequest) {
       ORDER BY g.created_at DESC
     `).all(userId, userId) as DbRow[];
 
-    // Get counts separately to avoid subquery issues
-    const result = groups.map((g) => {
-      const memberCount = db.prepare(
-        "SELECT COUNT(*) as c FROM group_members WHERE group_id = ?"
-      ).get(g.id) as { c: number };
-      const sessionCount = db.prepare(
-        "SELECT COUNT(*) as c FROM sessions WHERE group_id = ?"
-      ).get(g.id) as { c: number };
-      const universeCount = db.prepare(
-        "SELECT COUNT(*) as c FROM universes WHERE group_id = ?"
-      ).get(g.id) as { c: number };
-
-      return {
-        ...g,
-        member_count: memberCount.c,
-        session_count: sessionCount.c,
-        universe_count: universeCount.c,
-      };
-    });
-
-    return NextResponse.json({ groups: result });
+    return NextResponse.json({ groups });
   } catch (e) {
     logger.error("Groups GET error:", e);
     return internalError();

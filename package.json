@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@flowershow/remark-wiki-link": "^3.4.0",
-    "@types/cytoscape": "^3.21.9",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.10.0",
     "clsx": "^2.1.1",
@@ -35,6 +34,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^3.0.0",
     "@types/better-sqlite3": "^7.6.13",
+    "@types/cytoscape": "^3.21.9",
     "@types/node": "^25.8.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",

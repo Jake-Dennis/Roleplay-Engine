@@ -11,20 +11,44 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const sessionId = searchParams.get("sessionId");
+  const limitParam = searchParams.get("limit");
+  const cursor = searchParams.get("cursor");
+  const limit = limitParam ? Math.min(parseInt(limitParam, 10), 500) : 50;
 
   const db = getDb();
-  let memories;
+
+  let query = "SELECT id, session_id, type, content, importance, related_entities, created_at FROM narrative_memories WHERE user_id = ?";
+  const params: unknown[] = [decoded.sub];
+
   if (sessionId) {
-    memories = db.prepare(
-      "SELECT id, session_id, type, content, importance, related_entities, created_at FROM narrative_memories WHERE user_id = ? AND session_id = ? ORDER BY created_at DESC"
-    ).all(decoded.sub, sessionId);
-  } else {
-    memories = db.prepare(
-      "SELECT id, session_id, type, content, importance, related_entities, created_at FROM narrative_memories WHERE user_id = ? ORDER BY created_at DESC LIMIT 50"
-    ).all(decoded.sub);
+    query += " AND session_id = ?";
+    params.push(sessionId);
   }
 
-  return NextResponse.json({ memories });
+  if (cursor) {
+    const cursorMemory = db.prepare(
+      "SELECT created_at FROM narrative_memories WHERE id = ? AND user_id = ?"
+    ).get(cursor, decoded.sub) as { created_at: string } | undefined;
+
+    if (cursorMemory) {
+      query += " AND (created_at, id) < (?, ?)";
+      params.push(cursorMemory.created_at, cursor);
+    }
+  }
+
+  query += " ORDER BY created_at DESC, id DESC LIMIT ?";
+  params.push(limit + 1);
+
+  const memories = db.prepare(query).all(...params) as any[];
+
+  let nextCursor: string | null = null;
+  let resultMemories = memories;
+  if (memories.length > limit) {
+    nextCursor = memories[limit].id;
+    resultMemories = memories.slice(0, limit);
+  }
+
+  return NextResponse.json({ memories: resultMemories, nextCursor });
 }
 
 export async function POST(request: NextRequest) {
