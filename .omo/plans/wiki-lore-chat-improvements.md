@@ -145,7 +145,7 @@ Phase 3: Advanced Polish (Waves 7-8)
 
 ### Phase 1: Foundation & Quick Wins
 
-- [ ] 1. Update Username Validation & Case Preservation
+- [x] 1. Update Username Validation & Case Preservation
 
   **What to do**:
   - Update `usernamePattern` in `src/lib/config.ts` to `/^[a-zA-Z0-9_\-@.!#$%^&*()+=]+$/`
@@ -195,7 +195,7 @@ Phase 3: Advanced Polish (Waves 7-8)
   **Commit**: YES
   - Message: `feat: allow symbols in usernames and preserve case`
 
-- [ ] 2. Add FTS5 Virtual Table for Messages
+- [x] 2. Add FTS5 Virtual Table for Messages
 
   **What to do**:
   - Add `CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(content, session_id, sender_id)` to `scripts/init-db.ts`.
@@ -232,7 +232,7 @@ Phase 3: Advanced Polish (Waves 7-8)
   **Commit**: YES (groups with 1)
   - Message: `feat: add FTS5 virtual table for message search`
 
-- [ ] 3. Create NPCs Database Table
+- [x] 3. Create NPCs Database Table
 
   **What to do**:
   - Add `npcs` table to `scripts/init-db.ts`:
@@ -284,7 +284,7 @@ Phase 3: Advanced Polish (Waves 7-8)
   **Commit**: YES (groups with 1, 2)
   - Message: `feat: add npcs table for LLM-controlled characters`
 
-- [ ] 4. Create Wiki Versions Database Table
+- [x] 4. Create Wiki Versions Database Table
 
   **What to do**:
   - Add `wiki_versions` table to `scripts/init-db.ts`:
@@ -333,7 +333,7 @@ Phase 3: Advanced Polish (Waves 7-8)
 
 ### Phase 1: API Endpoints
 
-- [ ] 5. Chat Search Endpoint
+- [x] 5. Chat Search Endpoint
 
   **What to do**:
   - Create `src/app/api/sessions/[id]/messages/search/route.ts`.
@@ -371,7 +371,7 @@ Phase 3: Advanced Polish (Waves 7-8)
   **Commit**: YES
   - Message: `feat: add chat search endpoint with FTS5`
 
-- [ ] 6. Chat Export Endpoint
+- [x] 6. Chat Export Endpoint
 
   **What to do**:
   - Create `src/app/api/sessions/[id]/export/route.ts`.
@@ -411,7 +411,7 @@ Phase 3: Advanced Polish (Waves 7-8)
   **Commit**: YES (groups with 5)
   - Message: `feat: add chat export endpoint (JSON/MD/TXT)`
 
-- [ ] 7. Session Recap Trigger Endpoint
+- [x] 7. Session Recap Trigger Endpoint
 
   **What to do**:
   - Create `src/app/api/sessions/[id]/recap/route.ts`.
@@ -447,7 +447,7 @@ Phase 3: Advanced Polish (Waves 7-8)
   **Commit**: YES (groups with 5, 6)
   - Message: `feat: add session recap trigger endpoint`
 
-- [ ] 8. Recent Changes API
+- [x] 8. Recent Changes API
 
   **What to do**:
   - Create `src/app/api/wiki/recent/route.ts`.
@@ -485,7 +485,7 @@ Phase 3: Advanced Polish (Waves 7-8)
 
 ### Phase 1: UI Components
 
-- [ ] 9. Chat Search UI
+- [x] 9. Chat Search UI
 
   **What to do**:
   - Add search input to chat header.
@@ -525,7 +525,7 @@ Phase 3: Advanced Polish (Waves 7-8)
   **Commit**: YES
   - Message: `feat: add chat search UI component`
 
-- [ ] 10. Chat Export UI
+- [x] 10. Chat Export UI
 
   **What to do**:
   - Add "Export" button to session settings or chat header.
@@ -563,7 +563,7 @@ Phase 3: Advanced Polish (Waves 7-8)
   **Commit**: YES (groups with 9)
   - Message: `feat: add chat export UI`
 
-- [ ] 11. Session Recap Panel
+- [x] 11. Session Recap Panel
 
   **What to do**:
   - New sidebar panel component `SessionRecapPanel`.
@@ -605,7 +605,7 @@ Phase 3: Advanced Polish (Waves 7-8)
   **Commit**: YES (groups with 9, 10)
   - Message: `feat: add session recap panel UI`
 
-- [ ] 12. Recent Changes Dashboard Widget
+- [x] 12. Recent Changes Dashboard Widget
 
   **What to do**:
   - Add widget to `src/app/(app)/dashboard/page.tsx`.
@@ -645,7 +645,7 @@ Phase 3: Advanced Polish (Waves 7-8)
 
 ### Phase 2: Core Features
 
-- [ ] 13. NPCs API Endpoints
+- [x] 13. NPCs API Endpoints
 
   **What to do**:
   - `GET /api/npcs` - List NPCs (filter by universe)
@@ -685,7 +685,7 @@ Phase 3: Advanced Polish (Waves 7-8)
   **Commit**: YES
   - Message: `feat: add NPCs CRUD API endpoints`
 
-- [ ] 14. NPCs UI Components
+- [x] 14. NPCs UI Components
 
   **What to do**:
   - `src/components/npcs/npc-list.tsx` - List/Grid view
@@ -726,7 +726,7 @@ Phase 3: Advanced Polish (Waves 7-8)
   **Commit**: YES (groups with 13)
   - Message: `feat: add NPCs management UI`
 
-- [ ] 15. NPC Evolution Logic
+- [x] 15. NPC Evolution Logic
 
   **What to do**:
   - New job handler `src/lib/jobs/npc-evolution.ts`.
@@ -767,7 +767,7 @@ Phase 3: Advanced Polish (Waves 7-8)
   **Commit**: YES (groups with 13, 14)
   - Message: `feat: add NPC evolution job handler`
 
-- [ ] 16. Lore Extraction Job Handler
+- [x] 16. Lore Extraction Job Handler
 
   **What to do**:
   - New job type `extract_lore_comprehensive`.
@@ -809,7 +809,7 @@ Phase 3: Advanced Polish (Waves 7-8)
   **Commit**: YES
   - Message: `feat: add comprehensive lore extraction job`
 
-- [ ] 17. Lore Extraction UI Trigger
+- [x] 17. Lore Extraction UI Trigger
 
   **What to do**:
   - Add "Extract Lore" button to Universe settings or Wiki page.
@@ -848,7 +848,7 @@ Phase 3: Advanced Polish (Waves 7-8)
   **Commit**: YES (groups with 16)
   - Message: `feat: add lore extraction UI trigger`
 
-- [ ] 18. Enforce Universe Isolation
+- [x] 18. Enforce Universe Isolation
 
   **What to do**:
   - Update `sessions` table: `universe_id` NOT NULL (migration needed).
@@ -889,7 +889,7 @@ Phase 3: Advanced Polish (Waves 7-8)
 
 ### Phase 3: Advanced Polish
 
-- [ ] 19. Wiki Version History UI
+- [x] 19. Wiki Version History UI
 
   **What to do**:
   - New tab/panel in Wiki editor: "History".
@@ -930,7 +930,7 @@ Phase 3: Advanced Polish (Waves 7-8)
   **Commit**: YES
   - Message: `feat: add wiki version history UI`
 
-- [ ] 20. Wiki Templates System
+- [x] 20. Wiki Templates System
 
   **What to do**:
   - Create `src/lib/wiki/templates/` with `.md` files for each type.
@@ -974,10 +974,10 @@ Phase 3: Advanced Polish (Waves 7-8)
 
 ## Final Verification Wave
 
-- [ ] F1. **Plan Compliance Audit** — `oracle`
-- [ ] F2. **Code Quality Review** — `unspecified-high`
-- [ ] F3. **Real Manual QA** — `unspecified-high`
-- [ ] F4. **Scope Fidelity Check** — `deep`
+- [x] F1. **Plan Compliance Audit** — `oracle` — APPROVE
+- [x] F2. **Code Quality Review** — `unspecified-high` — APPROVE (fixed: missing handler, as any casts, JSON.parse)
+- [x] F3. **Real Manual QA** — `unspecified-high` — APPROVE (fixed: missing handler, export format bug)
+- [x] F4. **Scope Fidelity Check** — `deep` — APPROVE
 
 ---
 
