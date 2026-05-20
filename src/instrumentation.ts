@@ -3,7 +3,9 @@ export async function register() {
     const { setupGracefulShutdown } = await import('@/lib/shutdown');
     const { runStartupChecks } = await import('@/lib/startup-check');
     const { recoverStaleJobs } = await import('@/lib/job-processor');
+    const { runSchemaMigrations } = await import('@/lib/schema-migrations');
 
+    runSchemaMigrations();
     await runStartupChecks();
     setupGracefulShutdown();
     recoverStaleJobs();
