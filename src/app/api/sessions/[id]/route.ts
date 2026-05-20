@@ -14,6 +14,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
   const token = getAuthToken(request);
   if (!token) return unauthorizedError();
 
@@ -81,7 +82,7 @@ export async function GET(
     LEFT JOIN session_config ct ON ct.session_id = ? AND ct.key = 'current_turn'
     ORDER BY ss.updated_at DESC
     LIMIT 1
-  `).get(id, id, id, id, id) as DbRow | undefined;
+  `).get(id, id, id, id) as DbRow | undefined;
 
   const sceneState = combined && (combined as Record<string, unknown>).ss_id
     ? {
@@ -118,6 +119,10 @@ export async function GET(
     turnConfig,
     isOwner: (session as Record<string, unknown>).owner_id === decoded.sub,
   });
+  } catch (err) {
+    logger.error("[sessions/[id]] GET failed:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 export async function PUT(
