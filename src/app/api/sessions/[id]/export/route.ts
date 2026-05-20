@@ -1,4 +1,3 @@
-import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
@@ -76,14 +75,13 @@ export async function GET(
       ORDER BY m.timestamp ASC, m.id ASC
     `).all(sessionId);
 
-    const camellized = camelizeKeys(messages);
-
+    // Use raw DB results (snake_case) — all formatters expect snake_case fields
     let body: string;
     let contentType: string;
     let ext: string;
 
     if (format === "json") {
-      body = formatAsJson(camellized as ExportMessage[]);
+      body = formatAsJson(messages as ExportMessage[]);
       contentType = "application/json";
       ext = "json";
     } else if (format === "md") {
