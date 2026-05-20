@@ -52,8 +52,19 @@ function main() {
       user_id TEXT REFERENCES users(id),
       role TEXT DEFAULT 'participant',
       character_name TEXT,
+      private_state TEXT,
       joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (session_id, user_id)
+    );
+
+    -- Session config (turn mode, turn order, current turn)
+    CREATE TABLE IF NOT EXISTS session_config (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL REFERENCES sessions(id),
+      key TEXT NOT NULL,
+      value TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(session_id, key)
     );
 
     -- Universes
@@ -273,6 +284,7 @@ function main() {
     CREATE INDEX IF NOT EXISTS idx_entity_validations_universe ON entity_validations(universe_id);
     CREATE INDEX IF NOT EXISTS idx_backlinks_universe ON backlinks(universe_id);
     CREATE INDEX IF NOT EXISTS idx_timelines_universe ON timelines(universe_id);
+    CREATE INDEX IF NOT EXISTS idx_session_config_lookup ON session_config(session_id, key);
   `);
 
   // Create sqlite-vec virtual tables for vector search

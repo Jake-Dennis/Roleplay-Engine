@@ -38,4 +38,40 @@ export function runSchemaMigrations(): void {
   } catch {
     // Index already exists — safe to ignore
   }
+
+  // Migration: Add session_config table (Turn Config - Wave 4)
+  // Used by GET /api/sessions/[id] for turn_mode, turn_order, current_turn
+  // The turn route creates this inline, but the session GET route does not.
+  try {
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS session_config (
+        id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL REFERENCES sessions(id),
+        key TEXT NOT NULL,
+        value TEXT,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(session_id, key)
+      )
+    `).run();
+  } catch {
+    // Table already exists — safe to ignore
+  }
+
+  // Migration: Add index on session_config(session_id, key) for fast lookups
+  try {
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS idx_session_config_lookup ON session_config(session_id, key)"
+    ).run();
+  } catch {
+    // Index already exists — safe to ignore
+  }
+
+  // Migration: Add private_state column to session_participants (Wave 4 - Dual State Consolidation)
+  try {
+    db.prepare(
+      "ALTER TABLE session_participants ADD COLUMN private_state TEXT"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
 }
