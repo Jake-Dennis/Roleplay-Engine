@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { OLLAMA_CONFIG, TTS_CONFIG, TIMEOUTS } from "@/lib/config";
 import { getAuthToken } from "@/lib/auth-token";
 import { getDb } from "@/lib/db";
+import { getClientIp } from "@/lib/rate-limiter";
 
 export async function GET(request: NextRequest) {
   if (!await isAuthorized(request)) {
@@ -106,8 +107,7 @@ async function checkDb() {
 
 async function isAuthorized(request: NextRequest): Promise<boolean> {
   // Allow localhost access
-  const forwarded = request.headers.get("x-forwarded-for");
-  const ip = forwarded?.split(",")[0]?.trim() || "unknown";
+  const ip = getClientIp(request);
   if (ip === "127.0.0.1" || ip === "::1") {
     return true;
   }

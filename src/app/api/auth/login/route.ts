@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { authenticateUser, validateUsername, validatePassword } from "@/lib/auth";
-import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
+import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries, getClientIp } from "@/lib/rate-limiter";
 
 export async function POST(request: NextRequest) {
   cleanupExpiredEntries();
 
-  const ip = request.headers.get("x-forwarded-for") || "unknown";
+  const ip = getClientIp(request);
   const limit = checkRateLimit(`auth:${ip}`, "auth");
   if (!limit.allowed) return createRateLimitResponse(limit.retryAfter!);
 
   try {
+    requireJson(request);
     const body = await request.json();
     const { username, password } = body;
 

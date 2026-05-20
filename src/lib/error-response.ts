@@ -29,3 +29,15 @@ export function badRequestError(message: string): Response {
 export function internalError(): Response {
   return errorResponse('Internal server error', 500);
 }
+
+export function serverError(error: unknown): Response {
+  console.error(error);
+  return errorResponse('Internal server error', 500, error);
+}
+
+export function requireJson(request: Request): void {
+  const contentType = request.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    throw errorResponse('Unsupported Media Type. Content-Type must be application/json', 415);
+  }
+}

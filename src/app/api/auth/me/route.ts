@@ -5,11 +5,7 @@ import { ensureGroupSupport } from "@/lib/group-migrations";
 import { getAuthToken } from '@/lib/auth-token';
 
 export async function GET(request: NextRequest) {
-  let token = getAuthToken(request);
-  if (!token) {
-    token = request.headers.get("x-auth-token") || undefined;
-  }
-
+  const token = getAuthToken(request);
   if (!token) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }

@@ -16,7 +16,8 @@ import path from "path";
  * @returns true if candidatePath is within rootDir, false otherwise
  */
 export function isPathWithinRoot(candidatePath: string, rootDir: string): boolean {
-  const normalizedRoot = path.resolve(rootDir) + path.sep;
+  const normalizedRoot = path.resolve(rootDir);
   const normalizedCandidate = path.resolve(candidatePath);
-  return normalizedCandidate.startsWith(normalizedRoot);
+  return normalizedCandidate === normalizedRoot
+    || normalizedCandidate.startsWith(normalizedRoot + path.sep);
 }

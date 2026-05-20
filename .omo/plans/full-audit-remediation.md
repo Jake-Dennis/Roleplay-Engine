@@ -1647,7 +1647,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 23-29)
   - Message: `fix: consolidate voice assignments from localStorage to DB`
 
-- [ ] 30. Token Rotation on Password Change
+- [x] 30. Token Rotation on Password Change
 
   **What to do**:
   - Add `password_changed_at` column to users table (TIMESTAMP, nullable)
@@ -1698,7 +1698,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 30-38)
   - Message: `sec: add token rotation on password change`
 
-- [ ] 31. Token Revocation/Denylist
+- [x] 31. Token Revocation/Denylist
 
   **What to do**:
   - Create `token_denylist` table: `(token_id TEXT PRIMARY KEY, expires_at TIMESTAMP)`
@@ -1750,7 +1750,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 30-38)
   - Message: `sec: add token revocation via denylist`
 
-- [ ] 32. Remove x-auth-token Header Fallback
+- [x] 32. Remove x-auth-token Header Fallback
 
   **What to do**:
   - Update `src/lib/auth-token.ts` to remove the `x-auth-token` header fallback
@@ -1796,7 +1796,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 30-38)
   - Message: `sec: remove x-auth-token header fallback`
 
-- [ ] 33. Fix Rate Limiter IP Spoofing
+- [x] 33. Fix Rate Limiter IP Spoofing
 
   **What to do**:
   - Update rate limiter key extraction to use the TCP connection IP instead of `x-forwarded-for`
@@ -1842,7 +1842,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 30-38)
   - Message: `sec: fix rate limiter to use request IP instead of x-forwarded-for`
 
-- [ ] 34. Fix Error Response Message Leakage
+- [x] 34. Fix Error Response Message Leakage
 
   **What to do**:
   - Replace all `(error as Error).message` patterns in API routes with `serverError()` from `error-response.ts`
@@ -1890,7 +1890,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 30-38)
   - Message: `sec: fix error response message leakage`
 
-- [ ] 35. Add Input Length Validation
+- [x] 35. Add Input Length Validation
 
   **What to do**:
   - Add maximum length validation for all string inputs in API routes:
@@ -1942,7 +1942,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 30-38)
   - Message: `sec: add input length validation to all API routes`
 
-- [ ] 36. Add Content-Type Validation
+- [x] 36. Add Content-Type Validation
 
   **What to do**:
   - Create middleware or utility that validates `Content-Type: application/json` before calling `request.json()`
@@ -1986,7 +1986,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 30-38)
   - Message: `sec: add Content-Type validation to JSON endpoints`
 
-- [ ] 37. Fix Path-Guard Edge Case
+- [x] 37. Fix Path-Guard Edge Case
 
   **What to do**:
   - Update `src/lib/wiki/path-guard.ts` to handle the case where the candidate path equals the root directory
@@ -2029,7 +2029,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   **Commit**: YES (groups with 30-38)
   - Message: `fix: handle root path edge case in path-guard`
 
-- [ ] 38. Add Security Headers
+- [x] 38. Add Security Headers
 
   **What to do**:
   - Add security headers to `next.config.ts` via `headers()` configuration:

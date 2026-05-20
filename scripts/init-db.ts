@@ -30,7 +30,8 @@ function main() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       last_login DATETIME,
       last_idle_t INTEGER DEFAULT 0,
-      settings TEXT DEFAULT '{}'
+      settings TEXT DEFAULT '{}',
+      password_changed_at DATETIME
     );
 
     -- Sessions
@@ -243,6 +244,15 @@ function main() {
       last_used DATETIME,
       use_count INTEGER DEFAULT 1
     );
+
+    -- Token denylist (revoked JWTs)
+    CREATE TABLE IF NOT EXISTS token_denylist (
+      token_id TEXT PRIMARY KEY,
+      expires_at DATETIME NOT NULL
+    );
+
+    -- Index for denylist cleanup
+    CREATE INDEX IF NOT EXISTS idx_denylist_expires ON token_denylist(expires_at);
 
     -- Indexes for common queries
     CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id, timestamp);

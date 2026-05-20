@@ -19,7 +19,6 @@ const publicRoutes = ["/login", "/register", "/api/auth/login", "/api/auth/regis
 
 // NOTE: All protected routes are handled client-side via layout.tsx auth check.
 // Middleware can't read localStorage, which is needed for IP/DDNS-based access.
-// The client-side guard in (app)/layout.tsx checks /api/auth/me with x-auth-token header.
 const protectedRoutes: string[] = [];
 
 async function verifyToken(token: string): Promise<{ sub: string; username: string } | null> {
@@ -34,14 +33,47 @@ async function verifyToken(token: string): Promise<{ sub: string; username: stri
   }
 }
 
+/**
+ * Extract the real client IP, resistant to spoofing.
+ *
+ * In Edge middleware, request.ip is available at runtime (not typed).
+ * When TRUSTED_PROXIES is set, we trust x-forwarded-for (proxy overwrites it).
+ * Otherwise we use request.ip directly, ignoring any client-supplied header.
+ */
+function getRealIp(request: NextRequest): string {
+  // request.ip is available at runtime in Edge middleware but not in TS types
+  const ip = (request as unknown as { ip?: string }).ip;
+  const trustedProxies = process.env.TRUSTED_PROXIES;
+
+  if (trustedProxies) {
+    const proxyList = trustedProxies.split(',').map((p) => p.trim());
+    const serverIp = ip ?? '';
+    if (proxyList.includes(serverIp)) {
+      const forwarded = request.headers.get('x-forwarded-for');
+      if (forwarded) {
+        return forwarded.split(',')[0].trim();
+      }
+    }
+  }
+
+  return ip ?? 'unknown';
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  let token = request.cookies.get("auth-token")?.value;
+  const token = request.cookies.get("auth-token")?.value;
 
-  // Fallback: check for token in header (for IP-based access where cookies may fail)
-  if (!token) {
-    token = request.headers.get("x-auth-token") || undefined;
-  }
+  // Attach the real client IP as an internal header for route handlers.
+  // This prevents IP spoofing via forged x-forwarded-for headers.
+  const realIp = getRealIp(request);
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-real-ip', realIp);
+
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
   // Check if route is public
   if (publicRoutes.some((route) => pathname.startsWith(route))) {
@@ -52,7 +84,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL("/dashboard", request.url));
       }
     }
-    return NextResponse.next();
+    return response;
   }
 
   // Check if route is protected
@@ -63,13 +95,13 @@ export async function middleware(request: NextRequest) {
 
     const decoded = await verifyToken(token);
     if (!decoded) {
-      const response = NextResponse.redirect(new URL("/login", request.url));
-      response.cookies.set("auth-token", "", { path: "/", maxAge: 0 });
-      return response;
+      const redirectResponse = NextResponse.redirect(new URL("/login", request.url));
+      redirectResponse.cookies.set("auth-token", "", { path: "/", maxAge: 0 });
+      return redirectResponse;
     }
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {

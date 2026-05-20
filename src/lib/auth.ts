@@ -11,13 +11,16 @@ export interface User {
   created_at: string;
   last_login: string | null;
   settings: string;
+  password_changed_at: string | null;
 }
 
 export interface AuthToken {
   sub: string;
   username: string;
+  jti: string;
   iat: number;
   exp: number;
+  pwd_changed_at: string | null;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -34,7 +37,13 @@ export async function verifyPassword(
 export async function generateToken(user: User): Promise<string> {
   const secret = new TextEncoder().encode(AUTH_CONFIG.jwtSecret);
   const iat = Math.floor(Date.now() / 1000);
-  return new SignJWT({ sub: user.id, username: user.username })
+  const jti = crypto.randomUUID();
+  return new SignJWT({
+    sub: user.id,
+    username: user.username,
+    jti,
+    pwd_changed_at: user.password_changed_at ?? null,
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt(iat)
     .setExpirationTime(iat + AUTH_CONFIG.jwtExpiry)
@@ -45,7 +54,30 @@ export async function verifyToken(token: string): Promise<AuthToken | null> {
   try {
     const secret = new TextEncoder().encode(AUTH_CONFIG.jwtSecret);
     const { payload } = await jwtVerify(token, secret);
-    return payload as unknown as AuthToken;
+    const authPayload = payload as unknown as AuthToken;
+
+    // Check if token is in the denylist (revoked)
+    if (authPayload.jti) {
+      const db = getDb();
+      const denied = db
+        .prepare("SELECT 1 FROM token_denylist WHERE token_id = ?")
+        .get(authPayload.jti);
+      if (denied) return null;
+    }
+
+    // Check if token was issued before the user's last password change
+    if (authPayload.pwd_changed_at) {
+      const db = getDb();
+      const row = db
+        .prepare("SELECT password_changed_at FROM users WHERE id = ?")
+        .get(authPayload.sub) as { password_changed_at: string | null } | undefined;
+
+      if (row && row.password_changed_at && row.password_changed_at > authPayload.pwd_changed_at) {
+        return null; // Token issued before password change
+      }
+    }
+
+    return authPayload;
   } catch {
     return null;
   }
@@ -133,7 +165,7 @@ export async function authenticateUser(
 
   const row = db
     .prepare(
-      "SELECT id, username, password_hash, created_at, last_login, settings FROM users WHERE LOWER(username) = LOWER(?)"
+      "SELECT id, username, password_hash, created_at, last_login, settings, password_changed_at FROM users WHERE LOWER(username) = LOWER(?)"
     )
     .get(username.toLowerCase()) as
     | {
@@ -143,6 +175,7 @@ export async function authenticateUser(
         created_at: string;
         last_login: string | null;
         settings: string;
+        password_changed_at: string | null;
       }
     | undefined;
 
@@ -162,6 +195,7 @@ export async function authenticateUser(
     created_at: row.created_at,
     last_login: row.last_login,
     settings: row.settings,
+    password_changed_at: row.password_changed_at,
   };
 
   const token = await generateToken(user);
@@ -173,7 +207,7 @@ export function getUserById(id: string): User | null {
   const db = getDb();
   const row = db
     .prepare(
-      "SELECT id, username, created_at, last_login, settings FROM users WHERE id = ?"
+      "SELECT id, username, created_at, last_login, settings, password_changed_at FROM users WHERE id = ?"
     )
     .get(id) as
     | {
@@ -182,6 +216,7 @@ export function getUserById(id: string): User | null {
         created_at: string;
         last_login: string | null;
         settings: string;
+        password_changed_at: string | null;
       }
     | undefined;
 
@@ -193,6 +228,7 @@ export function getUserById(id: string): User | null {
     created_at: row.created_at,
     last_login: row.last_login,
     settings: row.settings,
+    password_changed_at: row.password_changed_at,
   };
 }
 
@@ -200,7 +236,7 @@ export function getUserByUsername(username: string): User | null {
   const db = getDb();
   const row = db
     .prepare(
-      "SELECT id, username, created_at, last_login, settings FROM users WHERE LOWER(username) = LOWER(?)"
+      "SELECT id, username, created_at, last_login, settings, password_changed_at FROM users WHERE LOWER(username) = LOWER(?)"
     )
     .get(username.toLowerCase()) as
     | {
@@ -209,6 +245,7 @@ export function getUserByUsername(username: string): User | null {
         created_at: string;
         last_login: string | null;
         settings: string;
+        password_changed_at: string | null;
       }
     | undefined;
 
@@ -220,6 +257,7 @@ export function getUserByUsername(username: string): User | null {
     created_at: row.created_at,
     last_login: row.last_login,
     settings: row.settings,
+    password_changed_at: row.password_changed_at,
   };
 }
 
@@ -253,10 +291,40 @@ export async function changePassword(
 
   // Hash and update new password
   const newHash = await hashPassword(newPassword);
-  db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(
-    newHash,
-    userId
-  );
+  db.prepare(
+    "UPDATE users SET password_hash = ?, password_changed_at = CURRENT_TIMESTAMP WHERE id = ?"
+  ).run(newHash, userId);
 
   return { success: true };
+}
+
+/**
+ * Revoke a token by adding its JTI to the denylist.
+ * Graceful degradation — does not throw if the write fails.
+ */
+export function revokeToken(tokenId: string, expiresAt: number): void {
+  try {
+    const db = getDb();
+    const expiresStr = new Date(expiresAt * 1000).toISOString();
+    db.prepare(
+      "INSERT OR IGNORE INTO token_denylist (token_id, expires_at) VALUES (?, ?)"
+    ).run(tokenId, expiresStr);
+  } catch {
+    // Graceful degradation — logout still succeeds
+  }
+}
+
+/**
+ * Remove expired entries from the token denylist.
+ * Safe to call opportunistically (e.g., during idle processing or on startup).
+ */
+export function cleanupExpiredDenylistEntries(): void {
+  try {
+    const db = getDb();
+    db.prepare(
+      "DELETE FROM token_denylist WHERE expires_at < datetime('now')"
+    ).run();
+  } catch {
+    // Non-fatal — cleanup will run next time
+  }
 }

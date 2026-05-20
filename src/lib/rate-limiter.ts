@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { TIME } from '@/lib/config';
 
 interface RateLimitEntry {
@@ -19,6 +19,21 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   upload: { windowMs: TIME.ONE_MINUTE, maxRequests: 20 },
   api: { windowMs: TIME.ONE_MINUTE, maxRequests: 100 },
 };
+
+/**
+ * Extract the client IP address from a request.
+ *
+ * Reads the `x-real-ip` header set by middleware, which extracts the real
+ * client IP using `request.ip` (Edge runtime) — resistant to spoofing via
+ * forged X-Forwarded-For headers.
+ *
+ * When TRUSTED_PROXIES is set (comma-separated IPs), the middleware trusts
+ * X-Forwarded-For instead — required for deployments behind reverse proxies
+ * (nginx, Cloudflare, etc.).
+ */
+export function getClientIp(request: NextRequest): string {
+  return request.headers.get('x-real-ip') ?? 'unknown';
+}
 
 export function checkRateLimit(
   key: string,

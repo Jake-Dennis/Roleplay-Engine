@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { OLLAMA_CONFIG, TTS_CONFIG, TIMEOUTS } from "@/lib/config";
 import { getAuthToken } from "@/lib/auth-token";
 import { getDb } from "@/lib/db";
+import { getClientIp } from "@/lib/rate-limiter";
 
 /**
  * Readiness probe — returns 200 only when all critical dependencies are reachable.
@@ -100,8 +101,7 @@ async function checkDb() {
 }
 
 async function isAuthorized(request: NextRequest): Promise<boolean> {
-  const forwarded = request.headers.get("x-forwarded-for");
-  const ip = forwarded?.split(",")[0]?.trim() || "unknown";
+  const ip = getClientIp(request);
   if (ip === "127.0.0.1" || ip === "::1") {
     return true;
   }
