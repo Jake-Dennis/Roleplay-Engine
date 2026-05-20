@@ -164,4 +164,13 @@ export function runSchemaMigrations(): void {
   } catch {
     // FTS5 table or triggers already exist — safe to ignore
   }
+
+  // Migration: Add result column to job_queue (Session Recap - Wave 3)
+  try {
+    db.prepare(
+      "ALTER TABLE job_queue ADD COLUMN result TEXT"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
 }

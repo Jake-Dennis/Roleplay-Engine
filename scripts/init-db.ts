@@ -219,7 +219,8 @@ function main() {
       progress_message TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       processed_at DATETIME,
-      error TEXT
+      error TEXT,
+      result TEXT
     );
 
     -- Embedding index
