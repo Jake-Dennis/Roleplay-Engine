@@ -10,7 +10,8 @@ import {
 import { generateIndex } from "@/lib/wiki/index-generator";
 import { findOrphans, getOrphanSuggestions } from "@/lib/wiki/orphans";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
-import { badRequestError } from "@/lib/error-response";
+import { badRequestError, requireJson } from "@/lib/error-response";
+import { validateLength } from "@/lib/validation";
 import path from "path";
 import fs from "fs";
 
@@ -49,12 +50,16 @@ export async function POST(request: NextRequest) {
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { path: pagePath, content, frontmatter } = body;
 
   if (!pagePath || content === undefined || !frontmatter) {
     return badRequestError("path, content, and frontmatter are required");
   }
+
+  const contentError = validateLength(content, 100000, "Content");
+  if (contentError) return badRequestError(contentError);
 
   const wikiRoot = path.join(APP_CONFIG.dataDir, userId, "wiki");
 

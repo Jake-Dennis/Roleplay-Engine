@@ -5,6 +5,8 @@ import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "
 import path from "path";
 import fs from "fs";
 import { getAuthToken } from '@/lib/auth-token';
+import { serverError, requireJson } from '@/lib/error-response';
+import { validateLength } from '@/lib/validation';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_EXTENSIONS = new Set([
@@ -21,7 +23,8 @@ export async function POST(request: NextRequest) {
   const limit = checkRateLimit(`upload:${decoded.sub}`, "upload");
   if (!limit.allowed) return createRateLimitResponse(limit.retryAfter!);
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { filename, content } = body;
 
   if (!filename || content === undefined || content === null) {
@@ -30,6 +33,9 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+
+  const contentError = validateLength(String(content), 100000, "Content");
+  if (contentError) return NextResponse.json({ error: contentError }, { status: 400 });
 
   // Sanitize filename: strip path separators and replace dangerous characters
   const safeFilename = path.basename(filename).replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -81,9 +87,6 @@ export async function POST(request: NextRequest) {
       size: stats.size,
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 }
-    );
+    return serverError(error);
   }
 }

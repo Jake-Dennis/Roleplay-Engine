@@ -1,4 +1,6 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { withAuth } from "@/lib/with-auth";
 import { getDb } from "@/lib/db";
 import { writeRelationshipFiles, type RelationshipRow } from "@/lib/relationship-markdown";
@@ -70,7 +72,7 @@ export async function GET(request: NextRequest) {
     ).all(userId, userId) as DbResult[];
   }
 
-  return NextResponse.json({ relationships });
+  return NextResponse.json({ relationships: camelizeKeys(relationships) });
 }
 
 export async function POST(request: NextRequest) {
@@ -78,7 +80,8 @@ export async function POST(request: NextRequest) {
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { sourceEntity, targetEntity, emotionalState, sharedHistory, relationshipStage, decayRates, universe_id } = body;
 
   if (!sourceEntity || !targetEntity) {
@@ -110,5 +113,5 @@ export async function POST(request: NextRequest) {
     // Filesystem errors should not break API response
   }
 
-  return NextResponse.json({ relationship }, { status: 201 });
+  return NextResponse.json({ relationship: camelizeKeys(relationship) }, { status: 201 });
 }

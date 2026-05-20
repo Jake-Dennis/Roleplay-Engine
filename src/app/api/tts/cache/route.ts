@@ -1,4 +1,6 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import fs from "fs";
@@ -112,7 +114,7 @@ export async function GET(request: NextRequest) {
       diskSizeFormatted: formatBytes(diskSize),
       fileCount,
     },
-    recentEntries,
+    recentEntries: camelizeKeys(recentEntries),
     nextCursor,
   });
 }
@@ -185,7 +187,8 @@ export async function POST(request: NextRequest) {
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { action } = body;
 
   const db = getDb();

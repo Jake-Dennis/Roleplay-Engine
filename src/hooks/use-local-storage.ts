@@ -9,6 +9,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { safeParse } from "@/lib/safe-json";
 
 export function useLocalStorage<T>(
   key: string,
@@ -17,7 +18,7 @@ export function useLocalStorage<T>(
   const [value, setValue] = useState<T>(() => {
     try {
       const stored = localStorage.getItem(key);
-      return stored ? JSON.parse(stored) : defaultValue;
+      return stored ? (safeParse(stored) ?? defaultValue) : defaultValue;
     } catch {
       return defaultValue;
     }

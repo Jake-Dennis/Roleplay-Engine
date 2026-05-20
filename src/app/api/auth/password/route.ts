@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { verifyToken, changePassword } from "@/lib/auth";
 import { getAuthToken } from '@/lib/auth-token';
 
@@ -13,7 +14,8 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { currentPassword, newPassword } = body;
 
   if (!currentPassword || !newPassword) {

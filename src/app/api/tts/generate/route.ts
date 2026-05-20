@@ -3,7 +3,7 @@ import { generateSpeech, getCachedAudio, cacheAudio } from "@/lib/tts";
 import { TTS_CONFIG } from "@/lib/config";
 import { verifyToken } from "@/lib/auth";
 import { getAuthToken } from '@/lib/auth-token';
-import { unauthorizedError, badRequestError } from '@/lib/error-response';
+import { unauthorizedError, badRequestError, serverError, requireJson } from '@/lib/error-response';
 
 export async function POST(request: NextRequest) {
   const token = getAuthToken(request);
@@ -16,7 +16,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { text, voice, speed = 1.0, format = TTS_CONFIG.defaultFormat } = body;
 
   if (!text || !voice) {
@@ -51,9 +52,6 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: "TTS generation failed", details: (error as Error).message },
-      { status: 500 }
-    );
+    return serverError(error);
   }
 }

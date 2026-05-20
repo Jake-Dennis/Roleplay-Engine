@@ -8,6 +8,7 @@ import {
 import { findOrphans } from "./orphans";
 import { generateText } from "../ollama";
 import { TIME } from "../config";
+import { safeParseWarn } from "@/lib/safe-json";
 
 // ---------------------------------------------------------------------------
 // Report Types
@@ -339,14 +340,13 @@ If there ARE contradictions, respond with JSON only:
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return null;
 
-    const parsed = JSON.parse(jsonMatch[0]);
-    if (parsed.contradicts) {
-      return {
-        claimA: parsed.claimA || "Unknown claim from page A",
-        claimB: parsed.claimB || "Unknown claim from page B",
-        entity: parsed.entity || entityName,
-      };
-    }
+    const parsed = safeParseWarn<{ contradicts?: boolean; claimA?: string; claimB?: string; entity?: string }>(jsonMatch[0], "LLM contradiction response");
+    if (!parsed || !parsed.contradicts) return null;
+    return {
+      claimA: parsed.claimA || "Unknown claim from page A",
+      claimB: parsed.claimB || "Unknown claim from page B",
+      entity: parsed.entity || entityName,
+    };
   } catch {
     // LLM comparison failed — skip this pair
   }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
@@ -15,7 +16,8 @@ export async function POST(
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const { id: sessionId } = await params;
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { userId } = body;
 
   if (!userId) {

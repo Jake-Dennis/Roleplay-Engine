@@ -10,6 +10,7 @@ import { EmotionBar } from "@/components/relationship/emotion-bar";
 import { RelationshipHistory } from "@/components/relationship/relationship-history";
 import { useActiveUniverse } from "@/contexts/active-universe";
 import { useApp } from "@/contexts/app-context";
+import { safeParse } from "@/lib/safe-json";
 import type { EmotionalState } from "@/lib/relationship-types";
 
 interface Relationship {
@@ -129,11 +130,7 @@ export default function RelationshipsPage() {
   }
 
   function parseEmotions(emotionalState: string | null): EmotionalState {
-    try {
-      return emotionalState ? JSON.parse(emotionalState) as EmotionalState : {};
-    } catch {
-      return {};
-    }
+    return safeParse<EmotionalState>(emotionalState, {}) as EmotionalState;
   }
 
   async function openMarkdownEditor(relId: string) {

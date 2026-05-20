@@ -5,6 +5,7 @@ import { lintWiki } from "@/lib/wiki/lint";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 import path from "path";
 import { getAuthToken } from '@/lib/auth-token';
+import { serverError } from '@/lib/error-response';
 
 export async function POST(request: NextRequest) {
   const token = getAuthToken(request);
@@ -31,9 +32,6 @@ export async function POST(request: NextRequest) {
       suggestions: result.suggestions,
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 }
-    );
+    return serverError(error);
   }
 }

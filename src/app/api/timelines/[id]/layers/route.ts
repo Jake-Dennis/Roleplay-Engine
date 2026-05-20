@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { rowToJson } from "@/lib/row-to-json";
@@ -59,7 +60,8 @@ export async function POST(
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const { id: timelineId } = await params;
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { layerType, name, description, startYear, endYear, metadata } = body;
 
   if (!layerType || !VALID_LAYER_TYPES.includes(layerType)) {

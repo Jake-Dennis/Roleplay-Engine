@@ -14,7 +14,7 @@ import {
   type JobStatus,
 } from "@/lib/job-processor";
 import { queueIdleJobs, processIdleTime, shouldProcessIdleTime } from "@/lib/idle-processing";
-import { badRequestError } from "@/lib/error-response";
+import { badRequestError, requireJson } from "@/lib/error-response";
 
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);
@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { action, type, payload, priority, jobId, universe_id } = body;
 
   switch (action) {

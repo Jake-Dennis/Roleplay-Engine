@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import type { DbDatabase } from "@/lib/types";
 import { getAuthToken } from '@/lib/auth-token';
 import { logger } from '@/lib/logger';
+import { safeParseWarn } from "@/lib/safe-json";
 
 // Add private_state column to session_participants if not exists
 function ensureColumn(db: DbDatabase) {
@@ -44,10 +46,9 @@ export async function GET(
   }
 
   let state: Record<string, unknown> = {};
-  try {
-    state = participant.private_state ? JSON.parse(participant.private_state) : {};
-  } catch (err) {
-    logger.warn('[private-state] Failed to parse private state:', err);
+  if (participant.private_state) {
+    const parsed = safeParseWarn<Record<string, unknown>>(participant.private_state, "private state");
+    if (parsed) state = parsed;
   }
 
   return NextResponse.json({ privateState: state });
@@ -64,7 +65,8 @@ export async function PUT(
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const { id: sessionId } = await params;
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { state } = body;
 
   const db = getDb();

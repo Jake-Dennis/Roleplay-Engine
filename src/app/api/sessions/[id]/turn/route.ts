@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import type { DbDatabase } from "@/lib/types";
 import { getAuthToken } from '@/lib/auth-token';
+import { safeParseWarn } from "@/lib/safe-json";
 
 // Ensure session_config table exists
 function ensureTable(db: DbDatabase) {
@@ -41,7 +43,7 @@ function getTurnConfig(db: DbDatabase, sessionId: string) {
 
   return {
     turnMode: turnMode?.value || "freeform",
-    turnOrder: turnOrder ? JSON.parse(turnOrder.value) : [],
+    turnOrder: safeParseWarn<string[]>(turnOrder?.value, "turn order", []) ?? [],
     currentTurn: currentTurn?.value || null,
   };
 }
@@ -95,7 +97,8 @@ export async function PUT(
     return NextResponse.json({ error: "Session not found or not owner" }, { status: 404 });
   }
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { turnMode, turnOrder, currentTurn } = body;
 
   if (turnMode !== undefined) {
@@ -138,7 +141,8 @@ export async function POST(
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const { id: sessionId } = await params;
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { action } = body;
 
   const db = getDb();
@@ -170,7 +174,7 @@ export async function POST(
 
   if (action === "advance") {
     // Advance to next in order (works with ordered mode)
-    const turnOrder: string[] = turnOrderRow ? JSON.parse(turnOrderRow.value) : [];
+    const turnOrder: string[] = safeParseWarn<string[]>(turnOrderRow?.value, "turn order", []) ?? [];
     if (turnOrder.length === 0) {
       return NextResponse.json({ error: "No turn order configured" }, { status: 400 });
     }

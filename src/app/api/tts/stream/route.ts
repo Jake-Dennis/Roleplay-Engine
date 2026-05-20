@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { verifyToken } from "@/lib/auth";
 import { generateSpeechStream } from "@/lib/tts";
 import { getAuthToken } from '@/lib/auth-token';
@@ -10,7 +11,8 @@ export async function POST(request: NextRequest) {
   const decoded = await verifyToken(token);
   if (!decoded) return new Response("Invalid token", { status: 401 });
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { text, voice, speed = 1.0, format = "mp3" } = body;
 
   if (!text || !voice) {

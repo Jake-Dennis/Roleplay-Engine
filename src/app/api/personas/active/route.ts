@@ -1,3 +1,4 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
@@ -18,5 +19,5 @@ export async function GET(request: NextRequest) {
     "SELECT * FROM personas WHERE user_id = ? AND is_active = 1"
   ).get(decoded.sub);
 
-  return NextResponse.json({ persona: persona || null });
+  return NextResponse.json({ persona: persona ? camelizeKeys(persona) : null });
 }

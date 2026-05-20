@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { OLLAMA_CONFIG, TTS_CONFIG } from "@/lib/config";
@@ -76,7 +77,8 @@ export async function PUT(request: NextRequest) {
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { llmModel, embeddingModel, ttsSpeed, ttsVolume, ttsFormat, ttsAutoPlay, ttsSkipLong, ttsLongThreshold } = body;
 
   if (!llmModel && !embeddingModel && ttsSpeed === undefined && ttsVolume === undefined && !ttsFormat && ttsAutoPlay === undefined && ttsSkipLong === undefined && ttsLongThreshold === undefined) {

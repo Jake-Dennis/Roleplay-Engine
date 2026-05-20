@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
@@ -26,7 +27,8 @@ export async function PUT(
     return NextResponse.json({ error: "Session not found or not owner" }, { status: 404 });
   }
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { participant_id, role } = body;
 
   if (!participant_id || !role) {

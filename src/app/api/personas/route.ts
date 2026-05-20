@@ -1,8 +1,11 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { ensureGroupSupport } from "@/lib/group-migrations";
 import { getAuthToken } from '@/lib/auth-token';
+import { validateLength } from '@/lib/validation';
 
 export async function GET(request: NextRequest) {
   const token = getAuthToken(request);
@@ -18,7 +21,7 @@ export async function GET(request: NextRequest) {
     "SELECT * FROM personas WHERE user_id = ? ORDER BY created_at DESC"
   ).all(decoded.sub);
 
-  return NextResponse.json({ personas });
+  return NextResponse.json({ personas: camelizeKeys(personas) });
 }
 
 export async function POST(request: NextRequest) {
@@ -31,12 +34,18 @@ export async function POST(request: NextRequest) {
   const db = getDb();
   ensureGroupSupport(db);
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { name, description, personality, scenario, firstMes, mesExample, creatorNotes, systemPrompt, postHistoryInstructions, tags, writingStyle, avatarUrl, llmModel, ttsVoice } = body;
 
   if (!name) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
   }
+
+  const nameError = validateLength(name, 200, "Name");
+  if (nameError) return NextResponse.json({ error: nameError }, { status: 400 });
+  const descError = validateLength(description || "", 5000, "Description");
+  if (descError) return NextResponse.json({ error: descError }, { status: 400 });
 
   const id = crypto.randomUUID();
 
@@ -51,5 +60,5 @@ export async function POST(request: NextRequest) {
 
   const persona = db.prepare("SELECT * FROM personas WHERE id = ?").get(id);
 
-  return NextResponse.json({ persona }, { status: 201 });
+  return NextResponse.json({ persona: camelizeKeys(persona) }, { status: 201 });
 }

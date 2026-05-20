@@ -1,7 +1,10 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { getAuthToken } from '@/lib/auth-token';
+import { validateLength } from '@/lib/validation';
 
 export async function GET(
   request: NextRequest,
@@ -15,7 +18,7 @@ export async function GET(
   const db = getDb();
   const memory = db.prepare("SELECT * FROM narrative_memories WHERE id = ? AND user_id = ?").get(id, decoded.sub);
   if (!memory) return NextResponse.json({ error: "Memory not found" }, { status: 404 });
-  return NextResponse.json({ memory });
+  return NextResponse.json({ memory: camelizeKeys(memory) });
 }
 
 export async function PUT(
@@ -27,11 +30,17 @@ export async function PUT(
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   const { id } = await params;
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const db = getDb();
   const existing = db.prepare("SELECT id FROM narrative_memories WHERE id = ? AND user_id = ?").get(id, decoded.sub);
   if (!existing) return NextResponse.json({ error: "Memory not found" }, { status: 404 });
   const { content, type, importance, relatedEntities } = body;
+
+  if (content !== undefined) {
+    const contentError = validateLength(content, 100000, "Content");
+    if (contentError) return NextResponse.json({ error: contentError }, { status: 400 });
+  }
   db.prepare(
     "UPDATE narrative_memories SET content = COALESCE(?, content), type = COALESCE(?, type), importance = COALESCE(?, importance), related_entities = COALESCE(?, related_entities) WHERE id = ?"
   ).run(content || null, type || null, importance ? JSON.stringify(importance) : null, relatedEntities ? JSON.stringify(relatedEntities) : null, id);

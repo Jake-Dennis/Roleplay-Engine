@@ -13,6 +13,7 @@
 import { getDb } from "@/lib/db";
 import { generateEmbedding } from "@/lib/ollama";
 import { classifyIntent, type Intent, INTENT_PROTOTYPES } from "@/lib/intent-analyzer";
+import { safeParseWarn } from "@/lib/safe-json";
 
 export interface SemanticIntentResult {
   intent: Intent;
@@ -61,7 +62,7 @@ async function getOrCreateEmbedding(
   ).get(userId, entityType, entityId) as { vector_data: string } | undefined;
 
   if (existing) {
-    return JSON.parse(existing.vector_data);
+    return safeParseWarn<number[]>(existing.vector_data, "embedding vector_data", []) ?? [];
   }
 
   // Generate new embedding
@@ -101,7 +102,7 @@ async function findSimilarContexts(
   // Compute similarities
   const similarities = embeddings
     .map((e) => {
-      const vector = JSON.parse(e.vector_data);
+      const vector = safeParseWarn<number[]>(e.vector_data, "embedding vector_data", []) ?? [];
       const sim = cosineSimilarity(queryVector, vector);
       return { content: e.text_content, similarity: sim };
     })

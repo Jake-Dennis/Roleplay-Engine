@@ -16,7 +16,7 @@ import { getAuthToken } from '@/lib/auth-token';
 const token = getAuthToken(request);
 if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 ```
-All routes use `getAuthToken()` (cookie + x-auth-token header fallback). Zero direct `request.cookies.get("auth-token")` calls remain.
+All routes use `getAuthToken()` (httpOnly cookie). Zero direct `request.cookies.get("auth-token")` calls remain.
 
 ## ERROR RESPONSES
 Always `NextResponse.json({ error: "..." }, { status: N })`:

@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { ensureGroupSupport } from "@/lib/group-migrations";
 import { getAuthToken } from '@/lib/auth-token';
 
 export async function PUT(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) {
-    const headerToken = request.headers.get("x-auth-token");
-    if (!headerToken) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    var authToken = headerToken;
-  } else {
-    var authToken = token;
-  }
+  const authToken = getAuthToken(request);
+  if (!authToken) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const decoded = await verifyToken(authToken);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { groupId, sessionId, universeId } = body;
 
   const db = getDb();

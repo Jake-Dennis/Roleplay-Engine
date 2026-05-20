@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { getAuthToken } from "@/lib/auth-token";
 import { ensureGroupSupport, isGroupOwner } from "@/lib/group-migrations";
+import { validateLength } from "@/lib/validation";
 
 export async function POST(
   request: NextRequest,
@@ -22,8 +24,14 @@ export async function POST(
     return NextResponse.json({ error: "Not owner" }, { status: 403 });
   }
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { username, user_id } = body;
+
+  if (username !== undefined) {
+    const usernameError = validateLength(username, 50, "Username");
+    if (usernameError) return NextResponse.json({ error: usernameError }, { status: 400 });
+  }
 
   let targetUserId: string;
 
@@ -54,7 +62,7 @@ export async function POST(
     "INSERT INTO group_members (group_id, user_id, role) VALUES (?, ?, 'member')"
   ).run(groupId, targetUserId);
 
-  return NextResponse.json({ success: true, user_id: targetUserId });
+  return NextResponse.json({ success: true, userId: targetUserId });
 }
 
 export async function DELETE(
@@ -75,7 +83,8 @@ export async function DELETE(
     return NextResponse.json({ error: "Not owner" }, { status: 403 });
   }
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { user_id } = body;
 
   if (!user_id) {

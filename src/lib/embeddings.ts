@@ -15,6 +15,7 @@
 
 import { getDb, isVecAvailable } from "@/lib/db";
 import { generateEmbedding } from "@/lib/ollama";
+import { safeParseWarn } from "@/lib/safe-json";
 import type { DbDatabase } from '@/lib/types';
 
 export interface EmbeddingResult {
@@ -143,11 +144,7 @@ export function getEmbedding(entityType: string, entityId: string): number[] | n
 
   if (!result) return null;
 
-  try {
-    return JSON.parse(result.vector_data);
-  } catch {
-    return null;
-  }
+  return safeParseWarn<number[]>(result.vector_data, "embedding vector");
 }
 
 /**

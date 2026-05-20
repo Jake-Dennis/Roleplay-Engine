@@ -20,6 +20,7 @@ import { generateText } from "@/lib/ollama";
 import { vectorSearch } from "@/lib/vector-search";
 import { CONTENT_LIMITS } from "@/lib/config";
 import * as fs from "fs";
+import { safeParseWarn } from "@/lib/safe-json";
 
 export interface CanonEntry {
   id: string;
@@ -187,17 +188,15 @@ export async function compareForContradiction(
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return null;
 
-    const parsed = JSON.parse(jsonMatch[0]);
-
-    if (parsed.contradicts && parsed.type !== "none") {
-      return {
-        type: parsed.type as SemanticContradiction["type"],
-        severity: parsed.severity as SemanticContradiction["severity"],
-        explanation: parsed.explanation || "Potential contradiction detected",
-        conflictingEntry: existingEntry,
-        similarityScore: existingEntry.similarity,
-      };
-    }
+    const parsed = safeParseWarn<{ contradicts?: boolean; type?: string; severity?: string; explanation?: string }>(jsonMatch[0], "LLM contradiction comparison");
+    if (!parsed || !parsed.contradicts || parsed.type === "none") return null;
+    return {
+      type: parsed.type as SemanticContradiction["type"],
+      severity: parsed.severity as SemanticContradiction["severity"],
+      explanation: parsed.explanation || "Potential contradiction detected",
+      conflictingEntry: existingEntry,
+      similarityScore: existingEntry.similarity,
+    };
   } catch {
     // LLM comparison failed — skip this entry
   }

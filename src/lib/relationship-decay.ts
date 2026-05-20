@@ -16,6 +16,7 @@ import { getDb } from "@/lib/db";
 import { parseEmotionalState } from "@/lib/emotion-utils";
 import { syncRelationshipToFilesystem } from "@/lib/relationship-markdown";
 import { EMOTION_HALF_LIVES } from "@/lib/relationship-constants";
+import { safeParseWarn } from "@/lib/safe-json";
 import type { RelationshipRow, EmotionalState, DecayConfig } from "@/lib/relationship-types";
 
 export { EMOTION_HALF_LIVES };
@@ -98,7 +99,7 @@ export function processRelationshipDecay(userId: string): DecayResult {
   for (const rel of relationships) {
     // Parse decay rates
     const rates: DecayConfig = rel.decay_rates
-      ? { ...DEFAULT_DECAY_RATES, ...JSON.parse(rel.decay_rates) }
+      ? { ...DEFAULT_DECAY_RATES, ...safeParseWarn<Partial<DecayConfig>>(rel.decay_rates, "relationship decay_rates", {}) }
       : DEFAULT_DECAY_RATES;
 
     // Calculate days since last update

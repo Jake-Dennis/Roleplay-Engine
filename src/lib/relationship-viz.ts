@@ -5,6 +5,7 @@
  */
 
 import type { EmotionalState } from "@/lib/relationship-types";
+import { safeParse } from "@/lib/safe-json";
 
 export interface VizNode {
   id: string;
@@ -198,11 +199,7 @@ export function calculateEmotionVectors(
 }
 
 function parseEmotions(emotionalState: string | null): EmotionalState {
-  try {
-    return emotionalState ? JSON.parse(emotionalState) as EmotionalState : {};
-  } catch {
-    return {};
-  }
+  return safeParse<EmotionalState>(emotionalState, {}) as EmotionalState;
 }
 
 function calculateStrength(emotions: EmotionalState): number {

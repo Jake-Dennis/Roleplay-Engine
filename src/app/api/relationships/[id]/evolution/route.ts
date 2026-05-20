@@ -1,4 +1,6 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { parseEmotionalState } from "@/lib/emotion-utils";
@@ -39,7 +41,7 @@ export async function GET(
     emotional_state: parseEmotionalState(entry.emotional_state),
   }));
 
-  return NextResponse.json({ history: parsedHistory });
+  return NextResponse.json({ history: camelizeKeys(parsedHistory) });
 }
 
 export async function POST(
@@ -59,7 +61,8 @@ export async function POST(
   const rel = hasRelationshipAccess(db, id, decoded.sub);
   if (!rel) return NextResponse.json({ error: "Relationship not found" }, { status: 404 });
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { emotionalState, relationshipStage, triggerEvent } = body;
 
   const entryId = crypto.randomUUID();
@@ -90,9 +93,9 @@ export async function POST(
   }
 
   return NextResponse.json({
-    entry: {
+    entry: camelizeKeys({
       ...entry,
       emotional_state: parseEmotionalState(entry.emotional_state),
-    },
+    }),
   }, { status: 201 });
 }

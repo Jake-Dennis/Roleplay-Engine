@@ -23,6 +23,7 @@ import { StatusBadge, statusToVariant } from "@/components/ui/status-badge";
 import { JobProgress } from "@/components/jobs/job-progress";
 import { useActiveUniverse } from "@/contexts/active-universe";
 import { formatRelativeTime } from "@/lib/date-formatter";
+import { safeParse } from "@/lib/safe-json";
 
 const JOB_TYPES = [
   "generate_response",
@@ -137,17 +138,15 @@ export default function JobsPage() {
     const evtSource = new EventSource("/api/jobs/stream");
 
     evtSource.addEventListener("job:progress", (e) => {
-      try {
-        const data = JSON.parse(e.data);
+      const data = safeParse<Record<string, unknown>>(e.data);
+      if (data?.jobId) {
         setJobs((prev) =>
           prev.map((j) =>
             j.id === data.jobId
-              ? { ...j, progress: data.progress, progress_message: data.message }
+              ? { ...j, progress: data.progress as number, progress_message: data.message as string | null }
               : j
           )
         );
-      } catch {
-        // ignore parse errors
       }
     });
 
@@ -222,8 +221,8 @@ export default function JobsPage() {
     return formatRelativeTime(ts);
   }
 
-  function parsePayload(payload: string): Record<string, string> {
-    try { return JSON.parse(payload); } catch { return {}; }
+  function parsePayload(payload: string): Record<string, unknown> {
+    return safeParse(payload) ?? {};
   }
 
   const filteredJobs = jobs.filter((j) => {
@@ -380,8 +379,8 @@ export default function JobsPage() {
                       </span>
                     </div>
                     <p className="text-xxs text-text-muted truncate">
-                      {payload.sessionId && `Session: ${String(payload.sessionId).slice(0, 8)}...`}
-                      {payload.entityType && `${String(payload.entityType)}: ${String(payload.entityId || "").slice(0, 8)}`}
+                      {payload.sessionId ? `Session: ${String(payload.sessionId).slice(0, 8)}...` : ""}
+                      {payload.entityType ? `${String(payload.entityType)}: ${String(payload.entityId || "").slice(0, 8)}` : ""}
                     </p>
                     {/* Progress bar for processing jobs */}
                     {job.status === "processing" && (

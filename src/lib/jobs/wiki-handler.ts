@@ -21,6 +21,7 @@ import { generateIndex } from "@/lib/wiki/index-generator";
 import { appendLog } from "@/lib/wiki/logger";
 import type { JobPayload, JobResult } from "@/lib/job-processor";
 import { updateJobProgress, markJobCompleted } from "@/lib/job-processor";
+import { safeParseWarn } from "@/lib/safe-json";
 
 // ---------------------------------------------------------------------------
 // Job Handlers
@@ -454,8 +455,8 @@ async function handleWikiExtractEvent(jobId: string, payload: JobPayload): Promi
     const response = await generateText(prompt, { temperature: 0.3, num_ctx: 4096, userId: userId as string });
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      if (Array.isArray(parsed.events)) {
+      const parsed = safeParseWarn<Record<string, unknown>>(jsonMatch[0], "LLM event extraction");
+      if (parsed && Array.isArray(parsed.events)) {
         for (const event of parsed.events) {
           const filename = `event_${event.title.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-")}.md`;
           const pagePath = `${wikiRoot}/concepts/${filename}`;

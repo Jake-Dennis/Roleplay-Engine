@@ -1,9 +1,11 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/with-auth";
 import { getDb } from "@/lib/db";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
 import type { DbResult } from "@/lib/types";
-import { forbiddenError, badRequestError, internalError } from "@/lib/error-response";
+import { forbiddenError, badRequestError, internalError, requireJson } from "@/lib/error-response";
+import { validateLength } from "@/lib/validation";
 import { parseBoundaries } from '@/lib/universe-utils';
 
 export async function GET(request: NextRequest) {
@@ -55,7 +57,7 @@ export async function GET(request: NextRequest) {
     boundaries: parseBoundaries(u.boundaries as string | null),
   }));
 
-  return NextResponse.json({ universes: parsed });
+  return NextResponse.json({ universes: camelizeKeys(parsed) });
 }
 
 export async function POST(request: NextRequest) {
@@ -63,12 +65,16 @@ export async function POST(request: NextRequest) {
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { name, canon_mode = "strict", lore_source, tone, boundaries, group_id } = body;
 
   if (!name || !name.trim()) {
     return badRequestError("Universe name is required");
   }
+
+  const nameError = validateLength(name, 200, "Name");
+  if (nameError) return badRequestError(nameError);
 
   const validModes = ["strict", "loose", "custom"];
   if (!validModes.includes(canon_mode)) {
@@ -106,5 +112,5 @@ export async function POST(request: NextRequest) {
 
   const parsed = { ...universe, boundaries: parseBoundaries(universe.boundaries as string | null) };
 
-  return NextResponse.json({ universe: parsed }, { status: 201 });
+  return NextResponse.json({ universe: camelizeKeys(parsed) }, { status: 201 });
 }

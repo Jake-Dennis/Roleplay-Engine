@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import {
@@ -87,7 +88,8 @@ export async function PUT(
     return NextResponse.json({ error: "Relationship not found" }, { status: 404 });
   }
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { notes, relationship_stage, emotional_state, shared_history } = body;
 
   // Update DB fields that were edited

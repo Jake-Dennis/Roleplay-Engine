@@ -1,8 +1,11 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { ensureGroupSupport } from "@/lib/group-migrations";
 import { getAuthToken } from '@/lib/auth-token';
+import { validateLength } from '@/lib/validation';
 
 export async function GET(
   request: NextRequest,
@@ -26,7 +29,7 @@ export async function GET(
     return NextResponse.json({ error: "Persona not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ persona });
+  return NextResponse.json({ persona: camelizeKeys(persona) });
 }
 
 export async function PUT(
@@ -52,8 +55,18 @@ export async function PUT(
     return NextResponse.json({ error: "Persona not found" }, { status: 404 });
   }
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { name, description, personality, scenario, firstMes, mesExample, creatorNotes, systemPrompt, postHistoryInstructions, tags, writingStyle, avatarUrl, llmModel, ttsVoice } = body;
+
+  if (name !== undefined) {
+    const nameError = validateLength(name, 200, "Name");
+    if (nameError) return NextResponse.json({ error: nameError }, { status: 400 });
+  }
+  if (description !== undefined) {
+    const descError = validateLength(description, 5000, "Description");
+    if (descError) return NextResponse.json({ error: descError }, { status: 400 });
+  }
 
   db.prepare(
     `UPDATE personas SET
@@ -81,7 +94,7 @@ export async function PUT(
 
   const persona = db.prepare("SELECT * FROM personas WHERE id = ?").get(id);
 
-  return NextResponse.json({ persona });
+  return NextResponse.json({ persona: camelizeKeys(persona) });
 }
 
 export async function DELETE(

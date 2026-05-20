@@ -18,12 +18,14 @@
  */
 
 import { getDb } from "@/lib/db";
+import { parseEmotionalState } from "@/lib/emotion-utils";
 import { processEmbeddings } from "@/lib/embeddings";
 import { processRelationshipAnalysis } from "@/lib/relationship-analysis";
 import { generateText } from "@/lib/ollama";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { runIdleEnrichment } from "@/lib/idle-enrichment";
 import { PROMPTS } from "@/lib/prompts";
+import { safeParseWarn } from "@/lib/safe-json";
 
 // Extracted job handlers
 import { handleResponseJob } from "./jobs/response-handler";
@@ -275,7 +277,7 @@ export function recoverStaleJobs(): number {
          error = 'Server crashed during processing', 
          processed_at = CURRENT_TIMESTAMP 
      WHERE status = 'processing' 
-       AND updated_at < datetime('now', '-5 minutes')`
+       AND created_at < datetime('now', '-5 minutes')`
   ).run();
   
   const recovered = result.changes;
@@ -297,7 +299,7 @@ export async function processJob(job: QueuedJob): Promise<JobResult> {
   markJobProcessing(job.id);
 
   try {
-    const payload: JobPayload = JSON.parse(job.payload);
+    const payload: JobPayload = safeParseWarn<JobPayload>(job.payload, "job payload") ?? {};
 
     switch (job.type) {
       case "generate_response":
@@ -466,7 +468,7 @@ async function handleDecayRelationships(jobId: string, payload: JobPayload): Pro
   for (let i = 0; i < relationships.length; i++) {
     const rel = relationships[i];
     const rates = rel.decay_rates
-      ? { ...DEFAULT_DECAY_RATES, ...JSON.parse(rel.decay_rates) }
+      ? { ...DEFAULT_DECAY_RATES, ...safeParseWarn<Partial<typeof DEFAULT_DECAY_RATES>>(rel.decay_rates, "relationship decay_rates", {}) }
       : DEFAULT_DECAY_RATES;
 
     const lastUpdate = rel.updated_at ? new Date(rel.updated_at) : new Date();
@@ -564,8 +566,8 @@ async function handleRefineRelationshipSummary(jobId: string, payload: JobPayloa
   const totalRelationships = relationships.length;
   for (let i = 0; i < relationships.length; i++) {
     const rel = relationships[i];
-    const emotions = rel.emotional_state ? JSON.parse(rel.emotional_state) : {};
-    const history = rel.shared_history ? JSON.parse(rel.shared_history) : [];
+    const emotions = parseEmotionalState(rel.emotional_state);
+    const history = safeParseWarn<({ summary?: string } | string)[]>(rel.shared_history, "relationship shared_history", []) ?? [];
 
     const emotionSummary = Object.entries(emotions)
       .filter(([, v]) => (v as number) > 0.3)
@@ -629,7 +631,7 @@ async function handleArchivalProcessing(jobId: string, payload: JobPayload): Pro
   const totalMemories = memories.length;
   for (let i = 0; i < memories.length; i++) {
     const memory = memories[i];
-    const imp = JSON.parse(memory.importance);
+    const imp = safeParseWarn<Record<string, number>>(memory.importance, "memory importance", {}) ?? {};
     const score = (imp.emotional || 1) + (imp.local || 1) + (imp.canonical || 1) + (imp.recency || 1);
 
     if (score <= 4) {
@@ -694,8 +696,8 @@ async function handleThreadAnalysis(jobId: string, payload: JobPayload): Promise
     const response = await generateText(prompt, { temperature: 0.3, num_ctx: 8192, userId: userId as string });
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      if (Array.isArray(parsed.threads)) {
+      const parsed = safeParseWarn<Record<string, unknown>>(jsonMatch[0], "LLM thread analysis");
+      if (parsed && Array.isArray(parsed.threads)) {
         for (const thread of parsed.threads) {
           const threadId = crypto.randomUUID();
           db.prepare(`

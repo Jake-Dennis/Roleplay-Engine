@@ -1,4 +1,6 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { getAuthToken } from '@/lib/auth-token';
@@ -20,7 +22,7 @@ export async function GET(
     "SELECT * FROM voice_assignments WHERE user_id = ? AND entity_type = ? AND entity_id = ?"
   ).get(decoded.sub, entityType, entityId);
 
-  return NextResponse.json({ assignment: assignment || null });
+  return NextResponse.json({ assignment: assignment ? camelizeKeys(assignment) : null });
 }
 
 export async function PUT(
@@ -34,7 +36,8 @@ export async function PUT(
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const { entityType, entityId } = await params;
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { voiceName, speed = 1.0, volume = 0.8 } = body;
 
   if (!voiceName) {
@@ -65,7 +68,7 @@ export async function PUT(
     "SELECT * FROM voice_assignments WHERE user_id = ? AND entity_type = ? AND entity_id = ?"
   ).get(decoded.sub, entityType, entityId);
 
-  return NextResponse.json({ assignment, success: true });
+  return NextResponse.json({ assignment: camelizeKeys(assignment), success: true });
 }
 
 export async function DELETE(

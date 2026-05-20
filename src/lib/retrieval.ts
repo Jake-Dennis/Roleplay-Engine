@@ -4,6 +4,7 @@ import { getDb } from "@/lib/db";
 import { classifyIntent, type Intent } from "@/lib/intent-analyzer";
 import { classifyIntentWithFallback } from "@/lib/semantic-intent-fallback";
 import { readWikiPage, listWikiPages } from "@/lib/wiki/file-io";
+import { safeParseWarn } from "@/lib/safe-json";
 
 // H5: Re-export prompt assembly functions from canonical source (prompt-builder.ts)
 export {
@@ -384,12 +385,8 @@ export function getCanonContext(universeId: string): string | null {
 
   let boundariesText = "";
   if (universe.boundaries) {
-    try {
-      const parsed = JSON.parse(universe.boundaries);
-      boundariesText = Array.isArray(parsed) ? parsed.join(", ") : universe.boundaries;
-    } catch {
-      boundariesText = universe.boundaries;
-    }
+    const parsed = safeParseWarn<string[]>(universe.boundaries, "universe boundaries");
+    boundariesText = Array.isArray(parsed) ? parsed.join(", ") : universe.boundaries;
   }
 
   const context = boundariesText || universe.name;

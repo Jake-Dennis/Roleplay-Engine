@@ -4,6 +4,8 @@ import { APP_CONFIG } from "@/lib/config";
 import { queryWiki } from "@/lib/wiki/query";
 import path from "path";
 import { getAuthToken } from '@/lib/auth-token';
+import { serverError, requireJson } from '@/lib/error-response';
+import { validateLength } from '@/lib/validation';
 
 export async function POST(request: NextRequest) {
   const token = getAuthToken(request);
@@ -11,7 +13,8 @@ export async function POST(request: NextRequest) {
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { query, universeId } = body;
 
   if (!query || !universeId) {
@@ -20,6 +23,9 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+
+  const queryError = validateLength(query, 1000, "Query");
+  if (queryError) return NextResponse.json({ error: queryError }, { status: 400 });
 
   const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
 
@@ -31,9 +37,6 @@ export async function POST(request: NextRequest) {
       usedFallback: result.usedFallback,
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 }
-    );
+    return serverError(error);
   }
 }

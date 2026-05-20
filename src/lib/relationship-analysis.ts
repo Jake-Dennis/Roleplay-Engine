@@ -14,6 +14,7 @@
 import { getDb } from "@/lib/db";
 import { generateText } from "@/lib/ollama";
 import { syncRelationshipToFilesystem } from "@/lib/relationship-markdown";
+import { safeParseWarn } from "@/lib/safe-json";
 import type { RelationshipRow } from "@/lib/relationship-types";
 
 export interface RelationshipAnalysisResult {
@@ -194,15 +195,15 @@ Only include relationships that have changed or are newly formed.`;
     const jsonMatch = response.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return { relationships: [] };
 
-    const parsed = JSON.parse(jsonMatch[0]);
-    if (!Array.isArray(parsed)) return { relationships: [] };
+    const parsed = safeParseWarn<Array<{ source?: unknown; target?: unknown; emotionalState?: string; stage?: string; sharedHistory?: string }>>(jsonMatch[0], "LLM relationship analysis");
+    if (!parsed || !Array.isArray(parsed)) return { relationships: [] };
 
     return {
       relationships: parsed
-        .filter((r: { source?: unknown; target?: unknown }) => r.source && r.target)
-        .map((r: { source: string; target: string; emotionalState?: string; stage?: string; confidence?: number; sharedHistory?: string }) => ({
-          source: r.source,
-          target: r.target,
+        .filter((r) => r.source && r.target)
+        .map((r) => ({
+          source: r.source as string,
+          target: r.target as string,
           emotionalState: r.emotionalState || "neutral",
           stage: r.stage || "acquaintances",
           sharedHistory: r.sharedHistory || "",

@@ -1,10 +1,11 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
 import type { DbDatabase, DbResult } from "@/lib/types";
 import { getAuthToken } from '@/lib/auth-token';
-import { unauthorizedError, notFoundError } from '@/lib/error-response';
+import { unauthorizedError, notFoundError, requireJson } from '@/lib/error-response';
 
 function hasEntityAccess(db: DbDatabase, entityType: string, entityId: string, userId: string): DbResult | null {
   const entity = db.prepare(
@@ -41,7 +42,7 @@ export async function GET(
 
   const rel = hasEntityAccess(db, "relationships", id, decoded.sub);
   if (!rel) return notFoundError("Relationship");
-  return NextResponse.json({ relationship: rel });
+  return NextResponse.json({ relationship: camelizeKeys(rel) });
 }
 
 export async function PUT(
@@ -54,7 +55,8 @@ export async function PUT(
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const { id } = await params;
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const db = getDb();
   ensureGroupSupport(db);
 
@@ -73,7 +75,7 @@ export async function PUT(
   );
 
   const rel = db.prepare("SELECT * FROM relationships WHERE id = ?").get(id);
-  return NextResponse.json({ relationship: rel });
+  return NextResponse.json({ relationship: camelizeKeys(rel) });
 }
 
 export async function DELETE(

@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     user: {
       id: user.id,
       username: user.username,
-      created_at: user.created_at,
+      createdAt: user.created_at,
     },
     activeState: {
       groupId: activeState?.last_active_group_id || null,

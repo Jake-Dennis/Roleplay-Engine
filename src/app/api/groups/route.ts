@@ -1,9 +1,11 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { ensureGroupSupport } from "@/lib/group-migrations";
 import type { DbRow } from "@/lib/types";
-import { badRequestError, internalError } from "@/lib/error-response";
+import { badRequestError, internalError, requireJson } from "@/lib/error-response";
+import { validateLength } from "@/lib/validation";
 import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
@@ -30,7 +32,7 @@ export async function GET(request: NextRequest) {
       ORDER BY g.created_at DESC
     `).all(userId, userId) as DbRow[];
 
-    return NextResponse.json({ groups });
+    return NextResponse.json({ groups: camelizeKeys(groups) });
   } catch (e) {
     logger.error("Groups GET error:", e);
     return internalError();
@@ -43,12 +45,18 @@ export async function POST(request: NextRequest) {
   const { userId } = authResult.auth;
 
   try {
+    requireJson(request);
     const body = await request.json();
     const { name, description } = body;
 
     if (!name || !name.trim()) {
       return badRequestError("Group name is required");
     }
+
+    const nameError = validateLength(name, 200, "Name");
+    if (nameError) return badRequestError(nameError);
+    const descError = validateLength(description || "", 5000, "Description");
+    if (descError) return badRequestError(descError);
 
     const db = getDb();
     ensureGroupSupport(db);
@@ -66,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     const group = db.prepare("SELECT * FROM groups WHERE id = ?").get(id);
 
-    return NextResponse.json({ group }, { status: 201 });
+    return NextResponse.json({ group: camelizeKeys(group) }, { status: 201 });
   } catch (e) {
     logger.error("Groups POST error:", e);
     return internalError();

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { cancelSessionJobs } from "@/lib/job-processor";
 import { getAuthToken } from '@/lib/auth-token';
+import { validateLength } from '@/lib/validation';
 
 export async function PUT(
   request: NextRequest,
@@ -18,12 +20,16 @@ export async function PUT(
   const { id: sessionId, messageId } = await params;
   const db = getDb();
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { content, regenerate = true } = body;
 
   if (!content) {
     return NextResponse.json({ error: "Content is required" }, { status: 400 });
   }
+
+  const contentError = validateLength(content, 100000, "Content");
+  if (contentError) return NextResponse.json({ error: contentError }, { status: 400 });
 
   // Verify message belongs to session and user owns it (or is session owner)
   const message = db.prepare(

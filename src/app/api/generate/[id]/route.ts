@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { generateTextStream, isOllamaAvailable, checkOllamaConnection, getUserModels, getActivePersonaContext, buildPersonaPrompt } from "@/lib/ollama";
@@ -67,7 +68,8 @@ export async function POST(
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { userMessage, parentMessageId } = body;
 
   if (!userMessage) {
@@ -125,6 +127,7 @@ export async function POST(
 
   const stream = new ReadableStream({
     async start(controller) {
+      eventBus.registerController(controller);
       try {
         // Resolve model: session > persona > user > default
         const userModels = getUserModels(decoded.sub);
@@ -191,6 +194,7 @@ export async function POST(
           )
         );
         controller.close();
+        eventBus.unregisterController(controller);
       } catch (error) {
         controller.enqueue(
           encoder.encode(
@@ -200,6 +204,7 @@ export async function POST(
           )
         );
         controller.close();
+        eventBus.unregisterController(controller);
       }
     },
   });

@@ -5,6 +5,7 @@ import { ingestSource } from "@/lib/wiki/ingest";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 import path from "path";
 import { getAuthToken } from '@/lib/auth-token';
+import { serverError, requireJson } from '@/lib/error-response';
 
 export async function POST(request: NextRequest) {
   const token = getAuthToken(request);
@@ -16,7 +17,8 @@ export async function POST(request: NextRequest) {
   const limit = checkRateLimit(`generate:${decoded.sub}`, "generate");
   if (!limit.allowed) return createRateLimitResponse(limit.retryAfter!);
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { sourcePath, universeId } = body;
 
   if (!sourcePath || !universeId) {
@@ -37,9 +39,6 @@ export async function POST(request: NextRequest) {
       errors: result.errors,
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 }
-    );
+    return serverError(error);
   }
 }

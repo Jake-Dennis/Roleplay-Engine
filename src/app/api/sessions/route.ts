@@ -1,9 +1,11 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
 import type { DbResult } from "@/lib/types";
-import { forbiddenError, badRequestError } from "@/lib/error-response";
+import { forbiddenError, badRequestError, requireJson } from "@/lib/error-response";
+import { validateLength } from "@/lib/validation";
 
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);
@@ -54,7 +56,7 @@ export async function GET(request: NextRequest) {
     `).all(userId, userId) as DbResult[];
   }
 
-  return NextResponse.json({ sessions });
+  return NextResponse.json({ sessions: camelizeKeys(sessions) });
 }
 
 export async function POST(request: NextRequest) {
@@ -62,12 +64,16 @@ export async function POST(request: NextRequest) {
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { name, universe_id, timeline_id, type = "solo", group_id } = body;
 
   if (!name) {
     return badRequestError("Session name is required");
   }
+
+  const nameError = validateLength(name, 200, "Name");
+  if (nameError) return badRequestError(nameError);
 
   const db = getDb();
   ensureGroupSupport(db);
@@ -92,5 +98,5 @@ export async function POST(request: NextRequest) {
 
   const session = db.prepare("SELECT * FROM sessions WHERE id = ?").get(id);
 
-  return NextResponse.json({ session }, { status: 201 });
+  return NextResponse.json({ session: camelizeKeys(session) }, { status: 201 });
 }

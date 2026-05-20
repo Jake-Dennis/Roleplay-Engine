@@ -95,5 +95,5 @@ export async function POST(
     action: "joined",
   });
 
-  return NextResponse.json({ success: true, role: "participant", character_name: characterName });
+  return NextResponse.json({ success: true, role: "participant", characterName: characterName });
 }

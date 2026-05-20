@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
+import { safeParseWarn } from "@/lib/safe-json";
 import type { WikiRevision, WikiFrontmatter } from "./types";
 export type { WikiRevision } from "./types";
 
@@ -70,12 +71,11 @@ export function listRevisions(
 
   const revisions: WikiRevision[] = [];
   for (const file of files) {
-    try {
-      const raw = fs.readFileSync(path.join(revisionsDir, file), "utf-8");
-      revisions.push(JSON.parse(raw) as WikiRevision);
-    } catch {
-      // Skip corrupted files
-    }
+    const parsed = safeParseWarn<WikiRevision>(
+      fs.readFileSync(path.join(revisionsDir, file), "utf-8"),
+      `revision file ${file}`,
+    );
+    if (parsed) revisions.push(parsed);
   }
 
   return revisions;
@@ -95,10 +95,8 @@ export function getRevision(
   if (!isPathWithinRoot(revisionPath, wikiRoot)) return null;
   if (!fs.existsSync(revisionPath)) return null;
 
-  try {
-    const raw = fs.readFileSync(revisionPath, "utf-8");
-    return JSON.parse(raw) as WikiRevision;
-  } catch {
-    return null;
-  }
+  return safeParseWarn<WikiRevision>(
+    fs.readFileSync(revisionPath, "utf-8"),
+    `revision file ${revisionId}`,
+  );
 }

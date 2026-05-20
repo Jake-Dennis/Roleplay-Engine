@@ -18,7 +18,8 @@ import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import path from "path";
 import fs from "fs";
 import { getAuthToken } from '@/lib/auth-token';
-import { unauthorizedError, notFoundError, badRequestError } from '@/lib/error-response';
+import { unauthorizedError, notFoundError, badRequestError, requireJson } from '@/lib/error-response';
+import { validateLength } from '@/lib/validation';
 
 /**
  * Resolve the slug array to a relative file path within the wiki root.
@@ -292,7 +293,8 @@ export async function PUT(
     return notFoundError("Wiki page");
   }
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { content, frontmatter, expectedLastModified } = body;
 
   if (content === undefined && !frontmatter) {
@@ -300,6 +302,11 @@ export async function PUT(
       { error: "At least one of content or frontmatter is required" },
       { status: 400 }
     );
+  }
+
+  if (content !== undefined) {
+    const contentError = validateLength(content, 100000, "Content");
+    if (contentError) return NextResponse.json({ error: contentError }, { status: 400 });
   }
 
   try {

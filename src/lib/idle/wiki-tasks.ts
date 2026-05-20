@@ -15,6 +15,7 @@ import { appendLog } from "@/lib/wiki/logger";
 import { generateText } from "@/lib/ollama";
 import { PROMPTS } from "@/lib/prompts";
 import { TIME, CONTENT_LIMITS } from "@/lib/config";
+import { safeParseWarn } from "@/lib/safe-json";
 import path from "path";
 import fs from "fs";
 
@@ -102,7 +103,7 @@ export async function wikiRefineRelationships(userId: string, universeId?: strin
 
   for (const rel of relationships) {
     const emotions = parseEmotionalState(rel.emotional_state);
-    const history = rel.shared_history ? JSON.parse(rel.shared_history) : [];
+    const history = safeParseWarn<({ summary?: string } | string)[]>(rel.shared_history, "relationship shared_history", []) ?? [];
 
     const emotionSummary = Object.entries(emotions)
       .filter(([, v]) => (v as number) > 0.3)
@@ -420,7 +421,7 @@ export async function wikiDecayRelationships(userId: string, universeId?: string
   const pages = listWikiPages(wikiRoot);
 
   for (const rel of relationships) {
-    const rates = rel.decay_rates ? { ...DEFAULT_DECAY_RATES, ...JSON.parse(rel.decay_rates) } : DEFAULT_DECAY_RATES;
+    const rates = rel.decay_rates ? { ...DEFAULT_DECAY_RATES, ...safeParseWarn<Partial<typeof DEFAULT_DECAY_RATES>>(rel.decay_rates, "relationship decay_rates", {}) } : DEFAULT_DECAY_RATES;
     const lastUpdate = rel.updated_at ? new Date(rel.updated_at) : new Date();
     const daysSinceUpdate = (Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24);
     if (daysSinceUpdate < 1) continue;

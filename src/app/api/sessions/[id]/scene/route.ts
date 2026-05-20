@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { getAuthToken } from '@/lib/auth-token';
+import { safeParseWarn } from "@/lib/safe-json";
 
 export async function GET(
   request: NextRequest,
@@ -40,8 +42,8 @@ export async function GET(
       location: sceneState.active_location_id,
       goal: sceneState.current_goal,
       tone: sceneState.emotional_tone,
-      activeNpcs: sceneState.active_npcs ? JSON.parse(sceneState.active_npcs) : [],
-      activeThreads: sceneState.active_threads ? JSON.parse(sceneState.active_threads) : [],
+      activeNpcs: safeParseWarn<string[]>(sceneState.active_npcs, "scene active_npcs", []) ?? [],
+      activeThreads: safeParseWarn<string[]>(sceneState.active_threads, "scene active_threads", []) ?? [],
       sceneSummary: sceneState.scene_summary,
       updatedAt: sceneState.updated_at,
     },
@@ -70,7 +72,8 @@ export async function PUT(
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { location, goal, tone, activeNpcs, activeThreads, sceneSummary } = body;
 
   // Check if scene state already exists

@@ -3,12 +3,8 @@
  * Returns an empty object on null, empty string, or malformed JSON.
  */
 import type { EmotionalState } from "@/lib/relationship-types";
+import { safeParse } from "@/lib/safe-json";
 
 export function parseEmotionalState(raw: string | null): EmotionalState {
-  if (!raw) return {};
-  try {
-    return JSON.parse(raw) as EmotionalState;
-  } catch {
-    return {};
-  }
+  return safeParse<EmotionalState>(raw, {}) as EmotionalState;
 }

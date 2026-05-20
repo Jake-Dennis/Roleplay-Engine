@@ -13,6 +13,7 @@
 
 import { getDb } from "@/lib/db";
 import { generateText } from "@/lib/ollama";
+import { safeParseWarn } from "@/lib/safe-json";
 
 export interface SummarizationResult {
   summarizedCount: number;
@@ -112,12 +113,13 @@ ${messageText}`;
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return null;
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    const parsed = safeParseWarn<{ summary?: string; emotionalTone?: string; relationshipEffects?: unknown[]; loreExtracted?: unknown[] }>(jsonMatch[0], "LLM batch summary response");
+    if (!parsed) return null;
     return {
       text: parsed.summary || "",
       emotionalTone: parsed.emotionalTone || "neutral",
-      relationshipEffects: Array.isArray(parsed.relationshipEffects) ? parsed.relationshipEffects : [],
-      loreExtracted: Array.isArray(parsed.loreExtracted) ? parsed.loreExtracted : [],
+      relationshipEffects: Array.isArray(parsed.relationshipEffects) ? parsed.relationshipEffects as string[] : [],
+      loreExtracted: Array.isArray(parsed.loreExtracted) ? parsed.loreExtracted as string[] : [],
     };
   } catch {
     return null;

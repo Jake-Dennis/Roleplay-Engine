@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { verifyToken } from "@/lib/auth";
 import { APP_CONFIG } from "@/lib/config";
 import { rejectPage } from "@/lib/wiki/validation";
@@ -31,7 +32,8 @@ export async function PUT(
     return NextResponse.json({ error: "Wiki page not found" }, { status: 404 });
   }
 
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   if (!body.reason) {
     return NextResponse.json({ error: "reason is required" }, { status: 400 });
   }

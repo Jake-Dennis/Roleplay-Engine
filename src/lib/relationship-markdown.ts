@@ -19,6 +19,7 @@ import { getDb } from "@/lib/db";
 import { parseEmotionalState } from "@/lib/emotion-utils";
 import { buildMarkdown, parseFrontmatter, LoreFrontmatter } from "@/lib/markdown-utils";
 import { EMOTION_HALF_LIVES } from "@/lib/relationship-constants";
+import { safeParseWarn } from "@/lib/safe-json";
 import type {
   RelationshipRow,
   EmotionalState,
@@ -89,7 +90,7 @@ export function getHistoryFilePath(
  */
 export function buildRelationshipMarkdown(rel: RelationshipRow): string {
   const emotionalState = parseEmotionalState(rel.emotional_state);
-  const decayRates = rel.decay_rates ? JSON.parse(rel.decay_rates) as DecayConfig : DEFAULT_DECAY_CONFIG;
+  const decayRates = safeParseWarn<DecayConfig>(rel.decay_rates, "relationship decay_rates", DEFAULT_DECAY_CONFIG) ?? DEFAULT_DECAY_CONFIG;
 
   // Build emotional state table
   const emotionRows = Object.entries(emotionalState)
@@ -104,7 +105,7 @@ export function buildRelationshipMarkdown(rel: RelationshipRow): string {
     : "";
 
   // Build shared history with wikilinks
-  const sharedHistory = rel.shared_history ? JSON.parse(rel.shared_history) as SharedHistoryEntry[] : [];
+  const sharedHistory = safeParseWarn<SharedHistoryEntry[]>(rel.shared_history, "relationship shared_history", []) ?? [];
   const historyItems = sharedHistory
     .map((entry) => {
       // Convert event references to wikilinks if they look like event names
@@ -139,7 +140,7 @@ export function buildRelationshipMarkdown(rel: RelationshipRow): string {
  * Build the markdown content for the shared history file.
  */
 export function buildHistoryMarkdown(rel: RelationshipRow): string {
-  const sharedHistory = rel.shared_history ? JSON.parse(rel.shared_history) as SharedHistoryEntry[] : [];
+  const sharedHistory = safeParseWarn<SharedHistoryEntry[]>(rel.shared_history, "relationship shared_history", []) ?? [];
 
   const historyEntries = sharedHistory
     .map((entry) => {
@@ -333,7 +334,7 @@ export function appendSharedHistory(
     if (!rel) return;
 
     // Update DB
-    const existingHistory = rel.shared_history ? JSON.parse(rel.shared_history) as SharedHistoryEntry[] : [];
+    const existingHistory = safeParseWarn<SharedHistoryEntry[]>(rel.shared_history, "relationship shared_history", []) ?? [];
     existingHistory.push(entry);
 
     db.prepare(

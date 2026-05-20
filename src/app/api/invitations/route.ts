@@ -1,3 +1,4 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
@@ -23,5 +24,5 @@ export async function GET(request: NextRequest) {
     ORDER BY i.created_at DESC
   `).all(decoded.sub);
 
-  return NextResponse.json({ invitations });
+  return NextResponse.json({ invitations: camelizeKeys(invitations) });
 }

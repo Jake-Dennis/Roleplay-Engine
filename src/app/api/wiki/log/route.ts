@@ -4,6 +4,7 @@ import { APP_CONFIG } from "@/lib/config";
 import { getRecentLogs } from "@/lib/wiki/logger";
 import path from "path";
 import { getAuthToken } from '@/lib/auth-token';
+import { serverError } from '@/lib/error-response';
 
 export async function GET(request: NextRequest) {
   const token = getAuthToken(request);
@@ -18,9 +19,6 @@ export async function GET(request: NextRequest) {
     const logs = getRecentLogs(wikiRoot, count);
     return NextResponse.json({ logs });
   } catch (error) {
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 }
-    );
+    return serverError(error);
   }
 }

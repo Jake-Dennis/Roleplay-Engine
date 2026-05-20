@@ -1,10 +1,12 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import type { DbDatabase } from "@/lib/types";
 import { getAuthToken } from '@/lib/auth-token';
-import { unauthorizedError, notFoundError, badRequestError } from '@/lib/error-response';
+import { unauthorizedError, notFoundError, badRequestError, requireJson } from '@/lib/error-response';
 import { parseBoundaries } from '@/lib/universe-utils';
+import { validateLength } from '@/lib/validation';
 
 function hasUniverseAccess(db: DbDatabase, universeId: string, userId: string): boolean {
   const universe = db.prepare(
@@ -53,7 +55,7 @@ export async function GET(
 
   const parsed = { ...universe, boundaries: parseBoundaries(universe.boundaries as string | null) };
 
-  return NextResponse.json({ universe: parsed });
+  return NextResponse.json({ universe: camelizeKeys(parsed) });
 }
 
 export async function PUT(
@@ -71,7 +73,8 @@ export async function PUT(
   }
 
   const { id } = await params;
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
 
   const db = getDb();
 
@@ -92,6 +95,11 @@ export async function PUT(
 
   if (name !== undefined && (!name || !name.trim())) {
     return badRequestError("Universe name cannot be empty");
+  }
+
+  if (name !== undefined) {
+    const nameError = validateLength(name, 200, "Name");
+    if (nameError) return badRequestError(nameError);
   }
 
   const validModes = ["strict", "loose", "custom"];
@@ -137,7 +145,7 @@ export async function PUT(
 
   const parsed = { ...universe, boundaries: parseBoundaries(universe.boundaries as string | null) };
 
-  return NextResponse.json({ universe: parsed });
+  return NextResponse.json({ universe: camelizeKeys(parsed) });
 }
 
 export async function DELETE(

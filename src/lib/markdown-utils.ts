@@ -7,6 +7,8 @@
  * Functions here have no DB or filesystem dependencies beyond what's passed to them.
  */
 
+import { safeParse } from "@/lib/safe-json";
+
 /**
  * Frontmatter fields for markdown files with entity metadata.
  */
@@ -71,10 +73,11 @@ export function parseFrontmatter(content: string): { frontmatter: Record<string,
 
     // Parse arrays (simple inline arrays)
     if (value.startsWith("[")) {
-      try {
-        frontmatter[key] = JSON.parse(value);
+      const parsed = safeParse<unknown>(value);
+      if (parsed !== null) {
+        frontmatter[key] = parsed;
         continue;
-      } catch { /* fall through */ }
+      }
     }
 
     // Parse booleans

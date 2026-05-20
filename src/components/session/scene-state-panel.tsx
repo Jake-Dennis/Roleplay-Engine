@@ -18,6 +18,7 @@
 
 import { useState } from "react";
 import { MapPin, Target, Palette, Users, GitBranch, MessageCircle } from "lucide-react";
+import { safeParse } from "@/lib/safe-json";
 
 interface SceneState {
   active_location_id: string | null;
@@ -46,8 +47,8 @@ export function SceneStatePanel({ scene, onSave, onClose }: SceneStatePanelProps
     location: scene?.active_location_id || "",
     goal: scene?.current_goal || "",
     tone: scene?.emotional_tone || "",
-    activeNpcs: scene?.active_npcs ? JSON.parse(scene.active_npcs) : [] as string[],
-    activeThreads: scene?.active_threads ? JSON.parse(scene.active_threads) : [] as string[],
+    activeNpcs: safeParse<string[]>(scene?.active_npcs ?? null) ?? [],
+    activeThreads: safeParse<string[]>(scene?.active_threads ?? null) ?? [],
     sceneSummary: scene?.scene_summary || "",
   });
 

@@ -15,6 +15,7 @@
 
 import { getDb } from "@/lib/db";
 import { generateText } from "@/lib/ollama";
+import { safeParseWarn } from "@/lib/safe-json";
 
 export interface MessageSummaryResult {
   summaryId: string;
@@ -79,7 +80,8 @@ If no lore is extracted, return an empty array for lore_extracted.`;
       return { summaryId: "", types: [] };
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    const parsed = safeParseWarn<Record<string, unknown>>(jsonMatch[0], "LLM message summary");
+    if (!parsed) return { summaryId: "", types: [] };
     const summaryId = crypto.randomUUID();
     const types: string[] = [];
 

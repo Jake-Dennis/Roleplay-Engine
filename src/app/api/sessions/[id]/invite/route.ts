@@ -1,9 +1,12 @@
+import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
+import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import type { DbDatabase } from "@/lib/types";
 import { getAuthToken } from '@/lib/auth-token';
+import { validateLength } from '@/lib/validation';
 
 // Ensure invitations table exists
 function ensureTable(db: DbDatabase) {
@@ -29,12 +32,16 @@ export async function POST(
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   const { id: sessionId } = await params;
-  const body = await request.json();
+    requireJson(request);
+    const body = await request.json();
   const { username } = body;
 
   if (!username) {
     return NextResponse.json({ error: "Username is required" }, { status: 400 });
   }
+
+  const usernameError = validateLength(username, 50, "Username");
+  if (usernameError) return NextResponse.json({ error: usernameError }, { status: 400 });
 
   const db = getDb();
   ensureTable(db);
@@ -141,5 +148,5 @@ export async function GET(
     ORDER BY i.created_at DESC
   `).all(sessionId);
 
-  return NextResponse.json({ invitations });
+  return NextResponse.json({ invitations: camelizeKeys(invitations) });
 }

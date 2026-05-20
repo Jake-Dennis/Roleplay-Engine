@@ -5,6 +5,7 @@ import { generateIndex } from "@/lib/wiki/index-generator";
 import fs from "fs";
 import path from "path";
 import { getAuthToken } from '@/lib/auth-token';
+import { serverError } from '@/lib/error-response';
 
 export async function GET(request: NextRequest) {
   const token = getAuthToken(request);
@@ -22,9 +23,6 @@ export async function GET(request: NextRequest) {
     const index = fs.readFileSync(indexPath, "utf-8");
     return NextResponse.json({ index });
   } catch (error) {
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 }
-    );
+    return serverError(error);
   }
 }
