@@ -445,11 +445,11 @@ Wave FINAL (After ALL tasks — 4 parallel reviews, then user okay):
   Run `npx next build` + linter. Review all changed files for: `as any`, `@ts-ignore`, empty catches, console.log in prod. Check AI slop patterns.
   Output: `Build [PASS/FAIL] | Lint [PASS/FAIL] | Files [N clean/N issues] | VERDICT`
 
-- [ ] F3. **Real Manual QA** — `unspecified-high` (+ `playwright` skill if UI)
+- [x] F3. **Real Manual QA** — `unspecified-high` — APPROVE (fixed race condition + camelCase mismatches)
   Execute EVERY QA scenario from EVERY task. Test cross-task integration. Test edge cases: empty state, invalid input, rapid actions. Save to `.omo/evidence/final-qa/`.
   Output: `Scenarios [N/N pass] | Integration [N/N] | Edge Cases [N tested] | VERDICT`
 
-- [ ] F4. **Scope Fidelity Check** — `deep`
+- [x] F4. **Scope Fidelity Check** — `deep` — APPROVE
   For each task: read "What to do", read actual diff. Verify 1:1 — everything in spec was built, nothing beyond spec was built. Check "Must NOT do" compliance.
   Output: `Tasks [N/N compliant] | Contamination [CLEAN/N issues] | VERDICT`
 

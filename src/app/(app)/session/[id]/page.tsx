@@ -640,7 +640,7 @@ export default function SessionChatPage() {
   const allMessages = messages || [];
 
   return (
-    <div className="flex h-[calc(100vh-3rem)] flex-col">
+    <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border-default pb-3">
         <div className="flex items-center gap-3">

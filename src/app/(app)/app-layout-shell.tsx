@@ -378,8 +378,8 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
         <ConnectionIndicator />
 
         {/* Page content */}
-        <main className="relative flex-1">
-          <div className="mx-auto max-w-5xl px-6 py-6">{children}</div>
+        <main className="relative flex-1 overflow-hidden">
+          <div className="mx-auto h-full max-w-5xl px-6 py-3">{children}</div>
 
           {/* Idle status indicator */}
           {isIdle && (
