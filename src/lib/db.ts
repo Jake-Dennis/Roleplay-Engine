@@ -22,6 +22,7 @@ export function getDb(): Database.Database {
   db.pragma("wal_autocheckpoint = 1000"); // checkpoint after 1000 WAL pages
   db.pragma("foreign_keys = ON");
   db.pragma("cache_size = -64000"); // 64MB cache
+  db.pragma("busy_timeout = 5000"); // Wait 5s for WAL lock contention
 
   // Load sqlite-vec extension
   try {

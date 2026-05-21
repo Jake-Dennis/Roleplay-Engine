@@ -6,12 +6,17 @@ import fs from "fs";
 import path from "path";
 import { getAuthToken } from '@/lib/auth-token';
 import { serverError } from '@/lib/error-response';
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 export async function GET(request: NextRequest) {
   const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`wiki_read:${ip}`, "wiki_read");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
   const indexPath = path.join(wikiRoot, "index.md");
@@ -22,7 +27,7 @@ export async function GET(request: NextRequest) {
     }
     const index = fs.readFileSync(indexPath, "utf-8");
     return NextResponse.json({ index });
-  } catch (error) {
-    return serverError(error);
+  } catch (err: unknown) {
+    return serverError(err);
   }
 }

@@ -1,0 +1,59 @@
+=== T3: Extraction Triggered After AI Response ===
+Date: 2026-05-21
+Tool: Code Review (manual)
+
+--- Step 1: Read generate/[id]/route.ts ---
+File: src/app/api/generate/[id]/route.ts
+
+--- Step 2: Verify extractAndApplySceneState is called after message save ---
+Line 13: `import { extractAndApplySceneState } from "@/lib/scene-extraction";`
+- Import present: YES
+
+Lines 206-213 (after generation completes, message saved):
+```typescript
+// Auto-extract scene state from recent messages
+try {
+  await extractAndApplySceneState(sessionId, decoded.sub);
+  eventBus.emit(`${SessionEvents.SCENE_UPDATED}:${sessionId}`, { sessionId });
+} catch (err) {
+  // Extraction failure should not break generation flow
+  // extractAndApplySceneState already logs warnings internally
+}
+```
+
+Placement analysis:
+- Called AFTER generateTextStream completes (line 180-196)
+- Called AFTER GENERATION_DONE event emitted (line 199-204)
+- Called BEFORE job queue triggers (line 217-230)
+- Called BEFORE completion signal sent to client (line 240-248)
+- Message content is fully saved at this point (incremental saves during streaming, line 184-187)
+Status: CORRECT PLACEMENT
+
+--- Step 3: Verify eventBus.emit(SessionEvents.SCENE_UPDATED, ...) is called ---
+Line 209: `eventBus.emit(`${SessionEvents.SCENE_UPDATED}:${sessionId}`, { sessionId });`
+- Uses SessionEvents.SCENE_UPDATED constant: YES
+- Event format matches pattern "scene:updated:sessionId": YES
+- Called on success (inside try, after extraction): YES
+
+--- Step 4: Verify try/catch around extraction call ---
+Lines 207-213:
+```typescript
+try {
+  await extractAndApplySceneState(sessionId, decoded.sub);
+  eventBus.emit(`${SessionEvents.SCENE_UPDATED}:${sessionId}`, { sessionId });
+} catch (err) {
+  // Extraction failure should not break generation flow
+  // extractAndApplySceneState already logs warnings internally
+}
+```
+- try/catch present: YES
+- Does NOT re-throw: YES
+- Does NOT block response: YES (generation continues to job queue and completion)
+- SCENE_UPDATED only emitted on success (inside try, after extraction): YES
+
+--- Step 5: Verify NOT using job queue ---
+- No queueJob call for scene extraction: PASS
+- Called inline with await: PASS
+- Not deferred: PASS
+
+VERDICT: PASS — Integration correct, error handling present, inline execution

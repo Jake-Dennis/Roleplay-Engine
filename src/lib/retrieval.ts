@@ -2,18 +2,12 @@ import fs from "fs";
 import path from "path";
 import { getDb } from "@/lib/db";
 import { classifyIntent, type Intent } from "@/lib/intent-analyzer";
-import { classifyIntentWithFallback } from "@/lib/semantic-intent-fallback";
 import { readWikiPage, listWikiPages } from "@/lib/wiki/file-io";
+import { parseWikiIndex, scoreWikiEntry, resolveWikiPagePath } from "@/lib/wiki/index-utils";
 import { safeParseWarn } from "@/lib/safe-json";
 
-// H5: Re-export prompt assembly functions from canonical source (prompt-builder.ts)
-export {
-  assemblePrompt,
-  assemblePromptWithBudget,
-  estimateTokens,
-  applyContextBudget,
-  buildIntentContext,
-} from "@/lib/prompt-builder";
+// H5: Re-export prompt assembly function from canonical source (prompt-builder.ts)
+export { assemblePromptWithBudget } from "@/lib/prompt-builder";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -24,6 +18,7 @@ export interface SceneContext {
   goal: string | null;
   tone: string | null;
   activeNpcs: string[];
+  activeThreads: string[];
 }
 
 export interface LoreContext {
@@ -48,6 +43,28 @@ export interface RetrievedContext {
 }
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Parse a value that may be a JSON array string or a comma-separated string.
+ * Returns [] for null/empty, tries JSON.parse for `[`-prefixed values,
+ * falls back to comma-split for backwards compatibility.
+ */
+function parseJsonOrSplit(val: string | null): string[] {
+  if (!val) return [];
+  if (val.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed.map(String);
+    } catch {
+      // Fall through to comma-split
+    }
+  }
+  return val.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
+// ---------------------------------------------------------------------------
 // Retrieval functions
 // ---------------------------------------------------------------------------
 
@@ -57,7 +74,7 @@ export interface RetrievedContext {
 export function getSceneContext(sessionId: string): SceneContext {
   const db = getDb();
   const result = db.prepare(
-    `SELECT active_location_id, current_goal, emotional_tone, active_npcs
+    `SELECT active_location_id, current_goal, emotional_tone, active_npcs, active_threads
      FROM scene_states
      WHERE session_id = ?
      ORDER BY updated_at DESC LIMIT 1`
@@ -66,134 +83,25 @@ export function getSceneContext(sessionId: string): SceneContext {
     current_goal: string | null;
     emotional_tone: string | null;
     active_npcs: string | null;
+    active_threads: string | null;
   } | undefined;
 
   if (!result) {
-    return { location: null, goal: null, tone: null, activeNpcs: [] };
+    return { location: null, goal: null, tone: null, activeNpcs: [], activeThreads: [] };
   }
 
   return {
     location: result.active_location_id,
     goal: result.current_goal,
     tone: result.emotional_tone,
-    activeNpcs: result.active_npcs
-      ? result.active_npcs.split(",").map((s: string) => s.trim()).filter(Boolean)
-      : [],
+    activeNpcs: parseJsonOrSplit(result.active_npcs),
+    activeThreads: parseJsonOrSplit(result.active_threads),
   };
 }
 
 // ---------------------------------------------------------------------------
-// Wiki-first retrieval (internal helpers)
+// Wiki-first retrieval (main entry point)
 // ---------------------------------------------------------------------------
-
-/** Parsed entry from wiki index.md. */
-interface WikiIndexEntry {
-  title: string;
-  summary: string;
-  status: string;
-  section: string; // entity, concept, source, synthesis
-}
-
-/**
- * Parse wiki index.md into structured entries grouped by section.
- * Expected format:
- *   ## Entities
- *   - [[Title]] — summary (status: reviewed)
- */
-function parseWikiIndex(indexPath: string): WikiIndexEntry[] {
-  if (!fs.existsSync(indexPath)) return [];
-
-  const content = fs.readFileSync(indexPath, "utf-8");
-  const entries: WikiIndexEntry[] = [];
-  let currentSection = "";
-
-  for (const line of content.split("\n")) {
-    const sectionMatch = line.match(/^##\s+(.+)$/);
-    if (sectionMatch) {
-      currentSection = sectionMatch[1].toLowerCase();
-      continue;
-    }
-
-    const entryMatch = line.match(/^-\s+\[\[([^\]]+)\]\]\s*[—-]\s*(.+)$/);
-    if (entryMatch) {
-      const title = entryMatch[1].trim();
-      const rest = entryMatch[2].trim();
-      const statusMatch = rest.match(/\(status:\s*(\w+)\)\s*$/);
-      const status = statusMatch ? statusMatch[1] : "draft";
-      const summary = statusMatch
-        ? rest.replace(/\(status:\s*\w+\)\s*$/, "").trim()
-        : rest;
-
-      entries.push({ title, summary, status, section: currentSection });
-    }
-  }
-
-  return entries;
-}
-
-/**
- * Score a wiki index entry's relevance to a query using keyword overlap.
- */
-function scoreWikiEntry(entry: WikiIndexEntry, query: string, universeId: string): number {
-  const queryTerms = query.toLowerCase().split(/\s+/).filter((t) => t.length > 2);
-  if (queryTerms.length === 0) return 0;
-
-  const searchable = `${entry.title} ${entry.summary} ${entry.section}`.toLowerCase();
-  let matches = 0;
-  for (const term of queryTerms) {
-    if (searchable.includes(term)) matches++;
-  }
-
-  let score = matches / queryTerms.length;
-
-  // Bonus for title match
-  if (entry.title.toLowerCase().includes(queryTerms[0])) score += 0.3;
-
-  // Bonus for reviewed/locked status
-  if (entry.status === "locked") score += 0.15;
-  else if (entry.status === "reviewed") score += 0.1;
-
-  // Bonus for universe-scoped sections
-  if (universeId && (entry.section === "entity" || entry.section === "concept")) {
-    score += 0.05;
-  }
-
-  return Math.min(score, 1.0);
-}
-
-/**
- * Resolve an index entry title to an actual wiki page path.
- */
-function resolveWikiPagePath(
-  title: string,
-  pages: ReturnType<typeof listWikiPages>,
-  universeId: string
-): string | null {
-  const normalizedTitle = title.toLowerCase().replace(/\s+/g, "-");
-
-  // First pass: exact title match + same universe
-  for (const page of pages) {
-    const pageTitle = (page.frontmatter.title || "").toLowerCase().replace(/\s+/g, "-");
-    const pageUniverse = page.frontmatter.universe?.toLowerCase();
-    if (pageTitle === normalizedTitle && pageUniverse === universeId) {
-      return page.path;
-    }
-  }
-
-  // Second pass: exact title match (any universe)
-  for (const page of pages) {
-    const pageTitle = (page.frontmatter.title || "").toLowerCase().replace(/\s+/g, "-");
-    if (pageTitle === normalizedTitle) return page.path;
-  }
-
-  // Third pass: filename match
-  for (const page of pages) {
-    const filename = path.basename(page.path, ".md").toLowerCase();
-    if (filename === normalizedTitle) return page.path;
-  }
-
-  return null;
-}
 
 /**
  * Hash a file path to a numeric ID for LoreContext compatibility.
@@ -238,10 +146,6 @@ function loadAllWikiEntries(wikiRoot: string, universeId: string): LoreContext {
     return { entries: [] };
   }
 }
-
-// ---------------------------------------------------------------------------
-// Wiki-first retrieval (main entry point)
-// ---------------------------------------------------------------------------
 
 /**
  * Fetch lore entries from the wiki using index-first retrieval.
@@ -432,44 +336,6 @@ export async function getRetrievedContext(
   const canonContext = getCanonContext(universeId);
 
   const intent = userMessage ? classifyIntent(userMessage) : "social";
-
-  return {
-    scene,
-    lore,
-    relationships,
-    recentMessages,
-    canonContext,
-    intent,
-  };
-}
-
-/**
- * Retrieve context with semantic intent fallback for ambiguous inputs.
- * D4: Uses embeddings to find similar past interactions when keyword
- * classification is uncertain.
- */
-export async function getRetrievedContextWithFallback(
-  sessionId: string,
-  universeId: string,
-  userId: string,
-  userMessage?: string
-): Promise<RetrievedContext> {
-  const scene = getSceneContext(sessionId);
-  const lore = await getWikiContext(userId, universeId, scene);
-  const relationships = getRelationshipContext(universeId);
-  const recentMessages = getRecentMessages(sessionId);
-  const canonContext = getCanonContext(universeId);
-
-  let intent: Intent = "social";
-  if (userMessage) {
-    try {
-      const result = await classifyIntentWithFallback(userId, userMessage);
-      intent = result.intent;
-    } catch {
-      // Fallback to fast keyword classifier
-      intent = classifyIntent(userMessage);
-    }
-  }
 
   return {
     scene,

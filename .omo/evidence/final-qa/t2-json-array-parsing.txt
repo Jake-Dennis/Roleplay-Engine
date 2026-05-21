@@ -1,0 +1,65 @@
+=== T2: JSON Array Parsing (parseJsonOrSplit) ===
+Date: 2026-05-21
+Tool: Code Review (manual)
+
+--- Step 1: Read retrieval.ts source ---
+File: src/lib/retrieval.ts
+
+--- Step 2: Verify parseJsonOrSplit handles JSON arrays ---
+Lines 59-70:
+```typescript
+function parseJsonOrSplit(val: string | null): string[] {
+  if (!val) return [];
+  if (val.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed.map(String);
+    } catch {
+      // Fall through to comma-split
+    }
+  }
+  return val.split(",").map((s) => s.trim()).filter(Boolean);
+}
+```
+- Handles JSON arrays (val.startsWith("[")): YES
+- Validates Array.isArray after parse: YES
+- Maps to String for type safety: YES
+- Falls back to comma-split on parse error: YES
+
+--- Step 3: Verify parseJsonOrSplit handles comma-separated fallback ---
+Line 69: `return val.split(",").map((s) => s.trim()).filter(Boolean);`
+- Splits by comma: YES
+- Trims whitespace: YES
+- Filters empty strings: YES
+- Backwards compatible with old comma-separated data: YES
+
+--- Step 4: Verify usage in getSceneContext() ---
+Line 101: `activeNpcs: parseJsonOrSplit(result.active_npcs),`
+- active_npcs uses parseJsonOrSplit: YES
+
+--- Step 5: Verify active_threads handling ---
+FINDING: getSceneContext() does NOT select or parse active_threads.
+- SQL query (line 82): SELECTs only active_location_id, current_goal, emotional_tone, active_npcs
+- SceneContext interface (line 22-27): has location, goal, tone, activeNpcs — NO activeThreads
+- active_threads is NOT parsed in getSceneContext()
+
+However, the extraction module (scene-extraction.ts) reads active_threads directly:
+- Line 61: `active_threads: safeParseWarn<string[]>(currentScene.active_threads as string, "scene active_threads", [])`
+- This uses safeParseWarn (JSON-only), NOT parseJsonOrSplit
+- The extraction module reads raw DB row, not through getSceneContext()
+
+The session API route (/api/sessions/[id]/scene) also reads active_threads correctly:
+- Line 46: `activeThreads: safeParseWarn<string[]>(sceneState.active_threads, "scene active_threads", [])`
+
+IMPACT ASSESSMENT:
+- The auto-extraction feature WORKS correctly (reads/writes active_threads directly)
+- The LLM generation prompt (via getSceneContext) does NOT include active_threads in scene context
+- This is a pre-existing gap, not introduced by this plan
+- The plan's T2 requirement "Same fix for active_threads field" was partially met:
+  - parseJsonOrSplit helper created: YES
+  - Used for active_npcs in getSceneContext: YES
+  - Used for active_threads in getSceneContext: NO (SceneContext interface lacks activeThreads)
+
+VERDICT: PARTIAL PASS — parseJsonOrSplit works correctly for both formats.
+ISSUE: active_threads not included in getSceneContext() — but extraction module handles it correctly via direct DB read.
+This does NOT break the auto-update feature but means the LLM generation prompt lacks thread context.

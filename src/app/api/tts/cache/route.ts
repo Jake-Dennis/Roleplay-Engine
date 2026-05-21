@@ -9,6 +9,8 @@ import { APP_CONFIG } from "@/lib/config";
 import { generateSpeech } from "@/lib/tts";
 import crypto from "crypto";
 import { getAuthToken } from '@/lib/auth-token';
+import { isPathWithinRoot } from '@/lib/wiki/path-guard';
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 export async function GET(request: NextRequest) {
   const token = getAuthToken(request);
@@ -16,6 +18,10 @@ export async function GET(request: NextRequest) {
 
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`api:${ip}`, "api");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   const db = getDb();
   const url = new URL(request.url);
@@ -126,6 +132,10 @@ export async function DELETE(request: NextRequest) {
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`api:${ip}`, "api");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
+
   const url = new URL(request.url);
   const action = url.searchParams.get("action");
 
@@ -138,9 +148,11 @@ export async function DELETE(request: NextRequest) {
     ).all(decoded.sub) as { audio_path: string | null }[];
 
     // Delete audio files
+    const userRoot = path.join(APP_CONFIG.dataDir, decoded.sub);
     for (const entry of entries) {
       if (entry.audio_path) {
-        const fullPath = path.join(APP_CONFIG.dataDir, decoded.sub, entry.audio_path);
+        const fullPath = path.join(userRoot, entry.audio_path);
+        if (!isPathWithinRoot(fullPath, userRoot)) continue;
         try {
           if (fs.existsSync(fullPath)) {
             fs.unlinkSync(fullPath);
@@ -186,6 +198,10 @@ export async function POST(request: NextRequest) {
 
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`api:${ip}`, "api");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
     requireJson(request);
     const body = await request.json();
@@ -281,11 +297,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Save combined file
-    const combinedName = outputName || `combined_${Date.now()}`;
-    const combinedFileName = `${combinedName}.mp3`;
+    const sanitizedName = path.basename(outputName || `combined_${Date.now()}`);
+    const combinedFileName = `${sanitizedName}.mp3`;
     const cacheDir = path.join(APP_CONFIG.dataDir, decoded.sub, "tts_cache");
     if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
     const combinedFilePath = path.join(cacheDir, combinedFileName);
+    if (!isPathWithinRoot(combinedFilePath, cacheDir)) {
+      return NextResponse.json({ error: "Invalid output name" }, { status: 400 });
+    }
     fs.writeFileSync(combinedFilePath, combinedBuffer);
 
     // Create new cache entry for combined file

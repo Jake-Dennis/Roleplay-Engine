@@ -58,8 +58,8 @@ export default function RelationshipsPage() {
       if (activeUniverse) params.set("universe_id", activeUniverse.id);
       if (activeGroup) params.set("group_id", activeGroup.id);
       const res = await fetch(`/api/relationships${params.toString() ? "?" + params.toString() : ""}`);
-      const data = await res.json();
-      setRelationships(data.relationships || []);
+      const json = await res.json();
+      setRelationships(json.relationships || []);
     } catch {
       // ignore
     } finally {
@@ -111,8 +111,8 @@ export default function RelationshipsPage() {
     setLoadingEvolution((prev) => ({ ...prev, [relId]: true }));
     try {
       const res = await fetch(`/api/relationships/${relId}/evolution`);
-      const data = await res.json();
-      setEvolutionHistory((prev) => ({ ...prev, [relId]: data.history || [] }));
+      const json = await res.json();
+      setEvolutionHistory((prev) => ({ ...prev, [relId]: json.history || [] }));
     } catch {
       // ignore
     } finally {
@@ -138,8 +138,8 @@ export default function RelationshipsPage() {
     setMarkdownLoaded(false);
     try {
       const res = await fetch(`/api/relationships/${relId}/file`);
-      const data = await res.json();
-      if (data.relationship) {
+      const json = await res.json();
+      if (json.relationship) {
         // Reconstruct markdown from parsed data
         const rel = relationships.find((r) => r.id === relId);
         if (rel) {
@@ -147,8 +147,8 @@ export default function RelationshipsPage() {
           const emotionTable = Object.entries(emotions)
             .map(([k, v]) => `| ${k} | ${v.toFixed(2)} |`)
             .join("\n");
-          const history = data.history || "";
-          const notes = data.relationship.notes || "";
+          const history = json.history || "";
+          const notes = json.relationship.notes || "";
           setMarkdownNotes(notes);
           setMarkdownContent(
             `# ${rel.source_entity} ↔ ${rel.target_entity}\n\n## Emotional State\n\n| Emotion | Value |\n|---------|-------|\n${emotionTable}\n\n## Stage\n\n**${rel.relationship_stage}**\n\n## Notes\n\n${notes}\n`

@@ -7,6 +7,7 @@ import { camelizeKeys } from "@/lib/response-utils";
 import { serverError } from "@/lib/error-response";
 import fs from "fs";
 import path from "path";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 export async function GET(request: NextRequest) {
   const token = getAuthToken(request);
@@ -14,6 +15,10 @@ export async function GET(request: NextRequest) {
 
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`wiki_read:${ip}`, "wiki_read");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   const wikiRoot = getWikiRoot(decoded.sub);
   if (!fs.existsSync(wikiRoot)) {
@@ -55,7 +60,7 @@ export async function GET(request: NextRequest) {
     recentFiles.sort((a, b) => b.mtime - a.mtime);
 
     return NextResponse.json({ files: camelizeKeys(recentFiles.slice(0, limit)) });
-  } catch (error) {
-    return serverError(error);
+  } catch (err: unknown) {
+    return serverError(err);
   }
 }

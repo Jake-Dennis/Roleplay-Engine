@@ -126,8 +126,8 @@ export default function VoiceCombinerPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "Generation failed");
+        const errorBody = await res.json();
+        setError(errorBody.error || "Generation failed");
         return;
       }
 
@@ -178,8 +178,8 @@ export default function VoiceCombinerPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "Save failed");
+        const errorBody = await res.json();
+        setError(errorBody.error || "Save failed");
         return;
       }
 
@@ -207,8 +207,8 @@ export default function VoiceCombinerPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "Delete failed");
+        const errorBody = await res.json();
+        setError(errorBody.error || "Delete failed");
         return;
       }
 

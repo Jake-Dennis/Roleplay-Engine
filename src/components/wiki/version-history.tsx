@@ -66,8 +66,8 @@ export default function VersionHistory({ slug, onRestore }: VersionHistoryProps)
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to restore version');
+        const errorBody = await res.json();
+        throw new Error(errorBody.error || 'Failed to restore version');
       }
 
       // Refresh version list
@@ -75,7 +75,7 @@ export default function VersionHistory({ slug, onRestore }: VersionHistoryProps)
 
       // Notify parent to refresh page content
       onRestore?.();
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to restore');
     } finally {
       setRestoring(null);

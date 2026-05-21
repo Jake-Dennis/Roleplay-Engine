@@ -57,9 +57,9 @@ export default function PersonasPage() {
   async function loadPersonas() {
     try {
       const res = await fetch("/api/personas");
-      const data = await res.json();
-      setPersonas(data.personas || []);
-    } catch (err) {
+      const json = await res.json();
+      setPersonas(json.personas || []);
+    } catch (err: unknown) {
       logger.warn("Failed to load personas", err);
     } finally {
       setLoading(false);
@@ -136,8 +136,8 @@ export default function PersonasPage() {
         });
         if (res.ok) {
           await loadPersonas();
-          const data = await res.json();
-          setSelectedId(data.persona.id);
+          const json = await res.json();
+          setSelectedId(json.persona.id);
           setCreating(false);
         }
       } else if (selectedId) {

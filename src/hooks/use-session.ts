@@ -103,8 +103,8 @@ export function useSession(sessionId: string): UseSessionResult {
         (p: Participant) => p.role === "observer"
       );
       setIsObserver(!!currentUserParticipant);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unknown error");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Unknown error");
       setSession(null);
       setMessages([]);
       setSceneState(null);

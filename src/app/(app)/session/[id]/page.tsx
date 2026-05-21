@@ -148,7 +148,7 @@ export default function SessionChatPage() {
         body: JSON.stringify({ persona_id: personaId }),
       });
       setActivePersonaId(personaId);
-    } catch (err) {
+    } catch (err: unknown) {
       logger.warn("persona change failed", err);
     }
   };
@@ -198,10 +198,6 @@ export default function SessionChatPage() {
     ritual: <Wand2 className="h-3 w-3" />,
   }), []);
 
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
-
   // Auto-scroll via render loop (30fps, direct DOM — no React re-render)
   const shouldScrollRef = useRef(false);
 
@@ -212,7 +208,7 @@ export default function SessionChatPage() {
   useRenderLoop(
     useCallback(() => {
       if (shouldScrollRef.current && messagesEndRef.current) {
-        messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
         shouldScrollRef.current = false;
       }
     }, []),
@@ -231,7 +227,7 @@ export default function SessionChatPage() {
     // NOTE: generation:started is excluded — it fires when the empty AI placeholder
     // is created, which would cause the UI to show an empty message bubble.
     // The UI already shows streaming content via streamContent state.
-    const allEvents = [...messageEvents, ...groupEvents, "session:updated", "generation:done"];
+    const allEvents = [...messageEvents, ...groupEvents, "session:updated", "generation:done", "scene:updated"];
 
     const cleanupFns = allEvents.map((eventName) => {
       evtSource.addEventListener(eventName, refreshSession);
@@ -257,8 +253,8 @@ export default function SessionChatPage() {
     if (res.ok) {
       setInviteUsername("");
     } else {
-      const err = await res.json();
-      alert(err.error || "Failed to invite user");
+      const errorBody = await res.json();
+      alert(errorBody.error || "Failed to invite user");
     }
   }
 
@@ -473,11 +469,11 @@ export default function SessionChatPage() {
     );
 
     if (!res.ok) return;
-    const data = await res.json();
+    const json = await res.json();
 
     // Reload and chain generation if there's a user message to regenerate from
-    if (data.lastUserMessage) {
-      await triggerGeneration(data.lastUserMessage, data.lastUserMessageId);
+    if (json.lastUserMessage) {
+      await triggerGeneration(json.lastUserMessage, json.lastUserMessageId);
     } else {
       // Just reload if no user message found
       await refreshSession();
@@ -835,7 +831,7 @@ export default function SessionChatPage() {
       )}
 
       {/* Typing Indicator */}
-      {streaming && <TypingIndicator />}
+      {streaming && !streamContent && <TypingIndicator />}
 
       {/* Chat Window */}
       <ChatWindow
@@ -900,8 +896,8 @@ export default function SessionChatPage() {
             body: JSON.stringify({ character_name: characterName }),
           });
           if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error || "Failed to join session");
+            const errorBody = await res.json();
+            throw new Error(errorBody.error || "Failed to join session");
           }
           setShowCharacterModal(false);
           await refreshSession();

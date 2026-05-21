@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       missingPages: result.missingPages,
       suggestions: result.suggestions,
     });
-  } catch (error) {
-    return serverError(error);
+  } catch (err: unknown) {
+    return serverError(err);
   }
 }

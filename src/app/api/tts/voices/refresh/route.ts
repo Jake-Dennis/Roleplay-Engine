@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { discoverVoices } from "@/lib/voice-discovery";
 import { getAuthToken } from '@/lib/auth-token';
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 export async function POST(request: NextRequest) {
   const token = getAuthToken(request);
@@ -9,6 +10,10 @@ export async function POST(request: NextRequest) {
 
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`api:${ip}`, "api");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   try {
     const voices = await discoverVoices();

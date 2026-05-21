@@ -59,16 +59,16 @@ export default function TimelineDetailPage({ params }: { params: Promise<{ id: s
     try {
       const res = await fetch(`/api/timeline?id=${id}`);
       if (res.ok) {
-        const data = await res.json();
-        setEntry(data.entry);
-        setEditTitle(data.entry?.title || "");
-        setEditDescription(data.entry?.description || "");
+        const json = await res.json();
+        setEntry(json.entry);
+        setEditTitle(json.entry?.title || "");
+        setEditDescription(json.entry?.description || "");
         // Format datetime-local value
-        const d = new Date(data.entry?.occurred_at);
+        const d = new Date(json.entry?.occurred_at);
         const offset = d.getTimezoneOffset();
         const local = new Date(d.getTime() - offset * 60000);
         setEditOccurredAt(local.toISOString().slice(0, 16));
-        setEditEra(data.entry?.era || "");
+        setEditEra(json.entry?.era || "");
       }
     } catch {
       // ignore

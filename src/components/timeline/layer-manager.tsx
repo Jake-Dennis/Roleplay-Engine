@@ -40,8 +40,8 @@ export function LayerManager({ timelineId }: LayerManagerProps) {
     try {
       const res = await fetch(`/api/timelines/${timelineId}/layers?layerType=${activeTab}`);
       if (res.ok) {
-        const data = await res.json();
-        setLayers(data.layers || []);
+        const json = await res.json();
+        setLayers(json.layers || []);
       }
     } catch {
       // ignore

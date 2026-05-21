@@ -7,12 +7,18 @@ import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import path from "path";
 import fs from "fs";
 import { getAuthToken } from '@/lib/auth-token';
+import { logger } from '@/lib/logger';
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 export async function GET(request: NextRequest) {
   const token = getAuthToken(request);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`wiki_read:${ip}`, "wiki_read");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
   const searchParams = request.nextUrl.searchParams;
@@ -55,6 +61,10 @@ export async function POST(request: NextRequest) {
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`wiki_write:${ip}`, "wiki_write");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
+
   const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
   const searchParams = request.nextUrl.searchParams;
   const slugParam = searchParams.get("slug");
@@ -80,7 +90,7 @@ export async function POST(request: NextRequest) {
     const revision = saveRevision(wikiRoot, slug, existing.content, existing.frontmatter);
     return NextResponse.json({ success: true, revision });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    logger.error("Failed to save wiki revision", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

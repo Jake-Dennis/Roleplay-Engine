@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { OLLAMA_CONFIG, TTS_CONFIG, TIMEOUTS } from "@/lib/config";
 import { getAuthToken } from "@/lib/auth-token";
+import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { getClientIp } from "@/lib/rate-limiter";
+import { logger } from "@/lib/logger";
 
 /**
  * Readiness probe — returns 200 only when all critical dependencies are reachable.
@@ -53,10 +55,11 @@ async function checkOllama() {
     const models = (data.models || []).map((m: { name: string }) => m.name);
 
     return { status: "connected", modelCount: models.length };
-  } catch (err) {
+  } catch (err: unknown) {
+    logger.error("Ollama readiness check failed", err as Error);
     return {
       status: "unavailable",
-      error: err instanceof Error ? err.message : "Connection failed",
+      error: "Connection failed",
     };
   }
 }
@@ -79,10 +82,11 @@ async function checkKokoro() {
     const voices = data.voices || [];
 
     return { status: "connected", voiceCount: voices.length };
-  } catch (err) {
+  } catch (err: unknown) {
+    logger.error("Kokoro TTS readiness check failed", err as Error);
     return {
       status: "unavailable",
-      error: err instanceof Error ? err.message : "Connection failed",
+      error: "Connection failed",
     };
   }
 }
@@ -92,10 +96,11 @@ async function checkDb() {
     const db = getDb();
     db.prepare("SELECT 1").get();
     return { status: "connected" };
-  } catch (err) {
+  } catch (err: unknown) {
+    logger.error("Database readiness check failed", err as Error);
     return {
       status: "unavailable",
-      error: err instanceof Error ? err.message : "Connection failed",
+      error: "Connection failed",
     };
   }
 }
@@ -108,7 +113,8 @@ async function isAuthorized(request: NextRequest): Promise<boolean> {
 
   const token = getAuthToken(request);
   if (token) {
-    return true;
+    const decoded = await verifyToken(token);
+    return decoded !== null;
   }
 
   return false;

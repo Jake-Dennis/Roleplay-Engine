@@ -34,8 +34,8 @@ export function useEntityFetch<T = any>(
       const json = await res.json();
       const key = dataKey || endpoint.split("/").pop() || "";
       setData(json[key] || []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unknown error");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Unknown error");
       setData([]);
     } finally {
       setLoading(false);

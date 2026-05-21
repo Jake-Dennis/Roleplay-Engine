@@ -9,6 +9,13 @@ import OutgoingLinksPanel from '@/components/wiki/outgoing-links-panel';
 import MarkdownRenderer from '@/components/wiki/markdown-renderer';
 import type { WikiPage } from '@/lib/wiki/file-io';
 
+interface BacklinkInfo {
+  path: string;
+  title: string;
+  type: string;
+  links: Array<{ name: string; context: string }>;
+}
+
 type EditMode = 'view' | 'edit' | 'preview';
 type RightPanel = 'backlinks' | 'history' | 'outline' | 'links';
 
@@ -81,6 +88,7 @@ export default function WikiPageView() {
   const [page, setPage] = useState<WikiPage | null>(null);
   const [allPages, setAllPages] = useState<WikiPage[]>([]);
   const [orphanPaths, setOrphanPaths] = useState<string[]>([]);
+  const [backlinks, setBacklinks] = useState<BacklinkInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -111,6 +119,7 @@ export default function WikiPageView() {
         setPage(data.page);
         setAllPages(data.allPages || []);
         setOrphanPaths(data.orphanPaths || []);
+        setBacklinks(data.backlinks || []);
         setEmbeds(data.embeds || {});
         setLoading(false);
       })
@@ -153,11 +162,11 @@ export default function WikiPageView() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
+        const errorBody = await res.json();
         if (res.status === 409) {
           setSaveError('Another edit was saved while you were working. Please refresh and try again.');
         } else {
-          setSaveError(data.error || 'Failed to save');
+          setSaveError(errorBody.error || 'Failed to save');
         }
         setSaving(false);
         return;
@@ -169,6 +178,7 @@ export default function WikiPageView() {
       setPage(refreshData.page);
       setAllPages(refreshData.allPages || []);
       setOrphanPaths(refreshData.orphanPaths || []);
+      setBacklinks(refreshData.backlinks || []);
       setEmbeds(refreshData.embeds || {});
       setMode('view');
     } catch {
@@ -331,7 +341,7 @@ export default function WikiPageView() {
       {/* Right sidebar */}
       <div className="w-64 border-l border-border-default p-4 overflow-y-auto shrink-0">
         {rightPanel === 'backlinks' && (
-          <BacklinkPanel currentPage={page.path} allPages={allPages} />
+          <BacklinkPanel backlinks={backlinks} />
         )}
         {rightPanel === 'history' && (
           <VersionHistory
@@ -345,6 +355,7 @@ export default function WikiPageView() {
                     setPage(data.page);
                     setAllPages(data.allPages || []);
                     setOrphanPaths(data.orphanPaths || []);
+                    setBacklinks(data.backlinks || []);
                     setEmbeds(data.embeds || {});
                   }
                 });

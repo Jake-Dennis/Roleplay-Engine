@@ -27,8 +27,7 @@ export interface PaginatedRow {
  * Use this for helper functions that return raw query results with
  * arbitrary columns (e.g., access checks, migration utilities).
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type DbResult = Record<string, any>;
+export type DbResult = Record<string, unknown>;
 
 // ── Auth ────────────────────────────────────────────────────────────────────
 

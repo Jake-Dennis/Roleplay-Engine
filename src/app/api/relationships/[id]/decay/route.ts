@@ -1,3 +1,4 @@
+import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
@@ -6,62 +7,63 @@ import { ensureGroupSupport } from "@/lib/group-migrations";
 import type { DbResult } from "@/lib/types";
 import { getAuthToken } from '@/lib/auth-token';
 import { hasRelationshipAccess } from '@/lib/relationship-access';
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export const GET = withErrorHandler(async (request: NextRequest,
+{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
+if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+const decoded = await verifyToken(token);
+if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
-  const { id } = await params;
-  const db = getDb();
-  ensureGroupSupport(db);
+const ip = getClientIp(request);
+const rateLimit = checkRateLimit(`relationship_read:${ip}`, "api");
+if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
-  // Verify ownership
-  const relationship = hasRelationshipAccess(db, id, decoded.sub);
-  if (!relationship) {
-    return NextResponse.json({ error: "Relationship not found" }, { status: 404 });
-  }
+const { id } = await params;
+const db = getDb();
+ensureGroupSupport(db);
 
-  // Get decay stats for user
-  const stats = getDecayStats(decoded.sub);
-
-  return NextResponse.json({
-    relationship,
-    stats,
-  });
+// Verify ownership
+const relationship = hasRelationshipAccess(db, id, decoded.sub);
+if (!relationship) {
+  return NextResponse.json({ error: "Relationship not found" }, { status: 404 });
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+// Get decay stats for user
+const stats = getDecayStats(decoded.sub);
 
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+return NextResponse.json({
+  relationship,
+  stats,
+}); });
 
-  const { id } = await params;
-  const db = getDb();
-  ensureGroupSupport(db);
+export const POST = withErrorHandler(async (request: NextRequest,
+{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
+if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Verify ownership
-  const relationship = hasRelationshipAccess(db, id, decoded.sub);
-  if (!relationship) {
-    return NextResponse.json({ error: "Relationship not found" }, { status: 404 });
-  }
+const decoded = await verifyToken(token);
+if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
-  // Process decay for this user
-  const result = processRelationshipDecay(decoded.sub);
+const ip = getClientIp(request);
+const rateLimit = checkRateLimit(`relationship_write:${ip}`, "relationship_write");
+if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
-  return NextResponse.json({
-    success: true,
-    decayedCount: result.decayedCount,
-    decayedRelationships: result.decayedRelationships,
-  });
+const { id } = await params;
+const db = getDb();
+ensureGroupSupport(db);
+
+// Verify ownership
+const relationship = hasRelationshipAccess(db, id, decoded.sub);
+if (!relationship) {
+  return NextResponse.json({ error: "Relationship not found" }, { status: 404 });
 }
+
+// Process decay for this user
+const result = processRelationshipDecay(decoded.sub);
+
+return NextResponse.json({
+  success: true,
+  decayedCount: result.decayedCount,
+  decayedRelationships: result.decayedRelationships,
+}); });

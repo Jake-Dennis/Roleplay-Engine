@@ -85,8 +85,8 @@ class TtsQueue {
       this.cache.set(cacheKey, url);
 
       item.resolve({ url, durationMs: 0 });
-    } catch (error) {
-      item.reject(error instanceof Error ? error : new Error("TTS generation failed"));
+    } catch (err: unknown) {
+      item.reject(err instanceof Error ? err : new Error("TTS generation failed"));
     } finally {
       this.processing = false;
       this.processNext();

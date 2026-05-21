@@ -27,11 +27,12 @@ import { generateText } from "@/lib/ollama";
 import { PROMPTS } from "@/lib/prompts";
 import { TIME, CONTENT_LIMITS } from "@/lib/config";
 import { safeParseWarn } from "@/lib/safe-json";
+import { DEFAULT_DECAY_RATES, EMOTIONAL_STATES, RELATIONSHIP_STAGES } from "@/lib/relationship-decay";
 
 // Wiki I/O modules
 import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import { listWikiPages, writeWikiPage, readWikiPage, WikiFrontmatter } from "@/lib/wiki/file-io";
-import { generateIndex } from "@/lib/wiki/index-generator";
+import { generateIndexDebounced } from "@/lib/wiki/index-generator";
 import { appendLog } from "@/lib/wiki/logger";
 import path from "path";
 import fs from "fs";
@@ -90,7 +91,7 @@ async function wikiCompressOldSummaries(userId: string, universeId: string | nul
     }
   }
 
-  try { generateIndex(wikiRoot); } catch { /* non-fatal */ }
+  try { generateIndexDebounced(wikiRoot); } catch { /* non-fatal */ }
   return compressed;
 }
 
@@ -177,7 +178,7 @@ async function wikiRefineRelationshipSummaries(userId: string, universeId: strin
     }
   }
 
-  try { generateIndex(wikiRoot); } catch { /* non-fatal */ }
+  try { generateIndexDebounced(wikiRoot); } catch { /* non-fatal */ }
   return refined;
 }
 
@@ -226,7 +227,7 @@ async function wikiDeepenActiveLocations(userId: string, universeId: string | nu
     }
   }
 
-  try { generateIndex(wikiRoot); } catch { /* non-fatal */ }
+  try { generateIndexDebounced(wikiRoot); } catch { /* non-fatal */ }
   return deepened;
 }
 
@@ -284,7 +285,7 @@ async function wikiEnrichNPCBackstories(userId: string, universeId: string | nul
     }
   }
 
-  try { generateIndex(wikiRoot); } catch { /* non-fatal */ }
+  try { generateIndexDebounced(wikiRoot); } catch { /* non-fatal */ }
   return enriched;
 }
 
@@ -351,7 +352,7 @@ async function wikiExpandRumors(userId: string, universeId: string | null): Prom
     }
   }
 
-  try { generateIndex(wikiRoot); } catch { /* non-fatal */ }
+  try { generateIndexDebounced(wikiRoot); } catch { /* non-fatal */ }
   return generated;
 }
 
@@ -400,7 +401,7 @@ async function wikiArchiveLowImportanceMemories(userId: string, universeId: stri
     }
   }
 
-  try { generateIndex(wikiRoot); } catch { /* non-fatal */ }
+  try { generateIndexDebounced(wikiRoot); } catch { /* non-fatal */ }
   try { appendLog(wikiRoot, "update", "batch", `Archived: ${archived}`); } catch { /* non-fatal */ }
   return archived;
 }
@@ -430,10 +431,6 @@ async function wikiApplyRelationshipDecay(userId: string, universeId: string | n
     emotional_state: string | null; relationship_stage: string | null;
     decay_rates: string | null; updated_at: string | null;
   }[];
-
-  const DEFAULT_DECAY_RATES = { emotionalHalfLifeDays: 7, stageRegressionDays: 14, minEmotionalState: "neutral" };
-  const EMOTIONAL_STATES = ["devoted", "loving", "trusting", "friendly", "warm", "neutral", "cold", "distant", "suspicious", "hostile", "hateful"] as const;
-  const RELATIONSHIP_STAGES = ["lovers", "close_friends", "friends", "allies", "acquaintances", "strangers"] as const;
 
   let decayed = 0;
   const pages = listWikiPages(wikiRoot);
@@ -502,7 +499,7 @@ async function wikiApplyRelationshipDecay(userId: string, universeId: string | n
     }
   }
 
-  try { generateIndex(wikiRoot); } catch { /* non-fatal */ }
+  try { generateIndexDebounced(wikiRoot); } catch { /* non-fatal */ }
   return decayed;
 }
 

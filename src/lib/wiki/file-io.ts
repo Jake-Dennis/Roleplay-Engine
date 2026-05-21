@@ -23,14 +23,47 @@ const SCAN_FOLDERS = ["entities", "concepts", "sources", "synthesis", "_review"]
 const fileLocks = new Map<string, boolean>();
 
 /**
+ * Tracks when each lock was acquired, for stale lock cleanup.
+ */
+const lockTimestamps = new Map<string, number>();
+
+/**
+ * Throttle for cleanupStaleLocks — prevents running on every lockFile call.
+ */
+let lastCleanupTime = 0;
+const CLEANUP_THROTTLE_MS = 60_000; // 60 seconds
+
+/**
+ * Remove locks older than maxAgeMs to prevent unbounded Map growth
+ * from abandoned locks (e.g., crashed requests).
+ */
+export function cleanupStaleLocks(maxAgeMs = 30_000): void {
+  const now = Date.now();
+  for (const [filePath, timestamp] of lockTimestamps.entries()) {
+    if (now - timestamp > maxAgeMs) {
+      fileLocks.delete(filePath);
+      lockTimestamps.delete(filePath);
+    }
+  }
+}
+
+/**
  * Acquire a write lock on a file path.
  * Throws if the file is already locked.
  */
 export function lockFile(filePath: string): void {
+  // Throttled stale-lock cleanup
+  const now = Date.now();
+  if (now - lastCleanupTime > CLEANUP_THROTTLE_MS) {
+    cleanupStaleLocks();
+    lastCleanupTime = now;
+  }
+
   if (fileLocks.get(filePath)) {
     throw new Error(`File already locked: ${filePath}`);
   }
   fileLocks.set(filePath, true);
+  lockTimestamps.set(filePath, now);
 }
 
 /**
@@ -38,6 +71,7 @@ export function lockFile(filePath: string): void {
  */
 export function unlockFile(filePath: string): void {
   fileLocks.delete(filePath);
+  lockTimestamps.delete(filePath);
 }
 
 /**

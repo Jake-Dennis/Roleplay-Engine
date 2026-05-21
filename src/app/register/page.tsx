@@ -31,10 +31,10 @@ export default function RegisterPage() {
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await res.json();
+      const json = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Registration failed");
+        setError(json.error || "Registration failed");
         return;
       }
 

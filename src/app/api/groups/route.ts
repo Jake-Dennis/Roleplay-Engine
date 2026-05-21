@@ -4,9 +4,9 @@ import { getDb } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { ensureGroupSupport } from "@/lib/group-migrations";
 import type { DbRow } from "@/lib/types";
-import { badRequestError, internalError, requireJson } from "@/lib/error-response";
+import { badRequestError, serverError, requireJson } from "@/lib/error-response";
 import { validateLength } from "@/lib/validation";
-import { logger } from "@/lib/logger";
+import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);
@@ -33,9 +33,8 @@ export async function GET(request: NextRequest) {
     `).all(userId, userId) as DbRow[];
 
     return NextResponse.json({ groups: camelizeKeys(groups) });
-  } catch (e) {
-    logger.error("Groups GET error:", e);
-    return internalError();
+  } catch (err: unknown) {
+    return serverError(err);
   }
 }
 
@@ -43,6 +42,10 @@ export async function POST(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
+
+  cleanupExpiredEntries();
+  const limit = checkRateLimit(`create_resource:${userId}`, "create_resource");
+  if (!limit.allowed) return createRateLimitResponse(limit.retryAfter!);
 
   try {
     requireJson(request);
@@ -75,8 +78,7 @@ export async function POST(request: NextRequest) {
     const group = db.prepare("SELECT * FROM groups WHERE id = ?").get(id);
 
     return NextResponse.json({ group: camelizeKeys(group) }, { status: 201 });
-  } catch (e) {
-    logger.error("Groups POST error:", e);
-    return internalError();
+  } catch (err: unknown) {
+    return serverError(err);
   }
 }

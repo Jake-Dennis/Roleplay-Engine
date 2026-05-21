@@ -223,8 +223,8 @@ export default function SettingsPage() {
     setCacheClearing(true);
     try {
       const res = await fetch(`/api/tts/cache?action=${action}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.success) {
+      const json = await res.json();
+      if (json.success) {
         // Reload stats
         const statsRes = await fetch("/api/tts/cache");
         const statsData = await statsRes.json();
@@ -240,12 +240,12 @@ export default function SettingsPage() {
     setModelError("");
     try {
       const res = await fetch("/api/models/ollama");
-      const data = await res.json();
-      setOllamaConnected(data.connected);
-      setLlmModels(data.llmModels || []);
-      setEmbeddingModels(data.embeddingModels || []);
-      if (!data.connected) {
-        setModelError(`Cannot connect to Ollama at ${data.host}`);
+      const json = await res.json();
+      setOllamaConnected(json.connected);
+      setLlmModels(json.llmModels || []);
+      setEmbeddingModels(json.embeddingModels || []);
+      if (!json.connected) {
+        setModelError(`Cannot connect to Ollama at ${json.host}`);
       }
       // Also refresh local models
       const modelsRes = await fetch("/api/ollama/models");
@@ -262,9 +262,9 @@ export default function SettingsPage() {
     setConnLoading(true);
     try {
       const res = await fetch("/api/health");
-      const data = await res.json();
-      setConnOllama(data.ollama || { status: "error" });
-      setConnKokoro(data.kokoro || { status: "error" });
+      const json = await res.json();
+      setConnOllama(json.ollama || { status: "error" });
+      setConnKokoro(json.kokoro || { status: "error" });
     } catch {
       setConnOllama({ status: "error", error: "Health check failed" });
       setConnKokoro({ status: "error", error: "Health check failed" });
@@ -289,8 +289,8 @@ export default function SettingsPage() {
         setModelSaved(true);
         setTimeout(() => setModelSaved(false), 3000);
       } else {
-        const data = await res.json();
-        setModelError(data.error || "Failed to save model settings");
+        const errorBody = await res.json();
+        setModelError(errorBody.error || "Failed to save model settings");
       }
     } catch {
       setModelError("Connection failed");
@@ -329,10 +329,10 @@ export default function SettingsPage() {
         }),
       });
 
-      const data = await res.json();
+      const json = await res.json();
 
       if (!res.ok) {
-        setPasswordError(data.error || "Failed to change password");
+        setPasswordError(json.error || "Failed to change password");
         return;
       }
 

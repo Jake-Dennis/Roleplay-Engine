@@ -1,6 +1,6 @@
 {
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\eslint.config.mjs": {
-    "mtime": 1779035527.8984892,
+    "mtime": 1779275360.0858796,
     "ast_hash": "dfa1f5f6a7037bf39dc510f30b180002",
     "semantic_hash": "dfa1f5f6a7037bf39dc510f30b180002"
   },
@@ -10,1423 +10,2288 @@
     "semantic_hash": "2a74d3909800ca5467fa83b0ab4a4890"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\next.config.ts": {
-    "mtime": 1779035527.9019997,
-    "ast_hash": "9b77af189a21a7a64e4bd7a426f64176",
-    "semantic_hash": "9b77af189a21a7a64e4bd7a426f64176"
+    "mtime": 1779275360.0858796,
+    "ast_hash": "fba46d525cba6263ed0ac08265e16d4f",
+    "semantic_hash": "fba46d525cba6263ed0ac08265e16d4f"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\postcss.config.mjs": {
-    "mtime": 1779035527.9254863,
+    "mtime": 1779275360.0893915,
     "ast_hash": "239f3ebf717465dc636818a1a619398d",
     "semantic_hash": "239f3ebf717465dc636818a1a619398d"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\init-db.js": {
-    "mtime": 1779035527.9321177,
-    "ast_hash": "1d8094c5fde1aec9173e306892cbd8e2",
-    "semantic_hash": "1d8094c5fde1aec9173e306892cbd8e2"
-  },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\init-db.ts": {
-    "mtime": 1779035527.9321177,
-    "ast_hash": "49bb3e64cffdae375f8d107ba5d4a645",
-    "semantic_hash": "49bb3e64cffdae375f8d107ba5d4a645"
+    "mtime": 1779355813.2155378,
+    "ast_hash": "172cd2cc1765873a24c38f11016bb5e6",
+    "semantic_hash": "172cd2cc1765873a24c38f11016bb5e6"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\migrate-add-last-idle-t.ts": {
-    "mtime": 1779035527.9331176,
+    "mtime": 1779275360.0966463,
     "ast_hash": "d2119cb5f9175171898e455b49c9d3d5",
     "semantic_hash": "d2119cb5f9175171898e455b49c9d3d5"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\migrate-universe-scope.ts": {
-    "mtime": 1779035527.9331176,
-    "ast_hash": "5ee60a73b705c459bbef37366c77960a",
-    "semantic_hash": "5ee60a73b705c459bbef37366c77960a"
-  },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\sync-frontmatter.ts": {
-    "mtime": 1779035527.9341173,
+    "mtime": 1779275360.0976527,
     "ast_hash": "fdc6f2a5a0b8fc37aed582d500ac3e6c",
     "semantic_hash": "fdc6f2a5a0b8fc37aed582d500ac3e6c"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\test-phase1.js": {
-    "mtime": 1779035527.936845,
-    "ast_hash": "c3dd418f0fbbf48b83c7c75604c51ff0",
-    "semantic_hash": "c3dd418f0fbbf48b83c7c75604c51ff0"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\test-phase2.js": {
-    "mtime": 1779035527.9383564,
-    "ast_hash": "81a4a4ca8f918863f24afea64ff5fbc4",
-    "semantic_hash": "81a4a4ca8f918863f24afea64ff5fbc4"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\test-phase3.js": {
-    "mtime": 1779035527.9388614,
-    "ast_hash": "6805cd119be9abc4f3132131ca454624",
-    "semantic_hash": "6805cd119be9abc4f3132131ca454624"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\test-phase4.js": {
-    "mtime": 1779035527.9393828,
-    "ast_hash": "0b98c897de0ef828208238322cdd4125",
-    "semantic_hash": "0b98c897de0ef828208238322cdd4125"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\test-phase5.js": {
-    "mtime": 1779035527.9408793,
-    "ast_hash": "32cc35941bb602858af449971f3dc3a7",
-    "semantic_hash": "32cc35941bb602858af449971f3dc3a7"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\test-phase6.js": {
-    "mtime": 1779035527.9419265,
-    "ast_hash": "a9ab6d7b4d3af454ea3d14fd277f0d1c",
-    "semantic_hash": "a9ab6d7b4d3af454ea3d14fd277f0d1c"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\test-phase7.js": {
-    "mtime": 1779035527.9429326,
-    "ast_hash": "23874e1f30b9fa80f70ec014620b55ab",
-    "semantic_hash": "23874e1f30b9fa80f70ec014620b55ab"
-  },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\middleware.ts": {
-    "mtime": 1779035528.0960317,
-    "ast_hash": "76cd5ab8428c44320cc952237d9de667",
-    "semantic_hash": "76cd5ab8428c44320cc952237d9de667"
+    "mtime": 1779275360.2672367,
+    "ast_hash": "9dc9077c5b671c3743c066ad8209c056",
+    "semantic_hash": "9dc9077c5b671c3743c066ad8209c056"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\layout.tsx": {
-    "mtime": 1779086837.052445,
-    "ast_hash": "8b88b837659bf6c8e536871c9df7ad3d",
-    "semantic_hash": "8b88b837659bf6c8e536871c9df7ad3d"
+    "mtime": 1779275360.1813939,
+    "ast_hash": "14d26098d686d3bcc61311e63bd53c4d",
+    "semantic_hash": "14d26098d686d3bcc61311e63bd53c4d"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\page.tsx": {
-    "mtime": 1779035528.0207412,
+    "mtime": 1779275360.1823928,
     "ast_hash": "5bf9b112a74f68792b16fe37ac73f0e6",
     "semantic_hash": "5bf9b112a74f68792b16fe37ac73f0e6"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\error.tsx": {
-    "mtime": 1779035527.949958,
+    "mtime": 1779275360.1055965,
     "ast_hash": "a420039bb050f2925b79f6d1152dce6f",
     "semantic_hash": "a420039bb050f2925b79f6d1152dce6f"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\global-error.tsx": {
-    "mtime": 1779035527.9514627,
+    "mtime": 1779275360.106596,
     "ast_hash": "9dfa2aa1173a3da9ac0d4e3c86f51198",
     "semantic_hash": "9dfa2aa1173a3da9ac0d4e3c86f51198"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\layout.tsx": {
-    "mtime": 1779035527.9539826,
+    "mtime": 1779275360.1116264,
     "ast_hash": "1f11d2ec4c06d0242ec49c03e367113c",
     "semantic_hash": "1f11d2ec4c06d0242ec49c03e367113c"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\loading.tsx": {
-    "mtime": 1779035527.9549828,
+    "mtime": 1779275360.1116264,
     "ast_hash": "84a8f3ed65561abd4eb0774c172a1b12",
     "semantic_hash": "84a8f3ed65561abd4eb0774c172a1b12"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\not-found.tsx": {
-    "mtime": 1779035527.9595466,
+    "mtime": 1779275360.1136272,
     "ast_hash": "8a723d53e35c4df1604560b0988d878d",
     "semantic_hash": "8a723d53e35c4df1604560b0988d878d"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\canon\\page.tsx": {
-    "mtime": 1779084978.9932334,
-    "ast_hash": "6b05fa38800df9d87889d6d0c66b947f",
-    "semantic_hash": "6b05fa38800df9d87889d6d0c66b947f"
+    "mtime": 1779275360.1035976,
+    "ast_hash": "8e1da8dec3facd9facbeb63d2a32585a",
+    "semantic_hash": "8e1da8dec3facd9facbeb63d2a32585a"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\characters\\page.tsx": {
-    "mtime": 1779084600.2026615,
-    "ast_hash": "67c7943b3e0427ad0cc28fe60a07258e",
-    "semantic_hash": "67c7943b3e0427ad0cc28fe60a07258e"
+    "mtime": 1779275360.1045961,
+    "ast_hash": "f020a49be55d62fd94ce4d3eaaa796c1",
+    "semantic_hash": "f020a49be55d62fd94ce4d3eaaa796c1"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\dashboard\\page.tsx": {
-    "mtime": 1779085204.4008484,
-    "ast_hash": "cba3abad870e1a6848832e918730836d",
-    "semantic_hash": "cba3abad870e1a6848832e918730836d"
+    "mtime": 1779281152.1220293,
+    "ast_hash": "c96b3d4b5fb7fb1ee8a8a53592befc0a",
+    "semantic_hash": "c96b3d4b5fb7fb1ee8a8a53592befc0a"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\events\\page.tsx": {
-    "mtime": 1779084658.122153,
-    "ast_hash": "5804a5693672ff44afe828194aadd4ce",
-    "semantic_hash": "5804a5693672ff44afe828194aadd4ce"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\graph\\page.tsx": {
-    "mtime": 1779085106.6989372,
-    "ast_hash": "b110ff9849fd4abad8a7964c2706a6a2",
-    "semantic_hash": "b110ff9849fd4abad8a7964c2706a6a2"
+    "mtime": 1779275360.106596,
+    "ast_hash": "ab7a90fe30e93579441be2cbc4aa5875",
+    "semantic_hash": "ab7a90fe30e93579441be2cbc4aa5875"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\jobs\\page.tsx": {
-    "mtime": 1779035527.9529757,
-    "ast_hash": "60a248ff1143b72104ec65b3510bfd46",
-    "semantic_hash": "60a248ff1143b72104ec65b3510bfd46"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\lore\\page.tsx": {
-    "mtime": 1779084692.7162323,
-    "ast_hash": "0ddcf07c2aa00d5bffdbfdde9c34e986",
-    "semantic_hash": "0ddcf07c2aa00d5bffdbfdde9c34e986"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\lore\\[id]\\edit\\page.tsx": {
-    "mtime": 1779035527.955982,
-    "ast_hash": "268024b201ae2d2cb261043c0314e89c",
-    "semantic_hash": "268024b201ae2d2cb261043c0314e89c"
+    "mtime": 1779275360.1106274,
+    "ast_hash": "d00654d3573ca7067c4d81821ac27876",
+    "semantic_hash": "d00654d3573ca7067c4d81821ac27876"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\narrative-threads\\page.tsx": {
-    "mtime": 1779084833.0881941,
+    "mtime": 1779275360.1136272,
     "ast_hash": "3f44d03689ae102c1c047b2c306246fc",
     "semantic_hash": "3f44d03689ae102c1c047b2c306246fc"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\narrative-threads\\[id]\\page.tsx": {
-    "mtime": 1779035527.9580424,
+    "mtime": 1779275360.1126266,
     "ast_hash": "c585b8639e1a55e672463eceb0857197",
     "semantic_hash": "c585b8639e1a55e672463eceb0857197"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\relationships\\page.tsx": {
-    "mtime": 1779084766.6943603,
-    "ast_hash": "d6e04fff94e936caca1ad01beef46d8e",
-    "semantic_hash": "d6e04fff94e936caca1ad01beef46d8e"
+    "mtime": 1779275360.1171708,
+    "ast_hash": "3966ccf04ac0afef260769cf139f61ba",
+    "semantic_hash": "3966ccf04ac0afef260769cf139f61ba"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\session\\page.tsx": {
-    "mtime": 1779084491.3399918,
+    "mtime": 1779275360.1197581,
     "ast_hash": "3f930f76d3ad5d23a486901d48f805e8",
     "semantic_hash": "3f930f76d3ad5d23a486901d48f805e8"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\session\\new\\page.tsx": {
-    "mtime": 1779082741.9727776,
-    "ast_hash": "18b30e1b25b48066c6de9f171474d191",
-    "semantic_hash": "18b30e1b25b48066c6de9f171474d191"
+    "mtime": 1779282137.1382515,
+    "ast_hash": "3344a1cfb401d190df75a5de0db04750",
+    "semantic_hash": "3344a1cfb401d190df75a5de0db04750"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\session\\[id]\\page.tsx": {
-    "mtime": 1779088414.5606322,
-    "ast_hash": "f71418a9665e9b49b80ab49840eb1307",
-    "semantic_hash": "f71418a9665e9b49b80ab49840eb1307"
+    "mtime": 1779354606.6728635,
+    "ast_hash": "b02a42d2519dd2769fd690583775f508",
+    "semantic_hash": "b02a42d2519dd2769fd690583775f508"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\settings\\page.tsx": {
-    "mtime": 1779035527.9615734,
-    "ast_hash": "11d980af23f50c23622fcccf1dc9a8b3",
-    "semantic_hash": "11d980af23f50c23622fcccf1dc9a8b3"
+    "mtime": 1779275360.121862,
+    "ast_hash": "654a8ccb9dce63665971b08bcf35e953",
+    "semantic_hash": "654a8ccb9dce63665971b08bcf35e953"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\timeline\\page.tsx": {
-    "mtime": 1779084914.3098764,
+    "mtime": 1779275360.1244576,
     "ast_hash": "0c0498d1367a80b17c27cddc71417c7f",
     "semantic_hash": "0c0498d1367a80b17c27cddc71417c7f"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\timeline\\[id]\\page.tsx": {
-    "mtime": 1779035527.9630778,
+    "mtime": 1779275360.1234162,
     "ast_hash": "ba7e539e2780034c1c79a43e7ef07584",
     "semantic_hash": "ba7e539e2780034c1c79a43e7ef07584"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\universe\\page.tsx": {
-    "mtime": 1779084507.424072,
-    "ast_hash": "8961f7d6931d97dc196d4ba9faca58d8",
-    "semantic_hash": "8961f7d6931d97dc196d4ba9faca58d8"
+    "mtime": 1779354733.0128329,
+    "ast_hash": "b7f2e3cc336bab4c5884d8424a2be387",
+    "semantic_hash": "b7f2e3cc336bab4c5884d8424a2be387"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\universe\\[id]\\page.tsx": {
-    "mtime": 1779035527.9640844,
+    "mtime": 1779275360.1249719,
     "ast_hash": "56076c6850e58a33de4d7653e5cf85ee",
     "semantic_hash": "56076c6850e58a33de4d7653e5cf85ee"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\validations\\page.tsx": {
-    "mtime": 1779085052.4425116,
-    "ast_hash": "6a571aab34853d48fa72366e12ea6204",
-    "semantic_hash": "6a571aab34853d48fa72366e12ea6204"
+    "mtime": 1779275360.1265137,
+    "ast_hash": "885826e1d4397814ee62a8f4bbea7709",
+    "semantic_hash": "885826e1d4397814ee62a8f4bbea7709"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\voice-combiner\\page.tsx": {
-    "mtime": 1779035527.966594,
-    "ast_hash": "49545c8560fa4327c3688ac280313ffc",
-    "semantic_hash": "49545c8560fa4327c3688ac280313ffc"
+    "mtime": 1779275360.1275432,
+    "ast_hash": "efc0c06bae1cc8271defa46653cf0add",
+    "semantic_hash": "efc0c06bae1cc8271defa46653cf0add"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\auth\\login\\route.ts": {
-    "mtime": 1779035527.967593,
-    "ast_hash": "16fc91dc368bd68fb72827b00cdc05ff",
-    "semantic_hash": "16fc91dc368bd68fb72827b00cdc05ff"
+    "mtime": 1779275360.1306753,
+    "ast_hash": "ef2ff5463046f4f98fe56940a6c86142",
+    "semantic_hash": "ef2ff5463046f4f98fe56940a6c86142"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\auth\\logout\\route.ts": {
-    "mtime": 1779035527.967593,
-    "ast_hash": "88b18f6d51279145fe7b906cfe2317c1",
-    "semantic_hash": "88b18f6d51279145fe7b906cfe2317c1"
+    "mtime": 1779275360.1312864,
+    "ast_hash": "b220c9f09b087f60ce3d86a94c108a91",
+    "semantic_hash": "b220c9f09b087f60ce3d86a94c108a91"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\auth\\me\\route.ts": {
-    "mtime": 1779080118.4086647,
-    "ast_hash": "c1ef1173d1bd3de4fdfc48d97b9b4643",
-    "semantic_hash": "c1ef1173d1bd3de4fdfc48d97b9b4643"
+    "mtime": 1779354252.1111512,
+    "ast_hash": "78a9700ea80224226eddfd89cf8e4ba0",
+    "semantic_hash": "78a9700ea80224226eddfd89cf8e4ba0"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\auth\\password\\route.ts": {
-    "mtime": 1779035527.968595,
-    "ast_hash": "a28628ff804e34a27e924804b85e03af",
-    "semantic_hash": "a28628ff804e34a27e924804b85e03af"
+    "mtime": 1779354252.112151,
+    "ast_hash": "60144477a28ac490f9c20c06e7fa7a9e",
+    "semantic_hash": "60144477a28ac490f9c20c06e7fa7a9e"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\auth\\register\\route.ts": {
-    "mtime": 1779035527.970082,
-    "ast_hash": "438f8ac311ba0b1a16f4afccd5ac9174",
-    "semantic_hash": "438f8ac311ba0b1a16f4afccd5ac9174"
+    "mtime": 1779275360.1333776,
+    "ast_hash": "5a1515632da60427a0ee87613fe87b4b",
+    "semantic_hash": "5a1515632da60427a0ee87613fe87b4b"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\backlinks\\route.ts": {
-    "mtime": 1779035527.972123,
-    "ast_hash": "2ee1e361dd3d938af13e40177e7625c4",
-    "semantic_hash": "2ee1e361dd3d938af13e40177e7625c4"
+    "mtime": 1779353228.08177,
+    "ast_hash": "e1973451e360e13af3ba09086b918c9f",
+    "semantic_hash": "e1973451e360e13af3ba09086b918c9f"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\backlinks\\graph\\route.ts": {
-    "mtime": 1779035527.9705865,
-    "ast_hash": "79067e2f3efef0f927a64a352e043cd3",
-    "semantic_hash": "79067e2f3efef0f927a64a352e043cd3"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\events\\route.ts": {
-    "mtime": 1779037978.2474096,
-    "ast_hash": "2e6cece775b09009a11f3fd9b27eedbd",
-    "semantic_hash": "2e6cece775b09009a11f3fd9b27eedbd"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\events\\[id]\\route.ts": {
-    "mtime": 1779073356.154291,
-    "ast_hash": "6628519921e452faa6bd29a1f406368c",
-    "semantic_hash": "6628519921e452faa6bd29a1f406368c"
+    "mtime": 1779354252.112151,
+    "ast_hash": "6d0add426abfea7ef61cb14cbcad81b8",
+    "semantic_hash": "6d0add426abfea7ef61cb14cbcad81b8"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\generate\\[id]\\route.ts": {
-    "mtime": 1779089358.2964504,
-    "ast_hash": "0a65d218b6dd4bcebfe59482104f42de",
-    "semantic_hash": "0a65d218b6dd4bcebfe59482104f42de"
+    "mtime": 1779354980.860355,
+    "ast_hash": "6e25a0aaba449a4f4ef76bedaae4c422",
+    "semantic_hash": "6e25a0aaba449a4f4ef76bedaae4c422"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\health\\route.ts": {
-    "mtime": 1779035527.9771552,
-    "ast_hash": "b10d7231990c4191415b256e77a32b89",
-    "semantic_hash": "b10d7231990c4191415b256e77a32b89"
+    "mtime": 1779354606.692484,
+    "ast_hash": "ab8f242b91968637688b66107af7fefc",
+    "semantic_hash": "ab8f242b91968637688b66107af7fefc"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\idle\\heartbeat\\route.ts": {
-    "mtime": 1779035527.9781551,
-    "ast_hash": "4d37c31adaf2dbdef0d0a74f71d1fa93",
-    "semantic_hash": "4d37c31adaf2dbdef0d0a74f71d1fa93"
+    "mtime": 1779354252.1141512,
+    "ast_hash": "e184b4df63ea43d6439e60439df3c11b",
+    "semantic_hash": "e184b4df63ea43d6439e60439df3c11b"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\invitations\\route.ts": {
-    "mtime": 1779035527.9781551,
-    "ast_hash": "bc07567ccc59a575b0bdfda02d4ce2b6",
-    "semantic_hash": "bc07567ccc59a575b0bdfda02d4ce2b6"
+    "mtime": 1779354252.115151,
+    "ast_hash": "922fe676029849525517f9adc4128fbb",
+    "semantic_hash": "922fe676029849525517f9adc4128fbb"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\jobs\\route.ts": {
-    "mtime": 1779035527.979155,
-    "ast_hash": "769606e657e58c2d8a60aeea3c09abc7",
-    "semantic_hash": "769606e657e58c2d8a60aeea3c09abc7"
+    "mtime": 1779355725.731115,
+    "ast_hash": "1cd8e6ff90d0794a11d80fbafe2517d7",
+    "semantic_hash": "1cd8e6ff90d0794a11d80fbafe2517d7"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\jobs\\stream\\route.ts": {
-    "mtime": 1779035527.9801543,
-    "ast_hash": "7df79031c6c3058b8d5a57637d2afdbb",
-    "semantic_hash": "7df79031c6c3058b8d5a57637d2afdbb"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\locations\\route.ts": {
-    "mtime": 1779037684.0542574,
-    "ast_hash": "707e70be0340535987db86461196fe1d",
-    "semantic_hash": "707e70be0340535987db86461196fe1d"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\locations\\[id]\\route.ts": {
-    "mtime": 1779073322.5677943,
-    "ast_hash": "d8549e86fbc0b32735969614926a4eb1",
-    "semantic_hash": "d8549e86fbc0b32735969614926a4eb1"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\lore-edits\\route.ts": {
-    "mtime": 1779035527.9816587,
-    "ast_hash": "6ee70ff6bb833447310932dec639e1c3",
-    "semantic_hash": "6ee70ff6bb833447310932dec639e1c3"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\lore-files\\route.ts": {
-    "mtime": 1779038030.943129,
-    "ast_hash": "7e347f23879bab3a3b4630a1c891aeb0",
-    "semantic_hash": "7e347f23879bab3a3b4630a1c891aeb0"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\lore-validations\\route.ts": {
-    "mtime": 1779035527.9831686,
-    "ast_hash": "9a1fc249971d22eb5d3508e3d0d94fc5",
-    "semantic_hash": "9a1fc249971d22eb5d3508e3d0d94fc5"
+    "mtime": 1779275360.1413615,
+    "ast_hash": "741b1875f298433dff8bcae450b48925",
+    "semantic_hash": "741b1875f298433dff8bcae450b48925"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\models\\ollama\\route.ts": {
-    "mtime": 1779035527.9841745,
-    "ast_hash": "1b21c97fa009a0a6896423e545e91bb2",
-    "semantic_hash": "1b21c97fa009a0a6896423e545e91bb2"
+    "mtime": 1779356493.9091053,
+    "ast_hash": "c532c522435790d0a91bcf530bdc60a6",
+    "semantic_hash": "c532c522435790d0a91bcf530bdc60a6"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\narrative-memories\\route.ts": {
-    "mtime": 1779035527.9851804,
-    "ast_hash": "cc6921d80c0f1aa3942c04df5c6ac45e",
-    "semantic_hash": "cc6921d80c0f1aa3942c04df5c6ac45e"
+    "mtime": 1779354252.115151,
+    "ast_hash": "4134dcfd1b709810691ea9ff8e6ab370",
+    "semantic_hash": "4134dcfd1b709810691ea9ff8e6ab370"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\narrative-memories\\[id]\\route.ts": {
-    "mtime": 1779035527.9841745,
-    "ast_hash": "d9b10a28add3981642cb87e4193bba77",
-    "semantic_hash": "d9b10a28add3981642cb87e4193bba77"
+    "mtime": 1779354252.116522,
+    "ast_hash": "899b799c5246f25c19d37dfcfd1b2ed3",
+    "semantic_hash": "899b799c5246f25c19d37dfcfd1b2ed3"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\narrative-threads\\route.ts": {
-    "mtime": 1779035527.9851804,
-    "ast_hash": "dc6e5eae9ba69cbee8d2210996d85938",
-    "semantic_hash": "dc6e5eae9ba69cbee8d2210996d85938"
+    "mtime": 1779354252.116522,
+    "ast_hash": "a0f83d596d7f686ee0bbb14ece6a0039",
+    "semantic_hash": "a0f83d596d7f686ee0bbb14ece6a0039"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\npcs\\route.ts": {
-    "mtime": 1779037649.6897466,
-    "ast_hash": "efb399d1a0b7fc94214e7d40ddbdd2c0",
-    "semantic_hash": "efb399d1a0b7fc94214e7d40ddbdd2c0"
+    "mtime": 1779354252.116522,
+    "ast_hash": "ae05a825440ddbcc7c4b85fe3963586e",
+    "semantic_hash": "ae05a825440ddbcc7c4b85fe3963586e"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\npcs\\[id]\\route.ts": {
-    "mtime": 1779073278.8813827,
-    "ast_hash": "c67bc4880708498047d8b544dbe3ba38",
-    "semantic_hash": "c67bc4880708498047d8b544dbe3ba38"
+    "mtime": 1779354252.1175237,
+    "ast_hash": "bf5adb1274a16f62d7c44a20db39adaf",
+    "semantic_hash": "bf5adb1274a16f62d7c44a20db39adaf"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\ollama\\models\\route.ts": {
-    "mtime": 1779035527.98912,
-    "ast_hash": "928edd00f24007064ddc25e8680543a1",
-    "semantic_hash": "928edd00f24007064ddc25e8680543a1"
+    "mtime": 1779354252.1175237,
+    "ast_hash": "b2017c8391ec5044ae0a404ab39d38c2",
+    "semantic_hash": "b2017c8391ec5044ae0a404ab39d38c2"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\relationships\\route.ts": {
-    "mtime": 1779038005.6107302,
-    "ast_hash": "1d0323724736232919411fd2375831ae",
-    "semantic_hash": "1d0323724736232919411fd2375831ae"
+    "mtime": 1779356068.5363185,
+    "ast_hash": "61d8d7965537297d79d7c7bd7aa7a48f",
+    "semantic_hash": "61d8d7965537297d79d7c7bd7aa7a48f"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\relationships\\[id]\\route.ts": {
-    "mtime": 1779073388.7299263,
-    "ast_hash": "cc4b267dba418a3dc813b6d02b0f41d2",
-    "semantic_hash": "cc4b267dba418a3dc813b6d02b0f41d2"
+    "mtime": 1779356047.679613,
+    "ast_hash": "0598b2d48a449e71b7205501cd1f71d8",
+    "semantic_hash": "0598b2d48a449e71b7205501cd1f71d8"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\relationships\\[id]\\decay\\route.ts": {
-    "mtime": 1779073441.9125798,
-    "ast_hash": "eab1800398b6fbd6e3b0fd749429ddd4",
-    "semantic_hash": "eab1800398b6fbd6e3b0fd749429ddd4"
+    "mtime": 1779354252.1200275,
+    "ast_hash": "0e0b26bb5f9ec13e2db59e16cbe6c70f",
+    "semantic_hash": "0e0b26bb5f9ec13e2db59e16cbe6c70f"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\relationships\\[id]\\evolution\\route.ts": {
-    "mtime": 1779073424.0561373,
-    "ast_hash": "4039f75e512eb52495edd50b86dcb3f2",
-    "semantic_hash": "4039f75e512eb52495edd50b86dcb3f2"
+    "mtime": 1779354252.1205325,
+    "ast_hash": "3f76c0a7c1eb8e3b50f59b5221e5fc8d",
+    "semantic_hash": "3f76c0a7c1eb8e3b50f59b5221e5fc8d"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\search\\route.ts": {
-    "mtime": 1779035527.9936469,
-    "ast_hash": "d9aefe663119e492bdb0fedade0303b0",
-    "semantic_hash": "d9aefe663119e492bdb0fedade0303b0"
+    "mtime": 1779275360.1497092,
+    "ast_hash": "3315127d2c35855e824b126331fde803",
+    "semantic_hash": "3315127d2c35855e824b126331fde803"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\route.ts": {
-    "mtime": 1779081599.6882977,
-    "ast_hash": "4fcf541155de79e5a4becf090f34ac0d",
-    "semantic_hash": "4fcf541155de79e5a4becf090f34ac0d"
+    "mtime": 1779354252.1215384,
+    "ast_hash": "385e16307004ea546d766b11e0954b67",
+    "semantic_hash": "385e16307004ea546d766b11e0954b67"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\route.ts": {
-    "mtime": 1779035528.0027266,
-    "ast_hash": "b0aa2285e704ec4bb60ef51463660043",
-    "semantic_hash": "b0aa2285e704ec4bb60ef51463660043"
+    "mtime": 1779354606.716058,
+    "ast_hash": "55c96b620baf7f48ea4548474482b3cd",
+    "semantic_hash": "55c96b620baf7f48ea4548474482b3cd"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\invite\\route.ts": {
-    "mtime": 1779035527.9947054,
-    "ast_hash": "d17dc5d48d3cec6c7698325d4d348b07",
-    "semantic_hash": "d17dc5d48d3cec6c7698325d4d348b07"
+    "mtime": 1779354252.122539,
+    "ast_hash": "de4a768108e8d69f88edf133ef6e2c2e",
+    "semantic_hash": "de4a768108e8d69f88edf133ef6e2c2e"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\join\\route.ts": {
-    "mtime": 1779035527.9947054,
-    "ast_hash": "df039254039facbf1a76a1326eedd3e5",
-    "semantic_hash": "df039254039facbf1a76a1326eedd3e5"
+    "mtime": 1779275360.151215,
+    "ast_hash": "adff4bf8aace79aa5e3f7b86d3f6e9a3",
+    "semantic_hash": "adff4bf8aace79aa5e3f7b86d3f6e9a3"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\kick\\route.ts": {
-    "mtime": 1779035527.99621,
-    "ast_hash": "8a7e73b471af963be400a7e328c0b8dc",
-    "semantic_hash": "8a7e73b471af963be400a7e328c0b8dc"
+    "mtime": 1779354252.122539,
+    "ast_hash": "1d72cc89d9fdcea7f3d0b5d582f10fc8",
+    "semantic_hash": "1d72cc89d9fdcea7f3d0b5d582f10fc8"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\leave\\route.ts": {
-    "mtime": 1779035527.9972155,
-    "ast_hash": "30eb0e27f96d52a75f7afd9779e847c2",
-    "semantic_hash": "30eb0e27f96d52a75f7afd9779e847c2"
+    "mtime": 1779354252.1235385,
+    "ast_hash": "1770b5092c6a04126b3474b16a62ce3f",
+    "semantic_hash": "1770b5092c6a04126b3474b16a62ce3f"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\messages\\route.ts": {
-    "mtime": 1779087765.9176269,
-    "ast_hash": "d336eacb161a1ac8b6962fd110bccf2a",
-    "semantic_hash": "d336eacb161a1ac8b6962fd110bccf2a"
+    "mtime": 1779354606.7105105,
+    "ast_hash": "e0931e3919f7bf111f662a7dccc2ba77",
+    "semantic_hash": "e0931e3919f7bf111f662a7dccc2ba77"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\messages\\[messageId]\\route.ts": {
-    "mtime": 1779035527.9987206,
-    "ast_hash": "1c3fd303c4a5c4928e1a2cf487f9e373",
-    "semantic_hash": "1c3fd303c4a5c4928e1a2cf487f9e373"
+    "mtime": 1779354252.1245632,
+    "ast_hash": "c1d2b2951d824581f2148ef9a41d9b77",
+    "semantic_hash": "c1d2b2951d824581f2148ef9a41d9b77"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\messages\\[messageId]\\edits\\route.ts": {
-    "mtime": 1779035527.9972155,
-    "ast_hash": "6a72a4149a683a405fc450bc3c256772",
-    "semantic_hash": "6a72a4149a683a405fc450bc3c256772"
+    "mtime": 1779354252.1245632,
+    "ast_hash": "7bbdf1cffa3febff4944537365060c97",
+    "semantic_hash": "7bbdf1cffa3febff4944537365060c97"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\messages\\[messageId]\\regenerate\\route.ts": {
-    "mtime": 1779035527.9987206,
-    "ast_hash": "f7084c2ecc2d6d16ea1df8f7978261d4",
-    "semantic_hash": "f7084c2ecc2d6d16ea1df8f7978261d4"
+    "mtime": 1779354252.1245632,
+    "ast_hash": "a67b4d9c6bdf32a85757fce7f43ae0f0",
+    "semantic_hash": "a67b4d9c6bdf32a85757fce7f43ae0f0"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\participants\\route.ts": {
-    "mtime": 1779035528.001729,
-    "ast_hash": "28b227be68ab1ac3ebe5b38048510eac",
-    "semantic_hash": "28b227be68ab1ac3ebe5b38048510eac"
+    "mtime": 1779354252.1255682,
+    "ast_hash": "ad8ad7f92e195651136ef719ebdfd52d",
+    "semantic_hash": "ad8ad7f92e195651136ef719ebdfd52d"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\participants\\role\\route.ts": {
-    "mtime": 1779035528.000728,
-    "ast_hash": "e61e5c6ab438e387b9c76624ad76f53e",
-    "semantic_hash": "e61e5c6ab438e387b9c76624ad76f53e"
+    "mtime": 1779354252.1255682,
+    "ast_hash": "5dba94d6f2bccf5f34fb0490b22f3425",
+    "semantic_hash": "5dba94d6f2bccf5f34fb0490b22f3425"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\private-state\\route.ts": {
-    "mtime": 1779035528.001729,
-    "ast_hash": "a4300725b8ad004046182bee06bd0589",
-    "semantic_hash": "a4300725b8ad004046182bee06bd0589"
+    "mtime": 1779275360.1562197,
+    "ast_hash": "0e1c64628e53fbce4ae98ab68823e399",
+    "semantic_hash": "0e1c64628e53fbce4ae98ab68823e399"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\scene\\route.ts": {
-    "mtime": 1779035528.004253,
-    "ast_hash": "b67f535483285c29d6bcfe9dba3d4d48",
-    "semantic_hash": "b67f535483285c29d6bcfe9dba3d4d48"
+    "mtime": 1779354252.1266239,
+    "ast_hash": "e79fd20ac7048bd3cf70a93c49adf38d",
+    "semantic_hash": "e79fd20ac7048bd3cf70a93c49adf38d"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\stream\\route.ts": {
-    "mtime": 1779035528.0064511,
-    "ast_hash": "badde9dc83c596df6b3c9c37f9b3c570",
-    "semantic_hash": "badde9dc83c596df6b3c9c37f9b3c570"
+    "mtime": 1779275360.1587293,
+    "ast_hash": "5e0923418b8953ff71fda6e2e2db7ef8",
+    "semantic_hash": "5e0923418b8953ff71fda6e2e2db7ef8"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\turn\\route.ts": {
-    "mtime": 1779035528.0069785,
-    "ast_hash": "c28962b0afb502b197ac0e9b8d5cd78d",
-    "semantic_hash": "c28962b0afb502b197ac0e9b8d5cd78d"
+    "mtime": 1779354252.127622,
+    "ast_hash": "ff096d03334e24b28ca90f0196e0a1d5",
+    "semantic_hash": "ff096d03334e24b28ca90f0196e0a1d5"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\settings\\route.ts": {
-    "mtime": 1779035528.0085416,
-    "ast_hash": "c1cccb6a5cb8334a670b566fa2c8feb6",
-    "semantic_hash": "c1cccb6a5cb8334a670b566fa2c8feb6"
+    "mtime": 1779354252.1286232,
+    "ast_hash": "526a7fbb131f5f3414be9be2f40a157f",
+    "semantic_hash": "526a7fbb131f5f3414be9be2f40a157f"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\timeline\\route.ts": {
-    "mtime": 1779035528.0090623,
-    "ast_hash": "cf769d2b21c18de16bcc63e8d5397cd1",
-    "semantic_hash": "cf769d2b21c18de16bcc63e8d5397cd1"
+    "mtime": 1779354252.1286232,
+    "ast_hash": "e75319b4bc4fe574f33da1f4b5a752d4",
+    "semantic_hash": "e75319b4bc4fe574f33da1f4b5a752d4"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\timelines\\[id]\\layers\\route.ts": {
-    "mtime": 1779035528.01062,
-    "ast_hash": "0a47dbf72c364cf836dfc720ebd7f35f",
-    "semantic_hash": "0a47dbf72c364cf836dfc720ebd7f35f"
+    "mtime": 1779354252.129621,
+    "ast_hash": "53a403883a52e65a1f9869ceb029d67f",
+    "semantic_hash": "53a403883a52e65a1f9869ceb029d67f"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\timelines\\[id]\\layers\\[layerId]\\route.ts": {
-    "mtime": 1779035528.0101032,
-    "ast_hash": "0205950c0fffffd4530edac364b63187",
-    "semantic_hash": "0205950c0fffffd4530edac364b63187"
+    "mtime": 1779354252.129621,
+    "ast_hash": "aed3f83c48cb8a99f538a5677d807f36",
+    "semantic_hash": "aed3f83c48cb8a99f538a5677d807f36"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\tts\\cache\\route.ts": {
-    "mtime": 1779035528.0116544,
-    "ast_hash": "218b758498b40a2d2429f39db4709d56",
-    "semantic_hash": "218b758498b40a2d2429f39db4709d56"
+    "mtime": 1779275360.1634307,
+    "ast_hash": "a471114cf0287007fb77669767cd265e",
+    "semantic_hash": "a471114cf0287007fb77669767cd265e"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\tts\\generate\\route.ts": {
-    "mtime": 1779035528.0121653,
-    "ast_hash": "d3d8fb2a4502a5750e332af37b84d9a9",
-    "semantic_hash": "d3d8fb2a4502a5750e332af37b84d9a9"
+    "mtime": 1779355022.404708,
+    "ast_hash": "8697cc7d22fa2533cbfb2a544cf53f38",
+    "semantic_hash": "8697cc7d22fa2533cbfb2a544cf53f38"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\tts\\stream\\route.ts": {
-    "mtime": 1779035528.0121653,
-    "ast_hash": "24ca863bf3a94b0a84a193fad5eccae4",
-    "semantic_hash": "24ca863bf3a94b0a84a193fad5eccae4"
+    "mtime": 1779355064.4296057,
+    "ast_hash": "22622729b838e038f14a7ed8bf0bc1f2",
+    "semantic_hash": "22622729b838e038f14a7ed8bf0bc1f2"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\tts\\voice\\[entityType]\\[entityId]\\route.ts": {
-    "mtime": 1779035528.0131705,
-    "ast_hash": "5ac9641f09ae143a0938c9a088fac9d8",
-    "semantic_hash": "5ac9641f09ae143a0938c9a088fac9d8"
+    "mtime": 1779354252.1306214,
+    "ast_hash": "93b4cfcf61f165370ac699aefcf63729",
+    "semantic_hash": "93b4cfcf61f165370ac699aefcf63729"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\tts\\voices\\route.ts": {
-    "mtime": 1779035528.0147233,
-    "ast_hash": "7d395c0bff6c942aeeca7725096feddd",
-    "semantic_hash": "7d395c0bff6c942aeeca7725096feddd"
+    "mtime": 1779354252.1306214,
+    "ast_hash": "af9d61a46d2e1476532dfa5f37cecf57",
+    "semantic_hash": "af9d61a46d2e1476532dfa5f37cecf57"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\tts\\voices\\combine\\route.ts": {
-    "mtime": 1779035528.0136738,
-    "ast_hash": "3627ffe18c7df986ae7aaec7c9e0645f",
-    "semantic_hash": "3627ffe18c7df986ae7aaec7c9e0645f"
+    "mtime": 1779275360.16594,
+    "ast_hash": "f7d6c8f0947e374713d3b8a74afcbdb7",
+    "semantic_hash": "f7d6c8f0947e374713d3b8a74afcbdb7"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\tts\\voices\\refresh\\route.ts": {
-    "mtime": 1779035528.0147233,
-    "ast_hash": "7db09e9b013bd79b7f41bc3778f1ff9f",
-    "semantic_hash": "7db09e9b013bd79b7f41bc3778f1ff9f"
+    "mtime": 1779275360.16594,
+    "ast_hash": "c39a4ab853358867beda33a9b3f53f92",
+    "semantic_hash": "c39a4ab853358867beda33a9b3f53f92"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\universes\\route.ts": {
-    "mtime": 1779081619.2053044,
-    "ast_hash": "e76b104506d588c95d488fe86585bc60",
-    "semantic_hash": "e76b104506d588c95d488fe86585bc60"
+    "mtime": 1779354252.1311247,
+    "ast_hash": "6ce82d23afc59aa298e088776d68ad8c",
+    "semantic_hash": "6ce82d23afc59aa298e088776d68ad8c"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\universes\\[id]\\route.ts": {
-    "mtime": 1779035528.015728,
-    "ast_hash": "5f5899d9ec343868d8453b6d242d80f2",
-    "semantic_hash": "5f5899d9ec343868d8453b6d242d80f2"
+    "mtime": 1779354252.1311247,
+    "ast_hash": "826de85540e32bd633d9ebb24890bfc7",
+    "semantic_hash": "826de85540e32bd633d9ebb24890bfc7"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\voice-assignments\\route.ts": {
-    "mtime": 1779035528.0172312,
-    "ast_hash": "ae9e3bd656e71bda8919898f3d883086",
-    "semantic_hash": "ae9e3bd656e71bda8919898f3d883086"
+    "mtime": 1779354252.1321313,
+    "ast_hash": "b8331ad972f24ebc10d5cb2f52e72486",
+    "semantic_hash": "b8331ad972f24ebc10d5cb2f52e72486"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\login\\page.tsx": {
-    "mtime": 1779035528.0192378,
-    "ast_hash": "53a3df99743530314254f0298b081a3d",
-    "semantic_hash": "53a3df99743530314254f0298b081a3d"
+    "mtime": 1779275360.1813939,
+    "ast_hash": "e19ebe8d2b5fdf33f29fea005a04d8de",
+    "semantic_hash": "e19ebe8d2b5fdf33f29fea005a04d8de"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\register\\page.tsx": {
-    "mtime": 1779035528.0217469,
+    "mtime": 1779275360.1823928,
     "ast_hash": "c3684214819495694e91c07bada34c93",
     "semantic_hash": "c3684214819495694e91c07bada34c93"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\backlinks\\backlink-panel.tsx": {
-    "mtime": 1779035528.023252,
+    "mtime": 1779275360.1843927,
     "ast_hash": "858cea05c530ad13267cd1fbf1d8e877",
     "semantic_hash": "858cea05c530ad13267cd1fbf1d8e877"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\canon\\canon-layer-selector.tsx": {
-    "mtime": 1779035528.023252,
+    "mtime": 1779275360.184901,
     "ast_hash": "dc0a8016b3487d7a84c5b68abfb74208",
     "semantic_hash": "dc0a8016b3487d7a84c5b68abfb74208"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\canon\\layer-viewer.tsx": {
-    "mtime": 1779035528.0242584,
+    "mtime": 1779275360.184901,
     "ast_hash": "e97558bf357c57683f48054c7baa9298",
     "semantic_hash": "e97558bf357c57683f48054c7baa9298"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\canon\\promotion-dialog.tsx": {
-    "mtime": 1779035528.025258,
+    "mtime": 1779275360.1859026,
     "ast_hash": "48e557de7b843d8d5abab6b541bc8d20",
     "semantic_hash": "48e557de7b843d8d5abab6b541bc8d20"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\chat\\chat-window.tsx": {
-    "mtime": 1779088622.8840356,
-    "ast_hash": "211e37d37ad1202f86d4e1cccdbed314",
-    "semantic_hash": "211e37d37ad1202f86d4e1cccdbed314"
+    "mtime": 1779345241.6256032,
+    "ast_hash": "eb118db00d67888af92f3d7f4e6fbb84",
+    "semantic_hash": "eb118db00d67888af92f3d7f4e6fbb84"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\chat\\edit-history.tsx": {
-    "mtime": 1779035528.025258,
+    "mtime": 1779275360.1874077,
     "ast_hash": "140ac057d1a362af67e1fd7c502bfbcc",
     "semantic_hash": "140ac057d1a362af67e1fd7c502bfbcc"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\chat\\message-bubble.tsx": {
-    "mtime": 1779035528.02728,
-    "ast_hash": "1cadc2203bf5bfc60f43414e936d1582",
-    "semantic_hash": "1cadc2203bf5bfc60f43414e936d1582"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\chat\\message-input.tsx": {
-    "mtime": 1779035528.02728,
-    "ast_hash": "af5ed81718f36fb0fc082c88d7e812f7",
-    "semantic_hash": "af5ed81718f36fb0fc082c88d7e812f7"
-  },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\chat\\streaming-text.tsx": {
-    "mtime": 1779035528.0282865,
-    "ast_hash": "a466af9bebd0c0162aed150c2e5bdbc7",
-    "semantic_hash": "a466af9bebd0c0162aed150c2e5bdbc7"
+    "mtime": 1779296393.7899868,
+    "ast_hash": "82c8601bc7cb85ef305751fce240df82",
+    "semantic_hash": "82c8601bc7cb85ef305751fce240df82"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\chat\\typing-indicator.tsx": {
-    "mtime": 1779035528.0282865,
+    "mtime": 1779275360.188977,
     "ast_hash": "b23766ce29f8700f6c5a0a23c99f104f",
     "semantic_hash": "b23766ce29f8700f6c5a0a23c99f104f"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\jobs\\job-progress.tsx": {
-    "mtime": 1779035528.0292864,
+    "mtime": 1779275360.190011,
     "ast_hash": "ee48b5ca14247c2de0b2badf0079a305",
     "semantic_hash": "ee48b5ca14247c2de0b2badf0079a305"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\layout\\page-header.tsx": {
-    "mtime": 1779035528.0292864,
+    "mtime": 1779275360.19053,
     "ast_hash": "6a9fb7d91aef5a7ce21fc5cfa5eaf82b",
     "semantic_hash": "6a9fb7d91aef5a7ce21fc5cfa5eaf82b"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\lore\\lore-browser.tsx": {
-    "mtime": 1779035528.0307083,
-    "ast_hash": "2ca966b05b443c0729ad6f6c6cc22906",
-    "semantic_hash": "2ca966b05b443c0729ad6f6c6cc22906"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\lore\\lore-editor.tsx": {
-    "mtime": 1779035528.0312,
-    "ast_hash": "d73166544994698ae7c00abbb001c66b",
-    "semantic_hash": "d73166544994698ae7c00abbb001c66b"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\lore\\wikilink-autocomplete.tsx": {
-    "mtime": 1779035528.0322244,
-    "ast_hash": "96daabda59841183b0312095324318ae",
-    "semantic_hash": "96daabda59841183b0312095324318ae"
-  },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\narrative\\event-timeline.tsx": {
-    "mtime": 1779035528.0332808,
+    "mtime": 1779275360.1910598,
     "ast_hash": "bef23d965e22f785f5cf40daef882706",
     "semantic_hash": "bef23d965e22f785f5cf40daef882706"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\narrative\\importance-meter.tsx": {
-    "mtime": 1779035528.033805,
-    "ast_hash": "5daa122695935f6c4250a74916b662a7",
-    "semantic_hash": "5daa122695935f6c4250a74916b662a7"
+    "mtime": 1779275360.1916182,
+    "ast_hash": "43f154a263068d2d2999f1f6683065a0",
+    "semantic_hash": "43f154a263068d2d2999f1f6683065a0"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\narrative\\thread-tracker.tsx": {
-    "mtime": 1779035528.0344186,
+    "mtime": 1779275360.1916182,
     "ast_hash": "103c3a390f9e0c75a2fec9d15a65ab7f",
     "semantic_hash": "103c3a390f9e0c75a2fec9d15a65ab7f"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\relationship\\emotion-bar.tsx": {
-    "mtime": 1779035528.0349534,
-    "ast_hash": "8e302a678395152f6a04e7d1ef021cbe",
-    "semantic_hash": "8e302a678395152f6a04e7d1ef021cbe"
+    "mtime": 1779275360.192652,
+    "ast_hash": "e92e03a9a311362e5f6d2b76b19b2f68",
+    "semantic_hash": "e92e03a9a311362e5f6d2b76b19b2f68"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\relationship\\relationship-graph.tsx": {
-    "mtime": 1779035528.0354815,
+    "mtime": 1779275360.192652,
     "ast_hash": "914608493e356142fa7dbf80ff1f69f3",
     "semantic_hash": "914608493e356142fa7dbf80ff1f69f3"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\relationship\\relationship-history.tsx": {
-    "mtime": 1779035528.0365224,
-    "ast_hash": "dbeb9ad8764027be599d5d505920f15c",
-    "semantic_hash": "dbeb9ad8764027be599d5d505920f15c"
+    "mtime": 1779275360.1931655,
+    "ast_hash": "650f47f16c06208d4237bbe46652fba1",
+    "semantic_hash": "650f47f16c06208d4237bbe46652fba1"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\relationships\\decay-indicator.tsx": {
-    "mtime": 1779035528.0375755,
+    "mtime": 1779275360.194285,
     "ast_hash": "5c4374e76bb0d8612e0e2c13faf4d928",
     "semantic_hash": "5c4374e76bb0d8612e0e2c13faf4d928"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\relationships\\emotion-graph.tsx": {
-    "mtime": 1779035528.038097,
+    "mtime": 1779275360.1948137,
     "ast_hash": "fc42f0914bc4ab1948cb61e6c296b4e9",
     "semantic_hash": "fc42f0914bc4ab1948cb61e6c296b4e9"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\relationships\\relationship-web.tsx": {
-    "mtime": 1779035528.038615,
+    "mtime": 1779275360.1953228,
     "ast_hash": "6f4ebda30b4e6a133e756b3d9a470ab5",
     "semantic_hash": "6f4ebda30b4e6a133e756b3d9a470ab5"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\character-declaration-modal.tsx": {
-    "mtime": 1779035528.0396714,
-    "ast_hash": "485cb89578b88e9edfec655dfbbeeac5",
-    "semantic_hash": "485cb89578b88e9edfec655dfbbeeac5"
+    "mtime": 1779354606.745764,
+    "ast_hash": "c324f2c7b5c5759488eb147c02e4abc7",
+    "semantic_hash": "c324f2c7b5c5759488eb147c02e4abc7"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\individual-memories.tsx": {
-    "mtime": 1779035528.040195,
+    "mtime": 1779275360.1963732,
     "ast_hash": "50052764b01983faea8174145073cd82",
     "semantic_hash": "50052764b01983faea8174145073cd82"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\participant-list.tsx": {
-    "mtime": 1779035528.0407214,
+    "mtime": 1779275360.1968946,
     "ast_hash": "2b900e70916c7a7fb6b7c3de40ca41fa",
     "semantic_hash": "2b900e70916c7a7fb6b7c3de40ca41fa"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\personal-relationships.tsx": {
-    "mtime": 1779035528.0412447,
+    "mtime": 1779275360.1974077,
     "ast_hash": "ed6f10456806b054983b48807f80e25e",
     "semantic_hash": "ed6f10456806b054983b48807f80e25e"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\private-state-panel.tsx": {
-    "mtime": 1779035528.041773,
+    "mtime": 1779275360.1979318,
     "ast_hash": "3ea91849cda793360c7bd6095b8fe2b7",
     "semantic_hash": "3ea91849cda793360c7bd6095b8fe2b7"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\private-thoughts.tsx": {
-    "mtime": 1779035528.042291,
-    "ast_hash": "f36c54fb3211cf08d0e8d6fbd6332c8a",
-    "semantic_hash": "f36c54fb3211cf08d0e8d6fbd6332c8a"
+    "mtime": 1779275360.1984532,
+    "ast_hash": "3a07fcbee67341dced12769b9bf9afd8",
+    "semantic_hash": "3a07fcbee67341dced12769b9bf9afd8"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\scene-state-panel.tsx": {
-    "mtime": 1779035528.043297,
-    "ast_hash": "664d8b159a7fdc6ec2878fab049fabab",
-    "semantic_hash": "664d8b159a7fdc6ec2878fab049fabab"
+    "mtime": 1779347864.6118302,
+    "ast_hash": "02323505f2a0640b3aeb073f54e15ea2",
+    "semantic_hash": "02323505f2a0640b3aeb073f54e15ea2"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\session-creator.tsx": {
-    "mtime": 1779082726.799093,
-    "ast_hash": "42c435079293706fc31ec5787282f823",
-    "semantic_hash": "42c435079293706fc31ec5787282f823"
+    "mtime": 1779282126.7281618,
+    "ast_hash": "5a305856c024a604927e68db4084644a",
+    "semantic_hash": "5a305856c024a604927e68db4084644a"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\session-list.tsx": {
-    "mtime": 1779035528.0438027,
+    "mtime": 1779275360.1994865,
     "ast_hash": "08dadbc75ceaadc2f914e53a2bbebacf",
     "semantic_hash": "08dadbc75ceaadc2f914e53a2bbebacf"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\timeline\\character-editor.tsx": {
-    "mtime": 1779035528.0458086,
+    "mtime": 1779275360.2020056,
     "ast_hash": "1348395b3ee26bbaf874ed6296bbc489",
     "semantic_hash": "1348395b3ee26bbaf874ed6296bbc489"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\timeline\\era-editor.tsx": {
-    "mtime": 1779035528.0458086,
+    "mtime": 1779275360.2020056,
     "ast_hash": "7d82864365c73dbedd4e997f6e4c6ecd",
     "semantic_hash": "7d82864365c73dbedd4e997f6e4c6ecd"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\timeline\\faction-editor.tsx": {
-    "mtime": 1779035528.0468094,
+    "mtime": 1779275360.2030044,
     "ast_hash": "47567d6e8bc8d6896a31864b23f61acd",
     "semantic_hash": "47567d6e8bc8d6896a31864b23f61acd"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\timeline\\layer-manager.tsx": {
-    "mtime": 1779035528.0468094,
+    "mtime": 1779275360.2030044,
     "ast_hash": "ced6a82b82d61a4d31e3d6b01bd16065",
     "semantic_hash": "ced6a82b82d61a4d31e3d6b01bd16065"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\tts\\tts-controls.tsx": {
-    "mtime": 1779035528.0478084,
+    "mtime": 1779275360.2040045,
     "ast_hash": "6af72de6ecf3083f0cd2ad405aff76ed",
     "semantic_hash": "6af72de6ecf3083f0cd2ad405aff76ed"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\tts\\tts-indicator.tsx": {
-    "mtime": 1779035528.0478084,
+    "mtime": 1779275360.2040045,
     "ast_hash": "8d10f31959ad21b1bb58375b8e805707",
     "semantic_hash": "8d10f31959ad21b1bb58375b8e805707"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\tts\\voice-picker.tsx": {
-    "mtime": 1779035528.0488083,
+    "mtime": 1779275360.2050061,
     "ast_hash": "9147c24d7cd579c6fb26b154a2463ab6",
     "semantic_hash": "9147c24d7cd579c6fb26b154a2463ab6"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\ui\\confirmation-dialog.tsx": {
-    "mtime": 1779035528.0498097,
+    "mtime": 1779275360.2050061,
     "ast_hash": "ebad72b26d1678cd11ae0a97d9568470",
     "semantic_hash": "ebad72b26d1678cd11ae0a97d9568470"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\ui\\connection-indicator.tsx": {
-    "mtime": 1779035528.0498097,
-    "ast_hash": "ada7effe152f6b489599fcb0b1783a22",
-    "semantic_hash": "ada7effe152f6b489599fcb0b1783a22"
+    "mtime": 1779275360.2050061,
+    "ast_hash": "592f11376f4c2288b9c2539845906541",
+    "semantic_hash": "592f11376f4c2288b9c2539845906541"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\ui\\empty-state.tsx": {
-    "mtime": 1779035528.0513148,
+    "mtime": 1779275360.2065103,
     "ast_hash": "7bc6c588d7bc436c447a9538b49c2201",
     "semantic_hash": "7bc6c588d7bc436c447a9538b49c2201"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\ui\\fps-counter.tsx": {
-    "mtime": 1779035528.0513148,
+    "mtime": 1779275360.2075155,
     "ast_hash": "e4e0da90310dc0a93eecd61b0c164e56",
     "semantic_hash": "e4e0da90310dc0a93eecd61b0c164e56"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\ui\\loading-state.tsx": {
-    "mtime": 1779035528.052321,
+    "mtime": 1779275360.2075155,
     "ast_hash": "c3f4cdc8340b7dd762cf58f76f7858fb",
     "semantic_hash": "c3f4cdc8340b7dd762cf58f76f7858fb"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\ui\\modal.tsx": {
-    "mtime": 1779035528.052321,
+    "mtime": 1779275360.2085302,
     "ast_hash": "37d80032f5cf07c073eb95dcbfa18cab",
     "semantic_hash": "37d80032f5cf07c073eb95dcbfa18cab"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\ui\\status-badge.tsx": {
-    "mtime": 1779035528.053321,
+    "mtime": 1779275360.2095299,
     "ast_hash": "272e9f5bfbf07135a235dbed0e638056",
     "semantic_hash": "272e9f5bfbf07135a235dbed0e638056"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\validation\\validation-badge.tsx": {
-    "mtime": 1779035528.054322,
-    "ast_hash": "3a13509c81fbc86e5367d6794c217f69",
-    "semantic_hash": "3a13509c81fbc86e5367d6794c217f69"
-  },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\contexts\\active-universe.tsx": {
-    "mtime": 1779073105.9449978,
+    "mtime": 1779275360.21653,
     "ast_hash": "2517318629e1d265f1e9223c6593510e",
     "semantic_hash": "2517318629e1d265f1e9223c6593510e"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-audio-player.ts": {
-    "mtime": 1779035528.0572622,
+    "mtime": 1779275360.2185411,
     "ast_hash": "3afb2f966543651b87b6beb30f30d758",
     "semantic_hash": "3afb2f966543651b87b6beb30f30d758"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-auth.ts": {
-    "mtime": 1779035528.0577886,
+    "mtime": 1779275360.2185411,
     "ast_hash": "41237b1de873a60c7e0c8b40609374e9",
     "semantic_hash": "41237b1de873a60c7e0c8b40609374e9"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-connection-status.ts": {
-    "mtime": 1779035528.0587962,
+    "mtime": 1779275360.219547,
     "ast_hash": "fe944dfb8522c21658134172a0b7f2f5",
     "semantic_hash": "fe944dfb8522c21658134172a0b7f2f5"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-entity-fetch.ts": {
-    "mtime": 1779035528.0597944,
-    "ast_hash": "c170683f58e05b8ee619d88c6b04f5f1",
-    "semantic_hash": "c170683f58e05b8ee619d88c6b04f5f1"
+    "mtime": 1779354645.3339748,
+    "ast_hash": "14e214d5aa50bb9c2476f624e4729196",
+    "semantic_hash": "14e214d5aa50bb9c2476f624e4729196"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-idle-tracker.ts": {
-    "mtime": 1779035528.0602982,
+    "mtime": 1779275360.2205472,
     "ast_hash": "9a97222d4b5577b02e5271cfaeb0987e",
     "semantic_hash": "9a97222d4b5577b02e5271cfaeb0987e"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-local-storage.ts": {
-    "mtime": 1779035528.0602982,
-    "ast_hash": "cb318b9533c296b4f13f9b1651f2c931",
-    "semantic_hash": "cb318b9533c296b4f13f9b1651f2c931"
+    "mtime": 1779275360.2205472,
+    "ast_hash": "528089a67deca7093f52de496e60debc",
+    "semantic_hash": "528089a67deca7093f52de496e60debc"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-render-loop.ts": {
-    "mtime": 1779035528.0613043,
+    "mtime": 1779275360.2215478,
     "ast_hash": "1170d3ab2125918e43f2cd04ae72926f",
     "semantic_hash": "1170d3ab2125918e43f2cd04ae72926f"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-session.ts": {
-    "mtime": 1779088574.7994962,
-    "ast_hash": "93a174d52e1a8b5754056576272f5755",
-    "semantic_hash": "93a174d52e1a8b5754056576272f5755"
+    "mtime": 1779354659.7732055,
+    "ast_hash": "f0fdeb8b167d35c65c9eb9cf8dc37031",
+    "semantic_hash": "f0fdeb8b167d35c65c9eb9cf8dc37031"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-tts.ts": {
-    "mtime": 1779035528.06281,
+    "mtime": 1779275360.2225468,
     "ast_hash": "a2ff7418e43e318bd49c0f323a9a062f",
     "semantic_hash": "a2ff7418e43e318bd49c0f323a9a062f"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\use-voices.ts": {
-    "mtime": 1779035528.06281,
-    "ast_hash": "380eaad04ccebee307945b3992e84e26",
-    "semantic_hash": "380eaad04ccebee307945b3992e84e26"
+    "mtime": 1779354652.540295,
+    "ast_hash": "0c20bc3938462018ae7b690248ba3e33",
+    "semantic_hash": "0c20bc3938462018ae7b690248ba3e33"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\api-client.ts": {
-    "mtime": 1779035528.0638163,
-    "ast_hash": "1e17eb07deaa3645ead20a41672bc415",
-    "semantic_hash": "1e17eb07deaa3645ead20a41672bc415"
+    "mtime": 1779354666.56858,
+    "ast_hash": "705a741df3aa6cfaa3812fecb0fe27f0",
+    "semantic_hash": "705a741df3aa6cfaa3812fecb0fe27f0"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\auth.ts": {
-    "mtime": 1779035528.0648181,
-    "ast_hash": "79c9803fc0af966019c16d70b2ac9c9d",
-    "semantic_hash": "79c9803fc0af966019c16d70b2ac9c9d"
+    "mtime": 1779280117.169697,
+    "ast_hash": "6dace3673512896e902dc24ef8fbc580",
+    "semantic_hash": "6dace3673512896e902dc24ef8fbc580"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\backlinks.ts": {
-    "mtime": 1779035528.0658169,
-    "ast_hash": "7970e3e2303ac4364193fa7839ad152f",
-    "semantic_hash": "7970e3e2303ac4364193fa7839ad152f"
+    "mtime": 1779354606.7727048,
+    "ast_hash": "bfb537ca9f4a506137a0148433167834",
+    "semantic_hash": "bfb537ca9f4a506137a0148433167834"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\canon-tiers.ts": {
-    "mtime": 1779035528.0658169,
+    "mtime": 1779275360.22665,
     "ast_hash": "62fd615395ddb0f2e826e4735f49ae98",
     "semantic_hash": "62fd615395ddb0f2e826e4735f49ae98"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\config.ts": {
-    "mtime": 1779085633.462698,
-    "ast_hash": "b29a7b7cea6815b096c0e36666f66486",
-    "semantic_hash": "b29a7b7cea6815b096c0e36666f66486"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\context-compression.ts": {
-    "mtime": 1779035528.0671103,
-    "ast_hash": "630b842381074c279d9d1e781431a19e",
-    "semantic_hash": "630b842381074c279d9d1e781431a19e"
+    "mtime": 1779278338.1590269,
+    "ast_hash": "0c74b4940da26262216dba2dab452da9",
+    "semantic_hash": "0c74b4940da26262216dba2dab452da9"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\contradiction-detector.ts": {
-    "mtime": 1779035528.0681095,
-    "ast_hash": "7335ce090c0fe7b06b2223acdc7e5c7a",
-    "semantic_hash": "7335ce090c0fe7b06b2223acdc7e5c7a"
+    "mtime": 1779275360.2271547,
+    "ast_hash": "3d58c7f774cd0a309fb6320c537a89ae",
+    "semantic_hash": "3d58c7f774cd0a309fb6320c537a89ae"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\date-formatter.ts": {
-    "mtime": 1779035528.0681095,
-    "ast_hash": "f9fec15bbedb7492013bf681d67a23ca",
-    "semantic_hash": "f9fec15bbedb7492013bf681d67a23ca"
+    "mtime": 1779275360.2271547,
+    "ast_hash": "14fcbc31607f5820a68658b7dbd16288",
+    "semantic_hash": "14fcbc31607f5820a68658b7dbd16288"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\db.ts": {
-    "mtime": 1779035528.0691094,
-    "ast_hash": "eb7654e252d7885ebe0f26719614ee19",
-    "semantic_hash": "eb7654e252d7885ebe0f26719614ee19"
+    "mtime": 1779275360.2286644,
+    "ast_hash": "2377cda3f890531787f7fe6621fb286e",
+    "semantic_hash": "2377cda3f890531787f7fe6621fb286e"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\embeddings.ts": {
-    "mtime": 1779035528.0701106,
-    "ast_hash": "da6d4c730a53437ee3cbe8be84ece6a2",
-    "semantic_hash": "da6d4c730a53437ee3cbe8be84ece6a2"
+    "mtime": 1779275360.2291863,
+    "ast_hash": "512c43b05f2ed525ac74bd7efbccc1f1",
+    "semantic_hash": "512c43b05f2ed525ac74bd7efbccc1f1"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\entity-constants.ts": {
-    "mtime": 1779035528.0701106,
-    "ast_hash": "e77806993d933f5e072c7b2ea6d8d24e",
-    "semantic_hash": "e77806993d933f5e072c7b2ea6d8d24e"
+    "mtime": 1779275360.2296972,
+    "ast_hash": "2bfffb60e7c6224fad7ab70d298a41d5",
+    "semantic_hash": "2bfffb60e7c6224fad7ab70d298a41d5"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\event-bus.ts": {
-    "mtime": 1779035528.0711112,
-    "ast_hash": "3582eb656f15920472b601b04450f15a",
-    "semantic_hash": "3582eb656f15920472b601b04450f15a"
+    "mtime": 1779275360.230702,
+    "ast_hash": "c6b1b093f65149db1896f02a362390d1",
+    "semantic_hash": "c6b1b093f65149db1896f02a362390d1"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\idle-processing.ts": {
-    "mtime": 1779035528.0726128,
-    "ast_hash": "dfc1b0270d1e25adca60480f15d7607b",
-    "semantic_hash": "dfc1b0270d1e25adca60480f15d7607b"
+    "mtime": 1779355811.406985,
+    "ast_hash": "2455b49918993b36f5ce0bdecaf363c9",
+    "semantic_hash": "2455b49918993b36f5ce0bdecaf363c9"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\importance.ts": {
-    "mtime": 1779035528.0751314,
+    "mtime": 1779275360.234208,
     "ast_hash": "74f2f3e698e7c0b6b42ca3252f4776cf",
     "semantic_hash": "74f2f3e698e7c0b6b42ca3252f4776cf"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\intent-analyzer.ts": {
-    "mtime": 1779035528.075471,
+    "mtime": 1779275360.2352133,
     "ast_hash": "3bb93459c294173d975490bcea90ab62",
     "semantic_hash": "3bb93459c294173d975490bcea90ab62"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\job-processor.ts": {
-    "mtime": 1779035528.0764759,
-    "ast_hash": "d9a111a494b53e9f1ba2736e7e159c35",
-    "semantic_hash": "d9a111a494b53e9f1ba2736e7e159c35"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\lore-expansion.ts": {
-    "mtime": 1779035528.077482,
-    "ast_hash": "0f281d7ea3da3190841c431dc69498b8",
-    "semantic_hash": "0f281d7ea3da3190841c431dc69498b8"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\lore-markdown.ts": {
-    "mtime": 1779035528.0784812,
-    "ast_hash": "d7d4ddc8f37a0aeeb37dbdb756201cd0",
-    "semantic_hash": "d7d4ddc8f37a0aeeb37dbdb756201cd0"
+    "mtime": 1779355746.9114704,
+    "ast_hash": "0c41a2edefc3b4e6aa6ed053954619b4",
+    "semantic_hash": "0c41a2edefc3b4e6aa6ed053954619b4"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\markdown-renderer.ts": {
-    "mtime": 1779035528.0784812,
-    "ast_hash": "15b3a77f93d2f6180b02fb6b69f54e68",
-    "semantic_hash": "15b3a77f93d2f6180b02fb6b69f54e68"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\markdown.ts": {
-    "mtime": 1779035528.0794814,
-    "ast_hash": "0eb12f5f16bad22f2fac1569bd6e3629",
-    "semantic_hash": "0eb12f5f16bad22f2fac1569bd6e3629"
+    "mtime": 1779275360.2382348,
+    "ast_hash": "f3ccd3fbd8856faf146b228798e2397a",
+    "semantic_hash": "f3ccd3fbd8856faf146b228798e2397a"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\memory-compression.ts": {
-    "mtime": 1779035528.0794814,
+    "mtime": 1779275360.2392335,
     "ast_hash": "cfd81530eee5b1a2e911a679fa3718af",
     "semantic_hash": "cfd81530eee5b1a2e911a679fa3718af"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\ollama.ts": {
-    "mtime": 1779089326.6479793,
-    "ast_hash": "e409a963d65e3b37f217254d6f580f36",
-    "semantic_hash": "e409a963d65e3b37f217254d6f580f36"
+    "mtime": 1779355278.4574764,
+    "ast_hash": "5bce04eab4b3c940b313eabad5a16281",
+    "semantic_hash": "5bce04eab4b3c940b313eabad5a16281"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\prompt-builder.ts": {
-    "mtime": 1779035528.0819912,
-    "ast_hash": "1c8285a5f139ba85a0e09ebf0e103e56",
-    "semantic_hash": "1c8285a5f139ba85a0e09ebf0e103e56"
+    "mtime": 1779275360.2415018,
+    "ast_hash": "07d52ef31551e8099a5555d301d4cbeb",
+    "semantic_hash": "07d52ef31551e8099a5555d301d4cbeb"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\relationship-analysis.ts": {
-    "mtime": 1779035528.0829928,
-    "ast_hash": "92d61493bb041f935ea44dd094cc25ca",
-    "semantic_hash": "92d61493bb041f935ea44dd094cc25ca"
+    "mtime": 1779275360.244159,
+    "ast_hash": "2dc81271ef481d014e22222ec24ec5fe",
+    "semantic_hash": "2dc81271ef481d014e22222ec24ec5fe"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\relationship-decay.ts": {
-    "mtime": 1779035528.083991,
-    "ast_hash": "ed3608db43b432de02d6b9897bf90420",
-    "semantic_hash": "ed3608db43b432de02d6b9897bf90420"
+    "mtime": 1779275360.2451954,
+    "ast_hash": "d41588bfdf68512c17e079a556669ac4",
+    "semantic_hash": "d41588bfdf68512c17e079a556669ac4"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\relationship-viz.ts": {
-    "mtime": 1779035528.0849915,
-    "ast_hash": "b8d328907c8d94465a09657c67072b6d",
-    "semantic_hash": "b8d328907c8d94465a09657c67072b6d"
+    "mtime": 1779275360.246752,
+    "ast_hash": "9b6b31bae77fb7210ac6c4b76885896a",
+    "semantic_hash": "9b6b31bae77fb7210ac6c4b76885896a"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\render-loop.ts": {
-    "mtime": 1779035528.0859911,
+    "mtime": 1779275360.2472596,
     "ast_hash": "f4af390d568798dffe8d27e0195f978a",
     "semantic_hash": "f4af390d568798dffe8d27e0195f978a"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\retrieval.ts": {
-    "mtime": 1779035528.0864954,
-    "ast_hash": "99885ab86d889b9d17ccf9f8d4b4b535",
-    "semantic_hash": "99885ab86d889b9d17ccf9f8d4b4b535"
+    "mtime": 1779340800.170859,
+    "ast_hash": "bf5bd2e96cf7d04e19d9286d1ae282d0",
+    "semantic_hash": "bf5bd2e96cf7d04e19d9286d1ae282d0"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\semantic-intent-fallback.ts": {
-    "mtime": 1779035528.0910144,
-    "ast_hash": "57a0690366c4bd8fa2ff24c56a040931",
-    "semantic_hash": "57a0690366c4bd8fa2ff24c56a040931"
+    "mtime": 1779275360.2509563,
+    "ast_hash": "87747b082a14669c2baa1775ff328189",
+    "semantic_hash": "87747b082a14669c2baa1775ff328189"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\summarization.ts": {
-    "mtime": 1779035528.0920134,
-    "ast_hash": "8a93ee8238b59fb505f6f15fce15ffe7",
-    "semantic_hash": "8a93ee8238b59fb505f6f15fce15ffe7"
+    "mtime": 1779275360.253548,
+    "ast_hash": "170b0f99bd2eeccd478b06969027258a",
+    "semantic_hash": "170b0f99bd2eeccd478b06969027258a"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\tts-queue.ts": {
-    "mtime": 1779035528.0920134,
-    "ast_hash": "cbd322e7bbf470eb75d829760bbcff79",
-    "semantic_hash": "cbd322e7bbf470eb75d829760bbcff79"
+    "mtime": 1779354777.8764944,
+    "ast_hash": "f20fd24aec821e5d91fbd16cf266a8c3",
+    "semantic_hash": "f20fd24aec821e5d91fbd16cf266a8c3"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\tts.ts": {
-    "mtime": 1779035528.0935187,
-    "ast_hash": "e0941eaa26a8e2be8b9d7937dda07923",
-    "semantic_hash": "e0941eaa26a8e2be8b9d7937dda07923"
+    "mtime": 1779355295.0531297,
+    "ast_hash": "0a8289830a69de6459721533c405c7dc",
+    "semantic_hash": "0a8289830a69de6459721533c405c7dc"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\vector-search.ts": {
-    "mtime": 1779035528.0945263,
+    "mtime": 1779275360.256161,
     "ast_hash": "b6f1d1a2d445a1a4ed4057c36a2b2ab3",
     "semantic_hash": "b6f1d1a2d445a1a4ed4057c36a2b2ab3"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\voice-discovery.ts": {
-    "mtime": 1779035528.0945263,
-    "ast_hash": "4d35848b91a0a2d88ffa8a13966a81e4",
-    "semantic_hash": "4d35848b91a0a2d88ffa8a13966a81e4"
+    "mtime": 1779275360.257166,
+    "ast_hash": "7b06ce179d6ca0daf504ca78227e60b8",
+    "semantic_hash": "7b06ce179d6ca0daf504ca78227e60b8"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\AGENTS.md": {
-    "mtime": 1779035527.8949778,
-    "ast_hash": "9e09241799026ac05be315a2f0b50055",
-    "semantic_hash": "9e09241799026ac05be315a2f0b50055"
+    "mtime": 1779275360.0833719,
+    "ast_hash": "53b07337cfa52cbdd71fdba0b42be1ec",
+    "semantic_hash": "53b07337cfa52cbdd71fdba0b42be1ec"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\CLAUDE.md": {
-    "mtime": 1779035527.8964827,
+    "mtime": 1779275360.0833719,
     "ast_hash": "5c27369b226fcf2be8a6cfe52224e767",
     "semantic_hash": "5c27369b226fcf2be8a6cfe52224e767"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\project-context.md": {
-    "mtime": 1779035527.926491,
-    "ast_hash": "b69fac7afcf45ac8194e6d59b2cd5b1a",
-    "semantic_hash": "b69fac7afcf45ac8194e6d59b2cd5b1a"
-  },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\README.md": {
-    "mtime": 1779035527.8974888,
-    "ast_hash": "f15aaa42d5d299d091b1171097ea56ad",
-    "semantic_hash": "f15aaa42d5d299d091b1171097ea56ad"
+    "mtime": 1779275360.0843718,
+    "ast_hash": "9daca55f14df9a8df9c64c22713849e8",
+    "semantic_hash": "9daca55f14df9a8df9c64c22713849e8"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\spec.md": {
-    "mtime": 1779035527.9464383,
+    "mtime": 1779275360.1015944,
     "ast_hash": "900a8f3c758a83929c8fc404272389df",
     "semantic_hash": "900a8f3c758a83929c8fc404272389df"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\decisions\\ADR-template.md": {
-    "mtime": 1779035527.8974888,
-    "ast_hash": "a5c038c0b5d9d90885c99bfaccaace1a",
-    "semantic_hash": "a5c038c0b5d9d90885c99bfaccaace1a"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\archived\\gap-closure-master-plan.md": {
-    "mtime": 1779035527.9040034,
-    "ast_hash": "1f567632ebf3283bdb15d309453ddd53",
-    "semantic_hash": "1f567632ebf3283bdb15d309453ddd53"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\archived\\phase4-integration.md": {
-    "mtime": 1779035527.905571,
-    "ast_hash": "304999b7c940d18fb1c7c295ab2d47c2",
-    "semantic_hash": "304999b7c940d18fb1c7c295ab2d47c2"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\archived\\phase5-components.md": {
-    "mtime": 1779035527.9071026,
-    "ast_hash": "8eed71f64ee9d632f6ed3084be91b213",
-    "semantic_hash": "8eed71f64ee9d632f6ed3084be91b213"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\canon-layers-ui.md": {
-    "mtime": 1779035527.911945,
-    "ast_hash": "be31964352cf4401a06f3cff1daf08c0",
-    "semantic_hash": "be31964352cf4401a06f3cff1daf08c0"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\character-declaration.md": {
-    "mtime": 1779035527.9129815,
-    "ast_hash": "d61790c74e6120198ab1f49acdf9bbdf",
-    "semantic_hash": "d61790c74e6120198ab1f49acdf9bbdf"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\color-palette-alignment.md": {
-    "mtime": 1779035527.9135027,
-    "ast_hash": "c0a067667677e2c219c9a397f8363374",
-    "semantic_hash": "c0a067667677e2c219c9a397f8363374"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\connection-status.md": {
-    "mtime": 1779035527.9140263,
-    "ast_hash": "f26da236f56de5489a563dce80da8658",
-    "semantic_hash": "f26da236f56de5489a563dce80da8658"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\job-queue-progress-bars.md": {
-    "mtime": 1779035527.914554,
-    "ast_hash": "7704aa104a8a13b7bf48951422fd7a77",
-    "semantic_hash": "7704aa104a8a13b7bf48951422fd7a77"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\lore-editor.md": {
-    "mtime": 1779035527.9150815,
-    "ast_hash": "953c59a8d7c8ee0920847fd11940c6ab",
-    "semantic_hash": "953c59a8d7c8ee0920847fd11940c6ab"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\modern-dark-ui.md": {
-    "mtime": 1779035527.9166644,
-    "ast_hash": "2ac60f474f53fcce3be8c0534334d66d",
-    "semantic_hash": "2ac60f474f53fcce3be8c0534334d66d"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\observer-mode.md": {
-    "mtime": 1779035527.9171884,
-    "ast_hash": "aacce6be8ec1824c4ed393fe71fef0a0",
-    "semantic_hash": "aacce6be8ec1824c4ed393fe71fef0a0"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\private-state-ui.md": {
-    "mtime": 1779035527.917714,
-    "ast_hash": "d97a472388cab4e45f03bdce129d7b05",
-    "semantic_hash": "d97a472388cab4e45f03bdce129d7b05"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\relationship-visualization.md": {
-    "mtime": 1779035527.918234,
-    "ast_hash": "26519207f0b3f7ad829a3d2ae48e7e48",
-    "semantic_hash": "26519207f0b3f7ad829a3d2ae48e7e48"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\roleplay-engine-implementation.md": {
-    "mtime": 1779035527.9192677,
-    "ast_hash": "e84c89cc3f2ba24def1538f135cc895b",
-    "semantic_hash": "e84c89cc3f2ba24def1538f135cc895b"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\settings-page.md": {
-    "mtime": 1779035527.9197855,
-    "ast_hash": "11a9751281ffc11f54f2a3d4858a31a3",
-    "semantic_hash": "11a9751281ffc11f54f2a3d4858a31a3"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\sqlite-vec-integration.md": {
-    "mtime": 1779035527.9208355,
-    "ast_hash": "dbe0989b57099919f7321a78c56c7cf2",
-    "semantic_hash": "dbe0989b57099919f7321a78c56c7cf2"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\timeline-layer-management.md": {
-    "mtime": 1779035527.9225419,
-    "ast_hash": "4d57f900afb7a669339dfbe03289bdbf",
-    "semantic_hash": "4d57f900afb7a669339dfbe03289bdbf"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\tts-streaming.md": {
-    "mtime": 1779035527.9230726,
-    "ast_hash": "d9ee1f70c30e03865135a450edc9bf68",
-    "semantic_hash": "d9ee1f70c30e03865135a450edc9bf68"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\yaml-frontmatter-sync.md": {
-    "mtime": 1779035527.9240801,
-    "ast_hash": "11bfbfd3b37543be091805572c23fce3",
-    "semantic_hash": "11bfbfd3b37543be091805572c23fce3"
-  },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\public\\file.svg": {
-    "mtime": 1779035527.926491,
+    "mtime": 1779275360.0893915,
     "ast_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71",
     "semantic_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\public\\globe.svg": {
-    "mtime": 1779035527.927497,
+    "mtime": 1779275360.0903893,
     "ast_hash": "2aaafa6a49b6563925fe440891e32717",
     "semantic_hash": "2aaafa6a49b6563925fe440891e32717"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\public\\next.svg": {
-    "mtime": 1779035527.9286041,
+    "mtime": 1779275360.0903893,
     "ast_hash": "8e061864f388b47f33a1c3780831193e",
     "semantic_hash": "8e061864f388b47f33a1c3780831193e"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\public\\vercel.svg": {
-    "mtime": 1779035527.9286041,
+    "mtime": 1779275360.0903893,
     "ast_hash": "c0af2f507b369b085b35ef4bbe3bcf1e",
     "semantic_hash": "c0af2f507b369b085b35ef4bbe3bcf1e"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\public\\window.svg": {
-    "mtime": 1779035527.9296048,
+    "mtime": 1779275360.0913908,
     "ast_hash": "a2760511c65806022ad20adf74370ff3",
     "semantic_hash": "a2760511c65806022ad20adf74370ff3"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\package.json": {
-    "mtime": 1779035527.9040034,
-    "ast_hash": "a8f229eabdc8fcaaf42384daeca46eef",
-    "semantic_hash": "a8f229eabdc8fcaaf42384daeca46eef"
+    "mtime": 1779275360.0883887,
+    "ast_hash": "96829f4da0d37e904fb8ab9947b3ab42",
+    "semantic_hash": "96829f4da0d37e904fb8ab9947b3ab42"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\setup-firewall.ps1": {
-    "mtime": 1779035527.9449325,
+    "mtime": 1779275360.1010869,
     "ast_hash": "2f8a2efbeb15c365ba828438908ac459",
     "semantic_hash": "2f8a2efbeb15c365ba828438908ac459"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\tsconfig.json": {
-    "mtime": 1779035528.098037,
+    "mtime": 1779275360.2677572,
     "ast_hash": "ee17fd1c97c735e9f3564e3f5251f125",
     "semantic_hash": "ee17fd1c97c735e9f3564e3f5251f125"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\conductor\\setup_state.json": {
-    "mtime": 1779103359.6581116,
-    "ast_hash": "0b310796999ef33e8712b94e0e683e95",
-    "semantic_hash": "0b310796999ef33e8712b94e0e683e95"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\conductor\\tracks\\phase8_stabilization_20260518\\metadata.json": {
-    "mtime": 1779103270.123175,
-    "ast_hash": "8da631c44d4d40a88f65e7aaef938503",
-    "semantic_hash": "8da631c44d4d40a88f65e7aaef938503"
-  },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\backfill-relationship-files.ts": {
-    "mtime": 1779035527.9301114,
+    "mtime": 1779275360.0923898,
     "ast_hash": "002d9a0d4fc4102e9a3d3c85c8b29398",
     "semantic_hash": "002d9a0d4fc4102e9a3d3c85c8b29398"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\check-db.ts": {
-    "mtime": 1779035527.9311173,
+    "mtime": 1779275360.0944307,
     "ast_hash": "0e4d5d22789cf5688baabac10d6d0539",
     "semantic_hash": "0e4d5d22789cf5688baabac10d6d0539"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\app-layout-shell.tsx": {
-    "mtime": 1779088508.711721,
-    "ast_hash": "29381ec0a7899ae92f0f193ac2ee23a5",
-    "semantic_hash": "29381ec0a7899ae92f0f193ac2ee23a5"
+    "mtime": 1779292549.859411,
+    "ast_hash": "0111717a67d7433fe7feee4c0f038c7f",
+    "semantic_hash": "0111717a67d7433fe7feee4c0f038c7f"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\groups\\page.tsx": {
-    "mtime": 1779081978.7117398,
+    "mtime": 1779275360.1096263,
     "ast_hash": "4583ca1728f94019555e1aa82af0f5d6",
     "semantic_hash": "4583ca1728f94019555e1aa82af0f5d6"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\groups\\new\\page.tsx": {
-    "mtime": 1779036181.0106814,
-    "ast_hash": "7f82a00fad98c7aef5845052e23f3e76",
-    "semantic_hash": "7f82a00fad98c7aef5845052e23f3e76"
+    "mtime": 1779354606.618196,
+    "ast_hash": "f30785c5a0f85f73996a029b595d419e",
+    "semantic_hash": "f30785c5a0f85f73996a029b595d419e"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\groups\\[id]\\page.tsx": {
-    "mtime": 1779082479.2794716,
-    "ast_hash": "dc63f4af3593490749e776070c85b360",
-    "semantic_hash": "dc63f4af3593490749e776070c85b360"
+    "mtime": 1779275360.1086223,
+    "ast_hash": "427dd30665d7aec87e774cbf06707967",
+    "semantic_hash": "427dd30665d7aec87e774cbf06707967"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\personas\\page.tsx": {
-    "mtime": 1779089682.0844207,
-    "ast_hash": "92d578330f0a84a2a715071c56c2bfd4",
-    "semantic_hash": "92d578330f0a84a2a715071c56c2bfd4"
+    "mtime": 1779354606.670868,
+    "ast_hash": "001ffcfd63d39e0ba1d0fe7f28af5262",
+    "semantic_hash": "001ffcfd63d39e0ba1d0fe7f28af5262"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\contradictions\\route.ts": {
-    "mtime": 1779035527.972628,
-    "ast_hash": "62d17126771c2fc798a1a5970add25a8",
-    "semantic_hash": "62d17126771c2fc798a1a5970add25a8"
+    "mtime": 1779354945.3279238,
+    "ast_hash": "0af7871b44bca0ecaf1ec8c14cab9154",
+    "semantic_hash": "0af7871b44bca0ecaf1ec8c14cab9154"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\groups\\route.ts": {
-    "mtime": 1779037514.5982182,
-    "ast_hash": "3407b81f6ca9ef3c60776204ff3ea771",
-    "semantic_hash": "3407b81f6ca9ef3c60776204ff3ea771"
+    "mtime": 1779354719.9691594,
+    "ast_hash": "86240a59e9519f68b633e29dde1111cd",
+    "semantic_hash": "86240a59e9519f68b633e29dde1111cd"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\groups\\[id]\\route.ts": {
-    "mtime": 1779037590.1247396,
-    "ast_hash": "073b65ea2e3412b19f009e3c26d587de",
-    "semantic_hash": "073b65ea2e3412b19f009e3c26d587de"
+    "mtime": 1779354252.1141512,
+    "ast_hash": "a690b9636e6cf636ae92aa6e4ffd0297",
+    "semantic_hash": "a690b9636e6cf636ae92aa6e4ffd0297"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\groups\\[id]\\members\\route.ts": {
-    "mtime": 1779082216.7896326,
-    "ast_hash": "365511ee809ac03de78681a37e5879f2",
-    "semantic_hash": "365511ee809ac03de78681a37e5879f2"
+    "mtime": 1779354252.1131518,
+    "ast_hash": "6c7b362c84edab5a1e24dfbb27a2144c",
+    "semantic_hash": "6c7b362c84edab5a1e24dfbb27a2144c"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\personas\\route.ts": {
-    "mtime": 1779089196.6467483,
-    "ast_hash": "2eab2b78963a50fc6586b00634f93c73",
-    "semantic_hash": "2eab2b78963a50fc6586b00634f93c73"
+    "mtime": 1779354252.1185234,
+    "ast_hash": "968b96a1322a34e899b2a80307b9ecc1",
+    "semantic_hash": "968b96a1322a34e899b2a80307b9ecc1"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\personas\\active\\route.ts": {
-    "mtime": 1779087687.9177215,
-    "ast_hash": "250f46f2da6afeaba401eeab6b557c7f",
-    "semantic_hash": "250f46f2da6afeaba401eeab6b557c7f"
+    "mtime": 1779354252.1175237,
+    "ast_hash": "ff2700508e9542b92374801318eaf92a",
+    "semantic_hash": "ff2700508e9542b92374801318eaf92a"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\personas\\[id]\\route.ts": {
-    "mtime": 1779089229.5166068,
-    "ast_hash": "4fa356f500e752ddb4e8dd2e03eb6b19",
-    "semantic_hash": "4fa356f500e752ddb4e8dd2e03eb6b19"
+    "mtime": 1779354252.1195219,
+    "ast_hash": "d946dbc0d6136d15ad45c067c10b2797",
+    "semantic_hash": "d946dbc0d6136d15ad45c067c10b2797"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\personas\\[id]\\activate\\route.ts": {
-    "mtime": 1779087661.409947,
-    "ast_hash": "2e8c4477876a75d8890432e32f421bc2",
-    "semantic_hash": "2e8c4477876a75d8890432e32f421bc2"
+    "mtime": 1779354252.1185234,
+    "ast_hash": "2af874f164fa91a2fb1493b1709bb2b1",
+    "semantic_hash": "2af874f164fa91a2fb1493b1709bb2b1"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\relationships\\[id]\\file\\route.ts": {
-    "mtime": 1779073497.227352,
-    "ast_hash": "826e608784827cb5cab7e983d4d3a406",
-    "semantic_hash": "826e608784827cb5cab7e983d4d3a406"
+    "mtime": 1779354252.1205325,
+    "ast_hash": "784b9f4178d3694958f40d20c54c61fe",
+    "semantic_hash": "784b9f4178d3694958f40d20c54c61fe"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\settings\\route.ts": {
-    "mtime": 1779035528.0054083,
-    "ast_hash": "383290f4dc0f278b3e2238abb8018e05",
-    "semantic_hash": "383290f4dc0f278b3e2238abb8018e05"
+    "mtime": 1779354252.127622,
+    "ast_hash": "a3e6665c7ad747527be186e35c14c8e6",
+    "semantic_hash": "a3e6665c7ad747527be186e35c14c8e6"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\settings\\active-state\\route.ts": {
-    "mtime": 1779080489.8686495,
-    "ast_hash": "7977fdf23c5d8a2dcaa3fd0de9979f60",
-    "semantic_hash": "7977fdf23c5d8a2dcaa3fd0de9979f60"
+    "mtime": 1779354252.127622,
+    "ast_hash": "d34fe830a704eef6142c3b3e1018f756",
+    "semantic_hash": "d34fe830a704eef6142c3b3e1018f756"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\users\\route.ts": {
-    "mtime": 1779082258.0648303,
-    "ast_hash": "8fd37ccb6d4d0b6f08460e4e818fbd04",
-    "semantic_hash": "8fd37ccb6d4d0b6f08460e4e818fbd04"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\auth\\auth-guard.tsx": {
-    "mtime": 1779035528.0217469,
-    "ast_hash": "92172e6dd0dba78e9f705ae9a59cf431",
-    "semantic_hash": "92172e6dd0dba78e9f705ae9a59cf431"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\lore\\validation-queue.tsx": {
-    "mtime": 1779035528.0317042,
-    "ast_hash": "0410c1f7c32b5319d229ef1406814400",
-    "semantic_hash": "0410c1f7c32b5319d229ef1406814400"
+    "mtime": 1779354252.1311247,
+    "ast_hash": "a7a892dcbc62c37b165af2233884fa1b",
+    "semantic_hash": "a7a892dcbc62c37b165af2233884fa1b"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\session-settings-panel.tsx": {
-    "mtime": 1779035528.044809,
-    "ast_hash": "5cd1ba2940a0e477af3bbc2657b8e39a",
-    "semantic_hash": "5cd1ba2940a0e477af3bbc2657b8e39a"
+    "mtime": 1779275360.2009985,
+    "ast_hash": "143f131c663599e9998b5e7a34042f1e",
+    "semantic_hash": "143f131c663599e9998b5e7a34042f1e"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\contexts\\app-context.tsx": {
-    "mtime": 1779083719.66904,
-    "ast_hash": "ed64c5341bbcdaac5e8ecf25992d78e1",
-    "semantic_hash": "ed64c5341bbcdaac5e8ecf25992d78e1"
+    "mtime": 1779275360.2175298,
+    "ast_hash": "d23b24d459d3e0560b3408b0794e956e",
+    "semantic_hash": "d23b24d459d3e0560b3408b0794e956e"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\group-migrations.ts": {
-    "mtime": 1779089176.4311182,
-    "ast_hash": "60c4e7a0cf0d888ca412c04562b93a46",
-    "semantic_hash": "60c4e7a0cf0d888ca412c04562b93a46"
+    "mtime": 1779354698.946387,
+    "ast_hash": "a69763b81f70f78a2525a09eb782d446",
+    "semantic_hash": "a69763b81f70f78a2525a09eb782d446"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\idle-enrichment.ts": {
-    "mtime": 1779035528.0721087,
-    "ast_hash": "ffdefde1fdf48e9d4a339d44f9ec6e70",
-    "semantic_hash": "ffdefde1fdf48e9d4a339d44f9ec6e70"
-  },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\importance-scoring.ts": {
-    "mtime": 1779035528.0741234,
-    "ast_hash": "657264112d5f9376f49d53aae540faa8",
-    "semantic_hash": "657264112d5f9376f49d53aae540faa8"
+    "mtime": 1779275360.2317014,
+    "ast_hash": "c928c9daf08fa1007f8a240e1f3a0889",
+    "semantic_hash": "c928c9daf08fa1007f8a240e1f3a0889"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\message-summarizer.ts": {
-    "mtime": 1779035528.0809853,
-    "ast_hash": "cda73c669accb91f28604f7f0dab8c9d",
-    "semantic_hash": "cda73c669accb91f28604f7f0dab8c9d"
+    "mtime": 1779275360.2402346,
+    "ast_hash": "8821f8012a970c8ea1b131f9dd9c9a82",
+    "semantic_hash": "8821f8012a970c8ea1b131f9dd9c9a82"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\relationship-markdown.ts": {
-    "mtime": 1779035528.0849915,
-    "ast_hash": "fc93b54b35c54f22f91f53a41eac37ab",
-    "semantic_hash": "fc93b54b35c54f22f91f53a41eac37ab"
+    "mtime": 1779275360.2457175,
+    "ast_hash": "1151d9b34291354097d98eb3a4459809",
+    "semantic_hash": "1151d9b34291354097d98eb3a4459809"
   },
   "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\semantic-contradiction.ts": {
-    "mtime": 1779035528.0900116,
-    "ast_hash": "45a065fbf7d938598fa2595998a726d2",
-    "semantic_hash": "45a065fbf7d938598fa2595998a726d2"
+    "mtime": 1779275360.250442,
+    "ast_hash": "80b13f4cdf93e2c00a8ddfc4d53cbefe",
+    "semantic_hash": "80b13f4cdf93e2c00a8ddfc4d53cbefe"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\user-overrides.ts": {
-    "mtime": 1779035528.0935187,
-    "ast_hash": "224fa9548353f90e696476336e70215f",
-    "semantic_hash": "224fa9548353f90e696476336e70215f"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\test-body-null.json": {
+    "mtime": 1779290073.8737962,
+    "ast_hash": "2713ddb0b9c60bbe43e6d8e167019581",
+    "semantic_hash": "2713ddb0b9c60bbe43e6d8e167019581"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\conductor\\index.md": {
-    "mtime": 1779103177.4114969,
-    "ast_hash": "7b9d0518e9d3b59ae7a3705a2e897ecc",
-    "semantic_hash": "7b9d0518e9d3b59ae7a3705a2e897ecc"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\test-body.json": {
+    "mtime": 1779290588.5600398,
+    "ast_hash": "e9712c8f66a1bd97d5835e655f73b741",
+    "semantic_hash": "e9712c8f66a1bd97d5835e655f73b741"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\conductor\\product-guidelines.md": {
-    "mtime": 1779102947.7215652,
-    "ast_hash": "fdd43c205e9754abf50f64b7f9b2a200",
-    "semantic_hash": "fdd43c205e9754abf50f64b7f9b2a200"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\boulder.json": {
+    "mtime": 1779357165.5735285,
+    "ast_hash": "8c29e71f5e629bbc2dae574ab484278e",
+    "semantic_hash": "8c29e71f5e629bbc2dae574ab484278e"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\conductor\\product.md": {
-    "mtime": 1779102548.0206668,
-    "ast_hash": "358ffd27ddbd963ed0bbb63a39cabbfa",
-    "semantic_hash": "358ffd27ddbd963ed0bbb63a39cabbfa"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\archived-scripts\\migrate-events-to-wiki.ts": {
+    "mtime": 1779275360.051464,
+    "ast_hash": "a2a5f9290205b3e7e07d73d0efc6c81b",
+    "semantic_hash": "a2a5f9290205b3e7e07d73d0efc6c81b"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\conductor\\tech-stack.md": {
-    "mtime": 1779103042.7404122,
-    "ast_hash": "2bd3952891c2fb2cfa496f26a610a9da",
-    "semantic_hash": "2bd3952891c2fb2cfa496f26a610a9da"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\archived-scripts\\migrate-locations-to-wiki.ts": {
+    "mtime": 1779275360.0530522,
+    "ast_hash": "300f15da0a44b360e9b452f267654c04",
+    "semantic_hash": "300f15da0a44b360e9b452f267654c04"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\conductor\\tracks.md": {
-    "mtime": 1779104128.1679902,
-    "ast_hash": "5bf3852d76b85a2fb4e311a782c277ae",
-    "semantic_hash": "5bf3852d76b85a2fb4e311a782c277ae"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\archived-scripts\\migrate-npcs-to-wiki.ts": {
+    "mtime": 1779275360.0530522,
+    "ast_hash": "2c2b362282f2f6ebdd0c21e91628f143",
+    "semantic_hash": "2c2b362282f2f6ebdd0c21e91628f143"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\conductor\\workflow.md": {
-    "mtime": 1779103161.8533232,
-    "ast_hash": "31be4145f6551de2231a28bb8c39755e",
-    "semantic_hash": "31be4145f6551de2231a28bb8c39755e"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\archived-scripts\\migrate-relationships-to-wiki.ts": {
+    "mtime": 1779275360.0530522,
+    "ast_hash": "a360c6a6a257e055b70099e4e653ef24",
+    "semantic_hash": "a360c6a6a257e055b70099e4e653ef24"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\conductor\\code_styleguides\\typescript-nextjs.md": {
-    "mtime": 1779103095.0329504,
-    "ast_hash": "9dee9f5550133f5808f0aae77fff08c3",
-    "semantic_hash": "9dee9f5550133f5808f0aae77fff08c3"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\archived-scripts\\migrate-universe-scope.ts": {
+    "mtime": 1779275360.0545733,
+    "ast_hash": "6e43cc234488a12b5935596f64358a79",
+    "semantic_hash": "6e43cc234488a12b5935596f64358a79"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\conductor\\tracks\\phase8_stabilization_20260518\\index.md": {
-    "mtime": 1779103347.8376732,
-    "ast_hash": "51d7d4cb2fa11199013b62f2e32c91fe",
-    "semantic_hash": "51d7d4cb2fa11199013b62f2e32c91fe"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\archived-scripts\\test-phase1.js": {
+    "mtime": 1779275360.0545733,
+    "ast_hash": "c3dd418f0fbbf48b83c7c75604c51ff0",
+    "semantic_hash": "c3dd418f0fbbf48b83c7c75604c51ff0"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\conductor\\tracks\\phase8_stabilization_20260518\\plan.md": {
-    "mtime": 1779104117.0139308,
-    "ast_hash": "a84363d64b5a8006e338a0320851332b",
-    "semantic_hash": "a84363d64b5a8006e338a0320851332b"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\archived-scripts\\test-phase2.js": {
+    "mtime": 1779275360.0555787,
+    "ast_hash": "81a4a4ca8f918863f24afea64ff5fbc4",
+    "semantic_hash": "81a4a4ca8f918863f24afea64ff5fbc4"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\conductor\\tracks\\phase8_stabilization_20260518\\spec.md": {
-    "mtime": 1779103303.7941122,
-    "ast_hash": "22e02ed0f117b0bbfc5de01b2f62d638",
-    "semantic_hash": "22e02ed0f117b0bbfc5de01b2f62d638"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\archived-scripts\\test-phase3.js": {
+    "mtime": 1779275360.0555787,
+    "ast_hash": "6805cd119be9abc4f3132131ca454624",
+    "semantic_hash": "6805cd119be9abc4f3132131ca454624"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\data\\a750ee1c-408f-4cda-861f-e429d4c20229\\npcs\\Test.md": {
-    "mtime": 1779091379.1075523,
-    "ast_hash": "0e4ad0c1d92521bab427a0e49b016720",
-    "semantic_hash": "0e4ad0c1d92521bab427a0e49b016720"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\archived-scripts\\test-phase4.js": {
+    "mtime": 1779275360.0565789,
+    "ast_hash": "0b98c897de0ef828208238322cdd4125",
+    "semantic_hash": "0b98c897de0ef828208238322cdd4125"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\8a-30fps-render-loop.md": {
-    "mtime": 1779035527.9071026,
-    "ast_hash": "a86b772383f3be40ff545a4ae29f95f2",
-    "semantic_hash": "a86b772383f3be40ff545a4ae29f95f2"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\archived-scripts\\test-phase5.js": {
+    "mtime": 1779275360.0575807,
+    "ast_hash": "32cc35941bb602858af449971f3dc3a7",
+    "semantic_hash": "32cc35941bb602858af449971f3dc3a7"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\8b-automatic-idle-detection.md": {
-    "mtime": 1779035527.908151,
-    "ast_hash": "d6f15aa6e84e6209ba1bcecaac8e0184",
-    "semantic_hash": "d6f15aa6e84e6209ba1bcecaac8e0184"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\archived-scripts\\test-phase6.js": {
+    "mtime": 1779275360.0575807,
+    "ast_hash": "a9ab6d7b4d3af454ea3d14fd277f0d1c",
+    "semantic_hash": "a9ab6d7b4d3af454ea3d14fd277f0d1c"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\8c-narrative-threads-ui.md": {
-    "mtime": 1779035527.908151,
-    "ast_hash": "ce948ee6becb49d4e80ef5146e3e47c1",
-    "semantic_hash": "ce948ee6becb49d4e80ef5146e3e47c1"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\archived-scripts\\test-phase7.js": {
+    "mtime": 1779275360.0575807,
+    "ast_hash": "23874e1f30b9fa80f70ec014620b55ab",
+    "semantic_hash": "23874e1f30b9fa80f70ec014620b55ab"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\8d-timeline-management.md": {
-    "mtime": 1779035527.9091501,
-    "ast_hash": "dc5fb535b63ccc4b917bf219eb2f6804",
-    "semantic_hash": "dc5fb535b63ccc4b917bf219eb2f6804"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\run-continuation\\ses_1beac37c5ffew8IS2Jp5wyXao4.json": {
+    "mtime": 1779275360.0803702,
+    "ast_hash": "cd47dedd3459a9fba6be3738b8628506",
+    "semantic_hash": "cd47dedd3459a9fba6be3738b8628506"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\8e-markdown-lore-editor.md": {
-    "mtime": 1779035527.910151,
-    "ast_hash": "4ea3a16492102ad3684491dd751ed766",
-    "semantic_hash": "4ea3a16492102ad3684491dd751ed766"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\run-continuation\\ses_1bed63cfeffe526WbLWces2ReQ.json": {
+    "mtime": 1779275360.0803702,
+    "ast_hash": "438dbc31b83411fc85538eeeb6d62f80",
+    "semantic_hash": "438dbc31b83411fc85538eeeb6d62f80"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\9a-relationship-markdown-storage.md": {
-    "mtime": 1779035527.910151,
-    "ast_hash": "3283f6cec93898ff94ae25342982f01f",
-    "semantic_hash": "3283f6cec93898ff94ae25342982f01f"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\run-continuation\\ses_1bf7b3ee5ffeuXUhxF4oxowhka.json": {
+    "mtime": 1779275360.0813694,
+    "ast_hash": "fb80145e87f7772e976c29a637ce2c38",
+    "semantic_hash": "fb80145e87f7772e976c29a637ce2c38"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\9b-embedding-contradiction-detection.md": {
-    "mtime": 1779035527.9115624,
-    "ast_hash": "ea9119fdb12888c96b958ebe995945c4",
-    "semantic_hash": "ea9119fdb12888c96b958ebe995945c4"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\run-continuation\\ses_1c1780b74ffe3QNAu8z9gZaHB4.json": {
+    "mtime": 1779275360.0813694,
+    "ast_hash": "18e41d0aee9ad43ebf1e240ec0c0f2b1",
+    "semantic_hash": "18e41d0aee9ad43ebf1e240ec0c0f2b1"
   },
-  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\plans\\completed\\master-feature-plan.md": {
-    "mtime": 1779035527.9161367,
-    "ast_hash": "7e0d14c3e5f759f2db6b5df1f1fb5b55",
-    "semantic_hash": "7e0d14c3e5f759f2db6b5df1f1fb5b55"
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\run-continuation\\ses_1c1cbbc9cffep7o3YImjyNE47y.json": {
+    "mtime": 1779275360.0823748,
+    "ast_hash": "39d029960d94aa9bae5e011b1e161958",
+    "semantic_hash": "39d029960d94aa9bae5e011b1e161958"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\run-continuation\\ses_1c53eff67ffeCdr0YX3P28JlBj.json": {
+    "mtime": 1779358389.2392435,
+    "ast_hash": "12ae4cd5ca82552be4886c323224a72a",
+    "semantic_hash": "12ae4cd5ca82552be4886c323224a72a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\add-missing-indexes.ts": {
+    "mtime": 1779275360.0923898,
+    "ast_hash": "9a645d4d014273fb0bf49f3a313d1f5f",
+    "semantic_hash": "9a645d4d014273fb0bf49f3a313d1f5f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\benchmark-wiki.ts": {
+    "mtime": 1779275360.0934248,
+    "ast_hash": "0aa9d9b4a69815af446b8039db147f76",
+    "semantic_hash": "0aa9d9b4a69815af446b8039db147f76"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\cleanup-old-lore-tables.ts": {
+    "mtime": 1779275360.0944307,
+    "ast_hash": "a16d9e79c09ae2e34671beca8bc8f9b1",
+    "semantic_hash": "a16d9e79c09ae2e34671beca8bc8f9b1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\init-wiki.ts": {
+    "mtime": 1779275360.095429,
+    "ast_hash": "92015578472872ccc78142360f3ce4a2",
+    "semantic_hash": "92015578472872ccc78142360f3ce4a2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\scripts\\migrate-backlinks-validations.ts": {
+    "mtime": 1779275360.0966463,
+    "ast_hash": "9c782886ab0954eda2ba6b4e97d3ae2b",
+    "semantic_hash": "9c782886ab0954eda2ba6b4e97d3ae2b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\instrumentation.ts": {
+    "mtime": 1779275360.2235463,
+    "ast_hash": "7cdc2d4650534f9fb1323619f841a9a4",
+    "semantic_hash": "7cdc2d4650534f9fb1323619f841a9a4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\canon\\error.tsx": {
+    "mtime": 1779275360.102598,
+    "ast_hash": "3e487923021c8785ae026a607aa271ec",
+    "semantic_hash": "3e487923021c8785ae026a607aa271ec"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\characters\\error.tsx": {
+    "mtime": 1779275360.1035976,
+    "ast_hash": "ab0602a7140216862fd13db8a054c4b9",
+    "semantic_hash": "ab0602a7140216862fd13db8a054c4b9"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\events\\error.tsx": {
+    "mtime": 1779275360.1055965,
+    "ast_hash": "60412505970c89585e1a1c3b48a871c2",
+    "semantic_hash": "60412505970c89585e1a1c3b48a871c2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\groups\\error.tsx": {
+    "mtime": 1779275360.1086223,
+    "ast_hash": "98884875549fb15ea6fae4b5dd7d66ce",
+    "semantic_hash": "98884875549fb15ea6fae4b5dd7d66ce"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\jobs\\error.tsx": {
+    "mtime": 1779275360.1106274,
+    "ast_hash": "14b033148017a8114a6e1f9b618b92d3",
+    "semantic_hash": "14b033148017a8114a6e1f9b618b92d3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\narrative-threads\\error.tsx": {
+    "mtime": 1779275360.1136272,
+    "ast_hash": "60364ffe48adf68659360ea406782c1e",
+    "semantic_hash": "60364ffe48adf68659360ea406782c1e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\npcs\\page.tsx": {
+    "mtime": 1779354606.6698673,
+    "ast_hash": "09479acceed7fad0e3f816c130d5c478",
+    "semantic_hash": "09479acceed7fad0e3f816c130d5c478"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\personas\\error.tsx": {
+    "mtime": 1779275360.115131,
+    "ast_hash": "b939ee688fdd2f5918bcf9894ac1454f",
+    "semantic_hash": "b939ee688fdd2f5918bcf9894ac1454f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\relationships\\error.tsx": {
+    "mtime": 1779275360.1166606,
+    "ast_hash": "3fd61585e415da10b20e30c24345f283",
+    "semantic_hash": "3fd61585e415da10b20e30c24345f283"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\session\\error.tsx": {
+    "mtime": 1779275360.1187222,
+    "ast_hash": "3f3da4ae118ac45a4981346432dbf009",
+    "semantic_hash": "3f3da4ae118ac45a4981346432dbf009"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\settings\\error.tsx": {
+    "mtime": 1779275360.1203055,
+    "ast_hash": "fefa8bba055fe9a55a078c0c7593330f",
+    "semantic_hash": "fefa8bba055fe9a55a078c0c7593330f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\settings\\ollama-settings.tsx": {
+    "mtime": 1779275360.121344,
+    "ast_hash": "c225cf8e518ba41977ed884e7f089a4b",
+    "semantic_hash": "c225cf8e518ba41977ed884e7f089a4b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\settings\\tts-settings.tsx": {
+    "mtime": 1779275360.122379,
+    "ast_hash": "2acf8d0ac24939b1741c962513267e7d",
+    "semantic_hash": "2acf8d0ac24939b1741c962513267e7d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\timeline\\error.tsx": {
+    "mtime": 1779275360.123932,
+    "ast_hash": "46085aaa3c1dbb408ce36a411479ebc5",
+    "semantic_hash": "46085aaa3c1dbb408ce36a411479ebc5"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\validations\\error.tsx": {
+    "mtime": 1779275360.1260056,
+    "ast_hash": "599430a8a48fea548c35fcccbc685b1b",
+    "semantic_hash": "599430a8a48fea548c35fcccbc685b1b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\voice-combiner\\error.tsx": {
+    "mtime": 1779275360.1270306,
+    "ast_hash": "6e3036486614e9431e4ff2aa0e0f4595",
+    "semantic_hash": "6e3036486614e9431e4ff2aa0e0f4595"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\wiki\\error.tsx": {
+    "mtime": 1779275360.128578,
+    "ast_hash": "e88298a140040b735db232a4285fc3df",
+    "semantic_hash": "e88298a140040b735db232a4285fc3df"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\wiki\\page.tsx": {
+    "mtime": 1779282484.5705953,
+    "ast_hash": "6dd6c27763e86cd73c4837bff7472249",
+    "semantic_hash": "6dd6c27763e86cd73c4837bff7472249"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\(app)\\wiki\\[...slug]\\page.tsx": {
+    "mtime": 1779282329.801512,
+    "ast_hash": "f4afd657e8fc96ba955ca8c8017a59cd",
+    "semantic_hash": "f4afd657e8fc96ba955ca8c8017a59cd"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\health\\live\\route.ts": {
+    "mtime": 1779354252.1141512,
+    "ast_hash": "56ce3af6a42485d69df98282ae3a1200",
+    "semantic_hash": "56ce3af6a42485d69df98282ae3a1200"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\health\\ready\\route.ts": {
+    "mtime": 1779354606.6904762,
+    "ast_hash": "73ad69cded8dddd4191e75eae27d6bf9",
+    "semantic_hash": "73ad69cded8dddd4191e75eae27d6bf9"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\export\\route.ts": {
+    "mtime": 1779354606.703494,
+    "ast_hash": "310350b28925895b7715c64658b56c8f",
+    "semantic_hash": "310350b28925895b7715c64658b56c8f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\messages\\search\\route.ts": {
+    "mtime": 1779354606.7080066,
+    "ast_hash": "ea8e73ffe0aed9f3afac344055b4b037",
+    "semantic_hash": "ea8e73ffe0aed9f3afac344055b4b037"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\persona\\route.ts": {
+    "mtime": 1779354252.1255682,
+    "ast_hash": "e67a7e3707f526de9d94d5068791dede",
+    "semantic_hash": "e67a7e3707f526de9d94d5068791dede"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\sessions\\[id]\\recap\\route.ts": {
+    "mtime": 1779354606.7135458,
+    "ast_hash": "eadb97274a34526b632b687dba0f58a1",
+    "semantic_hash": "eadb97274a34526b632b687dba0f58a1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\wiki\\route.ts": {
+    "mtime": 1779354252.133138,
+    "ast_hash": "7d1433b6b976d16121398e79e656873c",
+    "semantic_hash": "7d1433b6b976d16121398e79e656873c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\wiki\\file\\route.ts": {
+    "mtime": 1779355108.8751662,
+    "ast_hash": "ec53d9c37de76041f1c61c0c192c1b4c",
+    "semantic_hash": "ec53d9c37de76041f1c61c0c192c1b4c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\wiki\\graph\\route.ts": {
+    "mtime": 1779354252.1321313,
+    "ast_hash": "3c6f7bbfd2b8f6c1d95322731df2880b",
+    "semantic_hash": "3c6f7bbfd2b8f6c1d95322731df2880b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\wiki\\history\\route.ts": {
+    "mtime": 1779355167.896847,
+    "ast_hash": "46d4f87f2b736090cd3767fe4cab51ce",
+    "semantic_hash": "46d4f87f2b736090cd3767fe4cab51ce"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\wiki\\index\\route.ts": {
+    "mtime": 1779355216.6802459,
+    "ast_hash": "7421b953fc2f538c84cc8783280fd4b1",
+    "semantic_hash": "7421b953fc2f538c84cc8783280fd4b1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\wiki\\ingest\\route.ts": {
+    "mtime": 1779355224.571752,
+    "ast_hash": "ceda88e6d7738740b34940851f9702a6",
+    "semantic_hash": "ceda88e6d7738740b34940851f9702a6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\wiki\\lint\\route.ts": {
+    "mtime": 1779355232.0605998,
+    "ast_hash": "db7ec399801dbb5f7c27da70f20a34f9",
+    "semantic_hash": "db7ec399801dbb5f7c27da70f20a34f9"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\wiki\\lock\\[...slug]\\route.ts": {
+    "mtime": 1779353160.0358338,
+    "ast_hash": "491eb0fb688db39f9ab24b380e964b7e",
+    "semantic_hash": "491eb0fb688db39f9ab24b380e964b7e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\wiki\\log\\route.ts": {
+    "mtime": 1779355238.1078806,
+    "ast_hash": "5a0fce2b829ca7c551cd5d3b8a46cf1b",
+    "semantic_hash": "5a0fce2b829ca7c551cd5d3b8a46cf1b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\wiki\\query\\route.ts": {
+    "mtime": 1779355245.0849316,
+    "ast_hash": "1666b93971366706413b59f039e345ed",
+    "semantic_hash": "1666b93971366706413b59f039e345ed"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\wiki\\recent\\route.ts": {
+    "mtime": 1779355251.24217,
+    "ast_hash": "d6a2f9fe71cfa90501d40f6e83fef812",
+    "semantic_hash": "d6a2f9fe71cfa90501d40f6e83fef812"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\wiki\\reject\\[...slug]\\route.ts": {
+    "mtime": 1779353144.865362,
+    "ast_hash": "fc2463400ad0956344eea6bbbe7a0fe8",
+    "semantic_hash": "fc2463400ad0956344eea6bbbe7a0fe8"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\wiki\\sources\\upload\\route.ts": {
+    "mtime": 1779355262.446418,
+    "ast_hash": "ebb5af1ea323f41ae2d6700f4a127f1a",
+    "semantic_hash": "ebb5af1ea323f41ae2d6700f4a127f1a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\wiki\\split-suggestions\\[...slug]\\route.ts": {
+    "mtime": 1779354252.1341362,
+    "ast_hash": "1d9c2694f6c666272ba11acdf07dd095",
+    "semantic_hash": "1d9c2694f6c666272ba11acdf07dd095"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\wiki\\templates\\route.ts": {
+    "mtime": 1779354252.1341362,
+    "ast_hash": "473a59864356b5fb1c365d39f2ac2087",
+    "semantic_hash": "473a59864356b5fb1c365d39f2ac2087"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\wiki\\validate\\[...slug]\\route.ts": {
+    "mtime": 1779353128.6321526,
+    "ast_hash": "a5a550eba679ef57668370b3f335c8fc",
+    "semantic_hash": "a5a550eba679ef57668370b3f335c8fc"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\wiki\\[...slug]\\route.ts": {
+    "mtime": 1779353008.4592438,
+    "ast_hash": "82642f346c8c79184a7c0bf3793eeb23",
+    "semantic_hash": "82642f346c8c79184a7c0bf3793eeb23"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\wiki-revisions\\route.ts": {
+    "mtime": 1779353034.3000667,
+    "ast_hash": "92df570efb2d87b885ede3597bd09b60",
+    "semantic_hash": "92df570efb2d87b885ede3597bd09b60"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\chat\\chat-export.tsx": {
+    "mtime": 1779281120.0603578,
+    "ast_hash": "6c101e7ba469794344cd2990a6d82669",
+    "semantic_hash": "6c101e7ba469794344cd2990a6d82669"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\chat\\chat-search.tsx": {
+    "mtime": 1779281138.491343,
+    "ast_hash": "9a7c34a592e61b17a43a833c04c196e4",
+    "semantic_hash": "9a7c34a592e61b17a43a833c04c196e4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\npcs\\npc-editor.tsx": {
+    "mtime": 1779281773.5826337,
+    "ast_hash": "fe55664a5108906d60cdd428d968c333",
+    "semantic_hash": "fe55664a5108906d60cdd428d968c333"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\npcs\\npc-list.tsx": {
+    "mtime": 1779281699.3601725,
+    "ast_hash": "12f0c8463f7299d3decb0cf18cc764e1",
+    "semantic_hash": "12f0c8463f7299d3decb0cf18cc764e1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\session\\session-recap-panel.tsx": {
+    "mtime": 1779354606.7482731,
+    "ast_hash": "211306a414d66bd073d43a2742945826",
+    "semantic_hash": "211306a414d66bd073d43a2742945826"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\ui\\error-boundary.tsx": {
+    "mtime": 1779275360.2065103,
+    "ast_hash": "09236c7747571c605119b8c5bc0d511f",
+    "semantic_hash": "09236c7747571c605119b8c5bc0d511f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\wiki\\backlink-panel.tsx": {
+    "mtime": 1779275360.2105296,
+    "ast_hash": "4c68148cdc3859ea1da75b3538e39bd8",
+    "semantic_hash": "4c68148cdc3859ea1da75b3538e39bd8"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\wiki\\callout.tsx": {
+    "mtime": 1779275360.2105296,
+    "ast_hash": "8f0299799b7d9aa44b9361b3e6e955df",
+    "semantic_hash": "8f0299799b7d9aa44b9361b3e6e955df"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\wiki\\embed-transclusion.tsx": {
+    "mtime": 1779275360.211531,
+    "ast_hash": "c12719241f9a43e86474b3baea9b2990",
+    "semantic_hash": "c12719241f9a43e86474b3baea9b2990"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\wiki\\file-tree.tsx": {
+    "mtime": 1779275360.211531,
+    "ast_hash": "40f401432e53b4fd5e1619dba73101f7",
+    "semantic_hash": "40f401432e53b4fd5e1619dba73101f7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\wiki\\graph-view.tsx": {
+    "mtime": 1779275360.2125323,
+    "ast_hash": "0d2d08aa0aea97bccf7399aeded6b8c8",
+    "semantic_hash": "0d2d08aa0aea97bccf7399aeded6b8c8"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\wiki\\hover-preview.tsx": {
+    "mtime": 1779275360.2125323,
+    "ast_hash": "d8fd6444a50a8ab1caf88a6c09780124",
+    "semantic_hash": "d8fd6444a50a8ab1caf88a6c09780124"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\wiki\\lore-extraction-trigger.tsx": {
+    "mtime": 1779354606.754386,
+    "ast_hash": "dc021ebdb94a563196435fd80455e70c",
+    "semantic_hash": "dc021ebdb94a563196435fd80455e70c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\wiki\\markdown-renderer.tsx": {
+    "mtime": 1779275360.2135296,
+    "ast_hash": "60ab39d4bc8c7f503ae1fb0a5e9a1cec",
+    "semantic_hash": "60ab39d4bc8c7f503ae1fb0a5e9a1cec"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\wiki\\outgoing-links-panel.tsx": {
+    "mtime": 1779275360.2135296,
+    "ast_hash": "56fedb01fcec9cfdc810e4fac1a45c9b",
+    "semantic_hash": "56fedb01fcec9cfdc810e4fac1a45c9b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\wiki\\outline-panel.tsx": {
+    "mtime": 1779275360.2145357,
+    "ast_hash": "8d5a68b4dc2af7f5c70558322ae208ba",
+    "semantic_hash": "8d5a68b4dc2af7f5c70558322ae208ba"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\wiki\\react-cytoscapejs.d.ts": {
+    "mtime": 1779275360.2155304,
+    "ast_hash": "746a53877e691b23eef25f0331551488",
+    "semantic_hash": "746a53877e691b23eef25f0331551488"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\wiki\\recent-changes-widget.tsx": {
+    "mtime": 1779281124.0465455,
+    "ast_hash": "6213e5ffbf375744bebe3be2f8fbd3c5",
+    "semantic_hash": "6213e5ffbf375744bebe3be2f8fbd3c5"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\wiki\\revision-history.tsx": {
+    "mtime": 1779275360.2155304,
+    "ast_hash": "298daf93e78fb8154928777dc9e495f9",
+    "semantic_hash": "298daf93e78fb8154928777dc9e495f9"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\wiki\\search.tsx": {
+    "mtime": 1779354582.468903,
+    "ast_hash": "1012007b7a881d4a5b72411390351584",
+    "semantic_hash": "1012007b7a881d4a5b72411390351584"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\wiki\\template-selector.tsx": {
+    "mtime": 1779282308.2591865,
+    "ast_hash": "5d086315084ddb7803ba3e02237de750",
+    "semantic_hash": "5d086315084ddb7803ba3e02237de750"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\wiki\\version-history.tsx": {
+    "mtime": 1779354606.7579517,
+    "ast_hash": "0508fc3d892ccb6d05c6f4399a46dcaa",
+    "semantic_hash": "0508fc3d892ccb6d05c6f4399a46dcaa"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\emotion-utils.ts": {
+    "mtime": 1779275360.2296972,
+    "ast_hash": "802d7a11cd193017c754b3afdd905c59",
+    "semantic_hash": "802d7a11cd193017c754b3afdd905c59"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\error-response.ts": {
+    "mtime": 1779355713.5132947,
+    "ast_hash": "07c20f06589edfae20f3d3ff7fcc4ab2",
+    "semantic_hash": "07c20f06589edfae20f3d3ff7fcc4ab2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\logger.ts": {
+    "mtime": 1779275360.2382348,
+    "ast_hash": "5d95818a46aca3f35eb3581235b181f3",
+    "semantic_hash": "5d95818a46aca3f35eb3581235b181f3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\markdown-utils.ts": {
+    "mtime": 1779275360.2392335,
+    "ast_hash": "5e41b0c87dcebc172f721e2a94ffb88a",
+    "semantic_hash": "5e41b0c87dcebc172f721e2a94ffb88a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\prompts.ts": {
+    "mtime": 1779282283.6989877,
+    "ast_hash": "50f87b4602d879a8866fbac3dfe42e26",
+    "semantic_hash": "50f87b4602d879a8866fbac3dfe42e26"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\rate-limiter.ts": {
+    "mtime": 1779352910.2531745,
+    "ast_hash": "4a4c9030bd346d40aaa683122e9124fb",
+    "semantic_hash": "4a4c9030bd346d40aaa683122e9124fb"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\relationship-access.ts": {
+    "mtime": 1779275360.243629,
+    "ast_hash": "edf6156e5002c49dbb535667097adc6b",
+    "semantic_hash": "edf6156e5002c49dbb535667097adc6b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\relationship-constants.ts": {
+    "mtime": 1779275360.2446754,
+    "ast_hash": "e6b8697459af8c74ec0ea8e6503e84ae",
+    "semantic_hash": "e6b8697459af8c74ec0ea8e6503e84ae"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\relationship-types.ts": {
+    "mtime": 1779275360.2462356,
+    "ast_hash": "4b9ce67cffb2846be246c84a89a81be6",
+    "semantic_hash": "4b9ce67cffb2846be246c84a89a81be6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\response-utils.ts": {
+    "mtime": 1779275360.2477748,
+    "ast_hash": "09f08acc7d8f893c0e169ee635bd3ec0",
+    "semantic_hash": "09f08acc7d8f893c0e169ee635bd3ec0"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\row-to-json.ts": {
+    "mtime": 1779275360.2488296,
+    "ast_hash": "2518efd72642440924b2b9153e3087c2",
+    "semantic_hash": "2518efd72642440924b2b9153e3087c2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\safe-json.ts": {
+    "mtime": 1779354606.7825563,
+    "ast_hash": "b62ccf338c6b8483b71b1c38d8f1863a",
+    "semantic_hash": "b62ccf338c6b8483b71b1c38d8f1863a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\schema-migrations.ts": {
+    "mtime": 1779287924.0528615,
+    "ast_hash": "fb589735c150ac8b3077bc3d7566c521",
+    "semantic_hash": "fb589735c150ac8b3077bc3d7566c521"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\session-columns.ts": {
+    "mtime": 1779275360.2514892,
+    "ast_hash": "7c58268127d88c32bde56200c6ff5bb8",
+    "semantic_hash": "7c58268127d88c32bde56200c6ff5bb8"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\shutdown.ts": {
+    "mtime": 1779355408.3885877,
+    "ast_hash": "4ba692e80b1a1bf03283d4f30bfa79cf",
+    "semantic_hash": "4ba692e80b1a1bf03283d4f30bfa79cf"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\startup-check.ts": {
+    "mtime": 1779355447.895189,
+    "ast_hash": "a21dfebb8758c6fec0a1314edb15c7cf",
+    "semantic_hash": "a21dfebb8758c6fec0a1314edb15c7cf"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\types.ts": {
+    "mtime": 1779356029.5166273,
+    "ast_hash": "24223eb2f44198067b54499c0e2ec7f5",
+    "semantic_hash": "24223eb2f44198067b54499c0e2ec7f5"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\universe-utils.ts": {
+    "mtime": 1779275360.2555478,
+    "ast_hash": "93c0c2c44830ef589cb4c12bbdd96379",
+    "semantic_hash": "93c0c2c44830ef589cb4c12bbdd96379"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\validation.ts": {
+    "mtime": 1779275360.256161,
+    "ast_hash": "c9f4efb8caf413b0c3c743d57d14dec1",
+    "semantic_hash": "c9f4efb8caf413b0c3c743d57d14dec1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\with-auth.ts": {
+    "mtime": 1779275360.265733,
+    "ast_hash": "8f7640a9c12f6ea54941a913a5c9b6bc",
+    "semantic_hash": "8f7640a9c12f6ea54941a913a5c9b6bc"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\idle\\relationship-tasks.ts": {
+    "mtime": 1779275360.232702,
+    "ast_hash": "3539a24bff89f3e86cfd4b251aa6288f",
+    "semantic_hash": "3539a24bff89f3e86cfd4b251aa6288f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\idle\\wiki-tasks.ts": {
+    "mtime": 1779354685.115265,
+    "ast_hash": "f315892c4a4cbefb5615ac28166fc5d4",
+    "semantic_hash": "f315892c4a4cbefb5615ac28166fc5d4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\jobs\\lore-extraction.ts": {
+    "mtime": 1779282318.2613645,
+    "ast_hash": "8b190d6e4566aeeca7074cf6044583f9",
+    "semantic_hash": "8b190d6e4566aeeca7074cf6044583f9"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\jobs\\npc-evolution.ts": {
+    "mtime": 1779281594.8399286,
+    "ast_hash": "a57aabc2599aee636c4564c230588d18",
+    "semantic_hash": "a57aabc2599aee636c4564c230588d18"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\jobs\\response-handler.ts": {
+    "mtime": 1779275360.2352133,
+    "ast_hash": "f0f880b5d407a7116ab075751f51b8e6",
+    "semantic_hash": "f0f880b5d407a7116ab075751f51b8e6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\jobs\\session-recap.ts": {
+    "mtime": 1779283176.2964618,
+    "ast_hash": "b15e28653f8ef3c6ebcd61c65f33cb4b",
+    "semantic_hash": "b15e28653f8ef3c6ebcd61c65f33cb4b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\jobs\\summarization-handler.ts": {
+    "mtime": 1779275360.2372293,
+    "ast_hash": "b5d4fda89da47bfcb98c3ba54451693c",
+    "semantic_hash": "b5d4fda89da47bfcb98c3ba54451693c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\jobs\\wiki-handler.ts": {
+    "mtime": 1779275360.2372293,
+    "ast_hash": "8a7fad103a7ee0ca67191e90c121b7d2",
+    "semantic_hash": "8a7fad103a7ee0ca67191e90c121b7d2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\callout-remark-plugin.ts": {
+    "mtime": 1779275360.2576692,
+    "ast_hash": "a9458c6ba6f5f9355f1c81e19b1c6b90",
+    "semantic_hash": "a9458c6ba6f5f9355f1c81e19b1c6b90"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\embed-remark-plugin.ts": {
+    "mtime": 1779275360.2586746,
+    "ast_hash": "348450e27c74c1305e2ac2d7890b0f8c",
+    "semantic_hash": "348450e27c74c1305e2ac2d7890b0f8c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\file-io.ts": {
+    "mtime": 1779275360.2591796,
+    "ast_hash": "971fbda990b0671b015e26c27c2923f8",
+    "semantic_hash": "971fbda990b0671b015e26c27c2923f8"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\filing.ts": {
+    "mtime": 1779354868.4316387,
+    "ast_hash": "c03520a68ff7eaeaef118dc845aa40bd",
+    "semantic_hash": "c03520a68ff7eaeaef118dc845aa40bd"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\history.ts": {
+    "mtime": 1779282186.298771,
+    "ast_hash": "64e917d0be4e9b56a9e59d9dfd8aadd8",
+    "semantic_hash": "64e917d0be4e9b56a9e59d9dfd8aadd8"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\index-generator.ts": {
+    "mtime": 1779356010.1156335,
+    "ast_hash": "7c82452a030878feb20051f180e78863",
+    "semantic_hash": "7c82452a030878feb20051f180e78863"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\ingest.ts": {
+    "mtime": 1779355374.8659196,
+    "ast_hash": "6cc1cedba94b4eeea6cd1c7c70115850",
+    "semantic_hash": "6cc1cedba94b4eeea6cd1c7c70115850"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\lint.ts": {
+    "mtime": 1779275360.2602096,
+    "ast_hash": "6ec1efe566a8203eda8ed88dc549b833",
+    "semantic_hash": "6ec1efe566a8203eda8ed88dc549b833"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\logger.ts": {
+    "mtime": 1779275360.2617261,
+    "ast_hash": "269a86a171eebfe71a8717b872b529a0",
+    "semantic_hash": "269a86a171eebfe71a8717b872b529a0"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\orphans.ts": {
+    "mtime": 1779275360.2617261,
+    "ast_hash": "092097d2991ea83c3e57accd5ff1210b",
+    "semantic_hash": "092097d2991ea83c3e57accd5ff1210b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\page-split.ts": {
+    "mtime": 1779275360.2627337,
+    "ast_hash": "5ab71e3a5f61d0a53ffafd29bd6cce12",
+    "semantic_hash": "5ab71e3a5f61d0a53ffafd29bd6cce12"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\path-guard.ts": {
+    "mtime": 1779275360.2627337,
+    "ast_hash": "f24dfd210aa54dfd1451054f32e81b63",
+    "semantic_hash": "f24dfd210aa54dfd1451054f32e81b63"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\query.ts": {
+    "mtime": 1779354597.0655084,
+    "ast_hash": "77d414fa4b990231e97ff586da0d7dd4",
+    "semantic_hash": "77d414fa4b990231e97ff586da0d7dd4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\revisions.ts": {
+    "mtime": 1779275360.2647336,
+    "ast_hash": "3773a26e3862833581631b9b037ff411",
+    "semantic_hash": "3773a26e3862833581631b9b037ff411"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\types.ts": {
+    "mtime": 1779275360.2647336,
+    "ast_hash": "c3029d78d5a03dc44c1de571491d3d32",
+    "semantic_hash": "c3029d78d5a03dc44c1de571491d3d32"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\validation.ts": {
+    "mtime": 1779275360.2647336,
+    "ast_hash": "85f4925c9815b6b02aa26063d7882946",
+    "semantic_hash": "85f4925c9815b6b02aa26063d7882946"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\wiki-root.ts": {
+    "mtime": 1779275360.265733,
+    "ast_hash": "dda04f0e7f6e0c58b8245cde17cefae4",
+    "semantic_hash": "dda04f0e7f6e0c58b8245cde17cefae4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\wikilinks.ts": {
+    "mtime": 1779275360.265733,
+    "ast_hash": "359c5727609faef727eeca43f6103e16",
+    "semantic_hash": "359c5727609faef727eeca43f6103e16"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\__tests__\\safe-json.test.ts": {
+    "mtime": 1779275360.224548,
+    "ast_hash": "e52a7f1d1a27c767c645180c13d77ee3",
+    "semantic_hash": "e52a7f1d1a27c767c645180c13d77ee3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\bundle-analysis-report.md": {
+    "mtime": 1779275360.0601764,
+    "ast_hash": "7d0d2ee374509ad5dd0eef2cdf99bd5e",
+    "semantic_hash": "7d0d2ee374509ad5dd0eef2cdf99bd5e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\evidence-gap.md": {
+    "mtime": 1779275360.0601764,
+    "ast_hash": "b33e297d359625221d1b388404d84fbb",
+    "semantic_hash": "b33e297d359625221d1b388404d84fbb"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\task-1-commit-stat.txt": {
+    "mtime": 1779275360.0717957,
+    "ast_hash": "ed55ac4d904494728ced433a22808a22",
+    "semantic_hash": "ed55ac4d904494728ced433a22808a22"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\task-2-commit-stat.txt": {
+    "mtime": 1779275360.0717957,
+    "ast_hash": "9d7940db56293c106e07812fce1bd3b4",
+    "semantic_hash": "9d7940db56293c106e07812fce1bd3b4"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\task-3-git-status.txt": {
+    "mtime": 1779275360.0727942,
+    "ast_hash": "60dd39bba29985d3e67b6a32096fe7bc",
+    "semantic_hash": "60dd39bba29985d3e67b6a32096fe7bc"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\task-4-bundle-output.txt": {
+    "mtime": 1779275360.0727942,
+    "ast_hash": "416ab069abfe9b5468d8d2e371dd42d6",
+    "semantic_hash": "416ab069abfe9b5468d8d2e371dd42d6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\api-test-1-valid-persona.txt": {
+    "mtime": 1779289834.8851287,
+    "ast_hash": "cef4324a47643cea2b8f814450ad7f75",
+    "semantic_hash": "cef4324a47643cea2b8f814450ad7f75"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\api-test-1.txt": {
+    "mtime": 1779290058.075702,
+    "ast_hash": "1e417ee2bd007e230f34d432bdbe4eea",
+    "semantic_hash": "1e417ee2bd007e230f34d432bdbe4eea"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\api-test-2.txt": {
+    "mtime": 1779290073.917665,
+    "ast_hash": "d9f4645c6b7e89beded08c4e8eeebd3e",
+    "semantic_hash": "d9f4645c6b7e89beded08c4e8eeebd3e"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\api-test-3.txt": {
+    "mtime": 1779290085.87818,
+    "ast_hash": "89d5efeb40e74791b7124a2b609cc10c",
+    "semantic_hash": "89d5efeb40e74791b7124a2b609cc10c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\build-verification.txt": {
+    "mtime": 1779275360.0601764,
+    "ast_hash": "0f98868188fba8f23064080fba0dcd66",
+    "semantic_hash": "0f98868188fba8f23064080fba0dcd66"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\edge-cases.txt": {
+    "mtime": 1779340384.9191935,
+    "ast_hash": "300f898323c0b43267f0c726d83cb44d",
+    "semantic_hash": "300f898323c0b43267f0c726d83cb44d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\final-qa-results.txt": {
+    "mtime": 1779290684.933203,
+    "ast_hash": "47a429cbb16e565a8e0139d21ec3c462",
+    "semantic_hash": "47a429cbb16e565a8e0139d21ec3c462"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\integration-test.txt": {
+    "mtime": 1779340364.9909644,
+    "ast_hash": "94c85d0cb81f59c8bcf9cfac4e4bd373",
+    "semantic_hash": "94c85d0cb81f59c8bcf9cfac4e4bd373"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\qa-report.md": {
+    "mtime": 1779275360.0621278,
+    "ast_hash": "5fa544ca4b36a8138aeb0278b051771b",
+    "semantic_hash": "5fa544ca4b36a8138aeb0278b051771b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\qa1-existing-link.txt": {
+    "mtime": 1779275360.0631344,
+    "ast_hash": "510200dac15ea13a2d82dd82968a5c13",
+    "semantic_hash": "510200dac15ea13a2d82dd82968a5c13"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\qa11-hover-preview.txt": {
+    "mtime": 1779275360.0641322,
+    "ast_hash": "7c2bff187acea0def386f6c382b27ca2",
+    "semantic_hash": "7c2bff187acea0def386f6c382b27ca2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\qa12-outgoing-links.txt": {
+    "mtime": 1779275360.0641322,
+    "ast_hash": "5ab14d3b45f61f3014f6ab9686eeae77",
+    "semantic_hash": "5ab14d3b45f61f3014f6ab9686eeae77"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\qa2-new-link.txt": {
+    "mtime": 1779275360.0651338,
+    "ast_hash": "eb6613be199bab9165123f82746bc99a",
+    "semantic_hash": "eb6613be199bab9165123f82746bc99a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\qa3-6-callouts.txt": {
+    "mtime": 1779275360.0651338,
+    "ast_hash": "3ae71d01d1c409ba5a41a0747165a9f5",
+    "semantic_hash": "3ae71d01d1c409ba5a41a0747165a9f5"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\qa7-outline.txt": {
+    "mtime": 1779275360.0697944,
+    "ast_hash": "cfb14d7b9f1026ef68da815034f0feb6",
+    "semantic_hash": "cfb14d7b9f1026ef68da815034f0feb6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\qa8-10-embeds.txt": {
+    "mtime": 1779275360.0697944,
+    "ast_hash": "25e3a54215e2958e7fb02ed6f70bfc1b",
+    "semantic_hash": "25e3a54215e2958e7fb02ed6f70bfc1b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\rerun-qa-results.txt": {
+    "mtime": 1779291322.5901158,
+    "ast_hash": "eccff34b0758e23d791aeef43d2948d0",
+    "semantic_hash": "eccff34b0758e23d791aeef43d2948d0"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\notepads\\llm-wiki\\learnings.md": {
+    "mtime": 1779275360.0737934,
+    "ast_hash": "08a864fdbe7a994f8dc39cdc588a08c7",
+    "semantic_hash": "08a864fdbe7a994f8dc39cdc588a08c7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\notepads\\persona-selection\\learnings.md": {
+    "mtime": 1779288993.9312863,
+    "ast_hash": "7a3eeaed412b0f3189a1043c78408596",
+    "semantic_hash": "7a3eeaed412b0f3189a1043c78408596"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\notepads\\phase-1-security-hardening\\learnings.md": {
+    "mtime": 1779275360.0737934,
+    "ast_hash": "d1d1b8d6b85e1e197d19447fb708a00a",
+    "semantic_hash": "d1d1b8d6b85e1e197d19447fb708a00a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\notepads\\post-cleanup-optimization\\learnings.md": {
+    "mtime": 1779275360.0747957,
+    "ast_hash": "3b5f3f244d356774c1109bd81378b58c",
+    "semantic_hash": "3b5f3f244d356774c1109bd81378b58c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\notepads\\ui-overflow-fix\\learnings.md": {
+    "mtime": 1779292598.5921574,
+    "ast_hash": "3d491b2dfaee62dc53c60ba12f6c46ee",
+    "semantic_hash": "3d491b2dfaee62dc53c60ba12f6c46ee"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\chat-ux-overhaul.md": {
+    "mtime": 1779298576.305153,
+    "ast_hash": "c4dbd89aed9928b3754d96f4142bd476",
+    "semantic_hash": "c4dbd89aed9928b3754d96f4142bd476"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\full-audit-remediation.md": {
+    "mtime": 1779275360.0757937,
+    "ast_hash": "b52222e28ee5b0c68dd0d18133e21b16",
+    "semantic_hash": "b52222e28ee5b0c68dd0d18133e21b16"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\llm-wiki.md": {
+    "mtime": 1779275360.0757937,
+    "ast_hash": "2c2fdb3ab9e0039680877adb622370d1",
+    "semantic_hash": "2c2fdb3ab9e0039680877adb622370d1"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\obsidian-wiki-features.md": {
+    "mtime": 1779275360.0757937,
+    "ast_hash": "006c725aceeed194037e7626d1b1ef36",
+    "semantic_hash": "006c725aceeed194037e7626d1b1ef36"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\persona-selection.md": {
+    "mtime": 1779291691.6394615,
+    "ast_hash": "e22b560ef25a8942c56fcfb4d6fe39f2",
+    "semantic_hash": "e22b560ef25a8942c56fcfb4d6fe39f2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\phase-1-security-hardening.md": {
+    "mtime": 1779275360.0772996,
+    "ast_hash": "3b6895f084bb7fd30e1681cbca30b901",
+    "semantic_hash": "3b6895f084bb7fd30e1681cbca30b901"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\phase-2-reliability.md": {
+    "mtime": 1779275360.0783646,
+    "ast_hash": "0ab722625f009655a9c4f7ba10983c4c",
+    "semantic_hash": "0ab722625f009655a9c4f7ba10983c4c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\phase-3a-code-quality.md": {
+    "mtime": 1779275360.0783646,
+    "ast_hash": "ff55336ce4deed4bc3561a1ecd4201d8",
+    "semantic_hash": "ff55336ce4deed4bc3561a1ecd4201d8"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\phase-3b-architecture.md": {
+    "mtime": 1779275360.0793688,
+    "ast_hash": "fefed52bc2052e9414676e797baaadeb",
+    "semantic_hash": "fefed52bc2052e9414676e797baaadeb"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\phase-4-production-readiness.md": {
+    "mtime": 1779275360.0793688,
+    "ast_hash": "9c82152fd95c6d03e8cd9e39ec633bb7",
+    "semantic_hash": "9c82152fd95c6d03e8cd9e39ec633bb7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\ui-overflow-fix.md": {
+    "mtime": 1779294140.4328785,
+    "ast_hash": "99be3a10b78f502847cf63043b989dde",
+    "semantic_hash": "99be3a10b78f502847cf63043b989dde"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\wiki-lore-chat-improvements.md": {
+    "mtime": 1779284536.9742515,
+    "ast_hash": "914aa2fffa5008a5dbd12376cf5fcd7b",
+    "semantic_hash": "914aa2fffa5008a5dbd12376cf5fcd7b"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\docs\\wiki-migration.md": {
+    "mtime": 1779275360.0858796,
+    "ast_hash": "7f6dd5b3035a405ef0f92038318970f6",
+    "semantic_hash": "7f6dd5b3035a405ef0f92038318970f6"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\docs\\wiki-schema-reference.md": {
+    "mtime": 1779275360.0858796,
+    "ast_hash": "000387f7384655609ef23749fc83449c",
+    "semantic_hash": "000387f7384655609ef23749fc83449c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\AGENTS.md": {
+    "mtime": 1779275360.129626,
+    "ast_hash": "3116695dab0470696783a4fa9d948702",
+    "semantic_hash": "3116695dab0470696783a4fa9d948702"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\app\\api\\AGENTS.md": {
+    "mtime": 1779275360.1301472,
+    "ast_hash": "875d12063edc2ba8bfa8f1c6334739fd",
+    "semantic_hash": "875d12063edc2ba8bfa8f1c6334739fd"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\AGENTS.md": {
+    "mtime": 1779275360.1833947,
+    "ast_hash": "4d1e233dfc9f7bb76f24212bba9fb2f0",
+    "semantic_hash": "4d1e233dfc9f7bb76f24212bba9fb2f0"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\components\\wiki\\AGENTS.md": {
+    "mtime": 1779275360.2095299,
+    "ast_hash": "971411a440a188b47ed741bb752f4bfa",
+    "semantic_hash": "971411a440a188b47ed741bb752f4bfa"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\hooks\\AGENTS.md": {
+    "mtime": 1779275360.2180347,
+    "ast_hash": "ccc228d5b61140a79b26524949c3528f",
+    "semantic_hash": "ccc228d5b61140a79b26524949c3528f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\AGENTS.md": {
+    "mtime": 1779275360.2235463,
+    "ast_hash": "92140d5b45109791b51de45f3b0e5405",
+    "semantic_hash": "92140d5b45109791b51de45f3b0e5405"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\AGENTS.md": {
+    "mtime": 1779275360.2576692,
+    "ast_hash": "d4abc880983c7807590cc746f61aa7be",
+    "semantic_hash": "d4abc880983c7807590cc746f61aa7be"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\templates\\character.md": {
+    "mtime": 1779282221.363618,
+    "ast_hash": "d02457264757bab5e1ea92f04962bf2c",
+    "semantic_hash": "d02457264757bab5e1ea92f04962bf2c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\templates\\concept.md": {
+    "mtime": 1779282221.363618,
+    "ast_hash": "9f1178938d320d1efd4ce1324946b564",
+    "semantic_hash": "9f1178938d320d1efd4ce1324946b564"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\templates\\event.md": {
+    "mtime": 1779282221.363618,
+    "ast_hash": "07d0d2db8df2fae715bbd95c5402e8c3",
+    "semantic_hash": "07d0d2db8df2fae715bbd95c5402e8c3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\templates\\faction.md": {
+    "mtime": 1779282221.363618,
+    "ast_hash": "9a3a776366454e5b14bcef68f22c5541",
+    "semantic_hash": "9a3a776366454e5b14bcef68f22c5541"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\wiki\\templates\\location.md": {
+    "mtime": 1779282221.363618,
+    "ast_hash": "3863a94c50767f5341056075f71f06d3",
+    "semantic_hash": "3863a94c50767f5341056075f71f06d3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\task-1-dashboard.png": {
+    "mtime": 1779293856.2867067,
+    "ast_hash": "4f1ccbdb3a51df9eefd90096bf8d92e3",
+    "semantic_hash": "4f1ccbdb3a51df9eefd90096bf8d92e3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\task-1-no-scroll.png": {
+    "mtime": 1779293732.3796754,
+    "ast_hash": "773e85712e80f01278903d94c2cad714",
+    "semantic_hash": "773e85712e80f01278903d94c2cad714"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\task-1-other-pages.png": {
+    "mtime": 1779293916.0265677,
+    "ast_hash": "773e85712e80f01278903d94c2cad714",
+    "semantic_hash": "773e85712e80f01278903d94c2cad714"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\task-1-personas.png": {
+    "mtime": 1779293896.3409524,
+    "ast_hash": "4f1ccbdb3a51df9eefd90096bf8d92e3",
+    "semantic_hash": "4f1ccbdb3a51df9eefd90096bf8d92e3"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\task-1-wiki.png": {
+    "mtime": 1779293877.6470473,
+    "ast_hash": "223134e024b4bd6f38d4b8c6fd55eca2",
+    "semantic_hash": "223134e024b4bd6f38d4b8c6fd55eca2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\01-layout-test.png": {
+    "mtime": 1779297749.9155242,
+    "ast_hash": "06f5576a15fe0d64907430b046ac00bd",
+    "semantic_hash": "06f5576a15fe0d64907430b046ac00bd"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\02-message-animation.png": {
+    "mtime": 1779298044.0933158,
+    "ast_hash": "f93e7cd90b898ca0167ca01790aabdc9",
+    "semantic_hash": "f93e7cd90b898ca0167ca01790aabdc9"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\03-no-initial-animation.png": {
+    "mtime": 1779298089.9165542,
+    "ast_hash": "cc60f23613b69fa29a9836172484a243",
+    "semantic_hash": "cc60f23613b69fa29a9836172484a243"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\04-typing-indicator.png": {
+    "mtime": 1779298256.2765055,
+    "ast_hash": "9e932ad79387bfce9f61ca636d061fd0",
+    "semantic_hash": "9e932ad79387bfce9f61ca636d061fd0"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\05-progress-indicator.png": {
+    "mtime": 1779298376.036454,
+    "ast_hash": "5a7c5777ab1bc92beecbc0db519305e5",
+    "semantic_hash": "5a7c5777ab1bc92beecbc0db519305e5"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\06-smooth-scroll.png": {
+    "mtime": 1779298348.4706404,
+    "ast_hash": "8642e0f22f31820de6430d166cee7350",
+    "semantic_hash": "8642e0f22f31820de6430d166cee7350"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\qa1-wiki-page-loads.png": {
+    "mtime": 1779275360.0631344,
+    "ast_hash": "7ef2c4383c8d7da31b6339dff1c5e401",
+    "semantic_hash": "7ef2c4383c8d7da31b6339dff1c5e401"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\qa3-markdown-renderer.png": {
+    "mtime": 1779275360.0661342,
+    "ast_hash": "23246a0b77ea2cb20f4d2fda4a8b8d5d",
+    "semantic_hash": "23246a0b77ea2cb20f4d2fda4a8b8d5d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\qa5-graph-view.png": {
+    "mtime": 1779275360.0661342,
+    "ast_hash": "f4edea646e18a547e31807033d6656b9",
+    "semantic_hash": "f4edea646e18a547e31807033d6656b9"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\qa6-search.png": {
+    "mtime": 1779275360.0677893,
+    "ast_hash": "5a7d05bb5a5bca65b3198da211e55ce7",
+    "semantic_hash": "5a7d05bb5a5bca65b3198da211e55ce7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\qa7-empty-state.png": {
+    "mtime": 1779275360.0687966,
+    "ast_hash": "f17d3980786f2f9cce0807d7f32e4cc2",
+    "semantic_hash": "f17d3980786f2f9cce0807d7f32e4cc2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\qa8-nav-navigation.png": {
+    "mtime": 1779275360.070794,
+    "ast_hash": "f17d3980786f2f9cce0807d7f32e4cc2",
+    "semantic_hash": "f17d3980786f2f9cce0807d7f32e4cc2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\qa9-edge-cases.png": {
+    "mtime": 1779275360.070794,
+    "ast_hash": "848db4189814c860f67cc97e2d19c2eb",
+    "semantic_hash": "848db4189814c860f67cc97e2d19c2eb"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\rerun-scenario1-after-refresh.png": {
+    "mtime": 1779291112.992649,
+    "ast_hash": "a13da533e30cf715d16157c0cf14bd75",
+    "semantic_hash": "a13da533e30cf715d16157c0cf14bd75"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\rerun-scenario1-before-refresh.png": {
+    "mtime": 1779291071.8794558,
+    "ast_hash": "a13da533e30cf715d16157c0cf14bd75",
+    "semantic_hash": "a13da533e30cf715d16157c0cf14bd75"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\rerun-scenario3-fallback.png": {
+    "mtime": 1779291293.388009,
+    "ast_hash": "eff908e07dbdebc2a273aea9c22377d7",
+    "semantic_hash": "eff908e07dbdebc2a273aea9c22377d7"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\ui-test-1-dropdown-in-header.png": {
+    "mtime": 1779290252.3693647,
+    "ast_hash": "0791205beb10da03968abff3fd5ab8fe",
+    "semantic_hash": "0791205beb10da03968abff3fd5ab8fe"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\ui-test-2-dropdown-open.png": {
+    "mtime": 1779290292.5542014,
+    "ast_hash": "7100436ec6cd3e001f85477ef139e52f",
+    "semantic_hash": "7100436ec6cd3e001f85477ef139e52f"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\ui-test-3-click-outside-closes.png": {
+    "mtime": 1779290330.9190538,
+    "ast_hash": "0791205beb10da03968abff3fd5ab8fe",
+    "semantic_hash": "0791205beb10da03968abff3fd5ab8fe"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\ui-test-4-persist-FAIL.png": {
+    "mtime": 1779290439.703855,
+    "ast_hash": "0791205beb10da03968abff3fd5ab8fe",
+    "semantic_hash": "0791205beb10da03968abff3fd5ab8fe"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\ui-test-5-empty-state.png": {
+    "mtime": 1779290521.5353422,
+    "ast_hash": "96fe6f05c1b7e40aaa224fa6bc011c35",
+    "semantic_hash": "96fe6f05c1b7e40aaa224fa6bc011c35"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\run-continuation\\ses_1b74a7565ffex0Uvo0OGA1SzvM.json": {
+    "mtime": 1779336476.3781016,
+    "ast_hash": "11ef4fdedc0810eff0eb13da5028bf81",
+    "semantic_hash": "11ef4fdedc0810eff0eb13da5028bf81"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\scene-extraction.ts": {
+    "mtime": 1779354606.7835555,
+    "ast_hash": "6c58b55d4eab898bfd90237a7854cabb",
+    "semantic_hash": "6c58b55d4eab898bfd90237a7854cabb"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\src\\lib\\with-error-handler.ts": {
+    "mtime": 1779354311.1067207,
+    "ast_hash": "a73f667d1ccb41ebea9512ec4571fcee",
+    "semantic_hash": "a73f667d1ccb41ebea9512ec4571fcee"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\response_1.txt": {
+    "mtime": 1779356613.4341936,
+    "ast_hash": "d5f4dea8629ff6f0910f4a5702a9b07a",
+    "semantic_hash": "d5f4dea8629ff6f0910f4a5702a9b07a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\response_10.txt": {
+    "mtime": 1779356615.5784545,
+    "ast_hash": "d5f4dea8629ff6f0910f4a5702a9b07a",
+    "semantic_hash": "d5f4dea8629ff6f0910f4a5702a9b07a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\response_11.txt": {
+    "mtime": 1779356615.807418,
+    "ast_hash": "6ae40ee3f151bfbadb42fc9f02e4a095",
+    "semantic_hash": "6ae40ee3f151bfbadb42fc9f02e4a095"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\response_12.txt": {
+    "mtime": 1779356616.0342596,
+    "ast_hash": "6ae40ee3f151bfbadb42fc9f02e4a095",
+    "semantic_hash": "6ae40ee3f151bfbadb42fc9f02e4a095"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\response_2.txt": {
+    "mtime": 1779356613.7103262,
+    "ast_hash": "d5f4dea8629ff6f0910f4a5702a9b07a",
+    "semantic_hash": "d5f4dea8629ff6f0910f4a5702a9b07a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\response_3.txt": {
+    "mtime": 1779356613.9431217,
+    "ast_hash": "d5f4dea8629ff6f0910f4a5702a9b07a",
+    "semantic_hash": "d5f4dea8629ff6f0910f4a5702a9b07a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\response_4.txt": {
+    "mtime": 1779356614.1714447,
+    "ast_hash": "d5f4dea8629ff6f0910f4a5702a9b07a",
+    "semantic_hash": "d5f4dea8629ff6f0910f4a5702a9b07a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\response_5.txt": {
+    "mtime": 1779356614.4039211,
+    "ast_hash": "d5f4dea8629ff6f0910f4a5702a9b07a",
+    "semantic_hash": "d5f4dea8629ff6f0910f4a5702a9b07a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\response_6.txt": {
+    "mtime": 1779356614.6327784,
+    "ast_hash": "d5f4dea8629ff6f0910f4a5702a9b07a",
+    "semantic_hash": "d5f4dea8629ff6f0910f4a5702a9b07a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\response_7.txt": {
+    "mtime": 1779356614.860829,
+    "ast_hash": "d5f4dea8629ff6f0910f4a5702a9b07a",
+    "semantic_hash": "d5f4dea8629ff6f0910f4a5702a9b07a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\response_8.txt": {
+    "mtime": 1779356615.1195507,
+    "ast_hash": "d5f4dea8629ff6f0910f4a5702a9b07a",
+    "semantic_hash": "d5f4dea8629ff6f0910f4a5702a9b07a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\response_9.txt": {
+    "mtime": 1779356615.3489077,
+    "ast_hash": "d5f4dea8629ff6f0910f4a5702a9b07a",
+    "semantic_hash": "d5f4dea8629ff6f0910f4a5702a9b07a"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\final-qa-report.md": {
+    "mtime": 1779341805.4035594,
+    "ast_hash": "72a446a47b4c3045b13462af6e972066",
+    "semantic_hash": "72a446a47b4c3045b13462af6e972066"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\final-verdict.txt": {
+    "mtime": 1779340421.2218454,
+    "ast_hash": "cd2777bc214ba2dea7bba7c781b63a89",
+    "semantic_hash": "cd2777bc214ba2dea7bba7c781b63a89"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\t1-extraction-module.txt": {
+    "mtime": 1779339106.0037444,
+    "ast_hash": "a4f52a030ed902d37d88b4a334806bc5",
+    "semantic_hash": "a4f52a030ed902d37d88b4a334806bc5"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\t1-llm-failure-handling.txt": {
+    "mtime": 1779339123.032849,
+    "ast_hash": "ba2a1232063982ef5b6c51a36dc18b44",
+    "semantic_hash": "ba2a1232063982ef5b6c51a36dc18b44"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\t2-json-array-parsing.txt": {
+    "mtime": 1779339159.3624253,
+    "ast_hash": "654512e048d6e409de4f4671dd7fdc42",
+    "semantic_hash": "654512e048d6e409de4f4671dd7fdc42"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\t3-extraction-trigger.txt": {
+    "mtime": 1779339194.070962,
+    "ast_hash": "7a1a7085aaefc51d2983a6c3b7f570db",
+    "semantic_hash": "7a1a7085aaefc51d2983a6c3b7f570db"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\t4-sse-wiring.txt": {
+    "mtime": 1779339222.8240182,
+    "ast_hash": "5d37e425d14f6cad8ffc170b50c695fd",
+    "semantic_hash": "5d37e425d14f6cad8ffc170b50c695fd"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\t5-build-pass.txt": {
+    "mtime": 1779339282.576739,
+    "ast_hash": "9bccce744111494c5d2fcb90a08dc67d",
+    "semantic_hash": "9bccce744111494c5d2fcb90a08dc67d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\notepads\\audit-fix-all\\learnings.md": {
+    "mtime": 1779356145.117548,
+    "ast_hash": "522a5f1214954e61555b576d71d006d2",
+    "semantic_hash": "522a5f1214954e61555b576d71d006d2"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\notepads\\scene-state-auto-update\\learnings.md": {
+    "mtime": 1779338613.7681627,
+    "ast_hash": "6d92847a5a9640b16e39ad6ec0a7fb9c",
+    "semantic_hash": "6d92847a5a9640b16e39ad6ec0a7fb9c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\audit-fix-all.md": {
+    "mtime": 1779357107.7710445,
+    "ast_hash": "05985760e3c6731d56bc353d19e7bdcf",
+    "semantic_hash": "05985760e3c6731d56bc353d19e7bdcf"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\scene-state-auto-update.md": {
+    "mtime": 1779342023.4538896,
+    "ast_hash": "cebfeac982f5fff9af389a733a56f21d",
+    "semantic_hash": "cebfeac982f5fff9af389a733a56f21d"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\scene-after.png": {
+    "mtime": 1779341755.3084974,
+    "ast_hash": "abe40ab2df1ecc92313703c259232a5c",
+    "semantic_hash": "abe40ab2df1ecc92313703c259232a5c"
+  },
+  "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\evidence\\final-qa\\scene-before.png": {
+    "mtime": 1779341302.6754265,
+    "ast_hash": "bc0264f375b962dcff98535ba679ae98",
+    "semantic_hash": "bc0264f375b962dcff98535ba679ae98"
   }
 }

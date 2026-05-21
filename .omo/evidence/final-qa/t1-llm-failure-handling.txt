@@ -1,0 +1,49 @@
+=== T1: LLM Failure Handled Gracefully ===
+Date: 2026-05-21
+Tool: Code Review (manual)
+
+--- Step 1: Read extraction module source ---
+File: src/lib/scene-extraction.ts
+
+--- Step 2: Verify try/catch around LLM call ---
+Lines 27-142: Entire function body wrapped in try/catch
+- try block: lines 27-136
+- catch block: lines 137-142
+
+The LLM call at line 77-80:
+```typescript
+const response = await generateText(prompt, {
+  userId,
+  temperature: 0.3,
+});
+```
+This is INSIDE the try block.
+
+--- Step 3: Verify catch block logs warning and returns without throwing ---
+Lines 137-142:
+```typescript
+} catch (err) {
+  logger.warn("Scene extraction failed", {
+    sessionId,
+    error: err instanceof Error ? err.message : String(err),
+  });
+}
+```
+- Logs warning with sessionId and error message: YES
+- Does NOT re-throw: YES (no `throw` in catch)
+- Function returns void (implicit): YES
+
+Additional safety: Lines 87-93 handle invalid JSON response:
+```typescript
+if (!extracted) {
+  logger.warn("Scene extraction: LLM returned invalid JSON, skipping update", {
+    sessionId,
+    responsePreview: response.slice(0, 200),
+  });
+  return;
+}
+```
+- Graceful degradation: keeps existing values
+- No partial updates
+
+VERDICT: PASS — LLM failure handled gracefully, no uncaught exceptions

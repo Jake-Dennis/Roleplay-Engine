@@ -108,9 +108,9 @@ function addCrossReference(
 
     writeWikiPage(sourcePagePath, newContent, frontmatter);
     return sourcePagePath;
-  } catch (error) {
+  } catch (err: unknown) {
     throw new Error(
-      `Failed to add cross-reference to ${sourcePagePath}: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to add cross-reference to ${sourcePagePath}: ${err instanceof Error ? err.message : String(err)}`
     );
   }
 }
@@ -213,9 +213,9 @@ export async function fileAnswer(
     };
 
     writeWikiPage(synthesisPath, content, frontmatter);
-  } catch (error) {
+  } catch (err: unknown) {
     errors.push(
-      `Failed to write synthesis page: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to write synthesis page: ${err instanceof Error ? err.message : String(err)}`
     );
     return { success: false, pagePath: synthesisPath, errors };
   }
@@ -225,9 +225,9 @@ export async function fileAnswer(
   // -----------------------------------------------------------------------
   try {
     generateIndex(wikiRoot);
-  } catch (error) {
+  } catch (err: unknown) {
     errors.push(
-      `Failed to regenerate index: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to regenerate index: ${err instanceof Error ? err.message : String(err)}`
     );
     // Continue — page was written successfully
   }
@@ -242,9 +242,9 @@ export async function fileAnswer(
       `Synthesis: ${query.trim()}`,
       `Filed answer to ${synthesisFilename} with ${citations.length} citation(s)`
     );
-  } catch (error) {
+  } catch (err: unknown) {
     errors.push(
-      `Failed to append to log: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to append to log: ${err instanceof Error ? err.message : String(err)}`
     );
     // Continue — page was written successfully
   }
@@ -256,9 +256,9 @@ export async function fileAnswer(
   for (const citation of citations) {
     try {
       addCrossReference(citation.pagePath, synthesisTitle, synthesisFilename);
-    } catch (error) {
+    } catch (err: unknown) {
       errors.push(
-        `Failed to add cross-reference to ${path.basename(citation.pagePath)}: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to add cross-reference to ${path.basename(citation.pagePath)}: ${err instanceof Error ? err.message : String(err)}`
       );
       // Continue — other cross-references may still succeed
     }

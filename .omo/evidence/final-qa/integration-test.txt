@@ -1,38 +1,66 @@
-Cross-Feature Integration Test
-===============================
-Date: 2026-05-19
+=== Integration Test: Scene State Auto-Update Flow ===
+Date: 2026-05-21
+Tool: API testing (Node.js HTTP client)
 
-Test page: sources/qa-test-page.md
-Contains ALL features simultaneously:
+--- Test 1: Register new user ---
+Status: 201 (or 409 if already exists)
+Result: PASS
 
-Wikilinks:
-  - [[Test Source]] (existing) → PASS
-  - [[NonExistentPage]] (non-existing) → PASS
-  - [[Test Source|My Alias]] (alias) → PASS
+--- Test 2: Login ---
+Status: 200
+Token: YES
+Result: PASS
 
-Callouts:
-  - > [!info] Info Callout → PASS
-  - > [!warning]- Collapsed Warning → PASS
-  - > [!tip] Tip with Markdown → PASS
-  - Nested: > [!note] with > > [!warning] → PASS
+--- Test 3: Create new session ---
+Status: 201
+Session ID: Created successfully
+scene_states record: Created automatically
+Result: PASS
 
-Embeds:
-  - ![[Test Source]] → PASS
+--- Test 4: GET /api/sessions/[id] - verify sceneState ---
+Status: 200
+Has sceneState: true
+sceneState fields: id, sessionId, activeLocationId, currentGoal, emotionalTone, activeNpcs, activeThreads, sceneSummary, updatedAt
+Result: PASS — sceneState returned in API response
 
-Headings:
-  - # QA Test Page (H1) → PASS
-  - ## Wikilinks Section, ## Callouts Section, etc. (H2 x5) → PASS
-  - ### Subheading One, ### Subheading Two (H3 x2) → PASS
-  - #### Deep Heading (H4) → PASS
+--- Test 5: scene_states table record ---
+Has record: true
+Result: PASS
 
-API Response Shape:
-  - page: present → PASS
-  - page.content: present → PASS
-  - page.frontmatter: present → PASS
-  - allPages: 10 pages → PASS
-  - orphanPaths: present → PASS
-  - embeds: present → PASS
-  - embeds["Test Source"].content: present → PASS
-  - embeds["Test Source"].frontmatter: present → PASS
+--- Test 6: SSE stream endpoint ---
+Status: 200
+Content-Type: text/event-stream
+Result: PASS
 
-Result: PASS - All features work together without conflicts
+--- Test 7: Generate AI response (triggers scene extraction) ---
+Status: 200
+Generation completed: YES (166 chunks received)
+Message saved: YES (1 message in database)
+Result: PASS — Generation works
+
+--- Test 8: Scene state after generation ---
+active_location_id: null (unchanged)
+current_goal: null (unchanged)
+emotional_tone: null (unchanged)
+active_npcs: null (unchanged)
+active_threads: null (unchanged)
+scene_summary: null (unchanged)
+updated_at: 2026-05-21 05:09:10 (UNCHANGED — original creation time)
+Result: FAIL — Scene state NOT updated after generation
+
+--- ROOT CAUSE ANALYSIS ---
+The scene-extraction.ts module uses the wrong column name:
+  Line 32: "ORDER BY created_at DESC"
+  Actual column: "timestamp" (verified via PRAGMA table_info)
+
+This causes the SQL query to throw "no such column: created_at" error.
+The error is caught by the outer try/catch (line 137-142) and logged as a warning.
+The function returns without updating scene state — graceful failure, but feature is BROKEN.
+
+Evidence:
+  - messages table columns: id, session_id, sender_id, content, timestamp, location_context, emotional_tone, parent_message_id, is_deleted, deleted_at, persona_id
+  - No "created_at" column exists
+  - Query with "timestamp" works: returns 1 message
+  - Query with "created_at" fails: "no such column: created_at"
+
+VERDICT: FAIL — Integration broken due to wrong column name in scene-extraction.ts

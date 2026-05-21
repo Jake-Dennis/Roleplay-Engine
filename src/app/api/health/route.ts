@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { OLLAMA_CONFIG, TTS_CONFIG, TIMEOUTS } from "@/lib/config";
 import { getAuthToken } from "@/lib/auth-token";
+import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
-import { getClientIp } from "@/lib/rate-limiter";
+import { getClientIp, checkRateLimit, createRateLimitResponse } from "@/lib/rate-limiter";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
+  // Rate limit health checks (frequent polling)
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`health:${ip}`, "health");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
+
   if (!await isAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -54,10 +61,11 @@ async function checkOllama() {
       models,
       modelCount: models.length,
     };
-  } catch (err) {
+  } catch (err: unknown) {
+    logger.error("Ollama health check failed", err as Error);
     return {
       status: "unavailable",
-      error: err instanceof Error ? err.message : "Connection failed",
+      error: "Connection failed",
     };
   }
 }
@@ -84,10 +92,11 @@ async function checkKokoro() {
       voices,
       voiceCount: voices.length,
     };
-  } catch (err) {
+  } catch (err: unknown) {
+    logger.error("Kokoro TTS health check failed", err as Error);
     return {
       status: "unavailable",
-      error: err instanceof Error ? err.message : "Connection failed",
+      error: "Connection failed",
     };
   }
 }
@@ -97,10 +106,11 @@ async function checkDb() {
     const db = getDb();
     db.prepare("SELECT 1").get();
     return { status: "connected" };
-  } catch (err) {
+  } catch (err: unknown) {
+    logger.error("Database health check failed", err as Error);
     return {
       status: "unavailable",
-      error: err instanceof Error ? err.message : "Connection failed",
+      error: "Connection failed",
     };
   }
 }
@@ -115,7 +125,8 @@ async function isAuthorized(request: NextRequest): Promise<boolean> {
   // Allow authenticated requests
   const token = getAuthToken(request);
   if (token) {
-    return true;
+    const decoded = await verifyToken(token);
+    return decoded !== null;
   }
 
   return false;

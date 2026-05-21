@@ -18,6 +18,7 @@
  */
 
 import { getDb } from "@/lib/db";
+import { logger } from "@/lib/logger";
 import { parseEmotionalState } from "@/lib/emotion-utils";
 import { processEmbeddings } from "@/lib/embeddings";
 import { processRelationshipAnalysis } from "@/lib/relationship-analysis";
@@ -26,6 +27,7 @@ import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { runIdleEnrichment } from "@/lib/idle-enrichment";
 import { PROMPTS } from "@/lib/prompts";
 import { safeParseWarn } from "@/lib/safe-json";
+import { DEFAULT_DECAY_RATES, EMOTIONAL_STATES, RELATIONSHIP_STAGES } from "@/lib/relationship-decay";
 
 // Extracted job handlers
 import { handleResponseJob } from "./jobs/response-handler";
@@ -288,7 +290,7 @@ export function recoverStaleJobs(): number {
   
   const recovered = result.changes;
   if (recovered > 0) {
-    console.log(`[JobProcessor] Recovered ${recovered} stale job(s) — marked as failed.`);
+    logger.info(`Recovered ${recovered} stale job(s) — marked as failed.`);
   }
   
   return recovered;
@@ -345,8 +347,8 @@ export async function processJob(job: QueuedJob): Promise<JobResult> {
       default:
         throw new Error(`Unknown job type: ${job.type}`);
     }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     markJobFailed(job.id, message);
     return { success: false, jobId: job.id, type: job.type, error: message };
   }
@@ -465,17 +467,9 @@ async function handleDecayRelationships(jobId: string, payload: JobPayload): Pro
     updated_at: string | null;
   }[];
 
-  const DEFAULT_DECAY_RATES = {
-    emotionalHalfLifeDays: 7,
-    stageRegressionDays: 14,
-    minEmotionalState: "neutral",
-  };
-
-  const EMOTIONAL_STATES = ["devoted", "loving", "trusting", "friendly", "warm", "neutral", "cold", "distant", "suspicious", "hostile", "hateful"] as const;
-  const RELATIONSHIP_STAGES = ["lovers", "close_friends", "friends", "allies", "acquaintances", "strangers"] as const;
-
   let decayedCount = 0;
   const totalRelationships = relationships.length;
+  const pendingUpdates: { id: string; state: string; stage: string }[] = [];
 
   for (let i = 0; i < relationships.length; i++) {
     const rel = relationships[i];
@@ -524,11 +518,7 @@ async function handleDecayRelationships(jobId: string, payload: JobPayload): Pro
     }
 
     if (newState !== previousState || newStage !== previousStage) {
-      db.prepare(`
-        UPDATE relationships
-        SET emotional_state = ?, relationship_stage = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(newState, newStage, rel.id);
+      pendingUpdates.push({ id: rel.id, state: newState, stage: newStage });
       decayedCount++;
     }
 
@@ -536,6 +526,19 @@ async function handleDecayRelationships(jobId: string, payload: JobPayload): Pro
     if (totalRelationships > 4 && (i + 1) % Math.max(1, Math.floor(totalRelationships / 4)) === 0) {
       updateJobProgress(jobId, Math.round(((i + 1) / totalRelationships) * 80), `Processing ${i + 1}/${totalRelationships}...`);
     }
+  }
+
+  // Execute all batch updates in a single transaction
+  if (pendingUpdates.length > 0) {
+    const batchUpdate = db.transaction((updates: { id: string; state: string; stage: string }[]) => {
+      const stmt = db.prepare(
+        "UPDATE relationships SET emotional_state = ?, relationship_stage = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+      );
+      for (const { id, state, stage } of updates) {
+        stmt.run(state, stage, id);
+      }
+    });
+    batchUpdate(pendingUpdates);
   }
 
   markJobCompleted(jobId);

@@ -53,10 +53,10 @@ export default function NarrativeThreadDetailPage({ params }: { params: Promise<
     try {
       const res = await fetch(`/api/narrative-threads?id=${id}`);
       if (res.ok) {
-        const data = await res.json();
-        setThread(data.thread);
-        setEditTitle(data.thread?.title || "");
-        setEditDescription(data.thread?.description || "");
+        const json = await res.json();
+        setThread(json.thread);
+        setEditTitle(json.thread?.title || "");
+        setEditDescription(json.thread?.description || "");
       }
     } catch {
       // ignore

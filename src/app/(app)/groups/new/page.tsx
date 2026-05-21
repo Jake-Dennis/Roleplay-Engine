@@ -29,17 +29,17 @@ export default function NewGroupPage() {
         body: JSON.stringify({ name: name.trim(), description: description.trim() || null }),
       });
 
-      const data = await res.json();
-      logger.debug("Create group response:", res.status, data);
+      const json = await res.json();
+      logger.debug("Create group response:", res.status, json);
 
       if (!res.ok) {
-        setError(data.error || "Failed to create group");
+        setError(json.error || "Failed to create group");
         return;
       }
 
       refreshAll();
       router.push("/groups");
-    } catch (err) {
+    } catch (err: unknown) {
       logger.error("Create group error:", err);
       setError("Failed to create group");
     } finally {

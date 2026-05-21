@@ -1,8 +1,10 @@
+import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthToken } from "@/lib/auth-token";
 import { verifyToken } from "@/lib/auth";
 import path from "path";
 import fs from "fs";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 const TEMPLATES_DIR = path.join(process.cwd(), "src/lib/wiki/templates");
 
@@ -41,36 +43,38 @@ function parseTemplateBody(raw: string): string {
   return trimmed.slice(endIdx + 3).trim();
 }
 
-export async function GET(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+export const GET = withErrorHandler(async (request: NextRequest) => { const token = getAuthToken(request);
+if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+const decoded = await verifyToken(token);
+if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
-  if (!fs.existsSync(TEMPLATES_DIR)) {
-    return NextResponse.json({ templates: [] });
-  }
+const ip = getClientIp(request);
+const rateLimit = checkRateLimit(`wiki_read:${ip}`, "wiki_read");
+if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
-  const files = fs.readdirSync(TEMPLATES_DIR).filter((f) => f.endsWith(".md"));
-
-  const templates = files.map((file) => {
-    const raw = fs.readFileSync(path.join(TEMPLATES_DIR, file), "utf-8");
-    const frontmatter = parseTemplateFrontmatter(raw);
-    const body = parseTemplateBody(raw);
-    const name = file.replace(".md", "");
-
-    // Generate a short preview from the first heading
-    const firstHeading = body.match(/^#\s+(.+)$/m);
-    const preview = firstHeading ? firstHeading[1] : name;
-
-    return {
-      name,
-      title: (frontmatter.title as string) ?? name,
-      type: (frontmatter.type as string) ?? "entity",
-      preview,
-      content: raw,
-    };
-  });
-
-  return NextResponse.json({ templates });
+if (!fs.existsSync(TEMPLATES_DIR)) {
+  return NextResponse.json({ templates: [] });
 }
+
+const files = fs.readdirSync(TEMPLATES_DIR).filter((f) => f.endsWith(".md"));
+
+const templates = files.map((file) => {
+  const raw = fs.readFileSync(path.join(TEMPLATES_DIR, file), "utf-8");
+  const frontmatter = parseTemplateFrontmatter(raw);
+  const body = parseTemplateBody(raw);
+  const name = file.replace(".md", "");
+
+  // Generate a short preview from the first heading
+  const firstHeading = body.match(/^#\s+(.+)$/m);
+  const preview = firstHeading ? firstHeading[1] : name;
+
+  return {
+    name,
+    title: (frontmatter.title as string) ?? name,
+    type: (frontmatter.type as string) ?? "entity",
+    preview,
+    content: raw,
+  };
+});
+
+return NextResponse.json({ templates }); });

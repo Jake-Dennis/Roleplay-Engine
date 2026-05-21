@@ -71,11 +71,11 @@ export function PrivateStatePanel({ sessionId, onClose }: PrivateStatePanelProps
       try {
         const res = await fetch(`/api/sessions/${sessionId}/private-state`);
         if (res.ok) {
-          const data = await res.json();
+          const json = await res.json();
           setState({
-            thoughts: data.privateState?.thoughts || [],
-            relationships: data.privateState?.relationships || {},
-            memories: data.privateState?.memories || [],
+            thoughts: json.privateState?.thoughts || [],
+            relationships: json.privateState?.relationships || {},
+            memories: json.privateState?.memories || [],
           });
         }
       } catch {

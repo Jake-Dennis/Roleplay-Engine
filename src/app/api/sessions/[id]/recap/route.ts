@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { queueJob } from "@/lib/job-processor";
-import { unauthorizedError, notFoundError, badRequestError, internalError } from "@/lib/error-response";
+import { unauthorizedError, notFoundError, badRequestError, serverError } from "@/lib/error-response";
 import { getAuthToken } from '@/lib/auth-token';
-import { logger } from '@/lib/logger';
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 export async function POST(
   request: NextRequest,
@@ -16,6 +16,10 @@ export async function POST(
 
     const decoded = await verifyToken(token);
     if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+    const ip = getClientIp(request);
+    const rateLimit = checkRateLimit(`session_write:${ip}`, "session_write");
+    if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
     const { id: sessionId } = await params;
     const db = getDb();
@@ -40,8 +44,7 @@ export async function POST(
     );
 
     return NextResponse.json({ jobId }, { status: 201 });
-  } catch (err) {
-    logger.error("POST /api/sessions/[id]/recap error:", err);
-    return internalError();
+  } catch (err: unknown) {
+    return serverError(err);
   }
 }

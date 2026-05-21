@@ -5,6 +5,8 @@ import { withAuth } from "@/lib/with-auth";
 import { detectAllContradictionsWithSemantic } from "@/lib/contradiction-detector";
 import { scanUnverifiedLoreForContradictions } from "@/lib/semantic-contradiction";
 import type { DbParams, PaginatedRow } from "@/lib/types";
+import { logger } from '@/lib/logger';
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 /**
  * POST /api/contradictions/check
@@ -16,6 +18,10 @@ export async function POST(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`api:${ip}`, "api");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
     requireJson(request);
     const body = await request.json();
@@ -36,9 +42,10 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(result);
-  } catch (error) {
+  } catch (err: unknown) {
+    logger.error("Contradiction check failed", err as Error);
     return NextResponse.json(
-      { error: "Contradiction check failed", details: String(error) },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -55,13 +62,18 @@ export async function PUT(request: NextRequest) {
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
 
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`api:${ip}`, "api");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
+
   try {
     const result = await scanUnverifiedLoreForContradictions(userId);
 
     return NextResponse.json(result);
-  } catch (error) {
+  } catch (err: unknown) {
+    logger.error("Lore scan failed", err as Error);
     return NextResponse.json(
-      { error: "Lore scan failed", details: String(error) },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -76,6 +88,10 @@ export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`api:${ip}`, "api");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   const { searchParams } = new URL(request.url);
   const entityType = searchParams.get("entityType");

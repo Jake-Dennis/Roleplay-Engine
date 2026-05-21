@@ -10,7 +10,7 @@ import { logger } from '@/lib/logger';
 function safeMigration(db: DbDatabase, sql: string, description: string): void {
   try {
     db.exec(sql);
-  } catch (err) {
+  } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     if (!message.includes('already exists') && !message.includes('duplicate')) {
       logger.warn(`[group-migrations] ${description}: ${message}`);
@@ -97,9 +97,9 @@ export function ensureGroupSupport(db: DbDatabase) {
     safeMigration(db, "ALTER TABLE personas ADD COLUMN tags TEXT", "add tags to personas");
 
     db.exec("PRAGMA foreign_keys = ON");
-  } catch (e) {
-    logger.error("ensureGroupSupport error:", e);
-    try { db.exec("PRAGMA foreign_keys = ON"); } catch (err) {
+  } catch (err: unknown) {
+    logger.error("ensureGroupSupport error:", err);
+    try { db.exec("PRAGMA foreign_keys = ON"); } catch (err: unknown) {
       logger.warn("[group-migrations] Failed to re-enable foreign keys:", err);
     }
   }

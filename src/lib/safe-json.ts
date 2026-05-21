@@ -53,7 +53,7 @@ export function safeParseWarn<T>(raw: string | null | undefined, label: string, 
 
   try {
     return JSON.parse(raw) as T;
-  } catch (err) {
+  } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     logger.warn(`[safeParse] Failed to parse ${label}: ${message}`);
     if (fallback !== undefined) {

@@ -1,0 +1,26 @@
+=== T5: Build Passes ===
+Date: 2026-05-21
+Tool: Bash (npx next build)
+
+--- Step 1: Run npx next build ---
+Command: npx next build
+Exit code: 0 (success)
+
+--- Build Output ---
+- Compiled successfully in 12.7s
+- TypeScript finished in 7.8s
+- Static pages generated: 52/52
+- No TypeScript errors
+- No build errors
+
+--- Warnings (pre-existing, not from this plan) ---
+1. Middleware file convention deprecated (pre-existing)
+2. Two NFT trace warnings in next.config.ts (pre-existing, db.ts tracing)
+
+--- Routes verified ---
+- /api/generate/[id] — route present (contains extraction integration)
+- /api/sessions/[id] — route present (returns sceneState)
+- /api/sessions/[id]/stream — route present (SSE stream)
+- /session/[id] — page present (contains SSE wiring)
+
+VERDICT: PASS — Build exits 0, no errors, all routes compiled

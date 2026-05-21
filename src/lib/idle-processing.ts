@@ -77,6 +77,25 @@ export interface IdleProcessingResult {
 // Track last processing time in memory (resets on server restart)
 const lastProcessingTime = new Map<string, number>();
 
+/**
+ * Throttle for stale entry cleanup — prevents running on every processIdleTime call.
+ */
+let lastCleanupTime = 0;
+const CLEANUP_THROTTLE_MS = 60_000; // 60 seconds
+const STALE_ENTRY_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+/**
+ * Remove entries older than 24 hours to prevent unbounded Map growth.
+ */
+function cleanupStaleProcessingEntries(): void {
+  const now = Date.now();
+  for (const [userId, timestamp] of lastProcessingTime.entries()) {
+    if (now - timestamp > STALE_ENTRY_MAX_AGE_MS) {
+      lastProcessingTime.delete(userId);
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Main Processing
 // ---------------------------------------------------------------------------
@@ -86,7 +105,13 @@ const lastProcessingTime = new Map<string, number>();
  * Called from middleware on authenticated requests.
  */
 export async function processIdleTime(userId: string, universeId: string | null = null): Promise<IdleProcessingResult> {
+  // Throttled stale-entry cleanup
   const now = Date.now();
+  if (now - lastCleanupTime > CLEANUP_THROTTLE_MS) {
+    cleanupStaleProcessingEntries();
+    lastCleanupTime = now;
+  }
+
   const lastTime = lastProcessingTime.get(userId) || 0;
   const idleTime = now - lastTime;
 
@@ -229,18 +254,39 @@ export async function processIdleTime(userId: string, universeId: string | null 
           id: string; content: string; type: string; importance: string | null; created_at: string;
         }[];
 
+        const pendingUpdates: { id: string; content: string; importance: string | null }[] = [];
+
         for (const memory of memories) {
           const age = (Date.now() - new Date(memory.created_at).getTime()) / (1000 * 60 * 60 * 24);
           if (age >= 90) {
-            db.prepare("UPDATE narrative_memories SET content = ?, importance = 'archived' WHERE id = ?").run(`[ARCHIVED] ${memory.content.slice(0, 100)}`, memory.id);
+            pendingUpdates.push({ id: memory.id, content: `[ARCHIVED] ${memory.content.slice(0, 100)}`, importance: "archived" });
             result.memoriesCompressed++;
           } else if (age >= 30) {
-            db.prepare("UPDATE narrative_memories SET content = ?, importance = 'low' WHERE id = ?").run(memory.content.slice(0, 200), memory.id);
+            pendingUpdates.push({ id: memory.id, content: memory.content.slice(0, 200), importance: "low" });
             result.memoriesCompressed++;
           } else if (age >= 7) {
-            db.prepare("UPDATE narrative_memories SET content = ? WHERE id = ?").run(memory.content.slice(0, 500), memory.id);
+            pendingUpdates.push({ id: memory.id, content: memory.content.slice(0, 500), importance: null });
             result.memoriesCompressed++;
           }
+        }
+
+        if (pendingUpdates.length > 0) {
+          const batchUpdate = db.transaction((updates: { id: string; content: string; importance: string | null }[]) => {
+            const withImportance = db.prepare(
+              "UPDATE narrative_memories SET content = ?, importance = ? WHERE id = ?"
+            );
+            const withoutImportance = db.prepare(
+              "UPDATE narrative_memories SET content = ? WHERE id = ?"
+            );
+            for (const { id, content, importance } of updates) {
+              if (importance !== null) {
+                withImportance.run(content, importance, id);
+              } else {
+                withoutImportance.run(content, id);
+              }
+            }
+          });
+          batchUpdate(pendingUpdates);
         }
       } catch {
         // Skip if compression fails

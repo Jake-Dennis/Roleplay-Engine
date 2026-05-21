@@ -316,6 +316,19 @@ function main() {
     -- Index for denylist cleanup
     CREATE INDEX IF NOT EXISTS idx_denylist_expires ON token_denylist(expires_at);
 
+    -- Narrative memories
+    CREATE TABLE IF NOT EXISTS narrative_memories (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      session_id TEXT REFERENCES sessions(id),
+      universe_id TEXT REFERENCES universes(id),
+      type TEXT NOT NULL,
+      content TEXT NOT NULL,
+      importance TEXT,
+      related_entities TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
     -- Indexes for common queries
     CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id, timestamp);
     CREATE INDEX IF NOT EXISTS idx_messages_deleted ON messages(session_id, is_deleted);
@@ -338,6 +351,11 @@ function main() {
     CREATE INDEX IF NOT EXISTS idx_backlinks_universe ON backlinks(universe_id);
     CREATE INDEX IF NOT EXISTS idx_timelines_universe ON timelines(universe_id);
     CREATE INDEX IF NOT EXISTS idx_session_config_lookup ON session_config(session_id, key);
+
+    -- Composite indexes for query optimization
+    CREATE INDEX IF NOT EXISTS idx_messages_session_deleted_ts ON messages(session_id, is_deleted, timestamp);
+    CREATE INDEX IF NOT EXISTS idx_memories_user_created_importance ON narrative_memories(user_id, created_at, importance);
+    CREATE INDEX IF NOT EXISTS idx_jobs_user_status_type ON job_queue(user_id, status, type, priority);
   `);
 
   // Create sqlite-vec virtual tables for vector search

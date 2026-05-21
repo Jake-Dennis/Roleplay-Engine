@@ -121,9 +121,9 @@ export default function JobsPage() {
       if (status && status !== "all") params.set("status", status);
       if (activeUniverse) params.set("universe_id", activeUniverse.id);
       const res = await fetch(`/api/jobs?${params}`);
-      const data = await res.json();
-      setJobs(data.jobs || []);
-      setStats(data.stats || { queued: 0, processing: 0, completed: 0, failed: 0, cancelled: 0, total: 0 });
+      const json = await res.json();
+      setJobs(json.jobs || []);
+      setStats(json.stats || { queued: 0, processing: 0, completed: 0, failed: 0, cancelled: 0, total: 0 });
     } catch {
       // ignore
     } finally {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useState } from "react";
+import { useRef, useCallback, useState, useEffect } from "react";
 import { useRenderLoop } from "@/hooks/use-render-loop";
 
 interface StreamingTextProps {
@@ -21,6 +21,29 @@ export function StreamingText({ content, isStreaming, className = "" }: Streamin
   const cursorRef = useRef<HTMLSpanElement>(null);
   const cursorVisibleRef = useRef(true);
   const blinkAccumRef = useRef(0);
+
+  // Streaming progress: elapsed time + word count
+  const startTimeRef = useRef<number | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (isStreaming) {
+      startTimeRef.current = Date.now();
+      const interval = setInterval(() => {
+        if (startTimeRef.current) {
+          setElapsed((Date.now() - startTimeRef.current) / 1000);
+        }
+      }, 100);
+      return () => clearInterval(interval);
+    } else {
+      setElapsed(0);
+      startTimeRef.current = null;
+    }
+  }, [isStreaming]);
+
+  const wordCount = isStreaming
+    ? content.split(/\s+/).filter(Boolean).length
+    : 0;
 
   // Cursor blink via render loop (direct DOM, no React re-render)
   useRenderLoop(
@@ -55,6 +78,9 @@ export function StreamingText({ content, isStreaming, className = "" }: Streamin
         className="inline-block h-3.5 w-1.5 bg-accent ml-0.5 rounded-sm"
         style={{ opacity: 1 }}
       />
+      <p className="mt-2 text-xs text-text-muted">
+        {wordCount} words · {elapsed.toFixed(1)}s
+      </p>
     </div>
   );
 }

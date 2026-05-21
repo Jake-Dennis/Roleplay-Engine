@@ -1,0 +1,55 @@
+=== T1: Extraction Module — File Exists & Error Handling ===
+Date: 2026-05-21
+Tool: Code Review (manual)
+
+--- Step 1: Verify file exists ---
+File: src/lib/scene-extraction.ts
+Status: EXISTS (143 lines)
+
+--- Step 2: Verify exports ---
+Export: `export async function extractAndApplySceneState(sessionId: string, userId: string): Promise<void>`
+Status: CORRECT — named export, correct signature
+
+--- Step 3: Verify imports ---
+- import { generateText } from "@/lib/ollama" — Ollama LLM call
+- import { getDb } from "@/lib/db" — SQLite access
+- import { logger } from "@/lib/logger" — logging
+- import { safeParseWarn } from "@/lib/safe-json" — safe JSON parsing
+Status: ALL CORRECT
+
+--- Step 4: Verify function flow ---
+1. Fetches last 10 messages: SELECT content, sender_id FROM messages WHERE session_id = ? ORDER BY created_at DESC LIMIT 10
+   Status: CORRECT (line 31-33)
+2. Fetches current scene state: SELECT * FROM scene_states WHERE session_id = ?
+   Status: CORRECT (line 41-43)
+3. Formats messages as "Narrator: ..." or "Player: ..."
+   Status: CORRECT (line 46-52)
+4. Builds LLM prompt with current scene JSON + recent messages
+   Status: CORRECT (line 66-75)
+5. Calls generateText(prompt, { userId, temperature: 0.3 })
+   Status: CORRECT (line 77-80)
+6. Parses JSON response via safeParseWarn
+   Status: CORRECT (line 82-85)
+7. Upserts scene state (UPDATE if exists, INSERT if not)
+   Status: CORRECT (line 96-134)
+
+--- Step 5: Verify error handling ---
+Outer try/catch: lines 27-142
+- Catches ALL errors from the function
+- Logs warning: logger.warn("Scene extraction failed", { sessionId, error: ... })
+- Does NOT re-throw — silently returns
+- No partial updates on failure
+
+Inner validation: lines 87-93
+- If safeParseWarn returns null (invalid JSON), logs warning and returns
+- No update applied on parse failure
+
+Status: ERROR HANDLING PRESENT AND CORRECT
+
+--- Step 6: Verify no forbidden patterns ---
+- No job queue usage: PASS (no queueJob import/call)
+- No retry logic: PASS (single LLM call, no loops)
+- No schema changes: PASS (uses existing scene_states columns)
+- No partial updates: PASS (all-or-nothing upsert)
+
+VERDICT: PASS — File exists, exports correctly, error handling present, no forbidden patterns

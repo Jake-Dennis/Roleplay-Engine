@@ -4,6 +4,7 @@ import { TTS_CONFIG } from "@/lib/config";
 import { verifyToken } from "@/lib/auth";
 import { getAuthToken } from '@/lib/auth-token';
 import { unauthorizedError, badRequestError, serverError, requireJson } from '@/lib/error-response';
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 export async function POST(request: NextRequest) {
   const token = getAuthToken(request);
@@ -15,6 +16,10 @@ export async function POST(request: NextRequest) {
   if (!decoded) {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`tts_generate:${ip}`, "tts_generate");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
     requireJson(request);
     const body = await request.json();
@@ -51,7 +56,7 @@ export async function POST(request: NextRequest) {
         "X-Cache": "MISS",
       },
     });
-  } catch (error) {
-    return serverError(error);
+  } catch (err: unknown) {
+    return serverError(err);
   }
 }

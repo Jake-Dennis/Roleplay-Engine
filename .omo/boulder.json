@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "active_work_id": "ui-overflow-fix-d4ea47ec",
+  "active_work_id": "full-audit-remediation-2026-05-21-12269aa4",
   "works": {
     "persona-selection-bfa2db98": {
       "work_id": "persona-selection-bfa2db98",
@@ -102,9 +102,9 @@
       "work_id": "ui-overflow-fix-d4ea47ec",
       "active_plan": "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\ui-overflow-fix.md",
       "plan_name": "ui-overflow-fix",
-      "status": "active",
+      "status": "completed",
       "started_at": "2026-05-20T15:53:40.237Z",
-      "updated_at": "2026-05-20T15:59:43.937Z",
+      "updated_at": "2026-05-20T16:22:50.862Z",
       "session_ids": [
         "ses_1c53eff67ffeCdr0YX3P28JlBj"
       ],
@@ -125,34 +125,562 @@
           "status": "completed",
           "ended_at": "2026-05-20T15:59:43.937Z",
           "elapsed_ms": 170269
+        },
+        "final-wave:f1": {
+          "task_key": "final-wave:f1",
+          "task_label": "F1",
+          "task_title": "**Plan Compliance Audit** — `oracle`",
+          "session_id": "ses_1b9e104abffePr450GFyi8f20K",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "updated_at": "2026-05-20T16:03:41.026Z",
+          "started_at": "2026-05-20T16:03:24.289Z",
+          "status": "completed",
+          "ended_at": "2026-05-20T16:03:41.026Z",
+          "elapsed_ms": 16737
+        },
+        "final-wave:f2": {
+          "task_key": "final-wave:f2",
+          "task_label": "F2",
+          "task_title": "**Code Quality Review** — `unspecified-high`",
+          "session_id": "ses_1b9de6dc6ffeAsR1rADeJG92VX",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "updated_at": "2026-05-20T16:06:36.117Z",
+          "started_at": "2026-05-20T16:06:07.873Z",
+          "status": "completed",
+          "ended_at": "2026-05-20T16:06:36.117Z",
+          "elapsed_ms": 28244
+        },
+        "final-wave:f3": {
+          "task_key": "final-wave:f3",
+          "task_label": "F3",
+          "task_title": "**Real Manual QA** — `unspecified-high` (+ `playwright`)",
+          "session_id": "ses_1b9dc1b08ffexCa7Etbx6U6fsI",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "updated_at": "2026-05-20T16:20:30.895Z",
+          "started_at": "2026-05-20T16:19:10.252Z",
+          "status": "completed",
+          "ended_at": "2026-05-20T16:20:30.895Z",
+          "elapsed_ms": 80643
+        },
+        "final-wave:f4": {
+          "task_key": "final-wave:f4",
+          "task_label": "F4",
+          "task_title": "**Scope Fidelity Check** — `deep`",
+          "session_id": "ses_1b9cf0a4dffeCph0i0Yah564Mq",
+          "agent": "Sisyphus-Junior",
+          "category": "deep",
+          "updated_at": "2026-05-20T16:22:21.356Z",
+          "started_at": "2026-05-20T16:21:40.989Z",
+          "status": "completed",
+          "ended_at": "2026-05-20T16:22:21.356Z",
+          "elapsed_ms": 40367
+        }
+      },
+      "ended_at": "2026-05-20T16:22:50.862Z",
+      "elapsed_ms": 1750625
+    },
+    "chat-ux-overhaul-d166b68d": {
+      "work_id": "chat-ux-overhaul-d166b68d",
+      "active_plan": "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\chat-ux-overhaul.md",
+      "plan_name": "chat-ux-overhaul",
+      "status": "completed",
+      "started_at": "2026-05-20T16:50:54.302Z",
+      "updated_at": "2026-05-20T17:36:49.897Z",
+      "session_ids": [
+        "ses_1c53eff67ffeCdr0YX3P28JlBj"
+      ],
+      "session_origins": {
+        "ses_1c53eff67ffeCdr0YX3P28JlBj": "direct"
+      },
+      "agent": "atlas",
+      "task_sessions": {
+        "todo:1": {
+          "task_key": "todo:1",
+          "task_label": "1",
+          "task_title": "Verify zero imports: `grep -r \"message-bubble\\|message-input\" src/` returns zero results",
+          "session_id": "ses_1b9a9438fffehMIUNf0UYKj1qx",
+          "agent": "Sisyphus-Junior",
+          "category": "quick",
+          "started_at": "2026-05-20T16:52:51.783Z",
+          "ended_at": "2026-05-20T17:03:18.978Z",
+          "elapsed_ms": 627195,
+          "status": "completed",
+          "updated_at": "2026-05-20T17:03:18.978Z"
+        },
+        "todo:3": {
+          "task_key": "todo:3",
+          "task_label": "3",
+          "task_title": "Hide Typing Indicator During Streaming",
+          "session_id": "ses_1b9ad7bd0ffeiTBqUr6GW2Xumt",
+          "agent": "Sisyphus-Junior",
+          "category": "quick",
+          "updated_at": "2026-05-20T16:58:52.001Z",
+          "started_at": "2026-05-20T16:58:37.743Z",
+          "status": "completed",
+          "ended_at": "2026-05-20T16:58:52.001Z",
+          "elapsed_ms": 14258
+        },
+        "todo:4": {
+          "task_key": "todo:4",
+          "task_label": "4",
+          "task_title": "Add Streaming Progress Indicator",
+          "session_id": "ses_1b9ac3624ffeXpVIlzO1XZ6Wo4",
+          "agent": "Sisyphus-Junior",
+          "category": "quick",
+          "updated_at": "2026-05-20T17:00:47.156Z",
+          "started_at": "2026-05-20T17:00:35.422Z",
+          "status": "completed",
+          "ended_at": "2026-05-20T17:00:47.156Z",
+          "elapsed_ms": 11734
+        },
+        "final-wave:f1": {
+          "task_key": "final-wave:f1",
+          "task_label": "F1",
+          "task_title": "**Plan Compliance Audit** — `oracle`",
+          "session_id": "ses_1b9a39015ffeBvRV7SE9Se5o08",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "started_at": "2026-05-20T17:06:35.925Z",
+          "status": "completed",
+          "updated_at": "2026-05-20T17:10:07.137Z",
+          "ended_at": "2026-05-20T17:10:07.137Z",
+          "elapsed_ms": 211212
+        },
+        "final-wave:f2": {
+          "task_key": "final-wave:f2",
+          "task_label": "F2",
+          "task_title": "**Code Quality Review** — `unspecified-high`",
+          "session_id": "ses_1b9a1e9f5ffe7xB4PkOmO50iqD",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "updated_at": "2026-05-20T17:12:39.038Z",
+          "started_at": "2026-05-20T17:12:29.016Z",
+          "status": "completed",
+          "ended_at": "2026-05-20T17:12:39.038Z",
+          "elapsed_ms": 10022
+        },
+        "final-wave:f3": {
+          "task_key": "final-wave:f3",
+          "task_label": "F3",
+          "task_title": "**Real Manual QA** — `unspecified-high` (+ `playwright` skill if UI)",
+          "session_id": "ses_1b99fa7b9ffeUvqgJxrzczpI5P",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "updated_at": "2026-05-20T17:34:11.388Z",
+          "started_at": "2026-05-20T17:33:33.673Z",
+          "status": "completed",
+          "ended_at": "2026-05-20T17:34:11.388Z",
+          "elapsed_ms": 37715
+        },
+        "final-wave:f4": {
+          "task_key": "final-wave:f4",
+          "task_label": "F4",
+          "task_title": "**Scope Fidelity Check** — `deep`",
+          "session_id": "ses_1b98bea60ffeJR1KtUOqwb8PDV",
+          "agent": "Sisyphus-Junior",
+          "category": "deep",
+          "updated_at": "2026-05-20T17:36:17.270Z",
+          "started_at": "2026-05-20T17:35:22.005Z",
+          "status": "completed",
+          "ended_at": "2026-05-20T17:36:17.270Z",
+          "elapsed_ms": 55265
+        }
+      },
+      "ended_at": "2026-05-20T17:36:49.896Z",
+      "elapsed_ms": 2755594
+    },
+    "scene-state-auto-update-fc63b87b": {
+      "work_id": "scene-state-auto-update-fc63b87b",
+      "active_plan": "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\scene-state-auto-update.md",
+      "plan_name": "scene-state-auto-update",
+      "status": "completed",
+      "started_at": "2026-05-21T04:35:52.714Z",
+      "updated_at": "2026-05-21T05:43:29.776Z",
+      "session_ids": [
+        "ses_1c53eff67ffeCdr0YX3P28JlBj",
+        "ses_1b722bdf2ffehkhmy37WxcFr4P",
+        "ses_1b722bde1ffeWwsu6OT2ZWpQmI",
+        "ses_1b722a3aeffe3f2zVt14gw33uw",
+        "ses_1b7228d2bffe5u4O3XDxgtqSrQ",
+        "ses_1b704910effeaa9xgTC0cQDMxe",
+        "ses_1b7047c48ffesZPhGkr2YPKNOK"
+      ],
+      "session_origins": {
+        "ses_1c53eff67ffeCdr0YX3P28JlBj": "direct",
+        "ses_1b722bdf2ffehkhmy37WxcFr4P": "appended",
+        "ses_1b722bde1ffeWwsu6OT2ZWpQmI": "appended",
+        "ses_1b722a3aeffe3f2zVt14gw33uw": "appended",
+        "ses_1b7228d2bffe5u4O3XDxgtqSrQ": "appended",
+        "ses_1b704910effeaa9xgTC0cQDMxe": "appended",
+        "ses_1b7047c48ffesZPhGkr2YPKNOK": "appended"
+      },
+      "agent": "atlas",
+      "task_sessions": {
+        "todo:1": {
+          "task_key": "todo:1",
+          "task_label": "1",
+          "task_title": "`scene-extraction.ts` line 32: `created_at` → `timestamp` (column name fix)",
+          "session_id": "ses_1b704910effeaa9xgTC0cQDMxe",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "started_at": "2026-05-21T04:38:48.756Z",
+          "ended_at": "2026-05-21T04:40:45.526Z",
+          "elapsed_ms": 116770,
+          "status": "completed",
+          "updated_at": "2026-05-21T05:21:44.903Z"
+        },
+        "todo:3": {
+          "task_key": "todo:3",
+          "task_label": "3",
+          "task_title": "Integrate Extraction into Generate Route",
+          "session_id": "ses_1b728953cffeEPnDs9rQ7YXSxc",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "updated_at": "2026-05-21T04:45:20.724Z",
+          "started_at": "2026-05-21T04:43:45.627Z",
+          "status": "completed",
+          "ended_at": "2026-05-21T04:45:20.723Z",
+          "elapsed_ms": 95096
+        },
+        "final-wave:f1": {
+          "task_key": "final-wave:f1",
+          "task_label": "F1",
+          "task_title": "**Plan Compliance Audit** — `oracle`",
+          "session_id": "ses_1b7047c48ffesZPhGkr2YPKNOK",
+          "agent": "Sisyphus-Junior",
+          "category": "deep",
+          "started_at": "2026-05-21T05:16:31.196Z",
+          "status": "completed",
+          "updated_at": "2026-05-21T05:40:26.017Z",
+          "ended_at": "2026-05-21T05:40:26.017Z",
+          "elapsed_ms": 1434821
+        }
+      },
+      "ended_at": "2026-05-21T05:43:29.776Z",
+      "elapsed_ms": 4057062
+    },
+    "audit-fix-all-89bf12b7": {
+      "work_id": "audit-fix-all-89bf12b7",
+      "active_plan": "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\audit-fix-all.md",
+      "plan_name": "audit-fix-all",
+      "status": "completed",
+      "started_at": "2026-05-21T08:32:48.626Z",
+      "updated_at": "2026-05-21T09:52:45.573Z",
+      "session_ids": [
+        "ses_1c53eff67ffeCdr0YX3P28JlBj"
+      ],
+      "session_origins": {
+        "ses_1c53eff67ffeCdr0YX3P28JlBj": "direct"
+      },
+      "agent": "atlas",
+      "task_sessions": {
+        "todo:1": {
+          "task_key": "todo:1",
+          "task_label": "1",
+          "task_title": "Fix XSS in Chat Search (`dangerouslySetInnerHTML`)",
+          "session_id": "ses_1b653223cffea67BSRLnpaoE5t",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "updated_at": "2026-05-21T08:39:01.440Z",
+          "started_at": "2026-05-21T08:37:33.691Z",
+          "status": "completed",
+          "ended_at": "2026-05-21T08:39:01.440Z",
+          "elapsed_ms": 87749
+        },
+        "todo:4": {
+          "task_key": "todo:4",
+          "task_label": "4",
+          "task_title": "Expand Rate Limiting to High-Risk Endpoints",
+          "session_id": "ses_1b64e2c0bffee2aL4pg2Ys17N3",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "updated_at": "2026-05-21T08:49:58.049Z",
+          "started_at": "2026-05-21T08:45:33.692Z",
+          "status": "completed",
+          "ended_at": "2026-05-21T08:49:58.049Z",
+          "elapsed_ms": 264357
+        },
+        "todo:7": {
+          "task_key": "todo:7",
+          "task_label": "7",
+          "task_title": "Add try/catch to 50 Unprotected API Routes",
+          "session_id": "ses_1b644bd2affeK7c9EjEwFfC06V",
+          "agent": "Sisyphus-Junior",
+          "category": "deep",
+          "updated_at": "2026-05-21T09:07:00.930Z",
+          "started_at": "2026-05-21T09:06:22.150Z",
+          "status": "completed",
+          "ended_at": "2026-05-21T09:07:00.930Z",
+          "elapsed_ms": 38780
+        },
+        "todo:8": {
+          "task_key": "todo:8",
+          "task_label": "8",
+          "task_title": "Standardize Catch Variable Naming",
+          "session_id": "ses_1b635c940ffehZRM1HF3gADssI",
+          "agent": "Sisyphus-Junior",
+          "category": "quick",
+          "updated_at": "2026-05-21T09:26:37.040Z",
+          "started_at": "2026-05-21T09:25:58.996Z",
+          "status": "completed",
+          "ended_at": "2026-05-21T09:26:37.040Z",
+          "elapsed_ms": 38044
+        },
+        "todo:9": {
+          "task_key": "todo:9",
+          "task_label": "9",
+          "task_title": "Async Idle Processing (Non-Blocking)",
+          "session_id": "ses_1b623074affeGEz9XWj0miz1Z1",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "updated_at": "2026-05-21T09:32:03.204Z",
+          "started_at": "2026-05-21T09:30:01.036Z",
+          "status": "completed",
+          "ended_at": "2026-05-21T09:32:03.204Z",
+          "elapsed_ms": 122168
+        },
+        "todo:13": {
+          "task_key": "todo:13",
+          "task_label": "13",
+          "task_title": "Fix Unused Parameters in index-generator.ts",
+          "session_id": "ses_1b61e71a6ffeR5JQVKPJPR6yev",
+          "agent": "Sisyphus-Junior",
+          "category": "quick",
+          "updated_at": "2026-05-21T09:36:26.666Z",
+          "started_at": "2026-05-21T09:34:44.922Z",
+          "status": "completed",
+          "ended_at": "2026-05-21T09:36:26.666Z",
+          "elapsed_ms": 101744
+        },
+        "final-wave:f1": {
+          "task_key": "final-wave:f1",
+          "task_label": "F1",
+          "task_title": "**Plan Compliance Audit** — `oracle`",
+          "session_id": "ses_1b61a4403ffeGMyjalmZBRpQx5",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "updated_at": "2026-05-21T09:51:49.878Z",
+          "started_at": "2026-05-21T09:42:19.571Z",
+          "status": "completed",
+          "ended_at": "2026-05-21T09:51:49.878Z",
+          "elapsed_ms": 570307
+        }
+      },
+      "ended_at": "2026-05-21T09:52:45.573Z",
+      "elapsed_ms": 4796947
+    },
+    "full-audit-remediation-2026-05-21-12269aa4": {
+      "work_id": "full-audit-remediation-2026-05-21-12269aa4",
+      "active_plan": "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\full-audit-remediation-2026-05-21.md",
+      "plan_name": "full-audit-remediation-2026-05-21",
+      "status": "active",
+      "started_at": "2026-05-21T11:27:00.370Z",
+      "updated_at": "2026-05-21T14:02:33.940Z",
+      "session_ids": [
+        "ses_1c53eff67ffeCdr0YX3P28JlBj"
+      ],
+      "session_origins": {
+        "ses_1c53eff67ffeCdr0YX3P28JlBj": "direct"
+      },
+      "agent": "atlas",
+      "task_sessions": {
+        "todo:1": {
+          "task_key": "todo:1",
+          "task_label": "1",
+          "task_title": "DELETE action \"all\" (lines 142-146): `audio_path` from DB used in `fs.unlinkSync()` without path validation",
+          "session_id": "ses_1b5ac3dafffeBlGBcZQYFdjfcF",
+          "agent": "Sisyphus-Junior",
+          "category": "quick",
+          "started_at": "2026-05-21T11:31:03.483Z",
+          "ended_at": "2026-05-21T11:42:02.731Z",
+          "elapsed_ms": 659248,
+          "status": "completed",
+          "updated_at": "2026-05-21T11:42:02.731Z"
+        },
+        "todo:5": {
+          "task_key": "todo:5",
+          "task_label": "5",
+          "task_title": "Fix health endpoint token verification",
+          "session_id": "ses_1b5ac858cffeOkCDhMI6r8Rby2",
+          "agent": "Sisyphus-Junior",
+          "category": "quick",
+          "updated_at": "2026-05-21T11:52:26.903Z",
+          "started_at": "2026-05-21T11:43:15.678Z",
+          "status": "completed",
+          "ended_at": "2026-05-21T11:52:26.903Z",
+          "elapsed_ms": 551225
+        },
+        "todo:14": {
+          "task_key": "todo:14",
+          "task_label": "14",
+          "task_title": "Add rate limiting to remaining 76 routes",
+          "session_id": "ses_1b59b9dc7ffeobxS60VPoRBonW",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "updated_at": "2026-05-21T13:02:18.447Z",
+          "started_at": "2026-05-21T13:00:31.547Z",
+          "status": "completed",
+          "ended_at": "2026-05-21T13:02:18.447Z",
+          "elapsed_ms": 106900
+        },
+        "todo:15": {
+          "task_key": "todo:15",
+          "task_label": "15",
+          "task_title": "Fix logger stack traces in production",
+          "session_id": "ses_1b55d97f7ffel27x980V2zf4ii",
+          "agent": "Sisyphus-Junior",
+          "started_at": "2026-05-21T13:04:29.363Z",
+          "status": "completed",
+          "updated_at": "2026-05-21T13:14:28.871Z",
+          "ended_at": "2026-05-21T13:14:28.871Z",
+          "elapsed_ms": 599508
+        },
+        "todo:20": {
+          "task_key": "todo:20",
+          "task_label": "20",
+          "task_title": "Consolidate triple-duplicated relationship decay logic",
+          "session_id": "ses_1b5524a1affeeWAfeYGVk7ambC",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "updated_at": "2026-05-21T13:23:23.479Z",
+          "started_at": "2026-05-21T13:18:48.257Z",
+          "status": "completed",
+          "ended_at": "2026-05-21T13:23:23.479Z",
+          "elapsed_ms": 275222
+        },
+        "todo:33": {
+          "task_key": "todo:33",
+          "task_label": "33",
+          "task_title": "Add LRU cache to `listWikiPages()`",
+          "session_id": "ses_1b5410021ffeMHzB7dE3lajV6H",
+          "agent": "Sisyphus-Junior",
+          "category": "quick",
+          "started_at": "2026-05-21T13:31:55.779Z",
+          "status": "completed",
+          "updated_at": "2026-05-21T13:47:22.770Z",
+          "ended_at": "2026-05-21T13:47:22.770Z",
+          "elapsed_ms": 926991
+        },
+        "final-wave:f1": {
+          "task_key": "final-wave:f1",
+          "task_label": "F1",
+          "task_title": "**Plan Compliance Audit** — `oracle`",
+          "session_id": "ses_1b52b7dd8ffebWPUQMGmqfVngX",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "started_at": "2026-05-21T13:50:27.421Z",
+          "status": "completed",
+          "updated_at": "2026-05-21T14:02:33.940Z",
+          "ended_at": "2026-05-21T14:02:33.940Z",
+          "elapsed_ms": 726519
         }
       }
     }
   },
-  "active_plan": "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\ui-overflow-fix.md",
-  "started_at": "2026-05-20T15:53:40.237Z",
+  "active_plan": "C:\\Users\\JakeP\\Documents\\GitHub\\Roleplay-Engine\\.omo\\plans\\full-audit-remediation-2026-05-21.md",
+  "started_at": "2026-05-21T11:27:00.370Z",
   "status": "active",
-  "updated_at": "2026-05-20T15:59:43.937Z",
+  "updated_at": "2026-05-21T14:02:33.940Z",
   "session_ids": [
     "ses_1c53eff67ffeCdr0YX3P28JlBj"
   ],
   "session_origins": {
     "ses_1c53eff67ffeCdr0YX3P28JlBj": "direct"
   },
-  "plan_name": "ui-overflow-fix",
+  "plan_name": "full-audit-remediation-2026-05-21",
   "task_sessions": {
     "todo:1": {
       "task_key": "todo:1",
       "task_label": "1",
-      "task_title": "Fix Layout Overflow — Shell + Session Page",
-      "session_id": "ses_1b9e6af66ffeKoCPO7XZ3gPT6k",
+      "task_title": "DELETE action \"all\" (lines 142-146): `audio_path` from DB used in `fs.unlinkSync()` without path validation",
+      "session_id": "ses_1b5ac3dafffeBlGBcZQYFdjfcF",
       "agent": "Sisyphus-Junior",
-      "category": "visual-engineering",
-      "updated_at": "2026-05-20T15:59:43.937Z",
-      "started_at": "2026-05-20T15:56:53.668Z",
+      "category": "quick",
+      "started_at": "2026-05-21T11:31:03.483Z",
+      "ended_at": "2026-05-21T11:42:02.731Z",
+      "elapsed_ms": 659248,
       "status": "completed",
-      "ended_at": "2026-05-20T15:59:43.937Z",
-      "elapsed_ms": 170269
+      "updated_at": "2026-05-21T11:42:02.731Z"
+    },
+    "todo:5": {
+      "task_key": "todo:5",
+      "task_label": "5",
+      "task_title": "Fix health endpoint token verification",
+      "session_id": "ses_1b5ac858cffeOkCDhMI6r8Rby2",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-05-21T11:52:26.903Z",
+      "started_at": "2026-05-21T11:43:15.678Z",
+      "status": "completed",
+      "ended_at": "2026-05-21T11:52:26.903Z",
+      "elapsed_ms": 551225
+    },
+    "todo:14": {
+      "task_key": "todo:14",
+      "task_label": "14",
+      "task_title": "Add rate limiting to remaining 76 routes",
+      "session_id": "ses_1b59b9dc7ffeobxS60VPoRBonW",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-05-21T13:02:18.447Z",
+      "started_at": "2026-05-21T13:00:31.547Z",
+      "status": "completed",
+      "ended_at": "2026-05-21T13:02:18.447Z",
+      "elapsed_ms": 106900
+    },
+    "todo:15": {
+      "task_key": "todo:15",
+      "task_label": "15",
+      "task_title": "Fix logger stack traces in production",
+      "session_id": "ses_1b55d97f7ffel27x980V2zf4ii",
+      "agent": "Sisyphus-Junior",
+      "started_at": "2026-05-21T13:04:29.363Z",
+      "status": "completed",
+      "updated_at": "2026-05-21T13:14:28.871Z",
+      "ended_at": "2026-05-21T13:14:28.871Z",
+      "elapsed_ms": 599508
+    },
+    "todo:20": {
+      "task_key": "todo:20",
+      "task_label": "20",
+      "task_title": "Consolidate triple-duplicated relationship decay logic",
+      "session_id": "ses_1b5524a1affeeWAfeYGVk7ambC",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-05-21T13:23:23.479Z",
+      "started_at": "2026-05-21T13:18:48.257Z",
+      "status": "completed",
+      "ended_at": "2026-05-21T13:23:23.479Z",
+      "elapsed_ms": 275222
+    },
+    "todo:33": {
+      "task_key": "todo:33",
+      "task_label": "33",
+      "task_title": "Add LRU cache to `listWikiPages()`",
+      "session_id": "ses_1b5410021ffeMHzB7dE3lajV6H",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "started_at": "2026-05-21T13:31:55.779Z",
+      "status": "completed",
+      "updated_at": "2026-05-21T13:47:22.770Z",
+      "ended_at": "2026-05-21T13:47:22.770Z",
+      "elapsed_ms": 926991
+    },
+    "final-wave:f1": {
+      "task_key": "final-wave:f1",
+      "task_label": "F1",
+      "task_title": "**Plan Compliance Audit** — `oracle`",
+      "session_id": "ses_1b52b7dd8ffebWPUQMGmqfVngX",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "started_at": "2026-05-21T13:50:27.421Z",
+      "status": "completed",
+      "updated_at": "2026-05-21T14:02:33.940Z",
+      "ended_at": "2026-05-21T14:02:33.940Z",
+      "elapsed_ms": 726519
     }
   },
   "agent": "atlas"

@@ -10,6 +10,9 @@ import { OLLAMA_CONFIG } from "@/lib/config";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 import type { DbDatabase } from "@/lib/types";
 import { getAuthToken } from '@/lib/auth-token';
+import { extractAndApplySceneState } from "@/lib/scene-extraction";
+import { logger } from '@/lib/logger';
+import { validateLength } from '@/lib/validation';
 
 function getSessionSettings(db: DbDatabase, sessionId: string) {
   const rows = db.prepare(
@@ -75,6 +78,9 @@ export async function POST(
   if (!userMessage) {
     return NextResponse.json({ error: "userMessage is required" }, { status: 400 });
   }
+
+  const messageError = validateLength(userMessage, 10000, "userMessage");
+  if (messageError) return NextResponse.json({ error: messageError }, { status: 400 });
 
   // L3: Skip pre-flight connection check — let generateTextStream handle
   // retries internally. The pre-check would reject immediately without
@@ -176,14 +182,18 @@ export async function POST(
         const userModels = getUserModels(decoded.sub);
         const resolvedModel = sessionSettings.llmModel || persona?.llmModel || userModels.llmModel;
 
+        let chunkCount = 0;
         await generateTextStream(prompt, (chunk) => {
           fullResponse += chunk;
+          chunkCount++;
 
-          // Update the message in the database incrementally
-          db.prepare("UPDATE messages SET content = ? WHERE id = ?").run(
-            fullResponse,
-            aiMessageId
-          );
+          // Buffer DB writes — write every 50 chunks
+          if (chunkCount % 50 === 0) {
+            db.prepare("UPDATE messages SET content = ? WHERE id = ?").run(
+              fullResponse,
+              aiMessageId
+            );
+          }
 
           controller.enqueue(encoder.encode(JSON.stringify({ chunk }) + "\n"));
         }, {
@@ -194,6 +204,12 @@ export async function POST(
           num_ctx: sessionSettings.numCtx ?? undefined,
         });
 
+        // Final write after stream completes — ensures complete content is saved
+        db.prepare("UPDATE messages SET content = ? WHERE id = ?").run(
+          fullResponse,
+          aiMessageId
+        );
+
         // Emit generation done event
         eventBus.emit(`${SessionEvents.GENERATION_DONE}:${sessionId}`, {
           messageId: aiMessageId,
@@ -201,6 +217,15 @@ export async function POST(
           intent: ctx.intent,
           contentLength: fullResponse.length,
         });
+
+        // Auto-extract scene state from recent messages
+        try {
+          await extractAndApplySceneState(sessionId, decoded.sub);
+          eventBus.emit(`${SessionEvents.SCENE_UPDATED}:${sessionId}`, { sessionId });
+        } catch (err: unknown) {
+          // Extraction failure should not break generation flow
+          // extractAndApplySceneState already logs warnings internally
+        }
 
         // Queue background jobs for async processing
         // High priority: summarize the new message
@@ -238,11 +263,12 @@ export async function POST(
         );
         controller.close();
         eventBus.unregisterController(controller);
-      } catch (error) {
+      } catch (err: unknown) {
+        logger.error("Generation stream failed", err as Error);
         controller.enqueue(
           encoder.encode(
             JSON.stringify({
-              error: error instanceof Error ? error.message : "Generation failed",
+              error: "Internal server error",
             }) + "\n"
           )
         );

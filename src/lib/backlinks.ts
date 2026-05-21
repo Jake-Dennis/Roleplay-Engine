@@ -206,7 +206,7 @@ export function storeBacklinks(
           link.context.substring(0, 200)
         );
         stored++;
-      } catch (err) {
+      } catch (err: unknown) {
         logger.warn("Skipped backlink DB insert", { sourceId, linkName: link.name, error: String(err) });
         // Skip duplicates or errors
       }

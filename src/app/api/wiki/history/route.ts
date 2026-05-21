@@ -10,6 +10,7 @@ import fs from "fs";
 import { getAuthToken } from "@/lib/auth-token";
 import { unauthorizedError, notFoundError, badRequestError, requireJson, serverError } from "@/lib/error-response";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 /**
  * GET /api/wiki/history?slug=entities/my-page
@@ -21,6 +22,10 @@ export async function GET(request: NextRequest) {
   if (!token) return unauthorizedError();
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`wiki_read:${ip}`, "wiki_read");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   const slugParam = request.nextUrl.searchParams.get("slug");
   if (!slugParam) {
@@ -34,8 +39,8 @@ export async function GET(request: NextRequest) {
   try {
     const versions = getPageVersions(pagePath, decoded.sub);
     return NextResponse.json({ versions });
-  } catch (error) {
-    return serverError(error);
+  } catch (err: unknown) {
+    return serverError(err);
   }
 }
 
@@ -53,6 +58,10 @@ export async function POST(request: NextRequest) {
   if (!token) return unauthorizedError();
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`wiki_write:${ip}`, "wiki_write");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   requireJson(request);
   const body = await request.json();
@@ -90,8 +99,8 @@ export async function POST(request: NextRequest) {
       generateIndex(wikiRoot);
 
       return NextResponse.json({ success: true });
-    } catch (error) {
-      return serverError(error);
+    } catch (err: unknown) {
+      return serverError(err);
     }
   }
 
@@ -126,8 +135,8 @@ export async function POST(request: NextRequest) {
       recordVersion(relativePath, decoded.sub, versionNumber, changeSummary || "", snapshotPath);
 
       return NextResponse.json({ success: true, versionNumber });
-    } catch (error) {
-      return serverError(error);
+    } catch (err: unknown) {
+      return serverError(err);
     }
   }
 

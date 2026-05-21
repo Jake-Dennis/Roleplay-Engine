@@ -79,11 +79,35 @@ export function generateIndex(wikiRoot: string): string {
   return indexPath;
 }
 
+let pendingRegeneration = false;
+let lastRegeneration = 0;
+const DEBOUNCE_MS = 5000;
+
+/**
+ * Debounced wrapper around generateIndex().
+ * Only runs once per 5 seconds even if called multiple times.
+ */
+export function generateIndexDebounced(wikiRoot: string): void {
+  const now = Date.now();
+  if (pendingRegeneration || now - lastRegeneration < DEBOUNCE_MS) {
+    return; // Already scheduled or too soon
+  }
+  pendingRegeneration = true;
+  setImmediate(() => {
+    try {
+      generateIndex(wikiRoot);
+      lastRegeneration = Date.now();
+    } finally {
+      pendingRegeneration = false;
+    }
+  });
+}
+
 /**
  * Regenerate the index after a page is created or updated.
  * Delegates to generateIndex for simplicity — the full index is rebuilt each time.
  */
-export function updateIndexEntry(wikiRoot: string, _pagePath: string): string {
+export function updateIndexEntry(wikiRoot: string): string {
   return generateIndex(wikiRoot);
 }
 
@@ -91,6 +115,6 @@ export function updateIndexEntry(wikiRoot: string, _pagePath: string): string {
  * Regenerate the index after a page is deleted.
  * Delegates to generateIndex for simplicity — the full index is rebuilt each time.
  */
-export function removeIndexEntry(wikiRoot: string, _pagePath: string): string {
+export function removeIndexEntry(wikiRoot: string): string {
   return generateIndex(wikiRoot);
 }

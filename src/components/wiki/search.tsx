@@ -92,7 +92,7 @@ export default function Search({ pages, basePath = '/wiki', isSearching = false,
 
       indexRef.current = index;
       setIndexError(null);
-    } catch (e) {
+    } catch (err: unknown) {
       setIndexError('Failed to initialize search index');
     }
   }, [pages]);

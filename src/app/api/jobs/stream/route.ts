@@ -3,6 +3,7 @@ import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { getAuthToken } from '@/lib/auth-token';
 import { TIMEOUTS } from "@/lib/config";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -21,6 +22,13 @@ export async function GET(request: NextRequest) {
 
   const decoded = await verifyToken(token);
   if (!decoded) return new Response("Invalid token", { status: 401 });
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`api:${ip}`, "api");
+  if (!rateLimit.allowed) return new Response(
+    JSON.stringify({ error: 'Rate limit exceeded. Try again later.', retryAfter: rateLimit.retryAfter }),
+    { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } }
+  );
 
   const encoder = new TextEncoder();
 

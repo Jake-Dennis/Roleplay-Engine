@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { decodeJwt } from "jose";
-import { revokeToken, cleanupExpiredDenylistEntries } from "@/lib/auth";
+import { verifyToken, revokeToken, cleanupExpiredDenylistEntries } from "@/lib/auth";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`auth_logout:${ip}`, "api");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
+
   // Attempt to revoke the current token
   try {
     const token = request.cookies.get("auth-token")?.value;
     if (token) {
-      const payload = decodeJwt(token);
-      if (payload.jti && payload.exp) {
-        revokeToken(payload.jti as string, payload.exp as number);
+      const payload = await verifyToken(token);
+      if (payload) {
+        revokeToken(payload.jti, payload.exp);
       }
     }
   } catch {

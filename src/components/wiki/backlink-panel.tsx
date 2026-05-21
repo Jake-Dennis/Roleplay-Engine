@@ -1,21 +1,20 @@
 'use client';
 import Link from 'next/link';
-import { parseWikilinks, resolveWikilink } from '@/lib/wiki/wikilinks';
-import type { WikiPage } from '@/lib/wiki/file-io';
 import { Loader2, AlertTriangle, Link2 } from 'lucide-react';
 
+interface BacklinkInfo {
+  path: string;
+  title: string;
+  type: string;
+  links: Array<{ name: string; context: string }>;
+}
+
 interface BacklinkPanelProps {
-  currentPage: string;
-  allPages: WikiPage[];
+  backlinks: BacklinkInfo[];
   basePath?: string;
   isLoading?: boolean;
   error?: string | null;
   onRetry?: () => void;
-}
-
-interface BacklinkEntry {
-  page: WikiPage;
-  links: Array<{ name: string; context: string }>;
 }
 
 function LoadingState() {
@@ -65,54 +64,13 @@ function ErrorState({ error, onRetry }: { error: string; onRetry?: () => void })
   );
 }
 
-export default function BacklinkPanel({ currentPage, allPages, basePath = '/wiki', isLoading, error, onRetry }: BacklinkPanelProps) {
+export default function BacklinkPanel({ backlinks, basePath = '/wiki', isLoading, error, onRetry }: BacklinkPanelProps) {
   if (isLoading) {
     return <LoadingState />;
   }
 
   if (error) {
     return <ErrorState error={error} onRetry={onRetry} />;
-  }
-
-  // Map singular frontmatter type to plural folder name used in wiki directory structure
-  const typeToFolder: Record<string, string> = {
-    entity: 'entities',
-    concept: 'concepts',
-    source: 'sources',
-    synthesis: 'synthesis',
-  };
-
-  // Normalize currentPage from URL format (singular type) to file path format (plural folder)
-  // e.g., "entity/haleth.md" → "entities/haleth.md"
-  const normalizePath = (p: string): string => {
-    const parts = p.replace(/\\/g, '/').split('/');
-    if (parts.length >= 2) {
-      const firstPart = parts[0];
-      const plural = typeToFolder[firstPart];
-      if (plural) {
-        parts[0] = plural;
-      }
-    }
-    return parts.join('/');
-  };
-
-  const normalizedCurrent = normalizePath(currentPage);
-
-  // Find pages that link to current page using resolveWikilink
-  const backlinks: BacklinkEntry[] = [];
-
-  for (const page of allPages) {
-    if (page.path === currentPage || page.path === normalizedCurrent) continue;
-
-    const links = parseWikilinks(page.content);
-    const matchingLinks = links.filter(link => {
-      const resolved = resolveWikilink(link.name, allPages, page.frontmatter.universe);
-      return resolved === currentPage || resolved === normalizedCurrent;
-    });
-
-    if (matchingLinks.length > 0) {
-      backlinks.push({ page, links: matchingLinks });
-    }
   }
 
   if (backlinks.length === 0) {
@@ -122,15 +80,15 @@ export default function BacklinkPanel({ currentPage, allPages, basePath = '/wiki
   return (
     <div className="text-sm">
       <p className="font-medium mb-2 px-2">{backlinks.length} backlink{backlinks.length !== 1 ? 's' : ''}</p>
-      {backlinks.map(({ page, links }) => (
-        <div key={page.path} className="mb-2 px-2">
+      {backlinks.map((bl) => (
+        <div key={bl.path} className="mb-2 px-2">
           <Link
-            href={`${basePath}/${page.frontmatter.type}/${page.path.split('/').pop()?.replace('.md', '')}`}
+            href={`${basePath}/${bl.type}/${bl.path.split('/').pop()?.replace('.md', '')}`}
             className="text-accent hover:text-accent-hover font-medium"
           >
-            {page.frontmatter.title || page.path.split('/').pop()?.replace('.md', '')}
+            {bl.title}
           </Link>
-          {links.map((link, i) => (
+          {bl.links.map((link, i) => (
             <p key={i} className="text-xs text-text-muted mt-1 line-clamp-2">
               ...{link.context}...
             </p>

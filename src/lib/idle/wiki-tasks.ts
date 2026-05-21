@@ -61,8 +61,8 @@ export async function wikiCompressSummaries(userId: string, universeId?: string)
         const newContent = `> **Compressed Summary:** ${summary}\n\n---\n\n${page.content}`;
         writeWikiPage(page.path, newContent, updatedFrontmatter);
         compressed++;
-      } catch (e) {
-        errors.push(`Failed to compress ${page.path}: ${(e as Error).message}`);
+      } catch (err: unknown) {
+        errors.push(`Failed to compress ${page.path}: ${(err as Error).message}`);
       }
     }
   }
@@ -155,8 +155,8 @@ export async function wikiRefineRelationships(userId: string, universeId?: strin
         writeWikiPage(pagePath, summary, frontmatter);
       }
       refined++;
-    } catch (e) {
-      errors.push(`Failed to refine relationship ${rel.id}: ${(e as Error).message}`);
+    } catch (err: unknown) {
+      errors.push(`Failed to refine relationship ${rel.id}: ${(err as Error).message}`);
     }
   }
 
@@ -204,8 +204,8 @@ export async function wikiDeepenPages(userId: string, universeId?: string): Prom
 
       writeWikiPage(page.path, newContent, updatedFrontmatter);
       deepened++;
-    } catch (e) {
-      errors.push(`Failed to deepen ${page.path}: ${(e as Error).message}`);
+    } catch (err: unknown) {
+      errors.push(`Failed to deepen ${page.path}: ${(err as Error).message}`);
     }
   }
 
@@ -254,8 +254,8 @@ export async function wikiEnrichEntities(userId: string, universeId?: string): P
 
       writeWikiPage(page.path, newContent, updatedFrontmatter);
       enriched++;
-    } catch (e) {
-      errors.push(`Failed to enrich ${page.path}: ${(e as Error).message}`);
+    } catch (err: unknown) {
+      errors.push(`Failed to enrich ${page.path}: ${(err as Error).message}`);
     }
   }
 
@@ -323,8 +323,8 @@ export async function wikiGenerateRumors(userId: string, universeId?: string): P
 
       writeWikiPage(pagePath, rumors, frontmatter);
       rumorsGenerated++;
-    } catch (e) {
-      errors.push(`Failed to generate rumor for ${event.title}: ${(e as Error).message}`);
+    } catch (err: unknown) {
+      errors.push(`Failed to generate rumor for ${event.title}: ${(err as Error).message}`);
     }
   }
 
@@ -375,8 +375,8 @@ export async function wikiArchive(userId: string, universeId?: string): Promise<
       const newContent = `> **Archived:** ${summary}\n\n---\n\n${page.content}`;
       writeWikiPage(page.path, newContent, updatedFrontmatter);
       archived++;
-    } catch (e) {
-      errors.push(`Failed to archive ${page.path}: ${(e as Error).message}`);
+    } catch (err: unknown) {
+      errors.push(`Failed to archive ${page.path}: ${(err as Error).message}`);
     }
   }
 
@@ -475,8 +475,8 @@ export async function wikiDecayRelationships(userId: string, universeId?: string
             updated: new Date().toISOString(),
           };
           writeWikiPage(relPage.path, newContent, updatedFrontmatter);
-        } catch (e) {
-          errors.push(`Failed to update wiki for relationship ${rel.id}: ${(e as Error).message}`);
+        } catch (err: unknown) {
+          errors.push(`Failed to update wiki for relationship ${rel.id}: ${(err as Error).message}`);
         }
       }
 

@@ -48,8 +48,8 @@ export function SessionRecapPanel({ sessionId, onClose }: SessionRecapPanelProps
       try {
         const res = await fetch(`/api/jobs`);
         if (!res.ok) return;
-        const data = await res.json();
-        const job = (data.jobs || []).find((j: { id: string }) => j.id === id);
+        const json = await res.json();
+        const job = (json.jobs || []).find((j: { id: string }) => j.id === id);
         if (!job) return;
 
         setProgress(job.progress || 0);
@@ -103,15 +103,15 @@ export function SessionRecapPanel({ sessionId, onClose }: SessionRecapPanelProps
     try {
       const res = await fetch(`/api/sessions/${sessionId}/recap`, { method: "POST" });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to start recap generation");
+        const errorBody = await res.json().catch(() => ({}));
+        throw new Error(errorBody.error || "Failed to start recap generation");
       }
-      const data = await res.json();
-      setJobId(data.jobId);
+      const json = await res.json();
+      setJobId(json.jobId);
       setStatus("running");
       setProgress(0);
       setProgressMessage("Queued...");
-    } catch (err) {
+    } catch (err: unknown) {
       setStatus("failed");
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {

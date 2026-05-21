@@ -46,8 +46,8 @@ export default function TimelinePage() {
       if (activeUniverse) params.set("universe_id", activeUniverse.id);
       if (activeGroup) params.set("group_id", activeGroup.id);
       const res = await fetch(`/api/timeline?${params}`);
-      const data = await res.json();
-      setEntries(data.entries || []);
+      const json = await res.json();
+      setEntries(json.entries || []);
     } catch {
       // ignore
     } finally {

@@ -45,8 +45,8 @@ export function useVoices(): UseVoicesResult {
       if (!res.ok) throw new Error(`Failed to load voices: ${res.status}`);
       const data = await res.json();
       setVoices(data.voices || []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unknown error");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Unknown error");
       setVoices([]);
     } finally {
       setLoading(false);

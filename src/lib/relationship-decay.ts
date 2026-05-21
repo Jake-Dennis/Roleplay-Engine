@@ -35,7 +35,7 @@ export interface DecayResult {
 }
 
 // Default decay configuration
-const DEFAULT_DECAY_RATES: DecayConfig = {
+export const DEFAULT_DECAY_RATES: DecayConfig = {
   emotionalHalfLifeDays: 7,
   stageRegressionDays: 14,
   minEmotionalState: "neutral",
@@ -56,7 +56,7 @@ export function applyEmotionDecay(
 }
 
 // Emotional state progression (strongest to weakest)
-const EMOTIONAL_STATES = [
+export const EMOTIONAL_STATES = [
   "devoted",
   "loving",
   "trusting",
@@ -71,7 +71,7 @@ const EMOTIONAL_STATES = [
 ] as const;
 
 // Relationship stage progression (closest to furthest)
-const RELATIONSHIP_STAGES = [
+export const RELATIONSHIP_STAGES = [
   "lovers",
   "close_friends",
   "friends",

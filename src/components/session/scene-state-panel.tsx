@@ -16,7 +16,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapPin, Target, Palette, Users, GitBranch, MessageCircle } from "lucide-react";
 import { safeParse } from "@/lib/safe-json";
 
@@ -51,6 +51,20 @@ export function SceneStatePanel({ scene, onSave, onClose }: SceneStatePanelProps
     activeThreads: safeParse<string[]>(scene?.active_threads ?? null) ?? [],
     sceneSummary: scene?.scene_summary || "",
   });
+
+  // Sync edit state when scene prop updates (e.g., after SSE refresh)
+  useEffect(() => {
+    if (scene) {
+      setEdit({
+        location: scene.active_location_id || "",
+        goal: scene.current_goal || "",
+        tone: scene.emotional_tone || "",
+        activeNpcs: safeParse<string[]>(scene.active_npcs ?? null) ?? [],
+        activeThreads: safeParse<string[]>(scene.active_threads ?? null) ?? [],
+        sceneSummary: scene.scene_summary || "",
+      });
+    }
+  }, [scene]);
 
   function handleSave() {
     onSave({

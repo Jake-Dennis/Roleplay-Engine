@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
-import { notFoundError, unauthorizedError, badRequestError, internalError } from "@/lib/error-response";
+import { notFoundError, unauthorizedError, badRequestError, serverError } from "@/lib/error-response";
 import { getAuthToken } from '@/lib/auth-token';
-import { logger } from '@/lib/logger';
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 interface ExportMessage {
   id: string;
@@ -43,6 +43,10 @@ export async function GET(
 
     const decoded = await verifyToken(token);
     if (!decoded) return unauthorizedError();
+
+    const ip = getClientIp(request);
+    const rateLimit = checkRateLimit(`session_read:${ip}`, "session_read");
+    if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
     const { id: sessionId } = await params;
     const { searchParams } = new URL(request.url);
@@ -100,8 +104,7 @@ export async function GET(
         "Content-Disposition": `attachment; filename="chat-export.${ext}"`,
       },
     });
-  } catch (err) {
-    logger.error("GET /api/sessions/[id]/export error:", err);
-    return internalError();
+  } catch (err: unknown) {
+    return serverError(err);
   }
 }

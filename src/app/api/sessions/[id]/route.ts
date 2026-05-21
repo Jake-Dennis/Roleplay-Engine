@@ -9,6 +9,8 @@ import { logger } from '@/lib/logger';
 import { safeParseWarn } from "@/lib/safe-json";
 import type { DbRow } from "@/lib/types";
 import { validateLength } from '@/lib/validation';
+import { isValidUUID } from '@/lib/validation/uuid-validator';
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 export async function GET(
   request: NextRequest,
@@ -21,7 +23,14 @@ export async function GET(
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`session_read:${ip}`, "session_read");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
+
   const { id } = await params;
+  if (!isValidUUID(id)) {
+    return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
+  }
   const db = getDb();
   ensureParticipantColumns(db);
 
@@ -109,7 +118,7 @@ export async function GET(
       turnOrder: safeParseWarn<string[]>((combined as Record<string, unknown>)?.turn_order_value as string, "turn order", []) ?? [],
       currentTurn: ((combined as Record<string, unknown>)?.current_turn_value as string) || null,
     };
-  } catch (err) { logger.warn("[sessions] turn config parse failed:", err); }
+  } catch (err: unknown) { logger.warn("[sessions] turn config parse failed:", err); }
 
   return NextResponse.json({
     session: camelizeKeys(session),
@@ -119,7 +128,7 @@ export async function GET(
     turnConfig,
     isOwner: (session as Record<string, unknown>).owner_id === decoded.sub,
   });
-  } catch (err) {
+  } catch (err: unknown) {
     logger.error("[sessions/[id]] GET failed:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
@@ -135,7 +144,14 @@ export async function PUT(
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`session_write:${ip}`, "session_write");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
+
   const { id } = await params;
+  if (!isValidUUID(id)) {
+    return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
+  }
   const db = getDb();
 
   // Verify ownership
@@ -175,7 +191,14 @@ export async function DELETE(
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`session_write:${ip}`, "session_write");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
+
   const { id } = await params;
+  if (!isValidUUID(id)) {
+    return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
+  }
   const db = getDb();
 
   const session = db.prepare(

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getCorrelationId } from './logger';
+import { getCorrelationId, logger } from './logger';
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -31,12 +31,8 @@ export function badRequestError(message: string): Response {
   return errorResponse(message, 400);
 }
 
-export function internalError(): Response {
-  return errorResponse('Internal server error', 500);
-}
-
 export function serverError(error: unknown): Response {
-  console.error(error);
+  logger.error('Server error', error);
   return errorResponse('Internal server error', 500, error);
 }
 

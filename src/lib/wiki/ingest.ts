@@ -145,9 +145,9 @@ Rules:
       }));
 
     return { entities, concepts };
-  } catch (error) {
+  } catch (err: unknown) {
     // LLM failed — return empty extraction, caller handles gracefully
-    logger.error("[ingest] LLM extraction failed:", error);
+    logger.error("[ingest] LLM extraction failed:", err);
     return { entities: [], concepts: [] };
   }
 }
@@ -226,8 +226,8 @@ function createWikiPageForItem(
 
     writeWikiPage(pagePath, body, frontmatter);
     return { action: "created", pagePath };
-  } catch (error) {
-    logger.error(`[ingest] Failed to create page for "${item.title}":`, error);
+  } catch (err: unknown) {
+    logger.error(`[ingest] Failed to create page for "${item.title}":`, err);
     return null;
   }
 }
@@ -268,8 +268,8 @@ function createSourcePage(
 
     writeWikiPage(pagePath, body, frontmatter);
     return { pagePath };
-  } catch (error) {
-    logger.error(`[ingest] Failed to create source page for "${sourcePath}":`, error);
+  } catch (err: unknown) {
+    logger.error(`[ingest] Failed to create source page for "${sourcePath}":`, err);
     return null;
   }
 }
@@ -315,8 +315,8 @@ export async function ingestSource(
   let sourceContent: string;
   try {
     sourceContent = readSourceFile(sourcePath);
-  } catch (error) {
-    result.errors.push(`Failed to read source file: ${(error as Error).message}`);
+  } catch (err: unknown) {
+    result.errors.push(`Failed to read source file: ${(err as Error).message}`);
     return result;
   }
 
@@ -357,16 +357,16 @@ export async function ingestSource(
   // Step 5: Regenerate wiki index
   try {
     generateIndex(wikiRoot);
-  } catch (error) {
-    result.errors.push(`Failed to regenerate index: ${(error as Error).message}`);
+  } catch (err: unknown) {
+    result.errors.push(`Failed to regenerate index: ${(err as Error).message}`);
   }
 
   // Step 6: Append to operation log
   try {
     const details = `Source: ${sourcePath}\nCreated: ${result.created.length} pages\nUpdated: ${result.updated.length} pages\nErrors: ${result.errors.length}`;
     appendLog(wikiRoot, "ingest", sourceRef, details);
-  } catch (error) {
-    result.errors.push(`Failed to append log: ${(error as Error).message}`);
+  } catch (err: unknown) {
+    result.errors.push(`Failed to append log: ${(err as Error).message}`);
   }
 
   return result;

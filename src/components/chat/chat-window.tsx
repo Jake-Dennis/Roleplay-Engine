@@ -20,9 +20,7 @@
  *   />
  */
 
-"use client";
-
-import { memo } from "react";
+import { memo, useRef } from "react";
 import {
   Send,
   Loader2,
@@ -240,8 +238,20 @@ export function ChatWindow({
   onEditHistoryClose,
   disabled = false,
 }: ChatWindowProps) {
+  const seenMessageIds = useRef<Set<string>>(new Set());
+  const initializedRef = useRef(false);
+
+  // Pre-populate seen set with existing messages on first render
+  // so only NEWLY added messages get the entrance animation
+  if (!initializedRef.current) {
+    for (const msg of messages) {
+      seenMessageIds.current.add(msg.id);
+    }
+    initializedRef.current = true;
+  }
+
   return (
-    <>
+    <div className="flex flex-col h-full">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto py-4">
         {messages.length === 0 && !isStreaming ? (
@@ -256,17 +266,20 @@ export function ChatWindow({
         ) : (
           <div className="space-y-3">
             {(() => {
-              // Filter out empty AI placeholders (created before streaming starts)
-              const visibleMessages = messages.filter((m) => !(m.sender_id === null && !m.content));
+              // Filter out empty user messages (AI messages preserved for streaming transition)
+              const visibleMessages = messages.filter((m) => m.sender_id === null || (m.content && m.content.trim()));
               const lastMsgId = visibleMessages[visibleMessages.length - 1]?.id;
               return visibleMessages.map((message) => {
                 const isAI = message.sender_id === null;
                 const isEditing = editingId === message.id;
                 const isLastAI = isAI && message.id === lastMsgId;
+                const wasSeen = seenMessageIds.current.has(message.id);
+                if (!wasSeen) seenMessageIds.current.add(message.id);
+                const animationClass = wasSeen ? "" : "animate-message-slide";
 
               return (
+                <div key={message.id} className={animationClass}>
                 <MessageItem
-                  key={message.id}
                   message={message}
                   isAI={isAI}
                   isLastAI={isLastAI}
@@ -285,13 +298,14 @@ export function ChatWindow({
                   onEditContentChange={onEditContentChange}
                   onShowEditHistory={onShowEditHistory}
                 />
+                </div>
               );
             });
             })()}
 
             {/* Streaming message */}
-            {isStreaming && (
-              <div id="msg-streaming" className="flex">
+            {isStreaming && streamingContent && (
+              <div id="msg-streaming" className="flex animate-message-slide">
                 <div className="max-w-[75%] rounded-xl border border-border-default bg-bg-elevated px-4 py-3">
                   <p className="text-xxs font-medium text-text-muted mb-1">
                     AI Narrator
@@ -356,6 +370,6 @@ export function ChatWindow({
           onClose={onEditHistoryClose}
         />
       )}
-    </>
+    </div>
   );
 }

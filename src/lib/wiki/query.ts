@@ -4,154 +4,9 @@ import FlexSearch from "flexsearch";
 import { generateText } from "@/lib/ollama";
 import { readWikiPage, listWikiPages, WikiPage } from "@/lib/wiki/file-io";
 import { parseWikilinks } from "@/lib/wiki/wikilinks";
+import { parseWikiIndex, scoreWikiEntry, resolveWikiPagePath } from "./index-utils";
 import type { QueryResult } from "./types";
 export type { QueryResult } from "./types";
-
-/**
- * Parsed entry from index.md.
- */
-interface IndexEntry {
-  title: string;
-  summary: string;
-  status: string;
-  section: string; // entity, concept, source, synthesis
-  /** Raw line from index.md for relevance scoring. */
-  rawLine: string;
-}
-
-// ---------------------------------------------------------------------------
-// Index Parsing
-// ---------------------------------------------------------------------------
-
-/**
- * Parse index.md into structured entries grouped by section.
- *
- * Expected format:
- *   ## Entities
- *   - [[Title]] — summary (status: reviewed)
- */
-function parseIndex(indexPath: string): IndexEntry[] {
-  if (!fs.existsSync(indexPath)) return [];
-
-  const content = fs.readFileSync(indexPath, "utf-8");
-  const entries: IndexEntry[] = [];
-  let currentSection = "";
-
-  for (const line of content.split("\n")) {
-    // Detect section headers: ## Entities, ## Concepts, etc.
-    const sectionMatch = line.match(/^##\s+(.+)$/);
-    if (sectionMatch) {
-      currentSection = sectionMatch[1].toLowerCase();
-      continue;
-    }
-
-    // Detect index entries: - [[Title]] — summary (status: draft)
-    const entryMatch = line.match(/^-\s+\[\[([^\]]+)\]\]\s*[—-]\s*(.+)$/);
-    if (entryMatch) {
-      const title = entryMatch[1].trim();
-      const rest = entryMatch[2].trim();
-
-      // Extract status from end: (status: reviewed)
-      const statusMatch = rest.match(/\(status:\s*(\w+)\)\s*$/);
-      const status = statusMatch ? statusMatch[1] : "draft";
-      const summary = statusMatch
-        ? rest.replace(/\(status:\s*\w+\)\s*$/, "").trim()
-        : rest;
-
-      entries.push({
-        title,
-        summary,
-        status,
-        section: currentSection,
-        rawLine: line,
-      });
-    }
-  }
-
-  return entries;
-}
-
-// ---------------------------------------------------------------------------
-// Relevance Scoring
-// ---------------------------------------------------------------------------
-
-/**
- * Score an index entry's relevance to a query using keyword overlap.
- * Returns 0-1 score.
- */
-function scoreEntry(entry: IndexEntry, query: string): number {
-  const queryTerms = query
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((t) => t.length > 2);
-
-  if (queryTerms.length === 0) return 0;
-
-  const searchable = `${entry.title} ${entry.summary} ${entry.section}`.toLowerCase();
-  let matches = 0;
-
-  for (const term of queryTerms) {
-    if (searchable.includes(term)) matches++;
-  }
-
-  // Base score: fraction of query terms matched
-  let score = matches / queryTerms.length;
-
-  // Bonus for title match (higher weight)
-  if (entry.title.toLowerCase().includes(queryTerms[0])) {
-    score += 0.3;
-  }
-
-  // Bonus for reviewed/locked status (prefer curated content)
-  if (entry.status === "locked") score += 0.15;
-  else if (entry.status === "reviewed") score += 0.1;
-
-  return Math.min(score, 1.0);
-}
-
-// ---------------------------------------------------------------------------
-// Page Resolution
-// ---------------------------------------------------------------------------
-
-/**
- * Resolve an index entry title to an actual wiki page path.
- * Searches all wiki pages for a matching title (case-insensitive).
- */
-function resolvePagePath(
-  title: string,
-  pages: WikiPage[],
-  universeId: string
-): string | null {
-  const normalizedTitle = title.toLowerCase().replace(/\s+/g, "-");
-
-  // First pass: exact title match + same universe
-  for (const page of pages) {
-    const pageTitle = (page.frontmatter.title || "")
-      .toLowerCase()
-      .replace(/\s+/g, "-");
-    const pageUniverse = page.frontmatter.universe?.toLowerCase();
-
-    if (pageTitle === normalizedTitle && pageUniverse === universeId) {
-      return page.path;
-    }
-  }
-
-  // Second pass: exact title match (any universe)
-  for (const page of pages) {
-    const pageTitle = (page.frontmatter.title || "")
-      .toLowerCase()
-      .replace(/\s+/g, "-");
-    if (pageTitle === normalizedTitle) return page.path;
-  }
-
-  // Third pass: filename match
-  for (const page of pages) {
-    const filename = path.basename(page.path, ".md").toLowerCase();
-    if (filename === normalizedTitle) return page.path;
-  }
-
-  return null;
-}
 
 // ---------------------------------------------------------------------------
 // FlexSearch Fallback
@@ -392,7 +247,7 @@ export async function queryWiki(
   // Step 1: Read index.md for first-pass filtering
   // -----------------------------------------------------------------------
   const indexPath = path.join(wikiRoot, "index.md");
-  const indexEntries = parseIndex(indexPath);
+  const indexEntries = parseWikiIndex(indexPath);
 
   if (indexEntries.length === 0) {
     // No index — fall back to full-text search
@@ -405,7 +260,7 @@ export async function queryWiki(
   const scored = indexEntries
     .map((entry) => ({
       entry,
-      score: scoreEntry(entry, query),
+      score: scoreWikiEntry(entry, query),
     }))
     .filter((s) => s.score > 0.1)
     .sort((a, b) => b.score - a.score);
@@ -423,7 +278,7 @@ export async function queryWiki(
   // Resolve top candidates to actual page paths
   const candidatePaths: string[] = [];
   for (const { entry } of scored.slice(0, 8)) {
-    const resolved = resolvePagePath(entry.title, allPages, universeId);
+    const resolved = resolveWikiPagePath(entry.title, allPages, universeId);
     if (resolved && !candidatePaths.includes(resolved)) {
       candidatePaths.push(resolved);
     }
@@ -539,7 +394,7 @@ async function synthesizeAnswer(
       citations,
       usedFallback,
     };
-  } catch (error) {
+  } catch (err: unknown) {
     // LLM failed — return a fallback answer with page references
     const pageRefs = pages
       .map((p) => `- ${p.frontmatter.title || path.basename(p.path, ".md")} (${p.path})`)

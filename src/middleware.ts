@@ -1,18 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { jwtVerify } from "jose";
-
-const JWT_SECRET = new TextEncoder().encode(
-  (() => {
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      throw new Error(
-        "FATAL: JWT_SECRET environment variable is required. Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\""
-      );
-    }
-    return secret;
-  })()
-);
+import { verifyTokenBasic } from "@/lib/auth-edge";
 
 // Routes that don't require authentication
 const publicRoutes = ["/login", "/register", "/api/auth/login", "/api/auth/register", "/api/auth/me"];
@@ -20,18 +8,6 @@ const publicRoutes = ["/login", "/register", "/api/auth/login", "/api/auth/regis
 // NOTE: All protected routes are handled client-side via layout.tsx auth check.
 // Middleware can't read localStorage, which is needed for IP/DDNS-based access.
 const protectedRoutes: string[] = [];
-
-async function verifyToken(token: string): Promise<{ sub: string; username: string } | null> {
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    return {
-      sub: payload.sub as string,
-      username: payload.username as string,
-    };
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Extract the real client IP, resistant to spoofing.
@@ -73,6 +49,39 @@ export async function middleware(request: NextRequest) {
   requestHeaders.set('x-real-ip', realIp);
   requestHeaders.set('x-request-id', requestId);
 
+  // CSRF protection: validate Origin/Referer for state-changing methods.
+  // SameSite=Strict cookies provide baseline protection; this adds defense-in-depth.
+  const method = request.method;
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+    if (process.env.NODE_ENV !== 'development') {
+      const origin = request.headers.get('origin');
+      const referer = request.headers.get('referer');
+      const host = request.headers.get('host');
+
+      const originHost = origin
+        ? (() => { try { return new URL(origin).host; } catch { return null; } })()
+        : (referer
+          ? (() => { try { return new URL(referer).host; } catch { return null; } })()
+          : null);
+
+      if (originHost) {
+        if (originHost !== host) {
+          const forbiddenResponse = new NextResponse('Forbidden', { status: 403 });
+          forbiddenResponse.headers.set('X-Request-Id', requestId);
+          return forbiddenResponse;
+        }
+      } else if (!origin && !referer) {
+        // No Origin/Referer — allow only if X-Requested-With indicates same-origin AJAX
+        const xRequestedWith = request.headers.get('x-requested-with');
+        if (xRequestedWith !== 'XMLHttpRequest') {
+          const forbiddenResponse = new NextResponse('Forbidden', { status: 403 });
+          forbiddenResponse.headers.set('X-Request-Id', requestId);
+          return forbiddenResponse;
+        }
+      }
+    }
+  }
+
   const response = NextResponse.next({
     request: {
       headers: requestHeaders,
@@ -84,7 +93,7 @@ export async function middleware(request: NextRequest) {
   if (publicRoutes.some((route) => pathname.startsWith(route))) {
     // If already authenticated, redirect to dashboard
     if (token) {
-      const decoded = await verifyToken(token);
+      const decoded = await verifyTokenBasic(token);
       if (decoded && (pathname === "/login" || pathname === "/register")) {
         const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.url));
         redirectResponse.headers.set('X-Request-Id', requestId);
@@ -102,7 +111,7 @@ export async function middleware(request: NextRequest) {
       return redirectResponse;
     }
 
-    const decoded = await verifyToken(token);
+    const decoded = await verifyTokenBasic(token);
     if (!decoded) {
       const redirectResponse = NextResponse.redirect(new URL("/login", request.url));
       redirectResponse.cookies.set("auth-token", "", { path: "/", maxAge: 0 });

@@ -91,14 +91,14 @@ export function LoreExtractionTrigger({ universeId }: LoreExtractionTriggerProps
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to queue extraction job');
+        const errorBody = await res.json();
+        throw new Error(errorBody.error || 'Failed to queue extraction job');
       }
 
-      const data = await res.json();
-      setJobId(data.jobId);
+      const json = await res.json();
+      setJobId(json.jobId);
       setStatus('queued');
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       setStatus('failed');
     } finally {

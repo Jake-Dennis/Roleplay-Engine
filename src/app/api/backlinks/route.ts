@@ -4,11 +4,17 @@ import { requireJson } from "@/lib/error-response";
 import { withAuth } from "@/lib/with-auth";
 import { getDb } from "@/lib/db";
 import type { DbParams, PaginatedRow } from "@/lib/types";
+import { logger } from '@/lib/logger';
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`api:${ip}`, "api");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   const { searchParams } = new URL(request.url);
   const entityType = searchParams.get("entityType");
@@ -72,6 +78,10 @@ export async function POST(request: NextRequest) {
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
 
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`api:${ip}`, "api");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
+
     requireJson(request);
     const body = await request.json();
   const { sourceType, sourceId, targetType, targetId, linkType, contextSnippet, universe_id } = body;
@@ -92,6 +102,7 @@ export async function POST(request: NextRequest) {
     if (message.includes("UNIQUE")) {
       return NextResponse.json({ error: "Backlink already exists" }, { status: 409 });
     }
+    logger.error("Failed to create backlink", err);
     throw err;
   }
 
@@ -103,6 +114,10 @@ export async function DELETE(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`api:${ip}`, "api");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");

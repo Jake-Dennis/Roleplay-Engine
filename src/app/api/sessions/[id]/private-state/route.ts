@@ -6,6 +6,7 @@ import type { DbDatabase } from "@/lib/types";
 import { getAuthToken } from '@/lib/auth-token';
 import { logger } from '@/lib/logger';
 import { safeParseWarn } from "@/lib/safe-json";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 // Add private_state column to session_participants if not exists
 function ensureColumn(db: DbDatabase) {
@@ -25,6 +26,10 @@ export async function GET(
 
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`session_read:${ip}`, "session_read");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   const { id: sessionId } = await params;
   const db = getDb();
@@ -63,6 +68,10 @@ export async function PUT(
 
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`session_write:${ip}`, "session_write");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   const { id: sessionId } = await params;
     requireJson(request);

@@ -2,9 +2,30 @@ import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
-import { unauthorizedError, notFoundError, badRequestError, internalError } from "@/lib/error-response";
+import { unauthorizedError, notFoundError, badRequestError, serverError } from "@/lib/error-response";
 import { getAuthToken } from '@/lib/auth-token';
-import { logger } from '@/lib/logger';
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
+
+/**
+ * Escapes all HTML entities in text while preserving <mark> and </mark> tags.
+ * FTS5's snippet() returns raw HTML — this prevents XSS from malicious message content
+ * while keeping search highlighting intact.
+ */
+function escapeHtmlPreservingMarks(text: string): string {
+  const MARK_OPEN = '\x00MARK_OPEN\x00';
+  const MARK_CLOSE = '\x00MARK_CLOSE\x00';
+
+  return text
+    .replace(/<mark>/gi, MARK_OPEN)
+    .replace(/<\/mark>/gi, MARK_CLOSE)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(MARK_OPEN, '<mark>')
+    .replace(MARK_CLOSE, '</mark>');
+}
 
 export async function GET(
   request: NextRequest,
@@ -16,6 +37,10 @@ export async function GET(
 
     const decoded = await verifyToken(token);
     if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+    const ip = getClientIp(request);
+    const rateLimit = checkRateLimit(`session_read:${ip}`, "session_read");
+    if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
     const { id: sessionId } = await params;
     const { searchParams } = new URL(request.url);
@@ -47,12 +72,17 @@ export async function GET(
       LIMIT 50
     `).all(sessionId, escapedQuery);
 
+    const camelized = camelizeKeys(results) as Array<Record<string, unknown>>;
+    const sanitized = camelized.map((r) => ({
+      ...r,
+      snippet: r.snippet ? escapeHtmlPreservingMarks(r.snippet as string) : r.snippet,
+    }));
+
     return NextResponse.json({
-      results: camelizeKeys(results),
+      results: sanitized,
       total: results.length,
     });
-  } catch (err) {
-    logger.error("GET /api/sessions/[id]/messages/search error:", err);
-    return internalError();
+  } catch (err: unknown) {
+    return serverError(err);
   }
 }

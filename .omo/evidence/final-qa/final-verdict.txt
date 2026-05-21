@@ -1,0 +1,64 @@
+=== FINAL QA VERDICT: Scene State Auto-Update ===
+Date: 2026-05-21
+QA Type: Real Manual QA (code review + API testing + Playwright)
+
+--- Scenarios ---
+T1: Extraction module builds and exports correctly          [PASS]
+T1: LLM failure handled gracefully                          [PASS]
+T2: JSON array parsing works                                [PASS] (partial — active_threads not in getSceneContext)
+T3: Extraction triggered after AI response                  [PASS] (code wiring correct)
+T4: SSE event wiring correct                                [PASS]
+T5: Build passes                                            [PASS]
+
+--- Integration ---
+Scene state updates after AI response                       [FAIL] — CRITICAL BUG
+SSE triggers refresh                                        [PASS] (code review confirmed)
+Client re-fetches scene state via GET /api/sessions/[id]    [PASS] (verified via API)
+SceneStatePanel shows updated values                        [N/A] — UI has pre-existing chunk loading issue
+
+--- Edge Cases ---
+Empty session (no messages)                                 [PASS]
+LLM returns invalid JSON                                    [PASS]
+LLM call throws error                                       [PASS]
+No existing scene state record                              [PASS]
+Extraction failure doesn't break generation                 [PASS]
+Wrong column name (created_at vs timestamp)                 [FAIL] — CRITICAL
+active_threads not in getSceneContext()                     [PARTIAL]
+
+--- Evidence Files ---
+.omo/evidence/final-qa/t1-extraction-module.txt
+.omo/evidence/final-qa/t1-llm-failure-handling.txt
+.omo/evidence/final-qa/t2-json-array-parsing.txt
+.omo/evidence/final-qa/t3-extraction-trigger.txt
+.omo/evidence/final-qa/t4-sse-wiring.txt
+.omo/evidence/final-qa/t5-build-pass.txt
+.omo/evidence/final-qa/integration-test.txt
+.omo/evidence/final-qa/edge-cases.txt
+
+--- CRITICAL BUG ---
+File: src/lib/scene-extraction.ts, line 32
+Issue: Uses "ORDER BY created_at DESC" but messages table has "timestamp" column
+Impact: ALL scene extractions fail silently — feature is completely broken
+Fix: Change "created_at" to "timestamp" on line 32
+
+--- SECONDARY ISSUE ---
+File: src/lib/retrieval.ts, getSceneContext()
+Issue: Does not SELECT or parse active_threads
+Impact: LLM generation prompt lacks thread context for continuity
+Fix: Add active_threads to SELECT and SceneContext interface
+
+--- VERDICT: REJECT ---
+
+Reason: The core feature (scene state auto-update) does NOT work.
+The extraction module queries a non-existent column (created_at), causing
+all extractions to fail silently. The graceful error handling masks the bug
+during normal operation — no visible error, but no scene updates either.
+
+The integration test confirmed: after AI generation, scene state remains
+unchanged (all null, updated_at unchanged from creation time).
+
+All other aspects (SSE wiring, build, error handling patterns, parseJsonOrSplit)
+are correct. The feature needs only a one-line fix (created_at → timestamp)
+to become functional, plus the secondary active_threads fix for completeness.
+
+Recommendation: Fix the column name bug, re-run integration test, then APPROVE.

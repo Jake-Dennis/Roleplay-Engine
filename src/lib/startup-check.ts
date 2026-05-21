@@ -44,8 +44,8 @@ export async function runStartupChecks(): Promise<void> {
     const db = getDb();
     db.prepare('SELECT 1').get();
     console.log('[startup] Database: connected');
-  } catch (error) {
-    console.error('[startup] FATAL: Database connection failed:', error);
+  } catch (err: unknown) {
+    console.error('[startup] FATAL: Database connection failed:', err);
     process.exit(1);
   }
 

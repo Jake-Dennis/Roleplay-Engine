@@ -6,6 +6,8 @@ import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import path from "path";
 import fs from "fs";
 import { getAuthToken } from '@/lib/auth-token';
+import { logger } from '@/lib/logger';
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 export async function PUT(
   request: NextRequest,
@@ -15,6 +17,10 @@ export async function PUT(
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`wiki_write:${ip}`, "wiki_write");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   const { slug } = await params;
   const joined = slug.join("/");
@@ -38,7 +44,7 @@ export async function PUT(
     }
     return NextResponse.json({ success: true, status: "locked" });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    logger.error("Failed to lock wiki page", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

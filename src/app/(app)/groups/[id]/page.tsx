@@ -114,8 +114,8 @@ export default function GroupDetailPage() {
     });
 
     if (res.ok) {
-      const data = await res.json();
-      setGroup(data.group);
+      const json = await res.json();
+      setGroup(json.group);
       setEditing(false);
       refreshAll();
     }
@@ -132,14 +132,14 @@ export default function GroupDetailPage() {
       body: JSON.stringify({ user_id: selectedUser.id }),
     });
 
-    const data = await res.json();
+    const json = await res.json();
     if (res.ok) {
       setSelectedUser(null);
       setSearchQuery("");
       setAddMemberOpen(false);
       loadData();
     } else {
-      setAddMemberError(data.error || "Failed to add member");
+      setAddMemberError(json.error || "Failed to add member");
     }
     setAddMemberLoading(false);
   }

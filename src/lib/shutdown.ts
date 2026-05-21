@@ -71,8 +71,8 @@ export function setupGracefulShutdown(): void {
         await runShutdown();
         console.log('[shutdown] Graceful shutdown complete');
         process.exit(0);
-      } catch (error) {
-        console.error('[shutdown] Error during shutdown:', error);
+      } catch (err: unknown) {
+        console.error('[shutdown] Error during shutdown:', err);
         process.exit(1);
       }
     });

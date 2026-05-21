@@ -165,10 +165,10 @@ Wave FINAL:
 
 > 4 review agents run in PARALLEL. ALL must APPROVE.
 
-- [ ] F1. **Plan Compliance Audit** — `oracle`
-- [ ] F2. **Code Quality Review** — `unspecified-high`
-- [ ] F3. **Real Manual QA** — `unspecified-high` (+ `playwright`)
-- [ ] F4. **Scope Fidelity Check** — `deep`
+- [x] F1. **Plan Compliance Audit** — `oracle` — APPROVE
+- [x] F2. **Code Quality Review** — `unspecified-high` — APPROVE
+- [x] F3. **Real Manual QA** — `unspecified-high` — APPROVE (+ `playwright`)
+- [x] F4. **Scope Fidelity Check** — `deep` — APPROVE
 
 ---
 

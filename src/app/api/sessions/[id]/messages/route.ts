@@ -6,10 +6,10 @@ import { verifyToken } from "@/lib/auth";
 import { queueJob } from "@/lib/job-processor";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { ensureGroupSupport } from "@/lib/group-migrations";
-import { unauthorizedError, notFoundError, forbiddenError, badRequestError, internalError, requireJson } from "@/lib/error-response";
+import { unauthorizedError, notFoundError, forbiddenError, badRequestError, serverError, requireJson } from "@/lib/error-response";
 import { getAuthToken } from '@/lib/auth-token';
-import { logger } from '@/lib/logger';
 import { validateLength } from '@/lib/validation';
+import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from '@/lib/rate-limiter';
 
 export async function GET(
   request: NextRequest,
@@ -75,9 +75,8 @@ export async function GET(
     }
 
     return NextResponse.json({ messages: camelizeKeys(resultMessages), nextCursor });
-  } catch (err) {
-    logger.error("GET /api/sessions/[id]/messages error:", err);
-    return internalError();
+  } catch (err: unknown) {
+    return serverError(err);
   }
 }
 
@@ -94,6 +93,10 @@ export async function POST(
 
     const { id: sessionId } = await params;
     const db = getDb();
+
+    cleanupExpiredEntries();
+    const limit = checkRateLimit(`message_send:${decoded.sub}`, "message_send");
+    if (!limit.allowed) return createRateLimitResponse(limit.retryAfter!);
 
     // Verify session access
     const session = db.prepare(`
@@ -182,8 +185,7 @@ export async function POST(
     `).get(messageId);
 
     return NextResponse.json({ message: camelizeKeys(message) }, { status: 201 });
-  } catch (err) {
-    logger.error("POST /api/sessions/[id]/messages error:", err);
-    return internalError();
+  } catch (err: unknown) {
+    return serverError(err);
   }
 }

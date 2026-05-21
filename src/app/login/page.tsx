@@ -24,10 +24,10 @@ export default function LoginPage() {
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await res.json();
+      const json = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Login failed");
+        setError(json.error || "Login failed");
         return;
       }
 

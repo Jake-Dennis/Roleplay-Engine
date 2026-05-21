@@ -44,10 +44,10 @@ export default function UniverseListPage() {
       const url = activeGroup ? `/api/universes?group_id=${activeGroup.id}` : "/api/universes?scope=personal";
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to load universes");
-      const data = await res.json();
-      setUniverses(data.universes || []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load universes");
+      const json = await res.json();
+      setUniverses(json.universes || []);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load universes");
     } finally {
       setLoading(false);
     }
@@ -82,16 +82,16 @@ export default function UniverseListPage() {
         }),
       });
 
-      const data = await res.json();
+      const json = await res.json();
       if (res.ok) {
         setShowCreate(false);
         setName("");
         setTone("");
-        setSuccess(`"${data.universe.name}" created`);
+        setSuccess(`${json.universe.name}" created`);
         refreshAll();
         await loadUniverses();
       } else {
-        setError(data.error || "Failed to create universe");
+        setError(json.error || "Failed to create universe");
       }
     } catch {
       setError("Connection failed");
@@ -106,12 +106,12 @@ export default function UniverseListPage() {
 
     try {
       const res = await fetch(`/api/universes/${id}`, { method: "DELETE" });
-      const data = await res.json();
+      const json = await res.json();
       if (res.ok) {
         setSuccess("Universe deleted");
         await loadUniverses();
       } else {
-        setError(data.error || "Failed to delete universe");
+        setError(json.error || "Failed to delete universe");
       }
     } catch {
       setError("Connection failed");

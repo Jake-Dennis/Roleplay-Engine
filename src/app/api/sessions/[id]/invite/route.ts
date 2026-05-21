@@ -1,3 +1,4 @@
+import { withErrorHandler } from '@/lib/with-error-handler';
 import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
@@ -7,6 +8,7 @@ import { eventBus, SessionEvents } from "@/lib/event-bus";
 import type { DbDatabase } from "@/lib/types";
 import { getAuthToken } from '@/lib/auth-token';
 import { validateLength } from '@/lib/validation';
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 // Ensure invitations table exists
 function ensureTable(db: DbDatabase) {
@@ -21,132 +23,132 @@ function ensureTable(db: DbDatabase) {
   )`);
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export const POST = withErrorHandler(async (request: NextRequest,
+{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
+if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+const decoded = await verifyToken(token);
+if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
-  const { id: sessionId } = await params;
-    requireJson(request);
-    const body = await request.json();
-  const { username } = body;
+const ip = getClientIp(request);
+const rateLimit = checkRateLimit(`session_write:${ip}`, "session_write");
+if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
-  if (!username) {
-    return NextResponse.json({ error: "Username is required" }, { status: 400 });
-  }
+const { id: sessionId } = await params;
+  requireJson(request);
+  const body = await request.json();
+const { username } = body;
 
-  const usernameError = validateLength(username, 50, "Username");
-  if (usernameError) return NextResponse.json({ error: usernameError }, { status: 400 });
-
-  const db = getDb();
-  ensureTable(db);
-
-  // Verify session ownership
-  const session = db.prepare(
-    "SELECT id, owner_id FROM sessions WHERE id = ? AND owner_id = ?"
-  ).get(sessionId, decoded.sub);
-
-  if (!session) {
-    return NextResponse.json({ error: "Session not found or not owner" }, { status: 404 });
-  }
-
-  // Find user by username
-  const targetUser = db.prepare(
-    "SELECT id, username FROM users WHERE LOWER(username) = LOWER(?)"
-  ).get(username) as { id: string; username: string } | undefined;
-
-  if (!targetUser) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  if (targetUser.id === decoded.sub) {
-    return NextResponse.json({ error: "Cannot invite yourself" }, { status: 400 });
-  }
-
-  // Check if already a participant
-  const existing = db.prepare(
-    "SELECT session_id FROM session_participants WHERE session_id = ? AND user_id = ?"
-  ).get(sessionId, targetUser.id);
-
-  if (existing) {
-    return NextResponse.json({ error: "User is already a participant" }, { status: 409 });
-  }
-
-  // Check for existing pending invitation
-  const existingInvite = db.prepare(
-    "SELECT id, status FROM invitations WHERE session_id = ? AND invitee_id = ?"
-  ).get(sessionId, targetUser.id) as { id: string; status: string } | undefined;
-
-  if (existingInvite && existingInvite.status === "pending") {
-    return NextResponse.json({ error: "Invitation already pending for this user" }, { status: 409 });
-  }
-
-  // Upsert invitation
-  if (existingInvite) {
-    db.prepare(
-      "UPDATE invitations SET status = 'pending', created_at = CURRENT_TIMESTAMP WHERE id = ?"
-    ).run(existingInvite.id);
-  } else {
-    const id = crypto.randomUUID();
-    db.prepare(
-      "INSERT INTO invitations (id, session_id, inviter_id, invitee_id) VALUES (?, ?, ?, ?)"
-    ).run(id, sessionId, decoded.sub, targetUser.id);
-  }
-
-  // Emit SSE event
-  eventBus.emit(`${SessionEvents.PARTICIPANT_INVITED}:${sessionId}`, {
-    sessionId,
-    userId: targetUser.id,
-    username: targetUser.username,
-    inviterId: decoded.sub,
-    action: "invited",
-  });
-
-  return NextResponse.json({
-    success: true,
-    invitee: { id: targetUser.id, username: targetUser.username },
-  });
+if (!username) {
+  return NextResponse.json({ error: "Username is required" }, { status: 400 });
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+const usernameError = validateLength(username, 50, "Username");
+if (usernameError) return NextResponse.json({ error: usernameError }, { status: 400 });
 
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+const db = getDb();
+ensureTable(db);
 
-  const { id: sessionId } = await params;
-  const db = getDb();
-  ensureTable(db);
+// Verify session ownership
+const session = db.prepare(
+  "SELECT id, owner_id FROM sessions WHERE id = ? AND owner_id = ?"
+).get(sessionId, decoded.sub);
 
-  // Verify access
-  const session = db.prepare(
-    "SELECT id FROM sessions WHERE id = ? AND (owner_id = ? OR id IN (SELECT session_id FROM session_participants WHERE user_id = ?))"
-  ).get(sessionId, decoded.sub, decoded.sub);
-
-  if (!session) {
-    return NextResponse.json({ error: "Session not found" }, { status: 404 });
-  }
-
-  // Get pending invitations
-  const invitations = db.prepare(`
-    SELECT i.id, i.status, i.created_at,
-      inviter.id as inviter_id, inviter.username as inviter_username,
-      invitee.id as invitee_id, invitee.username as invitee_username
-    FROM invitations i
-    JOIN users inviter ON i.inviter_id = inviter.id
-    JOIN users invitee ON i.invitee_id = invitee.id
-    WHERE i.session_id = ? AND i.status = 'pending'
-    ORDER BY i.created_at DESC
-  `).all(sessionId);
-
-  return NextResponse.json({ invitations: camelizeKeys(invitations) });
+if (!session) {
+  return NextResponse.json({ error: "Session not found or not owner" }, { status: 404 });
 }
+
+// Find user by username
+const targetUser = db.prepare(
+  "SELECT id, username FROM users WHERE LOWER(username) = LOWER(?)"
+).get(username) as { id: string; username: string } | undefined;
+
+if (!targetUser) {
+  return NextResponse.json({ error: "User not found" }, { status: 404 });
+}
+
+if (targetUser.id === decoded.sub) {
+  return NextResponse.json({ error: "Cannot invite yourself" }, { status: 400 });
+}
+
+// Check if already a participant
+const existing = db.prepare(
+  "SELECT session_id FROM session_participants WHERE session_id = ? AND user_id = ?"
+).get(sessionId, targetUser.id);
+
+if (existing) {
+  return NextResponse.json({ error: "User is already a participant" }, { status: 409 });
+}
+
+// Check for existing pending invitation
+const existingInvite = db.prepare(
+  "SELECT id, status FROM invitations WHERE session_id = ? AND invitee_id = ?"
+).get(sessionId, targetUser.id) as { id: string; status: string } | undefined;
+
+if (existingInvite && existingInvite.status === "pending") {
+  return NextResponse.json({ error: "Invitation already pending for this user" }, { status: 409 });
+}
+
+// Upsert invitation
+if (existingInvite) {
+  db.prepare(
+    "UPDATE invitations SET status = 'pending', created_at = CURRENT_TIMESTAMP WHERE id = ?"
+  ).run(existingInvite.id);
+} else {
+  const id = crypto.randomUUID();
+  db.prepare(
+    "INSERT INTO invitations (id, session_id, inviter_id, invitee_id) VALUES (?, ?, ?, ?)"
+  ).run(id, sessionId, decoded.sub, targetUser.id);
+}
+
+// Emit SSE event
+eventBus.emit(`${SessionEvents.PARTICIPANT_INVITED}:${sessionId}`, {
+  sessionId,
+  userId: targetUser.id,
+  username: targetUser.username,
+  inviterId: decoded.sub,
+  action: "invited",
+});
+
+return NextResponse.json({
+  success: true,
+  invitee: { id: targetUser.id, username: targetUser.username },
+}); });
+
+export const GET = withErrorHandler(async (request: NextRequest,
+{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
+if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+const decoded = await verifyToken(token);
+if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+const ip = getClientIp(request);
+const rateLimit = checkRateLimit(`session_read:${ip}`, "session_read");
+if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
+
+const { id: sessionId } = await params;
+const db = getDb();
+ensureTable(db);
+
+// Verify access
+const session = db.prepare(
+  "SELECT id FROM sessions WHERE id = ? AND (owner_id = ? OR id IN (SELECT session_id FROM session_participants WHERE user_id = ?))"
+).get(sessionId, decoded.sub, decoded.sub);
+
+if (!session) {
+  return NextResponse.json({ error: "Session not found" }, { status: 404 });
+}
+
+// Get pending invitations
+const invitations = db.prepare(`
+  SELECT i.id, i.status, i.created_at,
+    inviter.id as inviter_id, inviter.username as inviter_username,
+    invitee.id as invitee_id, invitee.username as invitee_username
+  FROM invitations i
+  JOIN users inviter ON i.inviter_id = inviter.id
+  JOIN users invitee ON i.invitee_id = invitee.id
+  WHERE i.session_id = ? AND i.status = 'pending'
+  ORDER BY i.created_at DESC
+`).all(sessionId);
+
+return NextResponse.json({ invitations: camelizeKeys(invitations) }); });

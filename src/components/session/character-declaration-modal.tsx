@@ -48,7 +48,7 @@ export function CharacterDeclarationModal({
 
     try {
       await onJoin(characterName.trim());
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to join session");
     } finally {
       setLoading(false);

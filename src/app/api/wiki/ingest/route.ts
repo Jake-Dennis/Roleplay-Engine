@@ -5,6 +5,7 @@ import { ingestSource } from "@/lib/wiki/ingest";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 import path from "path";
 import { getAuthToken } from '@/lib/auth-token';
+import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import { serverError, requireJson } from '@/lib/error-response';
 
 export async function POST(request: NextRequest) {
@@ -30,6 +31,15 @@ export async function POST(request: NextRequest) {
 
   const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
 
+  // Resolve sourcePath relative to wikiRoot and verify it stays within bounds
+  const resolvedPath = path.resolve(wikiRoot, sourcePath);
+  if (!isPathWithinRoot(resolvedPath, wikiRoot)) {
+    return NextResponse.json(
+      { error: "sourcePath must be a relative path within the wiki directory" },
+      { status: 400 }
+    );
+  }
+
   try {
     const result = await ingestSource(sourcePath, wikiRoot, universeId);
     return NextResponse.json({
@@ -38,7 +48,7 @@ export async function POST(request: NextRequest) {
       updated: result.updated,
       errors: result.errors,
     });
-  } catch (error) {
-    return serverError(error);
+  } catch (err: unknown) {
+    return serverError(err);
   }
 }

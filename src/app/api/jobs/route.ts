@@ -15,11 +15,17 @@ import {
 } from "@/lib/job-processor";
 import { queueIdleJobs, processIdleTime, shouldProcessIdleTime } from "@/lib/idle-processing";
 import { badRequestError, requireJson } from "@/lib/error-response";
+import { logger } from "@/lib/logger";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`api:${ip}`, "api");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   const url = new URL(request.url);
   const status = url.searchParams.get("status") || undefined;
@@ -44,12 +50,38 @@ export async function POST(request: NextRequest) {
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
 
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`jobs_trigger:${ip}`, "jobs_trigger");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
+
     requireJson(request);
     const body = await request.json();
   const { action, type, payload, priority, jobId, universe_id } = body;
 
   switch (action) {
     case "queue": {
+      if (!type) {
+        return badRequestError("type is required");
+      }
+      const validJobTypes: JobType[] = [
+        "generate_response", "summarize_messages", "summarize_message",
+        "generate_embeddings", "analyze_relationships", "decay_relationships",
+        "compress_memories", "refine_relationship_summary", "archival_processing",
+        "thread_analysis", "idle_enrichment", "wiki_ingest", "wiki_enrich_entity",
+        "wiki_generate_rumors", "wiki_deepen_page", "wiki_deepen_location",
+        "wiki_extract_event", "generate_session_recap", "npc_evolution",
+        "extract_lore_comprehensive",
+      ];
+      if (!validJobTypes.includes(type as JobType)) {
+        return badRequestError(`Invalid job type. Must be one of: ${validJobTypes.join(", ")}`);
+      }
+      if (priority) {
+        const validPriorities: JobPriority[] = ["high", "medium", "low", "idle"];
+        if (!validPriorities.includes(priority as JobPriority)) {
+          return badRequestError(`Invalid priority. Must be one of: ${validPriorities.join(", ")}`);
+        }
+      }
+
       const id = queueJob(
         userId,
         type as JobType,
@@ -94,14 +126,22 @@ export async function POST(request: NextRequest) {
         const count = queueIdleJobs(userId, universe_id || null);
         return NextResponse.json({ success: true, queuedCount: count });
       } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : String(e);
-        return NextResponse.json({ success: false, error: message, queuedCount: 0 });
+        logger.error("Failed to queue idle jobs", e);
+        return NextResponse.json({ success: false, error: "Internal server error", queuedCount: 0 });
       }
     }
 
     case "process-idle": {
-      const result = await processIdleTime(userId, universe_id || null);
-      return NextResponse.json({ success: true, ...result });
+      // Fire-and-forget: defer idle processing to avoid blocking the response
+      setImmediate(async () => {
+        try {
+          await processIdleTime(userId, universe_id || null);
+        } catch (err: unknown) {
+          // Log but don't crash — idle processing is best-effort
+          logger.error("Idle processing failed", err);
+        }
+      });
+      return NextResponse.json({ success: true, message: "Idle processing started" });
     }
 
     default:
@@ -113,6 +153,10 @@ export async function DELETE(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`api:${ip}`, "api");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   const url = new URL(request.url);
   const jobId = url.searchParams.get("id");

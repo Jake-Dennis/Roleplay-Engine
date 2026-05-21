@@ -63,7 +63,9 @@ function extractMetadata(args: unknown[]): { message: string; metadata: Record<s
     const arg = args[i];
     if (arg instanceof Error) {
       metadata.error = arg.message;
-      metadata.stack = arg.stack;
+      if (isDev) {
+        metadata.stack = arg.stack;
+      }
     } else if (typeof arg === 'object' && arg !== null) {
       Object.assign(metadata, arg as Record<string, unknown>);
     } else {

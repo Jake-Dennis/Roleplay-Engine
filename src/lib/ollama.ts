@@ -144,7 +144,7 @@ export function getActivePersonaContext(userId: string): PersonaContext | null {
       writingStyle: persona.writing_style,
       llmModel: persona.llm_model,
     };
-  } catch (err) {
+  } catch (err: unknown) {
     logger.debug("Failed to get active persona context", { userId, error: String(err) });
     return null;
   }
@@ -325,8 +325,8 @@ export async function generateText(
       const data = await response.json();
       ollamaAvailable = true;
       return validateLlmOutput(data.response || "");
-    } catch (error) {
-      lastError = error as Error;
+    } catch (err: unknown) {
+      lastError = err as Error;
       ollamaAvailable = false;
 
       if (attempt < OLLAMA_CONFIG.retryAttempts) {

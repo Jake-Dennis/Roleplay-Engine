@@ -6,6 +6,7 @@ import { getDb } from "@/lib/db";
 import { writeRelationshipFiles, type RelationshipRow } from "@/lib/relationship-markdown";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
 import type { DbDatabase, DbResult } from "@/lib/types";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 function getUniverseOwnerId(db: DbDatabase, universeId: string): string | null {
   const universe = db.prepare(
@@ -17,15 +18,19 @@ function getUniverseOwnerId(db: DbDatabase, universeId: string): string | null {
 
   if (!universe) return null;
   if (universe.group_id) {
-    return universe.group_owner_id;
+    return universe.group_owner_id as string;
   }
-  return universe.user_id;
+  return universe.user_id as string;
 }
 
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`relationship_read:${ip}`, "api");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   const { searchParams } = new URL(request.url);
   const universeId = searchParams.get("universe_id");
@@ -79,6 +84,10 @@ export async function POST(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
   const { userId } = authResult.auth;
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`relationship_write:${ip}`, "relationship_write");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
     requireJson(request);
     const body = await request.json();

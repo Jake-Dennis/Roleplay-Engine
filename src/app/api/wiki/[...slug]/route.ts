@@ -14,13 +14,15 @@ import { saveRevision } from "@/lib/wiki/revisions";
 import { recordVersion, createSnapshotFile, getNextVersionNumber } from "@/lib/wiki/history";
 import { generateIndex } from "@/lib/wiki/index-generator";
 import { findOrphans } from "@/lib/wiki/orphans";
-import { parseWikilinks } from "@/lib/wiki/wikilinks";
+import { parseWikilinks, resolveWikilink } from "@/lib/wiki/wikilinks";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import path from "path";
 import fs from "fs";
 import { getAuthToken } from '@/lib/auth-token';
 import { unauthorizedError, notFoundError, badRequestError, requireJson } from '@/lib/error-response';
 import { validateLength } from '@/lib/validation';
+import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from '@/lib/rate-limiter';
+import { logger } from '@/lib/logger';
 
 /**
  * Resolve the slug array to a relative file path within the wiki root.
@@ -251,6 +253,34 @@ export async function GET(
       embeds[link.name] = { content: targetContent, frontmatter: targetFrontmatter };
     }
 
+    // Compute backlinks server-side (avoids exposing all page content to client)
+    const backlinks: Array<{
+      path: string;
+      title: string;
+      type: string;
+      links: Array<{ name: string; context: string }>;
+    }> = [];
+
+    for (const p of allPages) {
+      const pRelative = path.relative(wikiRoot, p.path).replace(/\\/g, "/");
+      if (pRelative === relativePath) continue;
+
+      const links = parseWikilinks(p.content);
+      const matchingLinks = links.filter((link) => {
+        const resolved = resolveWikilink(link.name, allPages, p.frontmatter.universe);
+        return resolved === relativePath;
+      });
+
+      if (matchingLinks.length > 0) {
+        backlinks.push({
+          path: pRelative,
+          title: p.frontmatter?.title || pRelative.split("/").pop()?.replace(".md", "") || "",
+          type: p.frontmatter?.type || "concept",
+          links: matchingLinks,
+        });
+      }
+    }
+
     return NextResponse.json({
       page: {
         path: relativePath,
@@ -259,15 +289,21 @@ export async function GET(
       },
       allPages: allPages.map((p) => ({
         path: path.relative(wikiRoot, p.path).replace(/\\/g, "/"),
-        content: p.content,
-        frontmatter: p.frontmatter,
+        frontmatter: {
+          title: p.frontmatter?.title,
+          type: p.frontmatter?.type,
+          status: p.frontmatter?.status,
+          tags: p.frontmatter?.tags,
+          universe: p.frontmatter?.universe,
+        },
       })),
+      backlinks,
       orphanPaths,
       embeds,
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 404 });
+    logger.error("Failed to read wiki page", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 404 });
   }
 }
 
@@ -279,6 +315,10 @@ export async function PUT(
   if (!token) return unauthorizedError();
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+  cleanupExpiredEntries();
+  const limit = checkRateLimit(`wiki_write:${decoded.sub}`, "wiki_write");
+  if (!limit.allowed) return createRateLimitResponse(limit.retryAfter!);
 
   const { slug } = await params;
   const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
@@ -350,8 +390,8 @@ export async function PUT(
         { status: 409 }
       );
     }
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    logger.error("Failed to update wiki page", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -386,7 +426,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    logger.error("Failed to delete wiki page", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

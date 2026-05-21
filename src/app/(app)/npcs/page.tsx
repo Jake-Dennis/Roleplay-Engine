@@ -49,9 +49,9 @@ export default function NpcsPage() {
   async function loadNpcs() {
     try {
       const res = await fetch("/api/npcs");
-      const data = await res.json();
-      setNpcs(data.npcs || []);
-    } catch (err) {
+      const json = await res.json();
+      setNpcs(json.npcs || []);
+    } catch (err: unknown) {
       logger.warn("Failed to load NPCs", err);
     } finally {
       setLoading(false);
@@ -61,9 +61,9 @@ export default function NpcsPage() {
   async function loadUniverses() {
     try {
       const res = await fetch("/api/universes");
-      const data = await res.json();
-      setUniverses(data.universes || []);
-    } catch (err) {
+      const json = await res.json();
+      setUniverses(json.universes || []);
+    } catch (err: unknown) {
       logger.warn("Failed to load universes", err);
     }
   }
@@ -120,8 +120,8 @@ export default function NpcsPage() {
         });
         if (res.ok) {
           await loadNpcs();
-          const data = await res.json();
-          setSelectedId(data.npc.id);
+          const json = await res.json();
+          setSelectedId(json.npc.id);
           setCreating(false);
         }
       } else if (selectedId) {

@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       filename: safeFilename,
       size: stats.size,
     });
-  } catch (error) {
-    return serverError(error);
+  } catch (err: unknown) {
+    return serverError(err);
   }
 }

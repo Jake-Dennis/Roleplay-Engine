@@ -67,8 +67,8 @@ class ApiClient {
         }
 
         return { data, error: null, status: res.status };
-      } catch (e) {
-        lastError = e as Error;
+      } catch (err: unknown) {
+        lastError = err as Error;
         if (attempt < retries) {
           await new Promise((resolve) => setTimeout(resolve, retryDelay * (attempt + 1)));
         }

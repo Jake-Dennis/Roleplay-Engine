@@ -1,0 +1,47 @@
+=== T4: SSE Event Wiring Correct ===
+Date: 2026-05-21
+Tool: Code Review (manual)
+
+--- Step 1: Read session/[id]/page.tsx ---
+File: src/app/(app)/session/[id]/page.tsx
+
+--- Step 2: Verify "scene:updated" in allEvents array ---
+Line 230:
+```typescript
+const allEvents = [...messageEvents, ...groupEvents, "session:updated", "generation:done", "scene:updated"];
+```
+- "scene:updated" present in allEvents: YES
+- Position: last item in the array
+- Event name matches SessionEvents.SCENE_UPDATED value ("scene:updated"): YES
+
+Full allEvents array composition:
+- messageEvents: ["message:created", "message:updated", "message:deleted"]
+- groupEvents: ["participant:joined", "participant:left", "participant:kicked", "participant:invited", "turn:updated"]
+- Additional: "session:updated", "generation:done", "scene:updated"
+Total: 11 events
+
+--- Step 3: Verify refreshSession() is called on this event ---
+Lines 232-235:
+```typescript
+const cleanupFns = allEvents.map((eventName) => {
+  evtSource.addEventListener(eventName, refreshSession);
+  return () => evtSource.removeEventListener(eventName, refreshSession);
+});
+```
+- ALL events in allEvents (including "scene:updated") trigger refreshSession: YES
+- refreshSession is the `refresh` function from useSession hook: YES
+- useSession.refresh() re-fetches GET /api/sessions/[id]: YES (line 92 of use-session.ts)
+- GET /api/sessions/[id] returns sceneState: YES (line 117 of sessions/[id]/route.ts)
+- sceneState is set via setSceneState: YES (line 97 of use-session.ts)
+
+Event flow verification:
+1. Server: extractAndApplySceneState() updates scene_states table
+2. Server: eventBus.emit("scene:updated:sessionId", { sessionId })
+3. SSE stream: event forwarded to client EventSource
+4. Client: EventSource receives "scene:updated" event
+5. Client: refreshSession() called
+6. Client: fetches GET /api/sessions/[id]
+7. Client: sceneState updated in useSession state
+8. UI: SceneStatePanel re-renders with new values
+
+VERDICT: PASS — Event wiring correct, refreshSession called on scene:updated

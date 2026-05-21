@@ -44,8 +44,8 @@ export default function NarrativeThreadsPage() {
       if (activeGroup) params.set("group_id", activeGroup.id);
       const url = `/api/narrative-threads${params.toString() ? "?" + params.toString() : ""}`;
       const res = await fetch(url);
-      const data = await res.json();
-      setThreads(data.threads || []);
+      const json = await res.json();
+      setThreads(json.threads || []);
     } catch {
       // ignore
     } finally {

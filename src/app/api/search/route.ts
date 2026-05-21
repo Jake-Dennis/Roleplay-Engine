@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { vectorSearch, getSearchStats } from "@/lib/vector-search";
 import { getAuthToken } from '@/lib/auth-token';
+import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 export async function GET(request: NextRequest) {
   const token = getAuthToken(request);
@@ -9,6 +10,10 @@ export async function GET(request: NextRequest) {
 
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`search:${ip}`, "search");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   const url = new URL(request.url);
   const query = url.searchParams.get("q");
@@ -22,9 +27,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ stats });
   }
 
+  // Cap limit to reasonable maximum
+  const safeLimit = Math.min(limit, 100);
+
+  // Validate minScore range
+  if (isNaN(minScore) || minScore < 0 || minScore > 1) {
+    return NextResponse.json({ error: "minScore must be between 0 and 1" }, { status: 400 });
+  }
+
   try {
     const results = await vectorSearch(decoded.sub, query, {
-      limit,
+      limit: safeLimit,
       entityType,
       minScore,
     });

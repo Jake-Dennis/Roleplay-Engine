@@ -64,8 +64,8 @@ export default function WikiHomePage() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || 'Failed to create page');
+        const errorBody = await res.json();
+        alert(errorBody.error || 'Failed to create page');
         setCreating(false);
         return;
       }

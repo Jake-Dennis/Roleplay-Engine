@@ -107,12 +107,12 @@ export default function UniverseDetailPage() {
         }),
       });
 
-      const data = await res.json();
+      const json = await res.json();
       if (res.ok) {
-        setUniverse(data.universe);
+        setUniverse(json.universe);
         setSaved(true);
       } else {
-        setError(data.error || "Failed to save");
+        setError(json.error || "Failed to save");
       }
     } catch {
       setError("Connection failed");

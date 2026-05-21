@@ -63,8 +63,8 @@ export async function generateSpeech(
 
       const buffer = Buffer.from(await response.arrayBuffer());
       return buffer;
-    } catch (error) {
-      lastError = error as Error;
+    } catch (err: unknown) {
+      lastError = err as Error;
 
       if (attempt < TTS_CONFIG.retryAttempts) {
         await new Promise((resolve) =>
