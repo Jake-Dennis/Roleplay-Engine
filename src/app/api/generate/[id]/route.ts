@@ -13,6 +13,7 @@ import { getAuthToken } from '@/lib/auth-token';
 import { extractAndApplySceneState } from "@/lib/scene-extraction";
 import { logger } from '@/lib/logger';
 import { validateLength } from '@/lib/validation';
+import { extractAndCreateWikiEntities } from "@/lib/wiki/auto-extract";
 
 function getSessionSettings(db: DbDatabase, sessionId: string) {
   const rows = db.prepare(
@@ -221,10 +222,31 @@ export async function POST(
         // Auto-extract scene state from recent messages
         try {
           await extractAndApplySceneState(sessionId, decoded.sub);
-          eventBus.emit(`${SessionEvents.SCENE_UPDATED}:${sessionId}`, { sessionId });
         } catch (err: unknown) {
           // Extraction failure should not break generation flow
           // extractAndApplySceneState already logs warnings internally
+        }
+        eventBus.emit(`${SessionEvents.SCENE_UPDATED}:${sessionId}`, { sessionId });
+
+        // Auto-extract wiki entities from AI response
+        try {
+          const wikiResult = await extractAndCreateWikiEntities(
+            sessionId,
+            decoded.sub,
+            session.universe_id || null,
+            fullResponse
+          );
+
+          if (wikiResult.created.length > 0 || wikiResult.updated.length > 0) {
+            eventBus.emit(`${SessionEvents.WIKI_PAGE_CREATED}:${sessionId}`, {
+              sessionId,
+              created: wikiResult.created,
+              updated: wikiResult.updated,
+            });
+          }
+        } catch (err) {
+          // Wiki extraction is non-critical — never fail generation
+          console.error("[wiki-extract] Error:", err);
         }
 
         // Queue background jobs for async processing
@@ -265,6 +287,8 @@ export async function POST(
         eventBus.unregisterController(controller);
       } catch (err: unknown) {
         logger.error("Generation stream failed", err as Error);
+        // Remove empty AI placeholder message created before stream
+        db.prepare("DELETE FROM messages WHERE id = ?").run(aiMessageId);
         controller.enqueue(
           encoder.encode(
             JSON.stringify({
