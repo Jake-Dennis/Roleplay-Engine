@@ -133,12 +133,16 @@ export async function GET(
         SessionEvents.PARTICIPANT_LEFT,
         SessionEvents.PARTICIPANT_KICKED,
         SessionEvents.PARTICIPANT_INVITED,
+        SessionEvents.PARTICIPANT_ROLE_CHANGED,
         SessionEvents.TURN_UPDATED,
         // D5: New SSE events
         SessionEvents.SCENE_UPDATED,
         SessionEvents.THREAD_UPDATED,
         SessionEvents.JOB_COMPLETED,
         SessionEvents.JOB_PROGRESS,
+        // Wiki page events
+        SessionEvents.WIKI_PAGE_CREATED,
+        SessionEvents.WIKI_PAGE_UPDATED,
       ];
 
       const unsubscribers = eventTypes.map((eventType) =>
