@@ -4,7 +4,7 @@ import path from 'path';
 /**
  * Operations that can be logged to the wiki operation log.
  */
-export type LogOperation = 'ingest' | 'query' | 'lint' | 'create' | 'update' | 'delete' | 'migrate' | 'validate' | 'lock' | 'reject';
+export type LogOperation = 'ingest' | 'query' | 'lint' | 'create' | 'update' | 'delete' | 'migrate' | 'validate' | 'lock' | 'reject' | 'auto-extract';
 
 /**
  * A single entry in the wiki operation log.

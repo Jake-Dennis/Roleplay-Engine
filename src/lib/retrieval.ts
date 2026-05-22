@@ -5,6 +5,7 @@ import { classifyIntent, type Intent } from "@/lib/intent-analyzer";
 import { readWikiPage, listWikiPages } from "@/lib/wiki/file-io";
 import { parseWikiIndex, scoreWikiEntry, resolveWikiPagePath } from "@/lib/wiki/index-utils";
 import { safeParseWarn } from "@/lib/safe-json";
+import { getWikiRoot } from "@/lib/wiki/wiki-root";
 
 // H5: Re-export prompt assembly function from canonical source (prompt-builder.ts)
 export { assemblePromptWithBudget } from "@/lib/prompt-builder";
@@ -166,7 +167,7 @@ export async function getWikiContext(
   universeId: string,
   sceneContext?: SceneContext
 ): Promise<LoreContext> {
-  const wikiRoot = path.join(process.cwd(), "data", userId, "wiki");
+  const wikiRoot = getWikiRoot(userId, universeId);
 
   // Build query from scene context for relevance scoring
   const queryParts: string[] = [];

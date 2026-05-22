@@ -22,6 +22,7 @@ export interface EmbedTransclusionProps {
   depth?: number;
   existingPages?: string[];
   wikiRoute?: string;
+  universeId?: string;
 }
 
 const MAX_EMBED_DEPTH = 2;
@@ -57,6 +58,7 @@ export default function EmbedTransclusion({
   depth = 0,
   existingPages,
   wikiRoute,
+  universeId,
 }: EmbedTransclusionProps) {
   const isImage = IMAGE_EXTENSIONS.test(target);
 
@@ -102,7 +104,7 @@ export default function EmbedTransclusion({
     return (
       <div className="wiki-embed wiki-embed-image my-4">
         <img
-          src={`/api/wiki/file?name=${encodeURIComponent(target)}`}
+          src={`/api/wiki/file?name=${encodeURIComponent(target)}&universe_id=${universeId || ''}`}
           alt={target}
           width={width ? parseInt(width, 10) : undefined}
           height={height ? parseInt(height, 10) : undefined}
@@ -137,6 +139,7 @@ export default function EmbedTransclusion({
             existingPages={existingPages}
             wikiRoute={wikiRoute}
             depth={nextDepth}
+            universeId={universeId}
           />
         </Suspense>
       </div>

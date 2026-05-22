@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
-import { APP_CONFIG } from "@/lib/config";
 import { fileAnswer } from "@/lib/wiki/filing";
-import path from "path";
 import { getAuthToken } from '@/lib/auth-token';
+import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import { serverError, requireJson } from '@/lib/error-response';
 import { validateLength } from '@/lib/validation';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
@@ -34,7 +33,7 @@ export async function POST(request: NextRequest) {
   const answerError = validateLength(answer, 100000, "Answer");
   if (answerError) return NextResponse.json({ error: answerError }, { status: 400 });
 
-  const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
+  const wikiRoot = getWikiRoot(decoded.sub, universeId);
 
   try {
     const result = await fileAnswer(query, answer, citations, wikiRoot, universeId);

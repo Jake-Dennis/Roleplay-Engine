@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
-import { APP_CONFIG } from "@/lib/config";
 import { queryWiki } from "@/lib/wiki/query";
-import path from "path";
 import { getAuthToken } from '@/lib/auth-token';
+import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import { serverError, requireJson } from '@/lib/error-response';
 import { validateLength } from '@/lib/validation';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
@@ -32,7 +31,7 @@ export async function POST(request: NextRequest) {
   const queryError = validateLength(query, 1000, "Query");
   if (queryError) return NextResponse.json({ error: queryError }, { status: 400 });
 
-  const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
+  const wikiRoot = getWikiRoot(decoded.sub, universeId);
 
   try {
     const result = await queryWiki(query, wikiRoot, universeId);

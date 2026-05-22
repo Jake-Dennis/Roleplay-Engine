@@ -114,7 +114,8 @@ function clampPosition(x: number, y: number): { x: number; y: number } {
 export function useHoverPreview(
   target: string,
   existingPages: string[] = [],
-  wikiRoute: string = '/wiki'
+  wikiRoute: string = '/wiki',
+  universeId?: string
 ): UseHoverPreviewReturn {
   const [visible, setVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -171,7 +172,7 @@ export function useHoverPreview(
     }
 
     try {
-      const response = await fetch(`${wikiRoute ? '' : ''}/api/wiki/${encodeURIComponent(slug)}`);
+      const response = await fetch(`/api/wiki/${encodeURIComponent(slug)}?universe_id=${universeId || ''}`);
 
       if (!response.ok) {
         if (mountedRef.current) {
@@ -215,7 +216,7 @@ export function useHoverPreview(
         setLoading(false);
       }
     }
-  }, [target, existingPages, wikiRoute, normalizeTarget]);
+  }, [target, existingPages, wikiRoute, normalizeTarget, universeId]);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {

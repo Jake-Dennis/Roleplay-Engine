@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FileText, Clock, Sparkles } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/date-formatter';
+import { useApp } from '@/contexts/app-context';
 
 interface WikiFile {
   path: string;
@@ -19,16 +20,17 @@ function pathToWikiUrl(filePath: string): string {
 export default function RecentChangesWidget() {
   const [files, setFiles] = useState<WikiFile[]>([]);
   const [loading, setLoading] = useState(true);
+  const { activeUniverse } = useApp();
 
   useEffect(() => {
-    fetch('/api/wiki/recent?limit=8')
+    fetch(`/api/wiki/recent?limit=8&universe_id=${activeUniverse?.id || ''}`)
       .then((res) => res.json())
       .then((data) => {
         setFiles(data.files || []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [activeUniverse]);
 
   if (loading) {
     return (

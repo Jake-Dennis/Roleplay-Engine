@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
-import { APP_CONFIG } from "@/lib/config";
 import {
   readWikiPage,
   writeWikiPage,
@@ -16,6 +15,7 @@ import { generateIndex } from "@/lib/wiki/index-generator";
 import { findOrphans } from "@/lib/wiki/orphans";
 import { parseWikilinks, resolveWikilink } from "@/lib/wiki/wikilinks";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
+import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import path from "path";
 import fs from "fs";
 import { getAuthToken } from '@/lib/auth-token';
@@ -176,8 +176,9 @@ export async function GET(
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
+  const universeId = request.nextUrl.searchParams.get("universe_id") || "";
   const { slug } = await params;
-  const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
+  const wikiRoot = getWikiRoot(decoded.sub, universeId || undefined);
   const relativePath = resolveSlugPath(slug);
   const fullPath = path.join(wikiRoot, relativePath);
 
@@ -316,12 +317,13 @@ export async function PUT(
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
+  const universeId = request.nextUrl.searchParams.get("universe_id") || "";
   cleanupExpiredEntries();
   const limit = checkRateLimit(`wiki_write:${decoded.sub}`, "wiki_write");
   if (!limit.allowed) return createRateLimitResponse(limit.retryAfter!);
 
   const { slug } = await params;
-  const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
+  const wikiRoot = getWikiRoot(decoded.sub, universeId || undefined);
   const relativePath = resolveSlugPath(slug);
   const fullPath = path.join(wikiRoot, relativePath);
 
@@ -404,8 +406,9 @@ export async function DELETE(
   const decoded = await verifyToken(token);
   if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
+  const universeId = request.nextUrl.searchParams.get("universe_id") || "";
   const { slug } = await params;
-  const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
+  const wikiRoot = getWikiRoot(decoded.sub, universeId || undefined);
   const relativePath = resolveSlugPath(slug);
   const fullPath = path.join(wikiRoot, relativePath);
 

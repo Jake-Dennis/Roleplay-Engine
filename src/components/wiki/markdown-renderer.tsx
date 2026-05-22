@@ -25,6 +25,7 @@ interface MarkdownRendererProps {
   onCreatePage?: (title?: string) => void;
   depth?: number; // Embed nesting depth for circular detection
   embeds?: Record<string, { content: string | null; frontmatter?: Record<string, unknown> | null }>; // Embed content lookup
+  universeId?: string; // Universe context for wiki isolation
 }
 
 function SkeletonContent() {
@@ -134,10 +135,12 @@ function WikiLink({
   children,
   existingPages,
   wikiRoute,
+  universeId,
   ...props
 }: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
   existingPages: string[];
   wikiRoute: string;
+  universeId?: string;
 }) {
   const isWikiLink = className?.includes('internal');
   const isNew = className?.includes('new');
@@ -147,7 +150,7 @@ function WikiLink({
     ? href.replace(new RegExp(`^${wikiRoute}/`), '')
     : '';
 
-  const hover = useHoverPreview(pageName, existingPages, wikiRoute);
+  const hover = useHoverPreview(pageName, existingPages, wikiRoute, universeId);
 
   return (
     <>
@@ -192,6 +195,7 @@ export default function MarkdownRenderer({
   onCreatePage,
   depth = 0,
   embeds = {},
+  universeId,
 }: MarkdownRendererProps) {
   if (isLoading) {
     return <SkeletonContent />;
@@ -305,6 +309,7 @@ export default function MarkdownRenderer({
                     depth={depth}
                     existingPages={existingPages}
                     wikiRoute={wikiRoute}
+                    universeId={universeId}
                   />
                 );
               }
@@ -334,6 +339,7 @@ export default function MarkdownRenderer({
                     className={className}
                     existingPages={existingPages}
                     wikiRoute={wikiRoute}
+                    universeId={universeId}
                     {...rest}
                   >
                     {children}

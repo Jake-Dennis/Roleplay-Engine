@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
-import { APP_CONFIG } from "@/lib/config";
 import { readWikiPage } from "@/lib/wiki/file-io";
 import { listRevisions, saveRevision, getRevision } from "@/lib/wiki/revisions";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
+import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import path from "path";
 import fs from "fs";
 import { getAuthToken } from '@/lib/auth-token';
@@ -20,10 +20,11 @@ export async function GET(request: NextRequest) {
   const rateLimit = checkRateLimit(`wiki_read:${ip}`, "wiki_read");
   if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
-  const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
   const searchParams = request.nextUrl.searchParams;
   const slugParam = searchParams.get("slug");
   const revisionId = searchParams.get("id");
+  const universeId = request.nextUrl.searchParams.get("universe_id") || "";
+  const wikiRoot = getWikiRoot(decoded.sub, universeId || undefined);
 
   if (!slugParam) {
     return NextResponse.json({ error: "slug query parameter is required" }, { status: 400 });
@@ -65,7 +66,13 @@ export async function POST(request: NextRequest) {
   const rateLimit = checkRateLimit(`wiki_write:${ip}`, "wiki_write");
   if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
-  const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
+  let wikiRoot: string;
+  try {
+    const body = await request.json();
+    wikiRoot = getWikiRoot(decoded.sub, body.universeId);
+  } catch {
+    wikiRoot = getWikiRoot(decoded.sub);
+  }
   const searchParams = request.nextUrl.searchParams;
   const slugParam = searchParams.get("slug");
 

@@ -1,10 +1,9 @@
 import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
-import { APP_CONFIG } from "@/lib/config";
 import { listWikiPages } from "@/lib/wiki/file-io";
 import { buildLinkGraph, detectCollisions } from "@/lib/wiki/wikilinks";
-import path from "path";
+import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import fs from "fs";
 import { getAuthToken } from '@/lib/auth-token';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
@@ -17,9 +16,10 @@ if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`wiki_read:${ip}`, "wiki_read");
-if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
-const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
+  const universeId = request.nextUrl.searchParams.get("universe_id") || "";
+  const wikiRoot = getWikiRoot(decoded.sub, universeId || undefined);
 if (!fs.existsSync(wikiRoot)) {
   return NextResponse.json({ nodes: [], edges: [], collisions: [] });
 }

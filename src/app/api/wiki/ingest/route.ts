@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
-import { APP_CONFIG } from "@/lib/config";
 import { ingestSource } from "@/lib/wiki/ingest";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 import path from "path";
 import { getAuthToken } from '@/lib/auth-token';
+import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import { serverError, requireJson } from '@/lib/error-response';
 
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
+  const wikiRoot = getWikiRoot(decoded.sub, universeId);
 
   // Resolve sourcePath relative to wikiRoot and verify it stays within bounds
   const resolvedPath = path.resolve(wikiRoot, sourcePath);

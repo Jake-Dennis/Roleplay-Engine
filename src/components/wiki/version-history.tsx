@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { History, X, ChevronRight, RotateCcw, Clock } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/date-formatter';
+import { useApp } from '@/contexts/app-context';
 
 interface VersionEntry {
   id: string;
@@ -26,12 +27,13 @@ export default function VersionHistory({ slug, onRestore }: VersionHistoryProps)
   const [confirmRestore, setConfirmRestore] = useState<string | null>(null);
 
   const pagePath = slug.join('/');
+  const { activeUniverse } = useApp();
 
   const loadVersions = useCallback(() => {
     setLoading(true);
     setError(null);
 
-    fetch(`/api/wiki/history?slug=${encodeURIComponent(pagePath)}`)
+    fetch(`/api/wiki/history?slug=${encodeURIComponent(pagePath)}&universe_id=${activeUniverse?.id || ''}`)
       .then(res => {
         if (!res.ok) throw new Error('Failed to load version history');
         return res.json();
@@ -62,6 +64,7 @@ export default function VersionHistory({ slug, onRestore }: VersionHistoryProps)
           action: 'restore',
           versionId,
           slug,
+          universeId: activeUniverse?.id,
         }),
       });
 

@@ -6,12 +6,13 @@
 
 import path from "path";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
+import { APP_CONFIG } from "@/lib/config";
 
 /**
  * Resolve the wiki root directory for a user/universe.
  */
 export function getWikiRoot(userId: string, universeId?: string): string {
-  const dataDir = process.env.DATA_DIR || "./data";
+  const dataDir = APP_CONFIG.dataDir;
   const base = path.join(dataDir, userId, "wiki");
   if (!universeId) return base;
 

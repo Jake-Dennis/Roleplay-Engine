@@ -9,6 +9,8 @@ import { unauthorizedError, notFoundError, badRequestError, requireJson } from '
 import { parseBoundaries } from '@/lib/universe-utils';
 import { validateLength } from '@/lib/validation';
 import { isValidUUID } from '@/lib/validation/uuid-validator';
+import { getWikiRoot } from '@/lib/wiki/wiki-root';
+import fs from 'fs';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 function hasUniverseAccess(db: DbDatabase, universeId: string, userId: string): boolean {
@@ -199,6 +201,12 @@ if (sessionCount.count > 0) {
     { error: `Cannot delete universe: ${sessionCount.count} session(s) depend on it. Delete or reassign sessions first.` },
     { status: 409 }
   );
+}
+
+// Clean up wiki directory for this universe
+const wikiRoot = getWikiRoot(decoded.sub, id);
+if (fs.existsSync(wikiRoot)) {
+  fs.rmSync(wikiRoot, { recursive: true, force: true });
 }
 
 // Delete all dependent records (cascade)

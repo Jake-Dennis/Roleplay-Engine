@@ -1,7 +1,7 @@
 import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/with-auth";
-import { APP_CONFIG } from "@/lib/config";
+import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import {
   listWikiPages,
   writeWikiPage,
@@ -25,7 +25,8 @@ const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`wiki_read:${ip}`, "wiki_read");
 if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
-const wikiRoot = path.join(APP_CONFIG.dataDir, userId, "wiki");
+const universeId = request.nextUrl.searchParams.get("universe_id") || "";
+const wikiRoot = getWikiRoot(userId, universeId || undefined);
 
 if (!fs.existsSync(wikiRoot)) {
   return NextResponse.json({ pages: [] });
@@ -59,7 +60,7 @@ if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   requireJson(request);
   const body = await request.json();
-const { path: pagePath, content, frontmatter } = body;
+const { path: pagePath, content, frontmatter, universeId } = body;
 
 if (!pagePath || content === undefined || !frontmatter) {
   return badRequestError("path, content, and frontmatter are required");
@@ -68,7 +69,7 @@ if (!pagePath || content === undefined || !frontmatter) {
 const contentError = validateLength(content, 100000, "Content");
 if (contentError) return badRequestError(contentError);
 
-const wikiRoot = path.join(APP_CONFIG.dataDir, userId, "wiki");
+const wikiRoot = getWikiRoot(userId, universeId);
 
 // Sanitize filename from the last path segment
 const dir = path.dirname(pagePath);

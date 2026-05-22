@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
-import { APP_CONFIG } from "@/lib/config";
 import { lintWiki } from "@/lib/wiki/lint";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
-import path from "path";
 import { getAuthToken } from '@/lib/auth-token';
+import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import { serverError } from '@/lib/error-response';
 
 export async function POST(request: NextRequest) {
@@ -20,7 +19,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
   const { universeId } = body;
 
-  const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
+  const wikiRoot = getWikiRoot(decoded.sub, universeId);
 
   try {
     const result = await lintWiki(wikiRoot, universeId);

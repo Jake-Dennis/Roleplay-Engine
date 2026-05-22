@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
-import { APP_CONFIG } from "@/lib/config";
 import { getRecentLogs } from "@/lib/wiki/logger";
-import path from "path";
+import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import { getAuthToken } from '@/lib/auth-token';
 import { serverError } from '@/lib/error-response';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
@@ -17,7 +16,8 @@ export async function GET(request: NextRequest) {
   const rateLimit = checkRateLimit(`wiki_read:${ip}`, "wiki_read");
   if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
-  const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
+  const universeId = request.nextUrl.searchParams.get("universe_id") || "";
+  const wikiRoot = getWikiRoot(decoded.sub, universeId || undefined);
   const count = parseInt(request.nextUrl.searchParams.get("count") || "5", 10);
 
   try {

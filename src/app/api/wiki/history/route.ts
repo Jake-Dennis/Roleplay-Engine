@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
-import { APP_CONFIG } from "@/lib/config";
+import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import { getPageVersions, restoreVersion, recordVersion, createSnapshotFile, getNextVersionNumber } from "@/lib/wiki/history";
 import { readWikiPage } from "@/lib/wiki/file-io";
 import { saveRevision } from "@/lib/wiki/revisions";
@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
   }
 
   const slug = slugParam.split("/");
-  const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
+  const universeId = request.nextUrl.searchParams.get("universe_id") || "";
+  const wikiRoot = getWikiRoot(decoded.sub, universeId || undefined);
   const pagePath = slug.join("/");
 
   try {
@@ -65,9 +66,9 @@ export async function POST(request: NextRequest) {
 
   requireJson(request);
   const body = await request.json();
-  const { action } = body;
+  const { action, universeId } = body;
 
-  const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
+  const wikiRoot = getWikiRoot(decoded.sub, universeId);
 
   if (action === "restore") {
     const { versionId, slug } = body;

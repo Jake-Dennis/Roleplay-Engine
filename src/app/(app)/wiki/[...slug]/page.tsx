@@ -7,6 +7,7 @@ import VersionHistory from '@/components/wiki/version-history';
 import OutlinePanel from '@/components/wiki/outline-panel';
 import OutgoingLinksPanel from '@/components/wiki/outgoing-links-panel';
 import MarkdownRenderer from '@/components/wiki/markdown-renderer';
+import { useApp } from '@/contexts/app-context';
 import type { WikiPage } from '@/lib/wiki/file-io';
 
 interface BacklinkInfo {
@@ -85,6 +86,7 @@ function parseRawMarkdown(raw: string): { content: string; frontmatter: Record<s
 export default function WikiPageView() {
   const params = useParams();
   const slug = params.slug as string[];
+  const { activeUniverse } = useApp();
   const [page, setPage] = useState<WikiPage | null>(null);
   const [allPages, setAllPages] = useState<WikiPage[]>([]);
   const [orphanPaths, setOrphanPaths] = useState<string[]>([]);
@@ -110,7 +112,7 @@ export default function WikiPageView() {
     setError(null);
     setSaveError(null);
 
-    fetch(`/api/wiki/${pagePath}`)
+    fetch(`/api/wiki/${pagePath}?universe_id=${activeUniverse?.id || ''}`)
       .then(res => {
         if (!res.ok) throw new Error('Page not found');
         return res.json();
@@ -158,6 +160,7 @@ export default function WikiPageView() {
           content: newContent,
           frontmatter: newFrontmatter,
           expectedLastModified: page.frontmatter?.updated,
+          universeId: activeUniverse?.id,
         }),
       });
 
@@ -173,7 +176,7 @@ export default function WikiPageView() {
       }
 
       // Refresh page data
-      const refreshRes = await fetch(`/api/wiki/${pagePath}`);
+      const refreshRes = await fetch(`/api/wiki/${pagePath}?universe_id=${activeUniverse?.id || ''}`);
       const refreshData = await refreshRes.json();
       setPage(refreshData.page);
       setAllPages(refreshData.allPages || []);
@@ -301,7 +304,7 @@ export default function WikiPageView() {
         {/* Content area */}
         <div className="flex-1 overflow-y-auto p-8">
           {mode === 'view' && (
-            <MarkdownRenderer content={page.content} frontmatter={page.frontmatter} existingPages={allPages?.map(p => p.path) || []} wikiRoute="/wiki" embeds={embeds} />
+            <MarkdownRenderer content={page.content} frontmatter={page.frontmatter} existingPages={allPages?.map(p => p.path) || []} wikiRoute="/wiki" embeds={embeds} universeId={activeUniverse?.id} />
           )}
 
           {mode === 'edit' && (
@@ -330,7 +333,7 @@ export default function WikiPageView() {
               {(() => {
                 const { content, frontmatter } = parseRawMarkdown(editContent);
                 return (
-                  <MarkdownRenderer content={content} frontmatter={frontmatter} existingPages={allPages?.map(p => p.path) || []} wikiRoute="/wiki" embeds={embeds} />
+                  <MarkdownRenderer content={content} frontmatter={frontmatter} existingPages={allPages?.map(p => p.path) || []} wikiRoute="/wiki" embeds={embeds} universeId={activeUniverse?.id} />
                 );
               })()}
             </div>
@@ -348,7 +351,7 @@ export default function WikiPageView() {
             slug={slug}
             onRestore={() => {
               const pagePath = slug.join('/');
-              fetch(`/api/wiki/${pagePath}`)
+              fetch(`/api/wiki/${pagePath}?universe_id=${activeUniverse?.id || ''}`)
                 .then(res => res.ok ? res.json() : null)
                 .then(data => {
                   if (data) {

@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
   const rateLimit = checkRateLimit(`wiki_read:${ip}`, "wiki_read");
   if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
-  const wikiRoot = getWikiRoot(decoded.sub);
+  const universeId = request.nextUrl.searchParams.get("universe_id") || "";
+  const wikiRoot = getWikiRoot(decoded.sub, universeId || undefined);
   if (!fs.existsSync(wikiRoot)) {
     return NextResponse.json({ files: [] });
   }

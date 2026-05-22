@@ -23,7 +23,7 @@ export default function WikiHomePage() {
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    fetch('/api/wiki')
+    fetch(`/api/wiki?universe_id=${activeUniverse?.id || ''}`)
       .then(res => res.json())
       .then(data => {
         setPages(data.pages || []);
@@ -31,7 +31,7 @@ export default function WikiHomePage() {
         setLoading(false);
       })
       .catch((err) => { setError(err.message); setLoading(false); });
-  }, []);
+  }, [activeUniverse]);
 
   const handleTemplateSelect = async (template: WikiTemplate) => {
     const title = prompt('Enter page title:');
@@ -60,6 +60,7 @@ export default function WikiHomePage() {
             status: 'draft',
             tags: [],
           },
+          universeId: activeUniverse?.id,
         }),
       });
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
-import { APP_CONFIG } from "@/lib/config";
+import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 import path from "path";
 import fs from "fs";
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     requireJson(request);
     const body = await request.json();
-  const { filename, content } = body;
+  const { filename, content, universeId } = body;
 
   if (!filename || content === undefined || content === null) {
     return NextResponse.json(
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const wikiRoot = path.join(APP_CONFIG.dataDir, decoded.sub, "wiki");
+  const wikiRoot = getWikiRoot(decoded.sub, universeId);
   const rawDir = path.join(wikiRoot, "raw");
   const filePath = path.join(rawDir, safeFilename);
 

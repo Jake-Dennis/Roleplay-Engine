@@ -197,4 +197,41 @@ Messages:
 <user_content>
 ${messageText}
 </user_content>`,
+
+  // -----------------------------------------------------------------------
+  // Auto-Extract
+  // -----------------------------------------------------------------------
+
+  /** Extract named entities from a single generation response for wiki auto-creation */
+  extractEntitiesFromResponse: (aiResponse: string, universeContext: string, existingTitles: string) =>
+    `Analyze this AI narrative response and extract named entities important to the story world.
+
+Return JSON array:
+[
+  {
+    "name": "entity name",
+    "type": "character|location|faction",
+    "description": "detailed description",
+    "importance": "high|medium|low"
+  }
+]
+
+Universe Context:
+<user_content>
+${universeContext}
+</user_content>
+
+Existing wiki pages (skip these): ${existingTitles || "none"}
+
+Rules:
+- Extract ONLY named entities central to the scene
+- Types: characters → "character", locations → "location", organizations → "faction"
+- Skip passing mentions. Max 5 entities total.
+- Return empty array [] if nothing to extract
+- Descriptions should be 1-3 sentences
+
+AI Response to analyze:
+<user_content>
+${aiResponse}
+</user_content>`,
 } as const;
