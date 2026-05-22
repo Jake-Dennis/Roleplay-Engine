@@ -176,8 +176,6 @@ export async function processIdleTime(userId: string, universeId: string | null 
       result.relationshipsAnalyzed += refineResult.refined;
     } catch { /* non-fatal */ }
 
-    const jobResults = await processJobsByType(userId, "generate_response", 5);
-    result.jobsProcessed += jobResults.filter((r) => r.success).length;
   }
 
   // Tier 2 (10+ minutes): Relationship analysis + embeddings

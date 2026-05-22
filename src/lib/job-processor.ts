@@ -8,7 +8,6 @@
  * 3. After message creation (high-priority response generation)
  * 
  * Job types:
- * - generate_response: AI generates next message
  * - summarize_messages: Compress old messages into summaries
  * - generate_embeddings: Create vector embeddings for entities
  * - analyze_relationships: Update relationship states from recent messages
@@ -30,7 +29,6 @@ import { safeParseWarn } from "@/lib/safe-json";
 import { DEFAULT_DECAY_RATES, EMOTIONAL_STATES, RELATIONSHIP_STAGES } from "@/lib/relationship-decay";
 
 // Extracted job handlers
-import { handleResponseJob } from "./jobs/response-handler";
 import { handleSummarizationJob } from "./jobs/summarization-handler";
 import { handleWikiJob } from "./jobs/wiki-handler";
 import { handleNpcEvolutionJob } from "./jobs/npc-evolution";
@@ -38,7 +36,6 @@ import { handleLoreExtractionJob } from "./jobs/lore-extraction";
 import { handleSessionRecapJob } from "./jobs/session-recap";
 
 export type JobType =
-  | "generate_response"
   | "summarize_messages"
   | "summarize_message"
   | "generate_embeddings"
@@ -244,19 +241,6 @@ export function cancelAllUserJobs(userId: string): number {
 }
 
 /**
- * Cancel all queued generate_response jobs for a specific session
- */
-export function cancelSessionJobs(userId: string, sessionId: string): number {
-  const db = getDb();
-  const result = db.prepare(
-    `UPDATE job_queue SET status = 'cancelled' 
-     WHERE user_id = ? AND status = 'queued' AND type = 'generate_response' 
-     AND payload LIKE ?`
-  ).run(userId, `%${sessionId}%`);
-  return result.changes;
-}
-
-/**
  * Get job queue stats for a user
  */
 export function getJobStats(userId: string): Record<string, number> {
@@ -310,8 +294,6 @@ export async function processJob(job: QueuedJob): Promise<JobResult> {
     const payload: JobPayload = safeParseWarn<JobPayload>(job.payload, "job payload") ?? {};
 
     switch (job.type) {
-      case "generate_response":
-        return await handleResponseJob(job.id, payload);
       case "summarize_messages":
       case "summarize_message":
       case "compress_memories":
