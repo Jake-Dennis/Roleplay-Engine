@@ -34,6 +34,7 @@ import { useApp } from "@/contexts/app-context";
 import { safeParse } from "@/lib/safe-json";
 import type { Message } from "@/hooks/use-session";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { WikiToast, type WikiToastItem } from "@/components/ui/wiki-toast";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { ChatSearch } from "@/components/chat/chat-search";
 import { ChatExport } from "@/components/chat/chat-export";
@@ -132,6 +133,10 @@ export default function SessionChatPage() {
   const [showPersonaSelector, setShowPersonaSelector] = useState(false);
   const personaDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Wiki auto-extract toast state
+  const [wikiToasts, setWikiToasts] = useState<WikiToastItem[]>([]);
+  const wikiToastCounterRef = useRef(0);
+
   // Restore session's selected persona on mount
   useEffect(() => {
     if (session?.personaId) {
@@ -216,6 +221,27 @@ export default function SessionChatPage() {
   );
 
   // -----------------------------------------------------------------------
+  // Wiki auto-extract toast notification dispatcher
+  // -----------------------------------------------------------------------
+  const showWikiToast = useCallback((created: number, updated: number) => {
+    const id = ++wikiToastCounterRef.current;
+    const toast: WikiToastItem = { id, created, updated, leaving: false };
+    setWikiToasts((prev) => [...prev, toast]);
+
+    // Start exit animation at 4.5s
+    setTimeout(() => {
+      setWikiToasts((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, leaving: true } : t))
+      );
+    }, 4500);
+
+    // Remove from DOM at 5s
+    setTimeout(() => {
+      setWikiToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 5000);
+  }, []);
+
+  // -----------------------------------------------------------------------
   // SSE EventSource for real-time updates (all sessions)
   // -----------------------------------------------------------------------
   useEffect(() => {
@@ -234,11 +260,30 @@ export default function SessionChatPage() {
       return () => evtSource.removeEventListener(eventName, refreshSession);
     });
 
+    // Wiki auto-extract event listener
+    const handleWikiCreated = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        const createdArr = data.created as string[] | undefined;
+        const updatedArr = data.updated as string[] | undefined;
+        const created = createdArr?.length || 0;
+        const updated = updatedArr?.length || 0;
+        if (created > 0 || updated > 0) {
+          showWikiToast(created, updated);
+        }
+      } catch {
+        // Silent
+      }
+    };
+
+    evtSource.addEventListener("wiki:page_created", handleWikiCreated);
+
     return () => {
       cleanupFns.forEach((fn) => fn());
+      evtSource.removeEventListener("wiki:page_created", handleWikiCreated);
       evtSource.close();
     };
-  }, [sessionId, refreshSession]);
+  }, [sessionId, refreshSession, showWikiToast]);
 
   // -----------------------------------------------------------------------
   // Group session actions
@@ -264,9 +309,6 @@ export default function SessionChatPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ participant_id: participantId }),
     });
-    if (res.ok) {
-      await refreshSession();
-    }
   }
 
   async function handleLeave() {
@@ -281,9 +323,6 @@ export default function SessionChatPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ turnMode: mode }),
     });
-    if (res.ok) {
-      await refreshSession();
-    }
   }
 
   async function handleAdvanceTurn() {
@@ -300,9 +339,6 @@ export default function SessionChatPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ participant_id: participantId, role }),
     });
-    if (res.ok) {
-      await refreshSession();
-    }
   }
 
   // -----------------------------------------------------------------------
@@ -457,7 +493,6 @@ export default function SessionChatPage() {
 
     if (!res.ok) return;
 
-    await refreshSession();
     setConfirmAction(null);
   }
 
@@ -474,9 +509,6 @@ export default function SessionChatPage() {
     // Reload and chain generation if there's a user message to regenerate from
     if (json.lastUserMessage) {
       await triggerGeneration(json.lastUserMessage, json.lastUserMessageId);
-    } else {
-      // Just reload if no user message found
-      await refreshSession();
     }
   }
 
@@ -900,10 +932,12 @@ export default function SessionChatPage() {
             throw new Error(errorBody.error || "Failed to join session");
           }
           setShowCharacterModal(false);
-          await refreshSession();
         }}
         onCancel={() => setShowCharacterModal(false)}
       />
+
+      {/* Wiki auto-extract toast notifications */}
+      <WikiToast toasts={wikiToasts} />
     </div>
   );
 }
