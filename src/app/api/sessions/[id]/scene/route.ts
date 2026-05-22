@@ -6,6 +6,7 @@ import { verifyToken } from "@/lib/auth";
 import { getAuthToken } from '@/lib/auth-token';
 import { safeParseWarn } from "@/lib/safe-json";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
+import { eventBus, SessionEvents } from "@/lib/event-bus";
 
 export const GET = withErrorHandler(async (request: NextRequest,
 { params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
@@ -119,5 +120,7 @@ if (existing) {
     sceneSummary || null
   );
 }
+
+eventBus.emit(`${SessionEvents.SCENE_UPDATED}:${sessionId}`, { sessionId });
 
 return NextResponse.json({ success: true }); });
