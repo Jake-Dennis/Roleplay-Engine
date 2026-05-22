@@ -4,7 +4,6 @@ import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
-import { cancelSessionJobs } from "@/lib/job-processor";
 import { getAuthToken } from '@/lib/auth-token';
 import { validateLength } from '@/lib/validation';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
@@ -128,9 +127,6 @@ if (regenerate) {
     }
   }
 
-  // Cancel any pending generate_response jobs for this session
-  cancelSessionJobs(decoded.sub, sessionId);
-
   // B1: No job queued here — client calls triggerGeneration() which uses
   // the direct streaming path (/api/generate/[id]) with full context retrieval.
   // The job queue path has no context and would produce a duplicate response.
@@ -226,8 +222,6 @@ if (subsequentMessages.length > 0) {
     });
   }
 
-  // Cancel any pending generate_response jobs for this session
-  cancelSessionJobs(decoded.sub, sessionId);
 }
 
 return NextResponse.json({ success: true, deletedCount: subsequentMessages.length }); });

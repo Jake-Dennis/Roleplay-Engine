@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
         return badRequestError("type is required");
       }
       const validJobTypes: JobType[] = [
-        "generate_response", "summarize_messages", "summarize_message",
+        "summarize_messages", "summarize_message",
         "generate_embeddings", "analyze_relationships", "decay_relationships",
         "compress_memories", "refine_relationship_summary", "archival_processing",
         "thread_analysis", "idle_enrichment", "wiki_ingest", "wiki_enrich_entity",

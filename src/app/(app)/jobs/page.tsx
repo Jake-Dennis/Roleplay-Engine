@@ -26,7 +26,6 @@ import { formatRelativeTime } from "@/lib/date-formatter";
 import { safeParse } from "@/lib/safe-json";
 
 const JOB_TYPES = [
-  "generate_response",
   "summarize_messages",
   "summarize_message",
   "generate_embeddings",
@@ -46,7 +45,6 @@ const JOB_TYPES = [
 ] as const;
 
 const JOB_TYPE_LABELS: Record<string, string> = {
-  generate_response: "AI Response",
   summarize_messages: "Summarize Messages",
   summarize_message: "Summarize Single",
   generate_embeddings: "Embeddings",
