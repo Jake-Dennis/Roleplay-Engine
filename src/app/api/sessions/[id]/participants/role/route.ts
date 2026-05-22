@@ -56,7 +56,7 @@ const user = db.prepare(
 ).get(participant_id) as { username: string } | undefined;
 
 // Emit SSE event
-eventBus.emit(`${SessionEvents.PARTICIPANT_INVITED}:${sessionId}`, {
+eventBus.emit(`${SessionEvents.PARTICIPANT_ROLE_CHANGED}:${sessionId}`, {
   sessionId,
   participantId: participant_id,
   username: user?.username || "unknown",

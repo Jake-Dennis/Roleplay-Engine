@@ -246,6 +246,7 @@ export const SessionEvents = {
   PARTICIPANT_LEFT: "participant:left",
   PARTICIPANT_KICKED: "participant:kicked",
   PARTICIPANT_INVITED: "participant:invited",
+  PARTICIPANT_ROLE_CHANGED: "participant:role_changed",
   TURN_UPDATED: "turn:updated",
   // D5: New SSE events
   SCENE_UPDATED: "scene:updated",
@@ -253,4 +254,7 @@ export const SessionEvents = {
   JOB_COMPLETED: "job:completed",
   JOB_PROGRESS: "job:progress",
   SESSION_UPDATED: "session:updated",
+  // Wiki page events
+  WIKI_PAGE_CREATED: "wiki:page_created",
+  WIKI_PAGE_UPDATED: "wiki:page_updated",
 } as const;
