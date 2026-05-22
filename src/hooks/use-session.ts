@@ -7,7 +7,7 @@
  *   const { session, messages, sceneState, participants, turnConfig, isOwner, claimTurn, advanceTurn, refresh } = useSession(sessionId);
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 interface Participant {
   id: string;
@@ -82,11 +82,14 @@ export function useSession(sessionId: string): UseSessionResult {
   const [isObserver, setIsObserver] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const pending = useRef(false);
 
   const refresh = useCallback(async () => {
     if (!sessionId) return;
+    if (pending.current) return;
     setLoading(true);
     setError(null);
+    pending.current = true;
     try {
       // Browser automatically sends httpOnly cookies with same-origin requests
       const res = await fetch(`/api/sessions/${sessionId}`);
@@ -112,6 +115,7 @@ export function useSession(sessionId: string): UseSessionResult {
       setTurnConfig(null);
       setIsOwner(false);
     } finally {
+      pending.current = false;
       setLoading(false);
     }
   }, [sessionId]);
