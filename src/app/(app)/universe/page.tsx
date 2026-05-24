@@ -17,6 +17,7 @@ import { useApp } from "@/contexts/app-context";
 interface Universe {
   id: string;
   name: string;
+  description: string | null;
   canon_mode: string;
   lore_source: string | null;
   tone: string | null;
@@ -31,6 +32,7 @@ export default function UniverseListPage() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [tone, setTone] = useState("");
   const [creating, setCreating] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -77,6 +79,7 @@ export default function UniverseListPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
+          description: description.trim() || null,
           tone: tone.trim() || null,
           group_id: activeGroup?.id || null,
         }),
@@ -86,6 +89,7 @@ export default function UniverseListPage() {
       if (res.ok) {
         setShowCreate(false);
         setName("");
+        setDescription("");
         setTone("");
         setSuccess(`${json.universe.name}" created`);
         refreshAll();
@@ -123,6 +127,7 @@ export default function UniverseListPage() {
 
   const filtered = universes.filter((u) =>
     u.name.toLowerCase().includes(search.toLowerCase()) ||
+    (u.description && u.description.toLowerCase().includes(search.toLowerCase())) ||
     (u.tone && u.tone.toLowerCase().includes(search.toLowerCase())) ||
     u.canon_mode.toLowerCase().includes(search.toLowerCase())
   );
@@ -167,7 +172,7 @@ export default function UniverseListPage() {
           <h2 className="text-sm font-medium text-text-primary mb-4">Create Universe</h2>
           <form onSubmit={handleCreate} className="space-y-3">
             <div>
-              <label className="mb-1 block text-xs text-text-secondary">Name</label>
+              <label className="mb-1.5 block text-xs text-text-secondary">Name</label>
               <input
                 type="text"
                 value={name}
@@ -176,6 +181,26 @@ export default function UniverseListPage() {
                 placeholder="e.g., Middle-earth"
                 required
                 autoFocus
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs text-text-secondary">Description (optional)</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:border-accent resize-none"
+                rows={2}
+                placeholder="Describe your world — the LLM will use this as context"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs text-text-secondary">Tone (optional)</label>
+              <input
+                type="text"
+                value={tone}
+                onChange={(e) => setTone(e.target.value)}
+                className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:border-accent"
+                placeholder="e.g., dark fantasy, lighthearted adventure"
               />
             </div>
             <div>

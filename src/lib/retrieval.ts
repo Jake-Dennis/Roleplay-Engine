@@ -283,19 +283,48 @@ export function getRecentMessages(
 export function getCanonContext(universeId: string): string | null {
   const db = getDb();
   const universe = db.prepare(
-    `SELECT name, boundaries, canon_mode FROM universes WHERE id = ?`
-  ).get(universeId) as { name: string; boundaries: string | null; canon_mode: string | null } | undefined;
+    `SELECT name, description, boundaries, canon_mode, tone, lore_source FROM universes WHERE id = ?`
+  ).get(universeId) as {
+    name: string;
+    description: string | null;
+    boundaries: string | null;
+    canon_mode: string | null;
+    tone: string | null;
+    lore_source: string | null;
+  } | undefined;
 
   if (!universe) return null;
 
-  let boundariesText = "";
-  if (universe.boundaries) {
-    const parsed = safeParseWarn<string[]>(universe.boundaries, "universe boundaries");
-    boundariesText = Array.isArray(parsed) ? parsed.join(", ") : universe.boundaries;
+  const parts: string[] = [];
+
+  // Name is always included
+  parts.push(`Name: ${universe.name}`);
+
+  // Tone — was stored but never injected
+  if (universe.tone) {
+    parts.push(`Tone: ${universe.tone}`);
   }
 
-  const context = boundariesText || universe.name;
-  if (!context) return null;
+  // Description — rich world description
+  if (universe.description) {
+    parts.push(`Description: ${universe.description}`);
+  }
+
+  // Lore source — reference URL or file path
+  if (universe.lore_source) {
+    parts.push(`Lore Source: ${universe.lore_source}`);
+  }
+
+  // Boundaries — explicit canon rules
+  if (universe.boundaries) {
+    const parsed = safeParseWarn<string[]>(universe.boundaries, "universe boundaries");
+    const boundariesText = Array.isArray(parsed) ? parsed.join(", ") : universe.boundaries;
+    if (boundariesText) {
+      parts.push(`Boundaries: ${boundariesText}`);
+    }
+  }
+
+  if (parts.length === 0) return null;
 
   const modeLabel =
     universe.canon_mode === "strict"
@@ -304,7 +333,7 @@ export function getCanonContext(universeId: string): string | null {
         ? "LOOSE CANON"
         : "CUSTOM CANON";
 
-  return `[CANON: ${modeLabel}]\n${context}`;
+  return `[CANON: ${modeLabel}]\n${parts.join("\n")}`;
 }
 
 // ---------------------------------------------------------------------------

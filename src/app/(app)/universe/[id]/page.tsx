@@ -8,6 +8,7 @@ import { ArrowLeft, Save, Sparkles, AlertCircle, Check, Clock, GitBranch } from 
 interface Universe {
   id: string;
   name: string;
+  description: string | null;
   canon_mode: string;
   lore_source: string | null;
   tone: string | null;
@@ -37,6 +38,7 @@ export default function UniverseDetailPage() {
 
   // Form state
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [tone, setTone] = useState("");
   const [canonMode, setCanonMode] = useState("strict");
   const [loreSource, setLoreSource] = useState("");
@@ -54,6 +56,7 @@ export default function UniverseDetailPage() {
 
         setUniverse(uData.universe);
         setName(uData.universe.name);
+        setDescription(uData.universe.description || "");
         setTone(uData.universe.tone || "");
         setCanonMode(uData.universe.canon_mode);
         setLoreSource(uData.universe.lore_source || "");
@@ -100,6 +103,7 @@ export default function UniverseDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
+          description: description.trim() || null,
           tone: tone.trim() || null,
           canon_mode: canonMode,
           lore_source: loreSource.trim() || null,
@@ -171,6 +175,17 @@ export default function UniverseDetailPage() {
               onChange={(e) => setName(e.target.value)}
               className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary focus:border-accent"
               required
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs text-text-secondary">Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:border-accent resize-none"
+              rows={3}
+              placeholder="Describe your world — the LLM will use this as world context. e.g., A high fantasy world where the Dark Lord Sauron forged the One Ring..."
             />
           </div>
 

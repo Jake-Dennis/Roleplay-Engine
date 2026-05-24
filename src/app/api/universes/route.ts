@@ -9,6 +9,10 @@ import { forbiddenError, badRequestError, serverError, requireJson } from "@/lib
 import { validateLength } from "@/lib/validation";
 import { parseBoundaries } from '@/lib/universe-utils';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
+import { getWikiRoot } from '@/lib/wiki/wiki-root';
+import { writeWikiPage } from '@/lib/wiki/file-io';
+import { generateIndex } from '@/lib/wiki/index-generator';
+import path from "path";
 
 export const GET = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
 if ("error" in authResult) return authResult.error;
@@ -32,7 +36,7 @@ if (groupId) {
     return forbiddenError();
   }
   universes = db.prepare(
-    `SELECT u.id, u.user_id, u.group_id, u.name, u.canon_mode, u.lore_source, u.tone, u.boundaries, u.created_at
+    `SELECT u.id, u.user_id, u.group_id, u.name, u.description, u.canon_mode, u.lore_source, u.tone, u.boundaries, u.created_at
      FROM universes u
      WHERE u.group_id = ?
      ORDER BY u.created_at DESC`
@@ -40,7 +44,7 @@ if (groupId) {
 } else if (scope === "personal") {
   // Only personal universes
   universes = db.prepare(
-    `SELECT u.id, u.user_id, u.group_id, u.name, u.canon_mode, u.lore_source, u.tone, u.boundaries, u.created_at
+    `SELECT u.id, u.user_id, u.group_id, u.name, u.description, u.canon_mode, u.lore_source, u.tone, u.boundaries, u.created_at
      FROM universes u
      WHERE u.user_id = ? AND u.group_id IS NULL
      ORDER BY u.created_at DESC`
@@ -48,7 +52,7 @@ if (groupId) {
 } else {
   // Return ALL universes the user has access to (personal + all groups)
   universes = db.prepare(
-    `SELECT u.id, u.user_id, u.group_id, u.name, u.canon_mode, u.lore_source, u.tone, u.boundaries, u.created_at
+    `SELECT u.id, u.user_id, u.group_id, u.name, u.description, u.canon_mode, u.lore_source, u.tone, u.boundaries, u.created_at
      FROM universes u
      WHERE u.user_id = ? OR u.group_id IN (
        SELECT group_id FROM group_members WHERE user_id = ?
@@ -74,7 +78,7 @@ if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   requireJson(request);
   const body = await request.json();
-const { name, canon_mode = "strict", lore_source, tone, boundaries, group_id } = body;
+const { name, description, canon_mode = "strict", lore_source, tone, boundaries, group_id } = body;
 
 if (!name || !name.trim()) {
   return badRequestError("Universe name is required");
@@ -104,8 +108,35 @@ const boundariesJson = Array.isArray(boundaries)
     : null;
 
 db.prepare(
-  "INSERT INTO universes (id, user_id, group_id, name, canon_mode, lore_source, tone, boundaries) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-).run(id, userId, group_id || null, name.trim(), canon_mode, lore_source || null, tone || null, boundariesJson);
+  "INSERT INTO universes (id, user_id, group_id, name, description, canon_mode, lore_source, tone, boundaries) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+).run(id, userId, group_id || null, name.trim(), description || null, canon_mode, lore_source || null, tone || null, boundariesJson);
+
+// Create initial wiki page with universe info
+const wikiRoot = getWikiRoot(userId, id);
+let boundariesText = "";
+if (boundariesJson) {
+  try {
+    const parsed = JSON.parse(boundariesJson);
+    if (Array.isArray(parsed)) {
+      boundariesText = parsed.map((b) => `- ${b}`).join("\n");
+    }
+  } catch { /* ignore */ }
+}
+const pageContent = [
+  `## ${name.trim()}`,
+  ``,
+  description ? `${description}\n` : "",
+  tone ? `**Tone:** ${tone}\n` : "",
+  lore_source ? `**Lore Source:** ${lore_source}\n` : "",
+  boundariesText ? `**Boundaries:**\n${boundariesText}\n` : "",
+].filter(Boolean).join("\n");
+writeWikiPage(path.join(wikiRoot, "concepts", "about.md"), pageContent, {
+  title: `${name.trim()} — Universe Overview`,
+  type: "concept",
+  status: "draft",
+  tags: ["auto-generated", "universe-info"],
+});
+generateIndex(wikiRoot);
 
 const universe = db
   .prepare(
