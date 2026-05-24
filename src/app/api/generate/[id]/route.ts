@@ -10,10 +10,8 @@ import { OLLAMA_CONFIG } from "@/lib/config";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 import type { DbDatabase } from "@/lib/types";
 import { getAuthToken } from '@/lib/auth-token';
-import { extractAndApplySceneState } from "@/lib/scene-extraction";
 import { logger } from '@/lib/logger';
 import { validateLength } from '@/lib/validation';
-import { extractAndCreateWikiEntities } from "@/lib/wiki/auto-extract";
 
 function getSessionSettings(db: DbDatabase, sessionId: string) {
   const rows = db.prepare(
@@ -219,35 +217,20 @@ export async function POST(
           contentLength: fullResponse.length,
         });
 
-        // Auto-extract scene state from recent messages
-        try {
-          await extractAndApplySceneState(sessionId, decoded.sub);
-        } catch (err: unknown) {
-          // Extraction failure should not break generation flow
-          // extractAndApplySceneState already logs warnings internally
-        }
-        eventBus.emit(`${SessionEvents.SCENE_UPDATED}:${sessionId}`, { sessionId });
+        // Queue deferred extraction jobs — these run during idle processing
+        // so they don't block the SSE stream from closing. The job handlers
+        // emit SCENE_UPDATED / WIKI_PAGE_CREATED events on completion.
+        queueJob(decoded.sub, "scene_state_extract", {
+          sessionId,
+          userId: decoded.sub,
+        }, "low", session.universe_id || undefined);
 
-        // Auto-extract wiki entities from AI response
-        try {
-          const wikiResult = await extractAndCreateWikiEntities(
-            sessionId,
-            decoded.sub,
-            session.universe_id || null,
-            fullResponse
-          );
-
-          if (wikiResult.created.length > 0 || wikiResult.updated.length > 0) {
-            eventBus.emit(`${SessionEvents.WIKI_PAGE_CREATED}:${sessionId}`, {
-              sessionId,
-              created: wikiResult.created,
-              updated: wikiResult.updated,
-            });
-          }
-        } catch (err) {
-          // Wiki extraction is non-critical — never fail generation
-          console.error("[wiki-extract] Error:", err);
-        }
+        queueJob(decoded.sub, "wiki_auto_extract", {
+          sessionId,
+          userId: decoded.sub,
+          universeId: session.universe_id || undefined,
+          content: fullResponse,
+        }, "low", session.universe_id || undefined);
 
         // Queue background jobs for async processing
         // High priority: summarize the new message
@@ -264,6 +247,7 @@ export async function POST(
           content: fullResponse,
           entityType: "message",
           entityId: aiMessageId,
+          userId: decoded.sub,
         }, "high", session.universe_id || undefined);
 
         // Medium priority: analyze relationship impacts
@@ -271,7 +255,20 @@ export async function POST(
           sessionId,
           messageId: aiMessageId,
           content: fullResponse,
+          userId: decoded.sub,
         }, "medium", session.universe_id || undefined);
+
+        // Low priority: extract wiki event pages from the response
+        queueJob(decoded.sub, "wiki_extract_event", {
+          sessionId,
+          userId: decoded.sub,
+        }, "low", session.universe_id || undefined);
+
+        // Low priority: analyze narrative threads in the session
+        queueJob(decoded.sub, "thread_analysis", {
+          sessionId,
+          userId: decoded.sub,
+        }, "low", session.universe_id || undefined);
 
         // Send completion signal with intent info
         controller.enqueue(
