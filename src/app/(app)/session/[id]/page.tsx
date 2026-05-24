@@ -249,7 +249,7 @@ export default function SessionChatPage() {
 
     // Listen for all session events
     const messageEvents = ["message:created", "message:updated", "message:deleted"];
-    const groupEvents = ["participant:joined", "participant:left", "participant:kicked", "participant:invited", "turn:updated"];
+    const groupEvents = ["participant:joined", "participant:left", "participant:kicked", "participant:invited", "participant:role_changed", "turn:updated"];
     // NOTE: generation:started is excluded — it fires when the empty AI placeholder
     // is created, which would cause the UI to show an empty message bubble.
     // The UI already shows streaming content via streamContent state.

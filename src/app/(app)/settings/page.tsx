@@ -156,13 +156,6 @@ export default function SettingsPage() {
         setOllamaConnected(data.connected);
         setLlmModels(data.llmModels || []);
         setEmbeddingModels(data.embeddingModels || []);
-        // Set defaults if not already set
-        if (!selectedLLM) {
-          setSelectedLLM(data.llmModels?.[0]?.name || data.defaultLLM || "");
-        }
-        if (!selectedEmbedding) {
-          setSelectedEmbedding(data.embeddingModels?.[0]?.name || data.defaultEmbedding || "");
-        }
         setModelLoading(false);
       })
       .catch(() => setModelLoading(false));
