@@ -15,10 +15,13 @@ import { generateText } from "@/lib/ollama";
 import { PROMPTS } from "@/lib/prompts";
 import { CONTENT_LIMITS, TIME } from "@/lib/config";
 import { ingestSource } from "@/lib/wiki/ingest";
+import { extractAndCreateWikiEntities } from "@/lib/wiki/auto-extract";
 import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import { listWikiPages, writeWikiPage, readWikiPage, WikiFrontmatter } from "@/lib/wiki/file-io";
 import { generateIndex } from "@/lib/wiki/index-generator";
 import { appendLog } from "@/lib/wiki/logger";
+import path from "path";
+import { eventBus, SessionEvents } from "@/lib/event-bus";
 import type { JobPayload, JobResult } from "@/lib/job-processor";
 import { updateJobProgress, markJobCompleted } from "@/lib/job-processor";
 import { safeParseWarn } from "@/lib/safe-json";
@@ -45,6 +48,10 @@ export async function handleWikiJob(jobId: string, payload: JobPayload, jobType:
       return handleWikiDeepenLocation(jobId, payload);
     case "wiki_extract_event":
       return handleWikiExtractEvent(jobId, payload);
+    case "wiki_auto_extract":
+      return handleWikiAutoExtract(jobId, payload);
+    case "universe_wiki_sync":
+      return handleUniverseWikiSync(jobId, payload);
     default:
       throw new Error(`Unknown wiki job type: ${jobType}`);
   }
@@ -501,5 +508,111 @@ async function handleWikiExtractEvent(jobId: string, payload: JobPayload): Promi
     jobId,
     type: "wiki_extract_event",
     data: { extractedCount: extracted },
+  };
+}
+
+async function handleWikiAutoExtract(jobId: string, payload: JobPayload): Promise<JobResult> {
+  const { sessionId, userId, universeId, content } = payload;
+  if (!sessionId || !userId) throw new Error("Missing sessionId or userId");
+
+  updateJobProgress(jobId, 20, "Extracting wiki entities...");
+  const result = await extractAndCreateWikiEntities(
+    sessionId as string,
+    userId as string,
+    (universeId as string) || null,
+    (content as string) || ""
+  );
+  updateJobProgress(jobId, 80, `Created ${result.created.length}, updated ${result.updated.length}`);
+
+  // Emit SSE events so UI gets real-time toast notifications
+  if (result.created.length > 0 || result.updated.length > 0) {
+    eventBus.emit(`${SessionEvents.WIKI_PAGE_CREATED}:${sessionId}`, {
+      sessionId,
+      created: result.created,
+      updated: result.updated,
+    });
+  }
+
+  markJobCompleted(jobId);
+  return {
+    success: true,
+    jobId,
+    type: "wiki_auto_extract",
+    data: { created: result.created.length, updated: result.updated.length },
+  };
+}
+
+/**
+ * universe_wiki_sync: Create or update the universe overview wiki page
+ * using the universe's name, description, tone, lore_source, and boundaries.
+ */
+async function handleUniverseWikiSync(jobId: string, payload: JobPayload): Promise<JobResult> {
+  const { userId, universeId } = payload;
+  if (!userId || !universeId) throw new Error("Missing userId or universeId");
+
+  updateJobProgress(jobId, 20, "Reading universe data...");
+
+  const db = getDb();
+  const universe = db.prepare(
+    "SELECT id, name, description, tone, lore_source, boundaries FROM universes WHERE id = ? AND user_id = ?"
+  ).get(universeId as string, userId as string) as Record<string, unknown> | undefined;
+
+  if (!universe) {
+    throw new Error(`Universe not found: ${universeId}`);
+  }
+
+  updateJobProgress(jobId, 40, "Building wiki page...");
+
+  const wikiRoot = getWikiRoot(userId as string, universeId as string);
+  const name = (universe.name as string) || "Unknown";
+  const description = (universe.description as string) || "";
+  const tone = (universe.tone as string) || "";
+  const loreSource = (universe.lore_source as string) || "";
+
+  // Parse boundaries from JSON string
+  let boundariesText = "";
+  try {
+    const raw = universe.boundaries as string | null;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        boundariesText = parsed.map((b: string) => `- ${b}`).join("\n");
+      }
+    }
+  } catch { /* not a JSON array — ignore */ }
+
+  // Build markdown content from universe fields
+  const content = [
+    `## ${name}`,
+    ``,
+    description ? `${description}\n` : "",
+    tone ? `**Tone:** ${tone}\n` : "",
+    loreSource ? `**Lore Source:** ${loreSource}\n` : "",
+    boundariesText ? `**Boundaries:**\n${boundariesText}\n` : "",
+  ].filter(Boolean).join("\n");
+
+  const pagePath = path.join(wikiRoot, "concepts", "about.md");
+  writeWikiPage(pagePath, content, {
+    title: `${name} — Universe Overview`,
+    type: "concept",
+    status: "draft",
+    tags: ["auto-generated", "universe-info"],
+  });
+
+  updateJobProgress(jobId, 70, "Regenerating index...");
+  generateIndex(wikiRoot);
+
+  updateJobProgress(jobId, 90, "Emitting SSE event...");
+  eventBus.emit(`${SessionEvents.WIKI_PAGE_CREATED}:${universeId}`, {
+    universeId,
+    page: "concepts/about.md",
+  });
+
+  markJobCompleted(jobId);
+  return {
+    success: true,
+    jobId,
+    type: "universe_wiki_sync",
+    data: { page: "concepts/about.md" },
   };
 }

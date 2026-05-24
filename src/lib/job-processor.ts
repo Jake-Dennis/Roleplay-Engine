@@ -23,7 +23,6 @@ import { processEmbeddings } from "@/lib/embeddings";
 import { processRelationshipAnalysis } from "@/lib/relationship-analysis";
 import { generateText } from "@/lib/ollama";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
-import { runIdleEnrichment } from "@/lib/idle-enrichment";
 import { PROMPTS } from "@/lib/prompts";
 import { safeParseWarn } from "@/lib/safe-json";
 import { DEFAULT_DECAY_RATES, EMOTIONAL_STATES, RELATIONSHIP_STAGES } from "@/lib/relationship-decay";
@@ -34,10 +33,10 @@ import { handleWikiJob } from "./jobs/wiki-handler";
 import { handleNpcEvolutionJob } from "./jobs/npc-evolution";
 import { handleLoreExtractionJob } from "./jobs/lore-extraction";
 import { handleSessionRecapJob } from "./jobs/session-recap";
+import { handleSceneStateExtract } from "./jobs/scene-handler";
 
 export type JobType =
   | "summarize_messages"
-  | "summarize_message"
   | "generate_embeddings"
   | "analyze_relationships"
   | "decay_relationships"
@@ -45,7 +44,6 @@ export type JobType =
   | "refine_relationship_summary"
   | "archival_processing"
   | "thread_analysis"
-  | "idle_enrichment"
   // Wiki enrichment job types
   | "wiki_ingest"
   | "wiki_enrich_entity"
@@ -55,7 +53,10 @@ export type JobType =
   | "wiki_extract_event"
   | "generate_session_recap"
   | "npc_evolution"
-  | "extract_lore_comprehensive";
+  | "extract_lore_comprehensive"
+  | "scene_state_extract"
+  | "wiki_auto_extract"
+  | "universe_wiki_sync";
 
 export type JobPriority = "high" | "medium" | "low" | "idle";
 export type JobStatus = "queued" | "processing" | "completed" | "failed" | "cancelled";
@@ -209,6 +210,22 @@ export function markJobCompleted(jobId: string): void {
 }
 
 /**
+ * Classify errors as transient (retryable) or permanent.
+ * Transient: network issues, timeouts, rate limits, temporary DB locks
+ * Permanent: missing fields, invalid references, schema violations, unknown job types
+ */
+function isTransientError(error: string): boolean {
+  const transientPatterns = [
+    "timeout", "timed out", "rate limit", "too many requests",
+    "connection", "ECONNREFUSED", "ECONNRESET", "ETIMEDOUT",
+    "database is locked", "SQLITE_BUSY", "temporary failure",
+    "Service Unavailable", "503", "429", "fetch failed",
+    "Ollama", "Failed to fetch",
+  ];
+  return transientPatterns.some(p => error.toLowerCase().includes(p.toLowerCase()));
+}
+
+/**
  * Mark a job as failed
  */
 export function markJobFailed(jobId: string, error: string): void {
@@ -216,6 +233,24 @@ export function markJobFailed(jobId: string, error: string): void {
   db.prepare(
     "UPDATE job_queue SET status = 'failed', error = ?, processed_at = CURRENT_TIMESTAMP WHERE id = ?"
   ).run(error, jobId);
+
+  // Auto-retry transient errors with exponential backoff
+  const job = db.prepare(
+    "SELECT retry_count, max_retries FROM job_queue WHERE id = ?"
+  ).get(jobId) as { retry_count: number | null; max_retries: number | null } | undefined;
+
+  if (job && isTransientError(error) && (job.retry_count ?? 0) < (job.max_retries ?? 3)) {
+    const newRetryCount = (job.retry_count ?? 0) + 1;
+    const backoffSeconds = Math.min(Math.pow(2, newRetryCount - 1), 30); // 1s, 2s, 4s, 8s, 16s, 30s (capped)
+    db.prepare(`
+      UPDATE job_queue 
+      SET status = 'queued', error = NULL, progress = 0, progress_message = NULL, 
+          processed_at = NULL, retry_count = ?,
+          created_at = datetime('now', '+${backoffSeconds} seconds')
+      WHERE id = ?
+    `).run(newRetryCount, jobId);
+    logger.info(`Auto-retrying job ${jobId} (attempt ${newRetryCount}/${job.max_retries ?? 3}) with ${backoffSeconds}s backoff`);
+  }
 }
 
 /**
@@ -237,6 +272,49 @@ export function cancelAllUserJobs(userId: string): number {
   const result = db.prepare(
     "UPDATE job_queue SET status = 'cancelled' WHERE user_id = ? AND status = 'queued'"
   ).run(userId);
+  return result.changes;
+}
+
+/**
+ * Retry a failed job — resets it to queued with cleared error.
+ * Respects max_retries cap; returns false if cap reached.
+ */
+export function retryJob(jobId: string): boolean {
+  const db = getDb();
+  const job = db.prepare(
+    "SELECT retry_count, max_retries FROM job_queue WHERE id = ? AND status = 'failed'"
+  ).get(jobId) as { retry_count: number | null; max_retries: number | null } | undefined;
+
+  if (!job) return false;
+
+  const currentRetries = job.retry_count ?? 0;
+  const maxRetries = job.max_retries ?? 3;
+
+  if (currentRetries >= maxRetries) {
+    return false; // Cap reached — no more manual retries
+  }
+
+  db.prepare(`
+    UPDATE job_queue 
+    SET status = 'queued', error = NULL, progress = 0, progress_message = NULL, 
+        processed_at = NULL, retry_count = ?
+    WHERE id = ? AND status = 'failed'
+  `).run(currentRetries + 1, jobId);
+  return true;
+}
+
+/**
+ * Retry all failed jobs for a user — only retries jobs where retry_count < max_retries.
+ */
+export function retryAllFailedJobs(userId: string): number {
+  const db = getDb();
+  const result = db.prepare(`
+    UPDATE job_queue 
+    SET status = 'queued', error = NULL, progress = 0, progress_message = NULL, 
+        processed_at = NULL, retry_count = COALESCE(retry_count, 0) + 1
+    WHERE user_id = ? AND status = 'failed' 
+      AND (COALESCE(retry_count, 0) < COALESCE(max_retries, 3))
+  `).run(userId);
   return result.changes;
 }
 
@@ -295,7 +373,6 @@ export async function processJob(job: QueuedJob): Promise<JobResult> {
 
     switch (job.type) {
       case "summarize_messages":
-      case "summarize_message":
       case "compress_memories":
         return await handleSummarizationJob(job.id, payload, job.type);
       case "generate_embeddings":
@@ -310,8 +387,8 @@ export async function processJob(job: QueuedJob): Promise<JobResult> {
         return await handleArchivalProcessing(job.id, payload);
       case "thread_analysis":
         return await handleThreadAnalysis(job.id, payload);
-      case "idle_enrichment":
-        return await handleIdleEnrichment(job.id, payload);
+      case "scene_state_extract":
+        return await handleSceneStateExtract(job.id, payload);
       // Wiki-native job types
       case "wiki_ingest":
       case "wiki_enrich_entity":
@@ -319,6 +396,8 @@ export async function processJob(job: QueuedJob): Promise<JobResult> {
       case "wiki_deepen_page":
       case "wiki_deepen_location":
       case "wiki_extract_event":
+      case "wiki_auto_extract":
+      case "universe_wiki_sync":
         return await handleWikiJob(job.id, payload, job.type);
       case "npc_evolution":
         return await handleNpcEvolutionJob(job.id, payload);
@@ -727,29 +806,3 @@ async function handleThreadAnalysis(jobId: string, payload: JobPayload): Promise
   };
 }
 
-async function handleIdleEnrichment(jobId: string, payload: JobPayload): Promise<JobResult> {
-  const { userId, idleMinutes, universeId } = payload;
-  if (!userId) throw new Error("Missing userId");
-
-  const minutes = typeof idleMinutes === "number" ? idleMinutes : 5;
-
-  updateJobProgress(jobId, 10, `Starting idle enrichment (${minutes}min idle)...`);
-  const result = await runIdleEnrichment(
-    userId as string,
-    minutes,
-    (universeId as string) || null
-  );
-  updateJobProgress(jobId, 90, "Enrichment complete");
-  markJobCompleted(jobId);
-
-  return {
-    success: true,
-    jobId,
-    type: "idle_enrichment",
-    data: {
-      tier: result.tier,
-      actionsCompleted: result.actionsCompleted,
-      itemsProcessed: result.itemsProcessed,
-    },
-  };
-}

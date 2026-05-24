@@ -3,24 +3,20 @@
  *
  * Handles summarization-related job types:
  * - summarize_messages: Batch summarization of old messages
- * - summarize_message: Single message summarization
  * - compress_memories: Age-based memory compression with LLM
  */
 
 import { getDb } from "@/lib/db";
 import { processSummarization } from "@/lib/summarization";
-import { summarizeMessage } from "@/lib/message-summarizer";
 import { generateText } from "@/lib/ollama";
 import { PROMPTS } from "@/lib/prompts";
 import type { JobPayload, JobResult } from "@/lib/job-processor";
 import { updateJobProgress, markJobCompleted } from "@/lib/job-processor";
 
-export async function handleSummarizationJob(jobId: string, payload: JobPayload, jobType: "summarize_messages" | "summarize_message" | "compress_memories"): Promise<JobResult> {
+export async function handleSummarizationJob(jobId: string, payload: JobPayload, jobType: "summarize_messages" | "compress_memories"): Promise<JobResult> {
   switch (jobType) {
     case "summarize_messages":
       return handleSummarizeMessages(jobId, payload);
-    case "summarize_message":
-      return handleSummarizeSingleMessage(jobId, payload);
     case "compress_memories":
       return handleCompressMemories(jobId, payload);
   }
@@ -40,23 +36,6 @@ async function handleSummarizeMessages(jobId: string, payload: JobPayload): Prom
     jobId,
     type: "summarize_messages",
     data: { summarizedCount: result.summarizedCount },
-  };
-}
-
-async function handleSummarizeSingleMessage(jobId: string, payload: JobPayload): Promise<JobResult> {
-  const { messageId } = payload;
-  if (!messageId) throw new Error("Missing messageId");
-
-  updateJobProgress(jobId, 20, "Analyzing message...");
-  const result = await summarizeMessage(messageId as string);
-  updateJobProgress(jobId, 80, "Saving summaries...");
-  markJobCompleted(jobId);
-
-  return {
-    success: true,
-    jobId,
-    type: "summarize_message",
-    data: { summaryId: result.summaryId, types: result.types },
   };
 }
 

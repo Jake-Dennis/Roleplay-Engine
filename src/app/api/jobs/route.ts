@@ -6,6 +6,8 @@ import {
   getJobStats,
   cancelJob,
   cancelAllUserJobs,
+  retryJob,
+  retryAllFailedJobs,
   processJob,
   processUserJobs,
   getNextJob,
@@ -54,8 +56,8 @@ export async function POST(request: NextRequest) {
   const rateLimit = checkRateLimit(`jobs_trigger:${ip}`, "jobs_trigger");
   if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
-    requireJson(request);
-    const body = await request.json();
+  requireJson(request);
+  const body = await request.json();
   const { action, type, payload, priority, jobId, universe_id } = body;
 
   switch (action) {
@@ -64,13 +66,13 @@ export async function POST(request: NextRequest) {
         return badRequestError("type is required");
       }
       const validJobTypes: JobType[] = [
-        "summarize_messages", "summarize_message",
+        "summarize_messages",
         "generate_embeddings", "analyze_relationships", "decay_relationships",
         "compress_memories", "refine_relationship_summary", "archival_processing",
-        "thread_analysis", "idle_enrichment", "wiki_ingest", "wiki_enrich_entity",
+        "thread_analysis", "wiki_ingest", "wiki_enrich_entity",
         "wiki_generate_rumors", "wiki_deepen_page", "wiki_deepen_location",
         "wiki_extract_event", "generate_session_recap", "npc_evolution",
-        "extract_lore_comprehensive",
+        "extract_lore_comprehensive", "scene_state_extract", "wiki_auto_extract",
       ];
       if (!validJobTypes.includes(type as JobType)) {
         return badRequestError(`Invalid job type. Must be one of: ${validJobTypes.join(", ")}`);
@@ -119,6 +121,19 @@ export async function POST(request: NextRequest) {
     case "cancel-all": {
       const count = cancelAllUserJobs(userId);
       return NextResponse.json({ success: true, cancelledCount: count });
+    }
+
+    case "retry": {
+      if (!jobId) {
+        return badRequestError("jobId required");
+      }
+      const retried = retryJob(jobId);
+      return NextResponse.json({ success: retried });
+    }
+
+    case "retry-all": {
+      const retriedCount = retryAllFailedJobs(userId);
+      return NextResponse.json({ success: true, retriedCount });
     }
 
     case "queue-idle": {

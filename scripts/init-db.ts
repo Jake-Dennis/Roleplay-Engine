@@ -73,6 +73,7 @@ function main() {
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),
       name TEXT NOT NULL,
+      description TEXT,
       canon_mode TEXT DEFAULT 'strict',
       lore_source TEXT,
       tone TEXT,
@@ -149,6 +150,22 @@ function main() {
       updated_at DATETIME
     );
 
+    -- Locations (queried by embeddings, backlinks, contradictions)
+    CREATE TABLE IF NOT EXISTS locations (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      universe_id TEXT REFERENCES universes(id),
+      name TEXT NOT NULL,
+      description TEXT,
+      known_info TEXT,
+      hidden_info TEXT,
+      tags TEXT,
+      is_canon BOOLEAN DEFAULT 0,
+      canon_layer TEXT DEFAULT 'generated_lore',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
     -- Messages
     CREATE TABLE IF NOT EXISTS messages (
       id TEXT PRIMARY KEY,
@@ -221,7 +238,9 @@ function main() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       processed_at DATETIME,
       error TEXT,
-      result TEXT
+      result TEXT,
+      retry_count INTEGER DEFAULT 0,
+      max_retries INTEGER DEFAULT 3
     );
 
     -- Embedding index
@@ -233,6 +252,12 @@ function main() {
       entity_id TEXT NOT NULL,
       text_content TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Embedding vectors (for vector search, 1:1 with embedding_index)
+    CREATE TABLE IF NOT EXISTS embedding_vectors (
+      embedding_id TEXT PRIMARY KEY REFERENCES embedding_index(id),
+      vector_data TEXT NOT NULL
     );
 
     -- Backlinks

@@ -219,4 +219,65 @@ export function runSchemaMigrations(): void {
   } catch {
     // Column already exists — safe to ignore
   }
+
+  // Migration: Add description column to universes
+  try {
+    db.prepare(
+      "ALTER TABLE universes ADD COLUMN description TEXT"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add missing locations table (queried by embeddings, backlinks, contradictions)
+  try {
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS locations (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        universe_id TEXT REFERENCES universes(id),
+        name TEXT NOT NULL,
+        description TEXT,
+        known_info TEXT,
+        hidden_info TEXT,
+        tags TEXT,
+        is_canon BOOLEAN DEFAULT 0,
+        canon_layer TEXT DEFAULT 'generated_lore',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `    ).run();
+  } catch {
+    // Table already exists — safe to ignore
+  }
+
+  // Migration: Add retry_count to job_queue
+  try {
+    db.prepare(
+      "ALTER TABLE job_queue ADD COLUMN retry_count INTEGER DEFAULT 0"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add max_retries to job_queue
+  try {
+    db.prepare(
+      "ALTER TABLE job_queue ADD COLUMN max_retries INTEGER DEFAULT 3"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add embedding_vectors table (created at runtime by ensureVectorTable())
+  try {
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS embedding_vectors (
+        embedding_id TEXT PRIMARY KEY REFERENCES embedding_index(id),
+        vector_data TEXT NOT NULL
+      )
+    `).run();
+  } catch {
+    // Table already exists — safe to ignore
+  }
 }

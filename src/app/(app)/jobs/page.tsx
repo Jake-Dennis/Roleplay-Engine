@@ -26,41 +26,49 @@ import { formatRelativeTime } from "@/lib/date-formatter";
 import { safeParse } from "@/lib/safe-json";
 
 const JOB_TYPES = [
-  "summarize_messages",
-  "summarize_message",
-  "generate_embeddings",
   "analyze_relationships",
-  "decay_relationships",
-  "compress_memories",
-  "refine_relationship_summary",
   "archival_processing",
+  "compress_memories",
+  "decay_relationships",
+  "extract_lore_comprehensive",
+  "generate_embeddings",
+  "generate_session_recap",
+  "npc_evolution",
+  "refine_relationship_summary",
+  "scene_state_extract",
+  "summarize_messages",
   "thread_analysis",
-  "idle_enrichment",
-  "wiki_ingest",
-  "wiki_enrich_entity",
-  "wiki_generate_rumors",
-  "wiki_deepen_page",
+  "universe_wiki_sync",
+  "wiki_auto_extract",
   "wiki_deepen_location",
+  "wiki_deepen_page",
+  "wiki_enrich_entity",
   "wiki_extract_event",
+  "wiki_generate_rumors",
+  "wiki_ingest",
 ] as const;
 
 const JOB_TYPE_LABELS: Record<string, string> = {
-  summarize_messages: "Summarize Messages",
-  summarize_message: "Summarize Single",
-  generate_embeddings: "Embeddings",
   analyze_relationships: "Relationship Analysis",
-  decay_relationships: "Relationship Decay",
-  compress_memories: "Memory Compression",
-  refine_relationship_summary: "Summary Refinement",
   archival_processing: "Archival Processing",
+  compress_memories: "Memory Compression",
+  decay_relationships: "Relationship Decay",
+  extract_lore_comprehensive: "Lore Extraction",
+  generate_embeddings: "Embeddings",
+  generate_session_recap: "Session Recap",
+  npc_evolution: "NPC Evolution",
+  refine_relationship_summary: "Summary Refinement",
+  scene_state_extract: "Scene State Extract",
+  summarize_messages: "Summarize Messages",
   thread_analysis: "Thread Analysis",
-  idle_enrichment: "Idle Enrichment",
-  wiki_ingest: "Wiki Ingest",
-  wiki_enrich_entity: "Wiki Enrich Entity",
-  wiki_generate_rumors: "Wiki Generate Rumors",
-  wiki_deepen_page: "Wiki Deepen Page",
+  universe_wiki_sync: "Universe Wiki Sync",
+  wiki_auto_extract: "Wiki Auto Extract",
   wiki_deepen_location: "Wiki Deepen Location",
+  wiki_deepen_page: "Wiki Deepen Page",
+  wiki_enrich_entity: "Wiki Enrich Entity",
   wiki_extract_event: "Wiki Extract Event",
+  wiki_generate_rumors: "Wiki Generate Rumors",
+  wiki_ingest: "Wiki Ingest",
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -90,6 +98,8 @@ interface Job {
   created_at: string;
   processed_at: string | null;
   error: string | null;
+  retry_count?: number;
+  max_retries?: number;
 }
 
 interface Stats {
@@ -112,6 +122,7 @@ export default function JobsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
   const [cancelAllConfirm, setCancelAllConfirm] = useState(false);
+  const [retryAllConfirm, setRetryAllConfirm] = useState(false);
 
   const loadJobs = useCallback(async (status?: string) => {
     try {
@@ -206,6 +217,25 @@ export default function JobsPage() {
     await loadJobs(statusFilter);
   }
 
+  async function handleRetry(id: string) {
+    await fetch("/api/jobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "retry", jobId: id }),
+    });
+    await loadJobs(statusFilter);
+  }
+
+  async function handleRetryAll() {
+    await fetch("/api/jobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "retry-all" }),
+    });
+    setRetryAllConfirm(false);
+    await loadJobs(statusFilter);
+  }
+
   async function handleQueueIdle() {
     await fetch("/api/jobs", {
       method: "POST",
@@ -277,6 +307,14 @@ export default function JobsPage() {
             >
               {processing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
               Process All
+            </button>
+            <button
+              onClick={() => setRetryAllConfirm(true)}
+              disabled={stats.failed === 0}
+              className="flex items-center gap-1.5 rounded-lg border border-warning/30 bg-bg-elevated px-3 py-1.5 text-xs text-warning transition-colors hover:bg-warning/10 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Retry Failed
             </button>
             <button
               onClick={() => setCancelAllConfirm(true)}
@@ -394,6 +432,16 @@ export default function JobsPage() {
 
                   <StatusBadge label={job.status} variant={statusToVariant(job.status)} />
 
+                  {job.status === "failed" ? (
+                    <span className="text-xxs text-text-muted whitespace-nowrap">
+                      Retry {(job.retry_count ?? 0)}/{(job.max_retries ?? 3)}
+                    </span>
+                  ) : (job.retry_count ?? 0) > 0 ? (
+                    <span className="text-xxs text-text-muted whitespace-nowrap">
+                      (retry {job.retry_count})
+                    </span>
+                  ) : null}
+
                   <span className="text-xxs text-text-muted w-20 text-right">
                     {formatTime(job.created_at)}
                   </span>
@@ -404,6 +452,20 @@ export default function JobsPage() {
                       className="rounded p-1 text-text-muted transition-colors hover:bg-bg-raised hover:text-error"
                     >
                       <XCircle className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  {job.status === "failed" && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleRetry(job.id); }}
+                      disabled={(job.retry_count ?? 0) >= (job.max_retries ?? 3)}
+                      className={`rounded p-1 transition-colors ${
+                        (job.retry_count ?? 0) >= (job.max_retries ?? 3)
+                          ? "text-text-muted/30 cursor-not-allowed"
+                          : "text-text-muted hover:bg-bg-raised hover:text-warning"
+                      }`}
+                      title={(job.retry_count ?? 0) >= (job.max_retries ?? 3) ? "Max retries reached" : "Retry job"}
+                    >
+                      <RotateCcw className={`h-3.5 w-3.5 ${(job.retry_count ?? 0) >= (job.max_retries ?? 3) ? "opacity-50" : ""}`} />
                     </button>
                   )}
 
@@ -430,6 +492,10 @@ export default function JobsPage() {
                       <div>
                         <span className="text-text-muted">Priority:</span>
                         <span className={`ml-1 font-medium ${PRIORITY_COLORS[job.priority]}`}>{job.priority}</span>
+                      </div>
+                      <div>
+                        <span className="text-text-muted">Retries:</span>
+                        <span className="ml-1 text-text-secondary">{(job.retry_count ?? 0)}/{(job.max_retries ?? 3)}</span>
                       </div>
                       {job.status === "processing" && (
                         <div className="col-span-2">
@@ -473,6 +539,19 @@ export default function JobsPage() {
                           <AlertTriangle className="h-3 w-3" />
                           {job.error}
                         </span>
+                        <button
+                          onClick={() => handleRetry(job.id)}
+                          disabled={(job.retry_count ?? 0) >= (job.max_retries ?? 3)}
+                          className={`ml-2 inline-flex items-center gap-1 rounded px-2 py-0.5 text-xxs transition-colors ${
+                            (job.retry_count ?? 0) >= (job.max_retries ?? 3)
+                              ? "bg-error/10 text-error/50 cursor-not-allowed"
+                              : "bg-error/20 text-error hover:bg-error/30"
+                          }`}
+                          title={(job.retry_count ?? 0) >= (job.max_retries ?? 3) ? "Max retries reached" : "Retry"}
+                        >
+                          <RotateCcw className={`h-3 w-3 ${(job.retry_count ?? 0) >= (job.max_retries ?? 3) ? "opacity-50" : ""}`} />
+                          Retry
+                        </button>
                       </div>
                     )}
                   </div>
@@ -505,6 +584,18 @@ export default function JobsPage() {
           message={`This will cancel ${stats.queued} queued jobs. This action cannot be undone.`}
           confirmVariant="danger"
           confirmLabel="Cancel All"
+        />
+      )}
+
+      {retryAllConfirm && (
+        <ConfirmationDialog
+          open={retryAllConfirm}
+          onClose={() => setRetryAllConfirm(false)}
+          onConfirm={handleRetryAll}
+          title="Retry All Failed Jobs"
+          message={`This will re-queue ${stats.failed} failed jobs for processing.`}
+          confirmVariant="default"
+          confirmLabel="Retry All"
         />
       )}
     </>

@@ -340,7 +340,7 @@ export function queueIdleJobs(userId: string, universeId: string | null = null):
 
   // Wiki job queueing
   // Queue wiki ingest for lore entries
-  queueJob(userId, "wiki_ingest", { userId, universeId: universeId || undefined }, "low", universeId || undefined);
+  queueJob(userId, "extract_lore_comprehensive", { userId, universeId: universeId || undefined }, "low", universeId || undefined);
   queued++;
 
   // Queue wiki entity enrichment
@@ -431,6 +431,16 @@ export async function processIdleTier(
     }
   } catch {
     // Log but don't throw — heartbeat should always succeed
+  }
+
+  // Process all queued jobs (including ones queued during generation, like
+  // scene_state_extract, wiki_auto_extract, summarize_messages, etc.)
+  // This is the only automatic path where queued jobs actually get processed.
+  try {
+    const results = await processUserJobs(userId, 10);
+    queued += results.filter((r) => r.success).length;
+  } catch {
+    // Job processing errors are handled per-job; this catch is a safety net
   }
 
   return { jobsQueued: queued, tier };
