@@ -12,6 +12,7 @@ import { isValidUUID } from '@/lib/validation/uuid-validator';
 import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import fs from 'fs';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
+import { queueJob } from '@/lib/job-processor';
 
 function hasUniverseAccess(db: DbDatabase, universeId: string, userId: string): boolean {
   const universe = db.prepare(
@@ -54,7 +55,7 @@ if (!hasUniverseAccess(db, id, decoded.sub)) {
 
 const universe = db
   .prepare(
-    "SELECT id, user_id, session_id, name, canon_mode, lore_source, tone, boundaries, created_at FROM universes WHERE id = ?"
+    "SELECT id, user_id, session_id, name, description, canon_mode, lore_source, tone, boundaries, created_at FROM universes WHERE id = ?"
   )
   .get(id) as Record<string, unknown> | undefined;
 
@@ -103,7 +104,7 @@ if (!existing) {
   return notFoundError("Universe");
 }
 
-const { name, canon_mode, lore_source, tone, boundaries } = body;
+const { name, description, canon_mode, lore_source, tone, boundaries } = body;
 
 if (name !== undefined && (!name || !name.trim())) {
   return badRequestError("Universe name cannot be empty");
@@ -133,6 +134,7 @@ const updates: string[] = [];
 const values: unknown[] = [];
 
 if (name !== undefined) { updates.push("name = ?"); values.push(name.trim()); }
+if (description !== undefined) { updates.push("description = ?"); values.push(description || null); }
 if (canon_mode !== undefined) { updates.push("canon_mode = ?"); values.push(canon_mode); }
 if (lore_source !== undefined) { updates.push("lore_source = ?"); values.push(lore_source || null); }
 if (tone !== undefined) { updates.push("tone = ?"); values.push(tone || null); }
@@ -145,9 +147,12 @@ if (updates.length === 0) {
 values.push(id);
 db.prepare(`UPDATE universes SET ${updates.join(", ")} WHERE id = ?`).run(...values);
 
+// Queue wiki sync to update the universe overview page
+queueJob(decoded.sub, "universe_wiki_sync", { userId: decoded.sub, universeId: id }, "low", id);
+
 const universe = db
   .prepare(
-    "SELECT id, user_id, session_id, name, canon_mode, lore_source, tone, boundaries, created_at FROM universes WHERE id = ?"
+    "SELECT id, user_id, session_id, name, description, canon_mode, lore_source, tone, boundaries, created_at FROM universes WHERE id = ?"
   )
   .get(id) as Record<string, unknown> | undefined;
 

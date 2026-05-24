@@ -11,6 +11,7 @@ import type { DbRow } from "@/lib/types";
 import { validateLength } from '@/lib/validation';
 import { isValidUUID } from '@/lib/validation/uuid-validator';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
+import { queueJob } from '@/lib/job-processor';
 
 export async function GET(
   request: NextRequest,
@@ -209,11 +210,36 @@ export async function DELETE(
     return NextResponse.json({ error: "Session not found or not owner" }, { status: 404 });
   }
 
-  // Delete messages, participants, scene state, then session
+  const universeId = (session as Record<string, unknown>)?.universe_id as string | null;
+
+  // Clean up derived data
+  db.prepare("DELETE FROM message_edits WHERE message_id IN (SELECT id FROM messages WHERE session_id = ?)").run(id);
+  db.prepare("DELETE FROM message_summaries WHERE source_message_id IN (SELECT id FROM messages WHERE session_id = ?)").run(id);
+  db.prepare("DELETE FROM embedding_vectors WHERE embedding_id IN (SELECT ei.id FROM embedding_index ei WHERE ei.entity_type = 'message' AND ei.entity_id IN (SELECT id FROM messages WHERE session_id = ?))").run(id);
+  db.prepare("DELETE FROM embedding_index WHERE entity_type = 'message' AND entity_id IN (SELECT id FROM messages WHERE session_id = ?)").run(id);
+  db.prepare("DELETE FROM tts_cache WHERE user_id = ? AND text_content IN (SELECT content FROM messages WHERE session_id = ?)").run(decoded.sub, id);
+
+  // Remove all jobs referencing this session
+  db.prepare("DELETE FROM job_queue WHERE status IN ('queued', 'processing', 'failed') AND json_extract(payload, '$.sessionId') = ?").run(id);
+
+  // Delete messages, participants, scene state, session
   db.prepare("DELETE FROM messages WHERE session_id = ?").run(id);
   db.prepare("DELETE FROM session_participants WHERE session_id = ?").run(id);
   db.prepare("DELETE FROM scene_states WHERE session_id = ?").run(id);
   db.prepare("DELETE FROM sessions WHERE id = ?").run(id);
+
+  // Queue universe-level re-extraction if this session was in a universe
+  if (universeId) {
+    queueJob(decoded.sub, "scene_state_extract", {
+      sessionId: id,
+      userId: decoded.sub,
+      universeId,
+    }, "low", universeId);
+    queueJob(decoded.sub, "analyze_relationships", {
+      sessionId: id,
+      userId: decoded.sub,
+    }, "low", universeId);
+  }
 
   return NextResponse.json({ success: true });
 }

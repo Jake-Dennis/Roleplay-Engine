@@ -171,6 +171,7 @@ export async function POST(
       content,
       entityType: "message",
       entityId: messageId,
+      userId: decoded.sub,
     }, "high", session.universe_id || undefined);
 
     // Update session timestamp

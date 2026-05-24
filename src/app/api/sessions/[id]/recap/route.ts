@@ -38,7 +38,7 @@ export async function POST(
     const jobId = queueJob(
       decoded.sub,
       "generate_session_recap",
-      { sessionId },
+      { sessionId, userId: decoded.sub },
       "medium",
       session.universe_id || undefined
     );

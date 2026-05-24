@@ -7,6 +7,7 @@ import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { getAuthToken } from '@/lib/auth-token';
 import { validateLength } from '@/lib/validation';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
+import { queueJob } from '@/lib/job-processor';
 
 export const PUT = withErrorHandler(async (request: NextRequest,
 { params }: { params: Promise<{ id: string; messageId: string }> }) => { const token = getAuthToken(request);
@@ -198,13 +199,25 @@ if (subsequentMessages.length > 0) {
     `UPDATE messages SET is_deleted = 1, deleted_at = CURRENT_TIMESTAMP WHERE id IN (${placeholders})`
   ).run(...ids);
 
-    // Clean up
+  // Clean up message summaries
   db.prepare(
     `DELETE FROM message_summaries WHERE source_message_id IN (${placeholders})`
+  ).run(...ids);
+
+  // Clean up embeddings (vectors first to avoid FK issues, then index)
+  db.prepare(
+    `DELETE FROM embedding_vectors WHERE embedding_id IN (SELECT id FROM embedding_index WHERE entity_type = 'message' AND entity_id IN (${placeholders}))`
   ).run(...ids);
   db.prepare(
     `DELETE FROM embedding_index WHERE entity_type = 'message' AND entity_id IN (${placeholders})`
   ).run(...ids);
+
+  // Cancel pending jobs referencing deleted messages
+  for (const mid of ids) {
+    db.prepare(
+      `UPDATE job_queue SET status = 'cancelled', error = 'Source message deleted', processed_at = CURRENT_TIMESTAMP WHERE status = 'queued' AND payload LIKE ?`
+    ).run(`%${mid}%`);
+  }
 
   // Clean up TTS cache entries for deleted messages
   const deletedContents = subsequentMessages.map((m) => m.content);
@@ -222,6 +235,18 @@ if (subsequentMessages.length > 0) {
     });
   }
 
+  // Queue re-extraction jobs so derived state is rebuilt without deleted messages
+  const session = db.prepare("SELECT universe_id FROM sessions WHERE id = ?").get(sessionId) as { universe_id: string | null } | undefined;
+  const universeId = session?.universe_id || undefined;
+  queueJob(decoded.sub, "scene_state_extract", {
+    sessionId,
+    userId: decoded.sub,
+    universeId,
+  }, "low", universeId);
+  queueJob(decoded.sub, "analyze_relationships", {
+    sessionId,
+    userId: decoded.sub,
+  }, "low", universeId);
 }
 
 return NextResponse.json({ success: true, deletedCount: subsequentMessages.length }); });
