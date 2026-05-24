@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Users, Save, Trash2, X, Shield, Sparkles } from "lucide-react";
 
 interface Universe {
@@ -54,6 +55,40 @@ export function NpcEditor({
   onDelete,
   onCancel,
 }: NpcEditorProps) {
+  const [userId, setUserId] = useState<string | null>(null);
+  const [showEvolutionQueued, setShowEvolutionQueued] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.user?.id) setUserId(data.user.id);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function handleEvolve() {
+    if (!selectedId || !userId) return;
+    try {
+      const res = await fetch("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "queue",
+          type: "npc_evolution",
+          payload: { npcId: selectedId, userId, universeId: formUniverseId || undefined },
+          priority: "low",
+        }),
+      });
+      if (res.ok) {
+        setShowEvolutionQueued(true);
+        setTimeout(() => setShowEvolutionQueued(false), 2000);
+      }
+    } catch {
+      // silently fail
+    }
+  }
+
   if (!selectedId && !creating) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -94,12 +129,21 @@ export function NpcEditor({
             Save
           </button>
           {selectedId && (
-            <button
-              onClick={() => onDelete(selectedId)}
-              className="flex items-center gap-1 rounded-lg bg-error/10 px-3 py-1.5 text-xs text-error transition-colors hover:bg-error/20"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            <>
+              <button
+                onClick={handleEvolve}
+                className="flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-raised px-3 py-1.5 text-xs text-text-secondary hover:bg-bg-highlight"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Evolve
+              </button>
+              <button
+                onClick={() => onDelete(selectedId)}
+                className="flex items-center gap-1 rounded-lg bg-error/10 px-3 py-1.5 text-xs text-error transition-colors hover:bg-error/20"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </>
           )}
           {creating && (
             <button
@@ -109,6 +153,9 @@ export function NpcEditor({
               <X className="h-3.5 w-3.5" />
               Cancel
             </button>
+          )}
+          {showEvolutionQueued && (
+            <span className="text-[10px] text-accent transition-opacity">Queued!</span>
           )}
         </div>
       </div>
