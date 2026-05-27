@@ -929,3 +929,584 @@ Note: Last 3 are composite indexes created alongside the index batch (total 35 i
 | Indexes | 35 |
 | Triggers | 3 |
 | Unique constraints (composite) | 5 |
+
+---
+
+## Entity Relationship Diagram
+
+```mermaid
+erDiagram
+
+    %% ==========================================================================
+    %% DOMAIN 1: Auth
+    %% ==========================================================================
+    users {
+        string id PK
+        string username UK
+        string password_hash
+        datetime created_at
+        datetime last_login
+        int last_idle_t
+        string settings
+        datetime password_changed_at
+        string last_active_group_id
+        string last_active_session_id
+        string last_active_universe_id
+    }
+
+    token_denylist {
+        string token_id PK
+        datetime expires_at
+    }
+
+    %% users relationships
+    users ||--o{ sessions : "owner"
+    users ||--o{ session_participants : "participant"
+    users ||--o{ universes : "owner"
+    users ||--o{ timelines : "owner"
+    users ||--o{ timeline_layers : "owner"
+    users ||--o{ relationships : "owner"
+    users ||--o{ relationship_evolution : "owner"
+    users ||--o{ narrative_anchors : "owner"
+    users ||--o{ entity_mentions : "owner"
+    users ||--o{ contradiction_flags : "owner"
+    users ||--o{ npcs : "owner"
+    users ||--o{ locations : "owner"
+    users ||--o{ events : "owner"
+    users ||--o{ messages : "sender"
+    users ||--o{ narrative_threads : "owner"
+    users ||--o{ job_queue : "owner"
+    users ||--o{ embedding_index : "owner"
+    users ||--o{ backlinks : "owner"
+    users ||--o{ wiki_versions : "editor"
+    users ||--o{ entity_validations : "owner"
+    users ||--o{ voice_assignments : "owner"
+    users ||--o{ tts_cache : "owner"
+    users ||--o{ narrative_memories : "owner"
+    users ||--o{ decision_points : "player"
+    users ||--o{ groups : "owner"
+    users ||--o{ group_members : "member"
+    users ||--o{ personas : "owner"
+    users ||--o{ invitations : "inviter"
+    users ||--o{ invitations : "invitee"
+
+    %% ==========================================================================
+    %% DOMAIN 2: Sessions & Messages
+    %% ==========================================================================
+    sessions {
+        string id PK
+        string owner_id FK
+        string name
+        string universe_id FK
+        string timeline_id FK
+        string persona_id FK
+        string status
+        datetime created_at
+        datetime updated_at
+        real narrative_tension
+        real pacing
+        string narrative_phase
+        string active_goals
+        string active_conflicts
+        string group_id
+        string type
+    }
+
+    session_participants {
+        string session_id PK FK
+        string user_id PK FK
+        string role
+        string character_name
+        string private_state
+        datetime joined_at
+    }
+
+    session_config {
+        string session_id PK FK
+        string key PK
+        string value
+        datetime updated_at
+    }
+
+    scene_states {
+        string id PK
+        string session_id FK
+        string active_location_id
+        string current_goal
+        string emotional_tone
+        string current_intent
+        string active_npcs
+        string active_threads
+        string scene_summary
+        string scene_type
+        real scene_tension
+        string conflict_type
+        string stakes
+        datetime updated_at
+    }
+
+    messages {
+        string id PK
+        string session_id FK
+        string sender_id FK
+        string content
+        datetime timestamp
+        string location_context
+        string emotional_tone
+        string parent_message_id FK
+        int is_deleted
+        datetime deleted_at
+        string persona_id
+    }
+
+    messages_fts {
+        string content
+        string session_id
+        string sender_id
+    }
+
+    message_summaries {
+        string id PK
+        string source_message_id FK
+        string message_id FK
+        string summary_type
+        string content
+        string summary
+        string emotional_tone
+        string relationship_effects
+        string lore_extracted
+        datetime created_at
+    }
+
+    message_edits {
+        string id PK
+        string message_id
+        string user_id
+        string old_content
+        string new_content
+        datetime edited_at
+    }
+
+    %% Sessions FK relationships
+    sessions ||--o{ session_participants : "contains"
+    sessions ||--o{ session_config : "configures"
+    sessions ||--o{ scene_states : "tracks"
+    sessions ||--o{ messages : "contains"
+    sessions ||--o{ narrative_threads : "tracks"
+    sessions ||--o{ decision_points : "contains"
+    sessions ||--o{ invitations : "targets"
+    sessions ||--o{ narrative_memories : "has"
+
+    %% Messages FK relationships
+    messages ||--o{ messages : "parent"
+    messages ||--o{ message_summaries : "source"
+    messages ||--o{ message_summaries : "polymorphic"
+
+    %% ==========================================================================
+    %% DOMAIN 3: Universes & Timelines
+    %% ==========================================================================
+    universes {
+        string id PK
+        string user_id FK
+        string name
+        string description
+        string canon_mode
+        string lore_source
+        string tone
+        string time_period
+        string boundaries
+        datetime created_at
+        string group_id
+    }
+
+    timelines {
+        string id PK
+        string user_id FK
+        string universe_id FK
+        string era
+        int year
+        string restrictions
+        string active_factions
+    }
+
+    timeline_layers {
+        string id PK
+        string user_id FK
+        string timeline_id FK
+        string universe_id FK
+        string layer_type
+        string name
+        string description
+        int start_year
+        int end_year
+        string metadata
+        datetime created_at
+    }
+
+    %% Universes FK relationships
+    universes ||--o{ sessions : "scopes"
+    universes ||--o{ timelines : "contains"
+    universes ||--o{ timeline_layers : "contains"
+    universes ||--o{ relationships : "scopes"
+    universes ||--o{ npcs : "scopes"
+    universes ||--o{ locations : "scopes"
+    universes ||--o{ events : "scopes"
+    universes ||--o{ narrative_threads : "scopes"
+    universes ||--o{ job_queue : "scopes"
+    universes ||--o{ embedding_index : "scopes"
+    universes ||--o{ backlinks : "scopes"
+    universes ||--o{ entity_validations : "scopes"
+    universes ||--o{ narrative_memories : "scopes"
+
+    %% Timelines FK relationships
+    timelines ||--o{ sessions : "active"
+    timelines ||--o{ timeline_layers : "layers"
+
+    %% ==========================================================================
+    %% DOMAIN 4: Groups & Personas
+    %% ==========================================================================
+    groups {
+        string id PK
+        string owner_id FK
+        string name
+        string description
+        datetime created_at
+    }
+
+    group_members {
+        string group_id PK FK
+        string user_id PK FK
+        string role
+        datetime joined_at
+    }
+
+    personas {
+        string id PK
+        string user_id FK
+        string name
+        string description
+        string personality
+        string scenario
+        string first_mes
+        string mes_example
+        string creator_notes
+        string system_prompt
+        string post_history_instructions
+        string tags
+        string writing_style
+        string avatar_url
+        string llm_model
+        string tts_voice
+        int is_active
+        datetime created_at
+    }
+
+    invitations {
+        string id PK
+        string session_id FK
+        string inviter_id FK
+        string invitee_id FK
+        string status
+        datetime created_at
+    }
+
+    %% Groups/Personas FK relationships
+    groups ||--o{ group_members : "members"
+    personas ||--o{ sessions : "active persona"
+    personas ||--o{ messages : "character"
+
+    %% ==========================================================================
+    %% DOMAIN 5: Wiki & Backlinks
+    %% ==========================================================================
+    wiki_versions {
+        string id PK
+        string page_path
+        string user_id FK
+        int version_number
+        string change_summary
+        string file_snapshot_path
+        datetime created_at
+    }
+
+    backlinks {
+        string id PK
+        string user_id FK
+        string universe_id FK
+        string source_type
+        string source_id
+        string target_type
+        string target_id
+        string link_type
+        string context_snippet
+        datetime created_at
+    }
+
+    %% ==========================================================================
+    %% DOMAIN 6: Relationships
+    %% ==========================================================================
+    relationships {
+        string id PK
+        string user_id FK
+        string universe_id FK
+        string source_entity
+        string target_entity
+        string emotional_state
+        string shared_history
+        string relationship_stage
+        string decay_rates
+        datetime updated_at
+    }
+
+    relationship_evolution {
+        string id PK
+        string relationship_id FK
+        string user_id FK
+        string emotional_state
+        string relationship_stage
+        string trigger_event
+        datetime recorded_at
+    }
+
+    narrative_anchors {
+        string id PK
+        string relationship_id FK
+        string user_id FK
+        string anchor_type
+        string description
+        string emotional_impact
+        int irreversible
+        datetime created_at
+    }
+
+    %% Relationships FKs
+    relationships ||--o{ relationship_evolution : "evolves"
+    relationships ||--o{ narrative_anchors : "anchors"
+
+    %% ==========================================================================
+    %% DOMAIN 7: NPCs & World
+    %% ==========================================================================
+    npcs {
+        string id PK
+        string user_id FK
+        string universe_id FK
+        string name
+        string description
+        string personality_traits
+        string behavior_patterns
+        string voice_id
+        int is_canon
+        string evolution_log
+        datetime created_at
+        datetime updated_at
+        string canon_layer
+    }
+
+    locations {
+        string id PK
+        string user_id FK
+        string universe_id FK
+        string name
+        string description
+        string known_info
+        string hidden_info
+        string tags
+        int is_canon
+        string canon_layer
+        datetime created_at
+        datetime updated_at
+    }
+
+    events {
+        string id PK
+        string user_id FK
+        string universe_id FK
+        string title
+        string event_type
+        string description
+        string participants
+        string location_id
+        string occurred_at
+        string outcome
+        string consequences
+        datetime created_at
+    }
+
+    entity_mentions {
+        string id PK
+        string user_id FK
+        string entity_name
+        string source_table
+        string source_id
+        int frequency
+        datetime last_seen_at
+        datetime created_at
+    }
+
+    contradiction_flags {
+        string id PK
+        string user_id FK
+        string entity_name
+        string page_a
+        string page_b
+        string claim_a
+        string claim_b
+        string contradiction_type
+        string severity
+        string status
+        datetime detected_at
+        datetime resolved_at
+        string resolution
+    }
+
+    entity_validations {
+        string id PK
+        string user_id FK
+        string universe_id FK
+        string entity_type
+        string entity_id
+        string state
+        string generated_by
+        string validation_notes
+        string validated_by
+        datetime validated_at
+        datetime created_at
+    }
+
+    %% ==========================================================================
+    %% DOMAIN 8: Narrative
+    %% ==========================================================================
+    narrative_threads {
+        string id PK
+        string user_id FK
+        string universe_id FK
+        string session_id FK
+        string title
+        string description
+        string arc_type
+        string status
+        string escalation_level
+        string name
+        string summary
+        string key_entities
+        string unresolved_items
+        datetime created_at
+        datetime updated_at
+        datetime resolved_at
+    }
+
+    narrative_memories {
+        string id PK
+        string user_id FK
+        string session_id FK
+        string universe_id FK
+        string type
+        string content
+        string importance
+        string related_entities
+        datetime created_at
+    }
+
+    decision_points {
+        string id PK
+        string session_id FK
+        string user_id FK
+        string prompt
+        string choices_made
+        string narrative_context
+        datetime created_at
+    }
+
+    %% ==========================================================================
+    %% DOMAIN 9: Jobs
+    %% ==========================================================================
+    job_queue {
+        string id PK
+        string user_id FK
+        string universe_id FK
+        string type
+        string priority
+        string status
+        string payload
+        real progress
+        string progress_message
+        datetime created_at
+        datetime processed_at
+        string error
+        string result
+        int retry_count
+        int max_retries
+    }
+
+    %% ==========================================================================
+    %% DOMAIN 10: Embeddings
+    %% ==========================================================================
+    embedding_index {
+        string id PK
+        string user_id FK
+        string universe_id FK
+        string entity_type
+        string entity_id
+        string text_content
+        datetime created_at
+    }
+
+    embedding_vectors {
+        string embedding_id PK FK
+        string vector_data
+    }
+
+    %% Embeddings FK
+    embedding_index ||--|| embedding_vectors : "vector"
+
+    %% ==========================================================================
+    %% DOMAIN 11: TTS & Voice
+    %% ==========================================================================
+    voice_assignments {
+        string id PK
+        string user_id FK
+        string entity_type
+        string entity_id
+        string voice_name
+        real voice_speed
+        real volume
+        datetime created_at
+        datetime updated_at
+    }
+
+    tts_cache {
+        string id PK
+        string user_id FK
+        string text_hash
+        string voice_name
+        string text_content
+        string audio_format
+        string audio_path
+        int duration_ms
+        datetime created_at
+        datetime last_used
+        int use_count
+    }
+
+    %% ==========================================================================
+    %% DOMAIN 12: Vector Search (Virtual Tables — no FK constraints)
+    %% ==========================================================================
+    vec_messages {
+        float embedding
+        string metadata
+    }
+
+    vec_npcs {
+        float embedding
+        string metadata
+    }
+
+    vec_memories {
+        float embedding
+        string metadata
+    }
+
+    vec_lore {
+        float embedding
+        string metadata
+    }
+```
