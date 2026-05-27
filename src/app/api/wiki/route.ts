@@ -17,6 +17,15 @@ import path from "path";
 import fs from "fs";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * GET /api/wiki
+ * Lists all wiki pages for a universe, including orphan detection and suggestions.
+ *
+ * @param request - The incoming Next.js request with query param: universe_id
+ * @returns NextResponse with { pages, orphanPaths, orphanSuggestions } — each page has path, content, frontmatter
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
 export const GET = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
 if ("error" in authResult) return authResult.error;
 const { userId } = authResult.auth;
@@ -50,6 +59,17 @@ return NextResponse.json({
   orphanSuggestions: suggestionsObj,
 }); });
 
+/**
+ * POST /api/wiki
+ * Creates or updates a wiki page. Sanitizes filenames, prevents path traversal,
+ * and regenerates the universe index after writing.
+ *
+ * @param request - The incoming Next.js request with JSON body: { path, content, frontmatter, universeId }
+ * @returns NextResponse with { success, path } (201)
+ * @throws 400 - If path, content, or frontmatter are missing; content exceeds 100k chars; or path traversal detected
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
 export const POST = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
 if ("error" in authResult) return authResult.error;
 const { userId } = authResult.auth;

@@ -6,6 +6,17 @@ import { getDb } from "@/lib/db";
 import { getClientIp, checkRateLimit, createRateLimitResponse } from "@/lib/rate-limiter";
 import { logger } from "@/lib/logger";
 
+/**
+ * GET /api/health
+ * Checks the health of Ollama LLM, Kokoro TTS, and SQLite database.
+ * Returns connection status for each service with model/voice details.
+ * Localhost requests are authorized by IP; remote requests require valid JWT.
+ *
+ * @param request - The incoming Next.js request
+ * @returns NextResponse with { ollama, kokoro, db, timestamp } — 200 if all healthy, 503 if any unhealthy
+ * @throws 401 - If request is not from localhost and lacks valid auth token
+ * @throws 429 - If rate limit exceeded
+ */
 export async function GET(request: NextRequest) {
   // Rate limit health checks (frequent polling)
   const ip = getClientIp(request);

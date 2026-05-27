@@ -7,6 +7,16 @@ import type { DbParams, PaginatedRow } from "@/lib/types";
 import { logger } from '@/lib/logger';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * GET /api/backlinks
+ * Lists backlinks with optional filters and cursor-based pagination.
+ * Backlinks are tracked references between entities in the wiki/narrative system.
+ *
+ * @param request - The incoming Next.js request with query params: entityType, entityId, targetType, universe_id, cursor, limit
+ * @returns NextResponse with { backlinks, nextCursor } — backlinks sorted by created_at DESC
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
@@ -73,6 +83,17 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ backlinks: camelizeKeys(resultItems), nextCursor });
 }
 
+/**
+ * POST /api/backlinks
+ * Creates a new backlink between entities.
+ *
+ * @param request - The incoming Next.js request with JSON body: { sourceType, sourceId, targetType, targetId, linkType?, contextSnippet?, universe_id? }
+ * @returns NextResponse with { backlink } (201) — the created backlink record
+ * @throws 400 - If sourceType, sourceId, targetType, or targetId are missing
+ * @throws 401 - If authentication fails
+ * @throws 409 - If backlink already exists (UNIQUE constraint)
+ * @throws 429 - If rate limit exceeded
+ */
 export async function POST(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
@@ -110,6 +131,16 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ backlink: camelizeKeys(backlink) }, { status: 201 });
 }
 
+/**
+ * DELETE /api/backlinks
+ * Deletes a backlink by ID.
+ *
+ * @param request - The incoming Next.js request with query param: id
+ * @returns NextResponse with { success: true } on deletion
+ * @throws 400 - If id query param is missing
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
 export async function DELETE(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
