@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { TTS_CONFIG } from "@/lib/config";
-import { getAuthToken } from '@/lib/auth-token';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * Combines multiple TTS voices into a single blended voice file.
+ *
+ * @param request - The incoming Next.js request object with JSON body: `{ voiceSpec: string }`
+ * @returns Response with binary `.pt` file download
+ * @throws 400 - If voiceSpec is missing or invalid
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ * @throws 500 - If the voice combine request fails
+ */
 export async function POST(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`api:${ip}`, "api");

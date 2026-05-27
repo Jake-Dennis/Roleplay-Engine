@@ -2,25 +2,35 @@ import type { PaginatedRow } from '@/lib/types';
 import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
 import { queueJob } from "@/lib/job-processor";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
-import { ensureGroupSupport } from "@/lib/group-migrations";
 import { unauthorizedError, notFoundError, forbiddenError, badRequestError, serverError, requireJson } from "@/lib/error-response";
-import { getAuthToken } from '@/lib/auth-token';
+import { withAuth } from '@/lib/with-auth';
 import { validateLength } from '@/lib/validation';
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from '@/lib/rate-limiter';
 
+/**
+ * GET /api/sessions/[id]/messages
+ *
+ * Retrieves paginated messages for a session using cursor-based pagination.
+ * Returns messages in chronological order with sender info and optional
+ * persona name/avatar.
+ *
+ * @param request - The incoming Next.js request object with optional query params: limit (default 100, max 500), cursor
+ * @param params - Route parameters containing the session id
+ * @returns NextResponse with { messages: Message[], nextCursor: string | null }
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 404 - If session is not found
+ * @throws 429 - If rate limit exceeded
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const token = getAuthToken(request);
-    if (!token) return unauthorizedError();
-
-    const decoded = await verifyToken(token);
-    if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    const authResult = await withAuth(request);
+    if ('error' in authResult) return authResult.error;
+    const { userId } = authResult.auth;
 
     const { id: sessionId } = await params;
     const { searchParams } = new URL(request.url);
@@ -31,7 +41,7 @@ export async function GET(
       SELECT * FROM sessions WHERE id = ? AND (owner_id = ? OR id IN (
         SELECT session_id FROM session_participants WHERE user_id = ?
       ))
-    `).get(sessionId, decoded.sub, decoded.sub);
+    `).get(sessionId, userId, userId);
 
     if (!session) {
       return notFoundError("Session");
@@ -80,22 +90,36 @@ export async function GET(
   }
 }
 
+/**
+ * POST /api/sessions/[id]/messages
+ *
+ * Sends a new message in the session. Creates the message record, emits
+ * an SSE event, and queues background jobs for summarization and embedding
+ * generation. Observers cannot send messages.
+ *
+ * @param request - The incoming Next.js request object containing JSON body with content and optional personaId
+ * @param params - Route parameters containing the session id
+ * @returns NextResponse with { message: Message } (201)
+ * @throws 400 - If content is missing or exceeds 100000 characters
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 403 - If user is an observer (read-only role)
+ * @throws 404 - If session or persona is not found
+ * @throws 429 - If rate limit exceeded
+ */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const token = getAuthToken(request);
-    if (!token) return unauthorizedError();
-
-    const decoded = await verifyToken(token);
-    if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    const authResult = await withAuth(request);
+    if ('error' in authResult) return authResult.error;
+    const { userId } = authResult.auth;
 
     const { id: sessionId } = await params;
     const db = getDb();
 
     cleanupExpiredEntries();
-    const limit = checkRateLimit(`message_send:${decoded.sub}`, "message_send");
+    const limit = checkRateLimit(`message_send:${userId}`, "message_send");
     if (!limit.allowed) return createRateLimitResponse(limit.retryAfter!);
 
     // Verify session access
@@ -103,7 +127,7 @@ export async function POST(
       SELECT * FROM sessions WHERE id = ? AND (owner_id = ? OR id IN (
         SELECT session_id FROM session_participants WHERE user_id = ?
       ))
-    `).get(sessionId, decoded.sub, decoded.sub) as { id: string; universe_id: string | null } | undefined;
+    `).get(sessionId, userId, userId) as { id: string; universe_id: string | null } | undefined;
 
     if (!session) {
       return notFoundError("Session");
@@ -112,7 +136,7 @@ export async function POST(
     // Check if user is an observer (cannot send messages)
     const participant = db.prepare(
       "SELECT role FROM session_participants WHERE session_id = ? AND user_id = ?"
-    ).get(sessionId, decoded.sub) as { role: string } | undefined;
+    ).get(sessionId, userId) as { role: string } | undefined;
 
     if (participant?.role === "observer") {
       return forbiddenError();
@@ -133,7 +157,7 @@ export async function POST(
     if (personaId) {
       const persona = db.prepare(
         "SELECT id FROM personas WHERE id = ? AND user_id = ?"
-      ).get(personaId, decoded.sub);
+      ).get(personaId, userId);
       if (!persona) {
         return notFoundError("Persona");
       }
@@ -148,30 +172,34 @@ export async function POST(
 
     db.prepare(
       "INSERT INTO messages (id, session_id, sender_id, content, parent_message_id, persona_id) VALUES (?, ?, ?, ?, ?, ?)"
-    ).run(messageId, sessionId, decoded.sub, content, lastMessage?.id || null, personaId || null);
+    ).run(messageId, sessionId, userId, content, lastMessage?.id || null, personaId || null);
 
     // Emit message created event for SSE
     eventBus.emit(`${SessionEvents.MESSAGE_CREATED}:${sessionId}`, {
       messageId,
       sessionId,
-      senderId: decoded.sub,
+      senderId: userId,
       content,
     });
 
     // Queue background jobs for async processing
-    queueJob(decoded.sub, "summarize_messages", {
+    // NOTE: These queue for the USER's message (just inserted above at messageId).
+    // The companion route (generate/[id]/route.ts) separately queues the SAME job
+    // types for the AI's response (aiMessageId). Both are needed — each message
+    // type (user vs AI) gets its own summarization + embedding.
+    queueJob(userId, "summarize_messages", {
       sessionId,
       messageId,
       content,
     }, "high", session.universe_id || undefined);
 
-    queueJob(decoded.sub, "generate_embeddings", {
+    queueJob(userId, "generate_embeddings", {
       sessionId,
       messageId,
       content,
       entityType: "message",
       entityId: messageId,
-      userId: decoded.sub,
+      userId,
     }, "high", session.universe_id || undefined);
 
     // Update session timestamp

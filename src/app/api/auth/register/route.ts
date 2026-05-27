@@ -3,6 +3,18 @@ import { requireJson } from "@/lib/error-response";
 import { createUser, validateUsername, validatePassword } from "@/lib/auth";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries, getClientIp } from "@/lib/rate-limiter";
 
+/**
+ * POST /api/auth/register
+ *
+ * Creates a new user account with the provided username and password.
+ * Validates both fields against length and character rules before creating.
+ *
+ * @param request - The incoming Next.js request object containing JSON body with username and password
+ * @returns NextResponse with { success, user: { id, username } } (201) on success
+ * @throws 400 - If username or password is missing, or validation fails
+ * @throws 409 - If the username already exists
+ * @throws 429 - If rate limit exceeded for this IP
+ */
 export async function POST(request: NextRequest) {
   cleanupExpiredEntries();
 
@@ -10,8 +22,9 @@ export async function POST(request: NextRequest) {
   const limit = checkRateLimit(`auth:${ip}`, "auth");
   if (!limit.allowed) return createRateLimitResponse(limit.retryAfter!);
 
+  requireJson(request);
+
   try {
-    requireJson(request);
     const body = await request.json();
     const { username, password } = body;
 

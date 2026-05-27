@@ -5,11 +5,23 @@ import { withAuth } from "@/lib/with-auth";
 import { getDb } from "@/lib/db";
 import { rowToJson } from "@/lib/row-to-json";
 import type { DbParams, PaginatedRow } from "@/lib/types";
+import { CONTENT_LIMITS } from '@/lib/config';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 const VALID_ENTRY_TYPES = ["event", "milestone", "era_start", "era_end", "note"];
 const VALID_IMPORTANCE = ["low", "medium", "high", "critical"];
 
+/**
+ * GET /api/timeline
+ * List timeline entries with optional filters (sessionId, threadId, era, entryType) and cursor pagination.
+ * Supports single entry lookup by id query parameter.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { entries, nextCursor } or { entry } (single)
+ * @throws 401 - If authentication fails
+ * @throws 404 - If single entry id is provided but not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const GET = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
 if ("error" in authResult) return authResult.error;
 const { userId } = authResult.auth;
@@ -95,6 +107,16 @@ if (rows.length > limit) {
 const entries = resultEntries.map(rowToJson);
 return NextResponse.json({ entries, nextCursor }); });
 
+/**
+ * POST /api/timeline
+ * Create a new timeline entry.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { entry } (201)
+ * @throws 400 - If title or occurredAt is missing, or validation fails
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
 export const POST = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
 if ("error" in authResult) return authResult.error;
 const { userId } = authResult.auth;
@@ -116,7 +138,7 @@ if (title.length > 200) {
 if (!occurredAt) {
   return NextResponse.json({ error: "occurredAt is required" }, { status: 400 });
 }
-if (description && description.length > 5000) {
+if (description && description.length > CONTENT_LIMITS.MEDIUM) {
   return NextResponse.json({ error: "description must be 5000 characters or less" }, { status: 400 });
 }
 if (entryType && !VALID_ENTRY_TYPES.includes(entryType)) {
@@ -148,6 +170,17 @@ db.prepare(
 const row = db.prepare("SELECT * FROM timeline_entries WHERE id = ?").get(id);
 return NextResponse.json({ entry: rowToJson(row) }, { status: 201 }); });
 
+/**
+ * PUT /api/timeline
+ * Update an existing timeline entry. Supports partial updates of title, description, occurredAt, era, entryType, and importance.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { entry }
+ * @throws 400 - If id is missing or validation fails
+ * @throws 401 - If authentication fails
+ * @throws 404 - If timeline entry not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const PUT = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
 if ("error" in authResult) return authResult.error;
 const { userId } = authResult.auth;
@@ -174,7 +207,7 @@ if (title !== undefined) {
   if (title.trim().length === 0) return NextResponse.json({ error: "title cannot be empty" }, { status: 400 });
   if (title.length > 200) return NextResponse.json({ error: "title must be 200 characters or less" }, { status: 400 });
 }
-if (description !== undefined && description.length > 5000) {
+if (description !== undefined && description.length > CONTENT_LIMITS.MEDIUM) {
   return NextResponse.json({ error: "description must be 5000 characters or less" }, { status: 400 });
 }
 if (entryType !== undefined && !VALID_ENTRY_TYPES.includes(entryType)) {
@@ -207,6 +240,17 @@ db.prepare(
 const row = db.prepare("SELECT * FROM timeline_entries WHERE id = ?").get(id);
 return NextResponse.json({ entry: rowToJson(row) }); });
 
+/**
+ * DELETE /api/timeline
+ * Delete a timeline entry by id (query parameter).
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { success: true }
+ * @throws 400 - If id query parameter is missing
+ * @throws 401 - If authentication fails
+ * @throws 404 - If timeline entry not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const DELETE = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
 if ("error" in authResult) return authResult.error;
 const { userId } = authResult.auth;

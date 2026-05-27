@@ -1,25 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { lintWiki } from "@/lib/wiki/lint";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
-import { getAuthToken } from '@/lib/auth-token';
 import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import { serverError } from '@/lib/error-response';
 
+/**
+ * POST /api/wiki/lint
+ *
+ * Runs lint checks on the wiki for a given universe, detecting contradictions,
+ * stale claims, orphan pages, missing pages, and providing improvement suggestions.
+ *
+ * @param request - The incoming Next.js request object with JSON body { universeId? }
+ * @returns NextResponse with { contradictions, staleClaims, orphans, missingPages, suggestions }
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ * @throws 500 - If the lint process fails
+ */
 export async function POST(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   cleanupExpiredEntries();
-  const limit = checkRateLimit(`generate:${decoded.sub}`, "generate");
+  const limit = checkRateLimit(`generate:${userId}`, "generate");
   if (!limit.allowed) return createRateLimitResponse(limit.retryAfter!);
 
   const body = await request.json().catch(() => ({}));
   const { universeId } = body;
 
-  const wikiRoot = getWikiRoot(decoded.sub, universeId);
+  const wikiRoot = getWikiRoot(userId, universeId);
 
   try {
     const result = await lintWiki(wikiRoot, universeId);

@@ -1,15 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { vectorSearch, getSearchStats } from "@/lib/vector-search";
-import { getAuthToken } from '@/lib/auth-token';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * GET /api/search
+ * Perform a vector search across entities or retrieve search stats.
+ * If query (q) is omitted, returns stats instead of results.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { results, query } or { stats }
+ * @throws 400 - If minScore is outside the 0-1 range
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
 export async function GET(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`search:${ip}`, "search");
@@ -23,7 +31,7 @@ export async function GET(request: NextRequest) {
 
   if (!query) {
     // Return stats
-    const stats = getSearchStats(decoded.sub);
+    const stats = getSearchStats(userId);
     return NextResponse.json({ stats });
   }
 
@@ -36,7 +44,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const results = await vectorSearch(decoded.sub, query, {
+    const results = await vectorSearch(userId, query, {
       limit: safeLimit,
       entityType,
       minScore,

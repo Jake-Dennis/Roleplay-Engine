@@ -1,17 +1,30 @@
 import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
-import { getAuthToken } from '@/lib/auth-token';
+import { withAuth } from '@/lib/with-auth';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * POST /api/sessions/[id]/messages/[messageId]/regenerate
+ *
+ * Regenerates a session from a specific message onward. Soft-deletes the
+ * target message and all subsequent messages, then returns the last valid
+ * user message data so the client can trigger a fresh generation. Cleans
+ * up summaries, embeddings, and TTS cache for deleted messages.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing session id and message id to regenerate from
+ * @returns NextResponse with { success, deletedCount, lastValidMessageId, lastUserMessageId, lastUserMessage, sessionName }
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 403 - If user does not have access to the session
+ * @throws 404 - If session or message is not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const POST = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string; messageId: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string; messageId: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`session_write:${ip}`, "session_write");
@@ -23,10 +36,10 @@ const db = getDb();
 // Verify session access
 const sessionAccess = db.prepare(
   "SELECT 1 FROM session_participants WHERE session_id = ? AND user_id = ?"
-).get(sessionId, decoded.sub);
+).get(sessionId, userId);
 const sessionOwner = db.prepare(
   "SELECT 1 FROM sessions WHERE id = ? AND owner_id = ?"
-).get(sessionId, decoded.sub);
+).get(sessionId, userId);
 if (!sessionAccess && !sessionOwner) {
   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 }
@@ -66,12 +79,12 @@ if (subsequentMessages.length > 0) {
     `DELETE FROM embedding_index WHERE entity_type = 'message' AND entity_id IN (${placeholders})`
   ).run(...ids);
 
-  // Clean up TTS cache entries for deleted messages
-  for (const msg of subsequentMessages) {
-    db.prepare(
-      "DELETE FROM tts_cache WHERE user_id = ? AND text_content = ?"
-    ).run(decoded.sub, msg.content);
-  }
+    // Clean up TTS cache entries for deleted messages
+    for (const msg of subsequentMessages) {
+      db.prepare(
+        "DELETE FROM tts_cache WHERE user_id = ? AND text_content = ?"
+      ).run(userId, msg.content);
+    }
 
   // Emit delete events
   for (const mid of ids) {

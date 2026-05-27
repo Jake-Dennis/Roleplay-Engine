@@ -3,10 +3,9 @@ import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import type { DbDatabase } from "@/lib/types";
-import { getAuthToken } from '@/lib/auth-token';
+import { withAuth } from '@/lib/with-auth';
 import { validateLength } from '@/lib/validation';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
@@ -23,12 +22,26 @@ function ensureTable(db: DbDatabase) {
   )`);
 }
 
+/**
+ * POST /api/sessions/[id]/invite
+ *
+ * Invites a user by username to join a session. Only the session owner
+ * can invite. Checks for existing participants and pending invitations
+ * to avoid duplicates. Emits a participant:invited SSE event.
+ *
+ * @param request - The incoming Next.js request object containing JSON body with username
+ * @param params - Route parameters containing the session id
+ * @returns NextResponse with { success: true, invitee: { id, username } }
+ * @throws 400 - If username is missing, invalid, or user tries to invite themselves
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 404 - If session or target user is not found
+ * @throws 409 - If user is already a participant or invitation is already pending
+ * @throws 429 - If rate limit exceeded
+ */
 export const POST = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`session_write:${ip}`, "session_write");
@@ -52,7 +65,7 @@ ensureTable(db);
 // Verify session ownership
 const session = db.prepare(
   "SELECT id, owner_id FROM sessions WHERE id = ? AND owner_id = ?"
-).get(sessionId, decoded.sub);
+).get(sessionId, userId);
 
 if (!session) {
   return NextResponse.json({ error: "Session not found or not owner" }, { status: 404 });
@@ -67,7 +80,7 @@ if (!targetUser) {
   return NextResponse.json({ error: "User not found" }, { status: 404 });
 }
 
-if (targetUser.id === decoded.sub) {
+if (targetUser.id === userId) {
   return NextResponse.json({ error: "Cannot invite yourself" }, { status: 400 });
 }
 
@@ -98,7 +111,7 @@ if (existingInvite) {
   const id = crypto.randomUUID();
   db.prepare(
     "INSERT INTO invitations (id, session_id, inviter_id, invitee_id) VALUES (?, ?, ?, ?)"
-  ).run(id, sessionId, decoded.sub, targetUser.id);
+  ).run(id, sessionId, userId, targetUser.id);
 }
 
 // Emit SSE event
@@ -106,7 +119,7 @@ eventBus.emit(`${SessionEvents.PARTICIPANT_INVITED}:${sessionId}`, {
   sessionId,
   userId: targetUser.id,
   username: targetUser.username,
-  inviterId: decoded.sub,
+  inviterId: userId,
   action: "invited",
 });
 
@@ -115,12 +128,23 @@ return NextResponse.json({
   invitee: { id: targetUser.id, username: targetUser.username },
 }); });
 
+/**
+ * GET /api/sessions/[id]/invite
+ *
+ * Lists all pending invitations for a session. Includes inviter and
+ * invitee details. Session owner and participants can view invitations.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing the session id
+ * @returns NextResponse with { invitations: Invitation[] }
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 404 - If session is not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const GET = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`session_read:${ip}`, "session_read");
@@ -133,7 +157,7 @@ ensureTable(db);
 // Verify access
 const session = db.prepare(
   "SELECT id FROM sessions WHERE id = ? AND (owner_id = ? OR id IN (SELECT session_id FROM session_participants WHERE user_id = ?))"
-).get(sessionId, decoded.sub, decoded.sub);
+).get(sessionId, userId, userId);
 
 if (!session) {
   return NextResponse.json({ error: "Session not found" }, { status: 404 });

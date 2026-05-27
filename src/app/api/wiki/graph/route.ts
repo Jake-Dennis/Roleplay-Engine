@@ -1,25 +1,33 @@
 import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { listWikiPages } from "@/lib/wiki/file-io";
 import { buildLinkGraph, detectCollisions } from "@/lib/wiki/wikilinks";
 import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import fs from "fs";
-import { getAuthToken } from '@/lib/auth-token';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
-export const GET = withErrorHandler(async (request: NextRequest) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+/**
+ * GET /api/wiki/graph
+ *
+ * Builds and returns the wikilink graph for a universe, including nodes, edges,
+ * and any detected collisions (pages with the same or similar names).
+ *
+ * @param request - The incoming Next.js request object (supports ?universe_id query param)
+ * @returns NextResponse with { nodes, edges, collisions }
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
+export const GET = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`wiki_read:${ip}`, "wiki_read");
   if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   const universeId = request.nextUrl.searchParams.get("universe_id") || "";
-  const wikiRoot = getWikiRoot(decoded.sub, universeId || undefined);
+  const wikiRoot = getWikiRoot(userId, universeId || undefined);
 if (!fs.existsSync(wikiRoot)) {
   return NextResponse.json({ nodes: [], edges: [], collisions: [] });
 }

@@ -1,15 +1,22 @@
 import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { getDb } from "@/lib/db";
-import { getAuthToken } from '@/lib/auth-token';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
-export const GET = withErrorHandler(async (request: NextRequest) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+/**
+ * GET /api/backlinks/graph
+ * Build a node-edge graph from all user backlinks for visualization.
+ * Nodes represent entities (locations, NPCs, events, threads); edges represent linked relationships.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { nodes: Node[], edges: Edge[] }
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
+export const GET = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`api:${ip}`, "api");
@@ -37,7 +44,7 @@ const backlinks = db.prepare(
    FROM backlinks b
    WHERE b.user_id = ?
    ORDER BY b.created_at DESC`
-).all(decoded.sub) as {
+).all(userId) as {
   source_type: string;
   source_id: string;
   target_type: string;

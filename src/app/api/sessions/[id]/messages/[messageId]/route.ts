@@ -2,19 +2,33 @@ import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
-import { getAuthToken } from '@/lib/auth-token';
+import { withAuth } from '@/lib/with-auth';
 import { validateLength } from '@/lib/validation';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 import { queueJob } from '@/lib/job-processor';
 
+/**
+ * PUT /api/sessions/[id]/messages/[messageId]
+ *
+ * Edits a message's content. Creates a branched copy of the message via
+ * soft-delete + insert pattern. Optionally deletes all subsequent messages
+ * (regenerate=true, the default) to allow re-generation downstream.
+ * Records edit history in the message_edits table and emits SSE events.
+ *
+ * @param request - The incoming Next.js request object containing JSON body with content and optional regenerate boolean
+ * @param params - Route parameters containing session id and message id
+ * @returns NextResponse with { message, newMessage, regenerated, editedContent }
+ * @throws 400 - If content is missing or exceeds 100000 characters
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 403 - If user does not have access to the session
+ * @throws 404 - If message is not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const PUT = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string; messageId: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string; messageId: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`session_write:${ip}`, "session_write");
@@ -37,10 +51,10 @@ if (contentError) return NextResponse.json({ error: contentError }, { status: 40
 // Verify session access
 const sessionAccess = db.prepare(
   "SELECT 1 FROM session_participants WHERE session_id = ? AND user_id = ?"
-).get(sessionId, decoded.sub);
+).get(sessionId, userId);
 const sessionOwner = db.prepare(
   "SELECT 1 FROM sessions WHERE id = ? AND owner_id = ?"
-).get(sessionId, decoded.sub);
+).get(sessionId, userId);
 if (!sessionAccess && !sessionOwner) {
   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 }
@@ -83,10 +97,10 @@ db.prepare(
 const editId = crypto.randomUUID();
 db.prepare(
   "INSERT INTO message_edits (id, message_id, user_id, old_content, new_content) VALUES (?, ?, ?, ?, ?)"
-).run(editId, messageId, decoded.sub, oldContent, content);
+).run(editId, messageId, userId, oldContent, content);
 
 // H4: Fetch the newly created message for the response
-let newMessage = db.prepare(`
+const newMessage = db.prepare(`
   SELECT m.*, u.username as sender_name
   FROM messages m
   LEFT JOIN users u ON m.sender_id = u.id
@@ -124,7 +138,7 @@ if (regenerate) {
     for (const msg of subsequentMessages) {
       db.prepare(
         "DELETE FROM tts_cache WHERE user_id = ? AND text_content = ?"
-      ).run(decoded.sub, msg.content);
+      ).run(userId, msg.content);
     }
   }
 
@@ -148,12 +162,26 @@ return NextResponse.json({
   editedContent: content,
 }); });
 
+/**
+ * DELETE /api/sessions/[id]/messages/[messageId]
+ *
+ * Soft-deletes a message and all subsequent messages in the session.
+ * Cleans up associated summaries, embeddings, TTS cache, and cancels
+ * pending jobs. Queues re-extraction jobs so derived state (scene,
+ * relationships) is rebuilt without the deleted messages.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing session id and message id
+ * @returns NextResponse with { success: true, deletedCount }
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 403 - If user does not have access to the session
+ * @throws 404 - If message is not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const DELETE = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string; messageId: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string; messageId: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`session_write:${ip}`, "session_write");
@@ -165,10 +193,10 @@ const db = getDb();
 // Verify session access
 const sessionAccess = db.prepare(
   "SELECT 1 FROM session_participants WHERE session_id = ? AND user_id = ?"
-).get(sessionId, decoded.sub);
+).get(sessionId, userId);
 const sessionOwner = db.prepare(
   "SELECT 1 FROM sessions WHERE id = ? AND owner_id = ?"
-).get(sessionId, decoded.sub);
+).get(sessionId, userId);
 if (!sessionAccess && !sessionOwner) {
   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 }
@@ -224,7 +252,7 @@ if (subsequentMessages.length > 0) {
   for (const content of deletedContents) {
     db.prepare(
       "DELETE FROM tts_cache WHERE user_id = ? AND text_content = ?"
-    ).run(decoded.sub, content);
+    ).run(userId, content);
   }
 
   // Emit delete events
@@ -238,14 +266,14 @@ if (subsequentMessages.length > 0) {
   // Queue re-extraction jobs so derived state is rebuilt without deleted messages
   const session = db.prepare("SELECT universe_id FROM sessions WHERE id = ?").get(sessionId) as { universe_id: string | null } | undefined;
   const universeId = session?.universe_id || undefined;
-  queueJob(decoded.sub, "scene_state_extract", {
+  queueJob(userId, "scene_state_extract", {
     sessionId,
-    userId: decoded.sub,
+    userId,
     universeId,
   }, "low", universeId);
-  queueJob(decoded.sub, "analyze_relationships", {
+  queueJob(userId, "analyze_relationships", {
     sessionId,
-    userId: decoded.sub,
+    userId,
   }, "low", universeId);
 }
 

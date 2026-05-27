@@ -1,17 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { queryWiki } from "@/lib/wiki/query";
-import { getAuthToken } from '@/lib/auth-token';
 import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import { serverError, requireJson } from '@/lib/error-response';
 import { validateLength } from '@/lib/validation';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * POST /api/wiki/query
+ *
+ * Queries the wiki using the LLM to synthesize an answer from wiki content.
+ * Returns the generated answer, supporting citations, and a fallback indicator.
+ *
+ * @param request - The incoming Next.js request object with JSON body { query, universeId }
+ * @returns NextResponse with { answer, citations, usedFallback }
+ * @throws 400 - If query or universeId is missing, or query exceeds length limit
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ * @throws 500 - If the LLM query fails
+ */
 export async function POST(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`wiki_query:${ip}`, "wiki_query");
@@ -31,7 +42,7 @@ export async function POST(request: NextRequest) {
   const queryError = validateLength(query, 1000, "Query");
   if (queryError) return NextResponse.json({ error: queryError }, { status: 400 });
 
-  const wikiRoot = getWikiRoot(decoded.sub, universeId);
+  const wikiRoot = getWikiRoot(userId, universeId);
 
   try {
     const result = await queryWiki(query, wikiRoot, universeId);

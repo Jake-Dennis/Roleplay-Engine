@@ -2,17 +2,28 @@ import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
-import { getAuthToken } from '@/lib/auth-token';
+import { withAuth } from '@/lib/with-auth';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * PUT /api/sessions/[id]/participants/role
+ *
+ * Changes a participant's role between "participant" and "observer".
+ * Only the session owner can change roles. Emits a participant:role_changed SSE event.
+ *
+ * @param request - The incoming Next.js request object containing JSON body with participant_id and role ("participant" | "observer")
+ * @param params - Route parameters containing the session id
+ * @returns NextResponse with { success: true, role }
+ * @throws 400 - If participant_id or role is missing, or role is invalid
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 404 - If session is not found, user is not the owner, or participant not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const PUT = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`session_write:${ip}`, "session_write");
@@ -24,7 +35,7 @@ const db = getDb();
 // Verify ownership
 const session = db.prepare(
   "SELECT id FROM sessions WHERE id = ? AND owner_id = ?"
-).get(sessionId, decoded.sub);
+).get(sessionId, userId);
 
 if (!session) {
   return NextResponse.json({ error: "Session not found or not owner" }, { status: 404 });

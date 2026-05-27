@@ -1,18 +1,28 @@
 import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
-import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { rowToJson } from "@/lib/row-to-json";
-import { getAuthToken } from '@/lib/auth-token';
+import { withAuth } from '@/lib/with-auth';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
-// PUT /api/timelines/[id]/layers/[layerId] — update a layer
+/**
+ * PUT /api/timelines/{id}/layers/{layerId}
+ * Update a timeline layer's name, description, start/end years, or metadata.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing the timeline id and layer id
+ * @returns NextResponse with { layer }
+ * @throws 400 - If name is empty or exceeds length limits
+ * @throws 401 - If authentication fails
+ * @throws 404 - If layer not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const PUT = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string; layerId: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string; layerId: string }> }) => {
+const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`timeline_write:${ip}`, "timeline_write");
@@ -28,7 +38,7 @@ const db = getDb();
 // Verify ownership
 const existing = db.prepare(
   "SELECT * FROM timeline_layers WHERE id = ? AND timeline_id = ? AND user_id = ?"
-).get(layerId, timelineId, decoded.sub);
+).get(layerId, timelineId, userId);
 if (!existing) {
   return NextResponse.json({ error: "Layer not found" }, { status: 404 });
 }
@@ -53,18 +63,28 @@ db.prepare(
   endYear ?? null,
   metadata !== undefined ? JSON.stringify(metadata) : null,
   layerId,
-  decoded.sub
+  userId
 );
 
 const row = db.prepare("SELECT * FROM timeline_layers WHERE id = ?").get(layerId);
 return NextResponse.json({ layer: rowToJson(row) }); });
 
-// DELETE /api/timelines/[id]/layers/[layerId] — delete a layer
+/**
+ * DELETE /api/timelines/{id}/layers/{layerId}
+ * Delete a timeline layer.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing the timeline id and layer id
+ * @returns NextResponse with { success: true }
+ * @throws 401 - If authentication fails
+ * @throws 404 - If layer not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const DELETE = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string; layerId: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string; layerId: string }> }) => {
+const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`timeline_write:${ip}`, "timeline_write");
@@ -76,13 +96,13 @@ const db = getDb();
 
 const existing = db.prepare(
   "SELECT id FROM timeline_layers WHERE id = ? AND timeline_id = ? AND user_id = ?"
-).get(layerId, timelineId, decoded.sub);
+).get(layerId, timelineId, userId);
 if (!existing) {
   return NextResponse.json({ error: "Layer not found" }, { status: 404 });
 }
 
 db.prepare(
   "DELETE FROM timeline_layers WHERE id = ? AND user_id = ?"
-).run(layerId, decoded.sub);
+).run(layerId, userId);
 
 return NextResponse.json({ success: true }); });

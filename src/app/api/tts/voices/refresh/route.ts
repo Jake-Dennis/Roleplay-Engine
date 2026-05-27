@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { discoverVoices } from "@/lib/voice-discovery";
-import { getAuthToken } from '@/lib/auth-token';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * Discovers and refreshes available TTS voices from the Kokoro service.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with `{ success: true, voices, count }`
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ * @throws 500 - If voice discovery fails
+ */
 export async function POST(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`api:${ip}`, "api");

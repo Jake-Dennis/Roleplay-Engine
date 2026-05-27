@@ -2,22 +2,11 @@ import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import type { DbDatabase } from "@/lib/types";
-import { getAuthToken } from '@/lib/auth-token';
 import { safeParseWarn } from "@/lib/safe-json";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
-
-// Ensure session_config table exists
-function ensureTable(db: DbDatabase) {
-  db.exec(`CREATE TABLE IF NOT EXISTS session_config (
-    session_id TEXT NOT NULL REFERENCES sessions(id),
-    key TEXT NOT NULL,
-    value TEXT,
-    PRIMARY KEY (session_id, key)
-  )`);
-}
 
 const VALID_MODES = ["freeform", "ordered", "disabled", "free_for_all", "claim", "round_robin"];
 
@@ -50,12 +39,23 @@ function getTurnConfig(db: DbDatabase, sessionId: string) {
   };
 }
 
+/**
+ * GET /api/sessions/[id]/turn
+ *
+ * Retrieves the current turn configuration for a session, including the
+ * turn mode, ordered turn list, and which user has the current turn.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing the session id
+ * @returns NextResponse with { turnMode: string, turnOrder: string[], currentTurn: string | null }
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 404 - If session is not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const GET = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`session_read:${ip}`, "session_read");
@@ -63,12 +63,11 @@ if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
 const { id: sessionId } = await params;
 const db = getDb();
-ensureTable(db);
 
 // Verify access
 const session = db.prepare(
   "SELECT id FROM sessions WHERE id = ? AND (owner_id = ? OR id IN (SELECT session_id FROM session_participants WHERE user_id = ?))"
-).get(sessionId, decoded.sub, decoded.sub);
+).get(sessionId, userId, userId);
 
 if (!session) {
   return NextResponse.json({ error: "Session not found" }, { status: 404 });
@@ -76,12 +75,24 @@ if (!session) {
 
 return NextResponse.json(getTurnConfig(db, sessionId)); });
 
+/**
+ * PUT /api/sessions/[id]/turn
+ *
+ * Updates the turn configuration for a session. Only the session owner
+ * can change turn mode, order, or current turn. Emits a turn:updated SSE event.
+ *
+ * @param request - The incoming Next.js request object containing JSON body with optional turnMode, turnOrder, currentTurn
+ * @param params - Route parameters containing the session id
+ * @returns NextResponse with { success: true, turnConfig: { turnMode, turnOrder, currentTurn } }
+ * @throws 400 - If turn mode is invalid
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 404 - If session is not found or user is not the owner
+ * @throws 429 - If rate limit exceeded
+ */
 export const PUT = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`session_write:${ip}`, "session_write");
@@ -89,12 +100,11 @@ if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
 const { id: sessionId } = await params;
 const db = getDb();
-ensureTable(db);
 
 // Verify ownership
 const session = db.prepare(
   "SELECT id FROM sessions WHERE id = ? AND owner_id = ?"
-).get(sessionId, decoded.sub);
+).get(sessionId, userId);
 
 if (!session) {
   return NextResponse.json({ error: "Session not found or not owner" }, { status: 404 });
@@ -132,12 +142,26 @@ eventBus.emit(`${SessionEvents.TURN_UPDATED}:${sessionId}`, config);
 
 return NextResponse.json({ success: true, turnConfig: config }); });
 
+/**
+ * POST /api/sessions/[id]/turn
+ *
+ * Performs a turn action — either "advance" to the next participant in
+ * the turn order, or "claim" to take the current turn. Only session
+ * participants can perform turn actions. Emits a turn:updated SSE event.
+ *
+ * @param request - The incoming Next.js request object containing JSON body with action ("advance" | "claim")
+ * @param params - Route parameters containing the session id
+ * @returns NextResponse with { success: true, turnConfig: { turnMode, turnOrder, currentTurn } }
+ * @throws 400 - If action is invalid or no turn order configured for advance
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 403 - If user is not a participant
+ * @throws 404 - If session is not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const POST = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`session_write:${ip}`, "session_write");
@@ -149,21 +173,15 @@ const { id: sessionId } = await params;
 const { action } = body;
 
 const db = getDb();
-ensureTable(db);
 
 // Verify participant
 const participant = db.prepare(
   "SELECT sp.session_id, u.username FROM session_participants sp JOIN users u ON sp.user_id = u.id WHERE sp.session_id = ? AND sp.user_id = ?"
-).get(sessionId, decoded.sub) as { session_id: string; username: string } | undefined;
+).get(sessionId, userId) as { session_id: string; username: string } | undefined;
 
 if (!participant) {
   return NextResponse.json({ error: "Not a participant" }, { status: 403 });
 }
-
-// Get current turn config
-const turnModeRow = db.prepare(
-  "SELECT value FROM session_config WHERE session_id = ? AND key = 'turn_mode'"
-).get(sessionId) as { value: string } | undefined;
 
 const turnOrderRow = db.prepare(
   "SELECT value FROM session_config WHERE session_id = ? AND key = 'turn_order'"
@@ -173,8 +191,6 @@ const currentTurnRow = db.prepare(
   "SELECT value FROM session_config WHERE session_id = ? AND key = 'current_turn'"
 ).get(sessionId) as { value: string } | undefined;
 
-const turnMode = turnModeRow?.value || "freeform";
-
 if (action === "advance") {
   // Advance to next in order (works with ordered mode)
   const turnOrder: string[] = safeParseWarn<string[]>(turnOrderRow?.value, "turn order", []) ?? [];
@@ -182,8 +198,8 @@ if (action === "advance") {
     return NextResponse.json({ error: "No turn order configured" }, { status: 400 });
   }
 
-  let currentIdx = currentTurnRow ? turnOrder.indexOf(currentTurnRow.value) : -1;
-  let nextIdx = (currentIdx + 1) % turnOrder.length;
+  const currentIdx = currentTurnRow ? turnOrder.indexOf(currentTurnRow.value) : -1;
+  const nextIdx = (currentIdx + 1) % turnOrder.length;
   const nextUserId = turnOrder[nextIdx];
 
   db.prepare(

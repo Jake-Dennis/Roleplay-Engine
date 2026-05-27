@@ -1,8 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireJson } from "@/lib/error-response";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { generateSpeechStream } from "@/lib/tts";
-import { getAuthToken } from '@/lib/auth-token';
 import { logger } from '@/lib/logger';
 import { TTS_CONFIG } from '@/lib/config';
 import { checkRateLimit, createRateLimitResponse } from '@/lib/rate-limiter';
@@ -11,14 +10,22 @@ const VALID_FORMATS = ["mp3", "wav", "ogg"] as const;
 const MIN_SPEED = 0.5;
 const MAX_SPEED = 2.0;
 
+/**
+ * Streams TTS audio in real-time for the given text and voice.
+ *
+ * @param request - The incoming Next.js request object with JSON body: `{ text, voice, speed?, format? }`
+ * @returns Response with streaming audio (`audio/{format}`, `Cache-Control: no-cache`)
+ * @throws 400 - If text or voice is missing, format is invalid, or speed is out of range
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded (tts_stream rate limit)
+ * @throws 500 - If streaming generation fails
+ */
 export async function POST(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return new Response("Unauthorized", { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
-  const decoded = await verifyToken(token);
-  if (!decoded) return new Response("Invalid token", { status: 401 });
-
-  const rateLimit = checkRateLimit(`tts_stream:${decoded.sub}`, "tts_stream");
+  const rateLimit = checkRateLimit(`tts_stream:${userId}`, "tts_stream");
   if (!rateLimit.allowed) {
     return createRateLimitResponse(rateLimit.retryAfter!);
   }
@@ -30,13 +37,6 @@ export async function POST(request: NextRequest) {
   if (!text || !voice) {
     return new Response(
       JSON.stringify({ error: "text and voice are required" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
-  }
-
-  if (text.length > TTS_CONFIG.maxTextLength) {
-    return new Response(
-      JSON.stringify({ error: `Text exceeds maximum length of ${TTS_CONFIG.maxTextLength} characters` }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }

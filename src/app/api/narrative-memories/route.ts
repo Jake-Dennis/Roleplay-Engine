@@ -2,18 +2,25 @@ import { withErrorHandler } from '@/lib/with-error-handler';
 import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { getDb } from "@/lib/db";
-import { getAuthToken } from '@/lib/auth-token';
 import { validateLength } from '@/lib/validation';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 interface PaginatedRow { id: string; [key: string]: unknown }
 
-export const GET = withErrorHandler(async (request: NextRequest) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+/**
+ * GET /api/narrative-memories
+ * List narrative memories for the authenticated user, with optional sessionId filter and cursor pagination.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { memories, nextCursor }
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
+export const GET = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`narrative_read:${ip}`, "api");
@@ -28,7 +35,7 @@ const limit = limitParam ? Math.min(parseInt(limitParam, 10), 500) : 50;
 const db = getDb();
 
 let query = "SELECT id, session_id, type, content, importance, related_entities, created_at FROM narrative_memories WHERE user_id = ?";
-const params: unknown[] = [decoded.sub];
+const params: unknown[] = [userId];
 
 if (sessionId) {
   query += " AND session_id = ?";
@@ -38,7 +45,7 @@ if (sessionId) {
 if (cursor) {
   const cursorMemory = db.prepare(
     "SELECT created_at FROM narrative_memories WHERE id = ? AND user_id = ?"
-  ).get(cursor, decoded.sub) as { created_at: string } | undefined;
+  ).get(cursor, userId) as { created_at: string } | undefined;
 
   if (cursorMemory) {
     query += " AND (created_at, id) < (?, ?)";
@@ -60,10 +67,19 @@ if (memories.length > limit) {
 
 return NextResponse.json({ memories: camelizeKeys(resultMemories), nextCursor }); });
 
-export const POST = withErrorHandler(async (request: NextRequest) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+/**
+ * POST /api/narrative-memories
+ * Create a new narrative memory with composite importance scoring.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { memory } (201)
+ * @throws 400 - If type or content is missing or content exceeds length limits
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
+export const POST = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`narrative_write:${ip}`, "narrative_write");
@@ -95,7 +111,7 @@ const compositeScore =
 db.prepare(
   "INSERT INTO narrative_memories (id, user_id, session_id, type, content, importance, related_entities) VALUES (?, ?, ?, ?, ?, ?, ?)"
 ).run(
-  id, decoded.sub, sessionId || null, type, content,
+  id, userId, sessionId || null, type, content,
   JSON.stringify({ ...impScore, composite: Math.round(compositeScore * 10) / 10 }),
   relatedEntities ? JSON.stringify(relatedEntities) : null
 );

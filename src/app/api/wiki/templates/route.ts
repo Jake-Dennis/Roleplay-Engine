@@ -1,7 +1,6 @@
 import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthToken } from "@/lib/auth-token";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import path from "path";
 import fs from "fs";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
@@ -43,10 +42,21 @@ function parseTemplateBody(raw: string): string {
   return trimmed.slice(endIdx + 3).trim();
 }
 
-export const GET = withErrorHandler(async (request: NextRequest) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+/**
+ * GET /api/wiki/templates
+ *
+ * Returns all available wiki page templates from the templates directory.
+ * Templates are markdown files with YAML frontmatter, used as starting points
+ * for creating new wiki pages.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { templates: Array<{ name, title, type, preview, content }> }
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
+export const GET = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`wiki_read:${ip}`, "wiki_read");

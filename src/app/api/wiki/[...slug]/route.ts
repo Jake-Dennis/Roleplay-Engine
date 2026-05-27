@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import {
   readWikiPage,
   writeWikiPage,
@@ -9,6 +9,7 @@ import {
   WikiFrontmatter,
   ConflictError,
 } from "@/lib/wiki/file-io";
+// @deprecated: revisions.ts is deprecated — use history.ts (SQLite wiki_versions) instead
 import { saveRevision } from "@/lib/wiki/revisions";
 import { recordVersion, createSnapshotFile, getNextVersionNumber } from "@/lib/wiki/history";
 import { generateIndex } from "@/lib/wiki/index-generator";
@@ -18,8 +19,7 @@ import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import path from "path";
 import fs from "fs";
-import { getAuthToken } from '@/lib/auth-token';
-import { unauthorizedError, notFoundError, badRequestError, requireJson } from '@/lib/error-response';
+import { notFoundError, badRequestError, requireJson } from '@/lib/error-response';
 import { validateLength } from '@/lib/validation';
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from '@/lib/rate-limiter';
 import { logger } from '@/lib/logger';
@@ -167,18 +167,31 @@ function extractBlock(content: string, blockId: string): string {
     .trim();
 }
 
+/**
+ * GET /api/wiki/[...slug]
+ *
+ * Retrieves a wiki page by its slug path, including parsed content, frontmatter,
+ * backlinks, orphan detection, and embedded content.
+ *
+ * @param request - The incoming Next.js request object (supports ?universe_id query param)
+ * @param params - Route parameters containing the slug path segments
+ * @returns NextResponse with { page, allPages, backlinks, orphanPaths, embeds }
+ * @throws 400 - If the slug path is invalid or traverses outside the wiki root
+ * @throws 401 - If authentication fails
+ * @throws 404 - If the wiki page does not exist
+ * @throws 500 - If reading or parsing the page fails
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string[] }> }
 ) {
-  const token = getAuthToken(request);
-  if (!token) return unauthorizedError();
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const universeId = request.nextUrl.searchParams.get("universe_id") || "";
   const { slug } = await params;
-  const wikiRoot = getWikiRoot(decoded.sub, universeId || undefined);
+  const wikiRoot = getWikiRoot(userId, universeId || undefined);
   const relativePath = resolveSlugPath(slug);
   const fullPath = path.join(wikiRoot, relativePath);
 
@@ -204,7 +217,7 @@ export async function GET(
     const seen = new Set<string>();
     const embeds: Record<
       string,
-      { content: string | null; frontmatter: Record<string, any> | null }
+      { content: string | null; frontmatter: Record<string, unknown> | null }
     > = {};
 
     for (const link of embedLinks) {
@@ -214,7 +227,7 @@ export async function GET(
       const { pageName, section, blockId } = splitEmbedSpec(link.name);
 
       let targetContent: string | null = null;
-      let targetFrontmatter: Record<string, any> | null = null;
+      let targetFrontmatter: Record<string, unknown> | null = null;
 
       if (!pageName) {
         // Current-page embed (#Heading or #^block-id)
@@ -308,22 +321,38 @@ export async function GET(
   }
 }
 
+/**
+ * PUT /api/wiki/[...slug]
+ *
+ * Updates an existing wiki page. Supports partial updates — only content or frontmatter
+ * can be provided. Performs concurrent edit detection via expectedLastModified timestamp.
+ * Saves a revision snapshot before overwriting and regenerates the search index.
+ *
+ * @param request - The incoming Next.js request object with JSON body { content?, frontmatter?, expectedLastModified? }
+ * @param params - Route parameters containing the slug path segments
+ * @returns NextResponse with { success: true, path }
+ * @throws 400 - If the slug path is invalid, body is malformed, or content exceeds size limit
+ * @throws 401 - If authentication fails
+ * @throws 404 - If the wiki page does not exist
+ * @throws 409 - If a concurrent edit conflict is detected
+ * @throws 429 - If rate limit exceeded
+ * @throws 500 - If writing or indexing fails
+ */
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string[] }> }
 ) {
-  const token = getAuthToken(request);
-  if (!token) return unauthorizedError();
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const universeId = request.nextUrl.searchParams.get("universe_id") || "";
   cleanupExpiredEntries();
-  const limit = checkRateLimit(`wiki_write:${decoded.sub}`, "wiki_write");
+  const limit = checkRateLimit(`wiki_write:${userId}`, "wiki_write");
   if (!limit.allowed) return createRateLimitResponse(limit.retryAfter!);
 
   const { slug } = await params;
-  const wikiRoot = getWikiRoot(decoded.sub, universeId || undefined);
+  const wikiRoot = getWikiRoot(userId, universeId || undefined);
   const relativePath = resolveSlugPath(slug);
   const fullPath = path.join(wikiRoot, relativePath);
 
@@ -372,8 +401,8 @@ export async function PUT(
     try {
       const rawContent = fs.readFileSync(fullPath, "utf-8");
       const snapshotPath = createSnapshotFile(wikiRoot, slug, rawContent);
-      const versionNumber = getNextVersionNumber(relativePath, decoded.sub);
-      recordVersion(relativePath, decoded.sub, versionNumber, "", snapshotPath);
+      const versionNumber = getNextVersionNumber(relativePath, userId);
+      recordVersion(relativePath, userId, versionNumber, "", snapshotPath);
     } catch {
       // Non-critical: version history failure should not block the save
     }
@@ -397,18 +426,30 @@ export async function PUT(
   }
 }
 
+/**
+ * DELETE /api/wiki/[...slug]
+ *
+ * Deletes a wiki page by its slug path. Regenerates the search index after deletion.
+ *
+ * @param request - The incoming Next.js request object (supports ?universe_id query param)
+ * @param params - Route parameters containing the slug path segments
+ * @returns NextResponse with { success: true }
+ * @throws 400 - If the slug path is invalid or traverses outside the wiki root
+ * @throws 401 - If authentication fails
+ * @throws 404 - If the wiki page does not exist
+ * @throws 500 - If deletion or index regeneration fails
+ */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string[] }> }
 ) {
-  const token = getAuthToken(request);
-  if (!token) return unauthorizedError();
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const universeId = request.nextUrl.searchParams.get("universe_id") || "";
   const { slug } = await params;
-  const wikiRoot = getWikiRoot(decoded.sub, universeId || undefined);
+  const wikiRoot = getWikiRoot(userId, universeId || undefined);
   const relativePath = resolveSlugPath(slug);
   const fullPath = path.join(wikiRoot, relativePath);
 

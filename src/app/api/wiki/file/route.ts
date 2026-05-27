@@ -1,17 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { fileAnswer } from "@/lib/wiki/filing";
-import { getAuthToken } from '@/lib/auth-token';
 import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import { serverError, requireJson } from '@/lib/error-response';
 import { validateLength } from '@/lib/validation';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * POST /api/wiki/file
+ *
+ * Files an LLM-generated answer into the wiki by creating or updating pages based on
+ * the provided query, answer text, and citations. Used to persist query results as wiki content.
+ *
+ * @param request - The incoming Next.js request object with JSON body { query, answer, citations, universeId }
+ * @returns NextResponse with the filing result object
+ * @throws 400 - If required fields (query, answer, citations, universeId) are missing or invalid
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ * @throws 500 - If the filing operation fails
+ */
 export async function POST(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`wiki_write:${ip}`, "wiki_write");
@@ -33,7 +44,7 @@ export async function POST(request: NextRequest) {
   const answerError = validateLength(answer, 100000, "Answer");
   if (answerError) return NextResponse.json({ error: answerError }, { status: 400 });
 
-  const wikiRoot = getWikiRoot(decoded.sub, universeId);
+  const wikiRoot = getWikiRoot(userId, universeId);
 
   try {
     const result = await fileAnswer(query, answer, citations, wikiRoot, universeId);

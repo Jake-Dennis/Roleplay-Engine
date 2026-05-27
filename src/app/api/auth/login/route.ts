@@ -3,6 +3,18 @@ import { requireJson } from "@/lib/error-response";
 import { authenticateUser, validateUsername, validatePassword } from "@/lib/auth";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries, getClientIp } from "@/lib/rate-limiter";
 
+/**
+ * POST /api/auth/login
+ *
+ * Authenticates a user with username and password credentials.
+ * On success, sets an httpOnly auth-token cookie for subsequent requests.
+ *
+ * @param request - The incoming Next.js request object containing JSON body with username and password
+ * @returns NextResponse with { success, user: { id, username } } and httpOnly auth-token cookie
+ * @throws 400 - If username or password is missing, or validation fails
+ * @throws 401 - If credentials are invalid
+ * @throws 429 - If rate limit exceeded for this IP
+ */
 export async function POST(request: NextRequest) {
   cleanupExpiredEntries();
 
@@ -10,8 +22,9 @@ export async function POST(request: NextRequest) {
   const limit = checkRateLimit(`auth:${ip}`, "auth");
   if (!limit.allowed) return createRateLimitResponse(limit.retryAfter!);
 
+  requireJson(request);
+
   try {
-    requireJson(request);
     const body = await request.json();
     const { username, password } = body;
 

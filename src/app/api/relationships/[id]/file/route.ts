@@ -1,19 +1,16 @@
 import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { getDb } from "@/lib/db";
 import {
   getRelationshipFilePath,
   getHistoryFilePath,
   readRelationshipFiles,
-  parseRelationshipMarkdown,
   syncRelationshipToFilesystem,
 } from "@/lib/relationship-markdown";
 import { ensureGroupSupport } from "@/lib/group-migrations";
 import fs from "fs";
-import type { DbResult } from "@/lib/types";
-import { getAuthToken } from '@/lib/auth-token';
 import { hasRelationshipAccess } from '@/lib/relationship-access';
 import type { RelationshipRowWithGroup } from '@/lib/relationship-types';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
@@ -23,11 +20,21 @@ function getFileOwnerId(entity: RelationshipRowWithGroup, fallbackUserId: string
   return fallbackUserId;
 }
 
+/**
+ * Reads the markdown relationship and history files for a relationship.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing `{ id }` — the relationship UUID
+ * @returns NextResponse with `{ relationship, history, filePath, historyPath }` — file contents and paths
+ * @throws 401 - If authentication fails
+ * @throws 404 - If the relationship is not found or user lacks access
+ * @throws 429 - If rate limit exceeded
+ * @throws 500 - If markdown file generation fails on first sync
+ */
 export const GET = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`relationship_read:${ip}`, "api");
@@ -38,13 +45,13 @@ const db = getDb();
 ensureGroupSupport(db);
 
 // Get relationship from DB
-const rel = hasRelationshipAccess(db, relId, decoded.sub);
+const rel = hasRelationshipAccess(db, relId, userId);
 if (!rel) {
   return NextResponse.json({ error: "Relationship not found" }, { status: 404 });
 }
 
 // Use group owner's directory for group-owned relationships
-const fileOwnerId = getFileOwnerId(rel, decoded.sub);
+const fileOwnerId = getFileOwnerId(rel, userId);
 
 // Try to read markdown files
 const files = readRelationshipFiles(fileOwnerId, rel.source_entity, rel.target_entity);
@@ -71,11 +78,21 @@ return NextResponse.json({
   historyPath: getHistoryFilePath(fileOwnerId, rel.source_entity, rel.target_entity),
 }); });
 
+/**
+ * Updates relationship markdown files and syncs changes back to the database.
+ *
+ * @param request - The incoming Next.js request object with JSON body: `{ notes?, relationship_stage?, emotional_state?, shared_history? }`
+ * @param params - Route parameters containing `{ id }` — the relationship UUID
+ * @returns NextResponse with `{ success: true, relationship?, history? }`
+ * @throws 400 - If request body is not valid JSON
+ * @throws 401 - If authentication fails
+ * @throws 404 - If the relationship is not found or user lacks access
+ * @throws 429 - If rate limit exceeded
+ */
 export const PUT = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`relationship_write:${ip}`, "relationship_write");
@@ -86,7 +103,7 @@ const db = getDb();
 ensureGroupSupport(db);
 
 // Get relationship from DB
-const rel = hasRelationshipAccess(db, relId, decoded.sub);
+const rel = hasRelationshipAccess(db, relId, userId);
 if (!rel) {
   return NextResponse.json({ error: "Relationship not found" }, { status: 404 });
 }
@@ -124,7 +141,7 @@ if (updates.length > 0) {
 }
 
 // Use group owner's directory for group-owned relationships
-const fileOwnerId = getFileOwnerId(rel, decoded.sub);
+const fileOwnerId = getFileOwnerId(rel, userId);
 
 // Sync DB to markdown files (preserves user-edited notes in the file)
 syncRelationshipToFilesystem(relId);

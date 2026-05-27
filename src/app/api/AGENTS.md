@@ -1,22 +1,17 @@
 # API ROUTES — src/app/api/
 
 ## OVERVIEW
-75 REST route handlers (`route.ts` files). Raw SQL via better-sqlite3, inline auth checks, `NextResponse.json` errors. No server actions.
+94 REST route handlers (`route.ts` files). Raw SQL via better-sqlite3, inline auth checks, `NextResponse.json` errors. No server actions.
 
 ## AUTH PATTERN
-Every protected route uses the `withAuth()` wrapper or `getAuthToken()` utility:
+All protected routes use the `withAuth()` HOF:
 ```typescript
-// Preferred: withAuth wrapper (10 routes, 28 handlers)
+import { withAuth } from '@/lib/with-auth';
 const authResult = await withAuth(request);
 if ('error' in authResult) return authResult.error;
 const { userId } = authResult.auth;
-
-// Alternative: getAuthToken utility (all remaining routes)
-import { getAuthToken } from '@/lib/auth-token';
-const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 ```
-All routes use `getAuthToken()` (httpOnly cookie). Zero direct `request.cookies.get("auth-token")` calls remain.
+100% of protected routes now use `withAuth()` (88 route files). Only `health/route.ts`, `health/ready/route.ts` (localhost bypass pattern), and `auth/logout/route.ts` (optional token revocation) remain on `getAuthToken()` by design.
 
 ## ERROR RESPONSES
 Always `NextResponse.json({ error: "..." }, { status: N })`:

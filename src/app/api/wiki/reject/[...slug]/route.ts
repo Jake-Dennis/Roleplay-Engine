@@ -1,23 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAuth } from '@/lib/with-auth';
 import { requireJson } from "@/lib/error-response";
-import { verifyToken } from "@/lib/auth";
 import { rejectPage } from "@/lib/wiki/validation";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import path from "path";
 import fs from "fs";
-import { getAuthToken } from '@/lib/auth-token';
 import { logger } from '@/lib/logger';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * PUT /api/wiki/reject/[...slug]
+ *
+ * Rejects a wiki page that is in "draft" status, transitioning it to "rejected" status
+ * with a provided reason. The page remains available but is flagged as rejected.
+ *
+ * @param request - The incoming Next.js request object with JSON body { reason: string }
+ * @param params - Route parameters containing the slug path segments
+ * @returns NextResponse with { success: true, status: "rejected" }
+ * @throws 400 - If the slug path is invalid, reason is missing, or page is not in draft state
+ * @throws 401 - If authentication fails
+ * @throws 404 - If the wiki page does not exist
+ * @throws 429 - If rate limit exceeded
+ * @throws 500 - If the reject operation fails
+ */
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string[] }> }
 ) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const universeId = request.nextUrl.searchParams.get("universe_id") || "";
   const ip = getClientIp(request);
@@ -27,7 +40,7 @@ export async function PUT(
   const { slug } = await params;
   const joined = slug.join("/");
   const relativePath = joined.endsWith(".md") ? joined : `${joined}.md`;
-  const wikiRoot = getWikiRoot(decoded.sub, universeId || undefined);
+  const wikiRoot = getWikiRoot(userId, universeId || undefined);
   const fullPath = path.join(wikiRoot, relativePath);
 
   // Security: prevent path traversal

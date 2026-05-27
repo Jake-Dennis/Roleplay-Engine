@@ -1,17 +1,24 @@
 import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { getDb } from "@/lib/db";
 import { ensureGroupSupport } from "@/lib/group-migrations";
-import { getAuthToken } from '@/lib/auth-token';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
-export const PUT = withErrorHandler(async (request: NextRequest) => { const authToken = getAuthToken(request);
-if (!authToken) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(authToken);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+/**
+ * PUT /api/settings/active-state
+ * Update the user's active state (last active group, session, universe).
+ * Only touch fields that are provided in the body.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { success: true }
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
+export const PUT = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`active_state:${ip}`, "api");
@@ -45,7 +52,7 @@ if (updates.length === 0) {
   return NextResponse.json({ success: true });
 }
 
-values.push(decoded.sub);
+values.push(userId);
 db.prepare(`UPDATE users SET ${updates.join(", ")} WHERE id = ?`).run(...values);
 
 return NextResponse.json({ success: true }); });

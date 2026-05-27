@@ -2,23 +2,34 @@ import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
-import { getAuthToken } from '@/lib/auth-token';
+import { withAuth } from '@/lib/with-auth';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * PUT /api/sessions/[id]/persona
+ *
+ * Sets the active persona for a session. Only the session owner can
+ * change the persona. Validates that the persona belongs to the user
+ * if a persona_id is provided. Set persona_id to null to clear.
+ *
+ * @param request - The incoming Next.js request object containing JSON body with persona_id (string | null)
+ * @param params - Route parameters containing the session id
+ * @returns NextResponse with { success: true, session: { persona_id } }
+ * @throws 400 - If persona_id is provided but persona not found or doesn't belong to user
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 404 - If session is not found or user is not the owner
+ * @throws 429 - If rate limit exceeded
+ */
 export const PUT = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`session_write:${ip}`, "session_write");
 if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
 const { id: sessionId } = await params;
-const userId = decoded.sub;
 const db = getDb();
 
 // Verify ownership (only owner can change persona)

@@ -2,20 +2,31 @@ import { withErrorHandler } from '@/lib/with-error-handler';
 import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
-import { getAuthToken } from "@/lib/auth-token";
-import { unauthorizedError, badRequestError, requireJson } from "@/lib/error-response";
+import { withAuth } from '@/lib/with-auth';
+import { badRequestError, requireJson } from "@/lib/error-response";
 import { ensureGroupSupport, isGroupMember, isGroupOwner } from "@/lib/group-migrations";
+import { CONTENT_LIMITS } from '@/lib/config';
 import { validateLength } from '@/lib/validation';
 import { isValidUUID } from '@/lib/validation/uuid-validator';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * GET /api/groups/{id}
+ * Get group details, members, sessions, and universes for a group the user is a member of.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing the group id
+ * @returns NextResponse with { group, members, sessions, universes }
+ * @throws 400 - If ID format is invalid
+ * @throws 401 - If authentication fails
+ * @throws 403 - If user is not a member of the group
+ * @throws 429 - If rate limit exceeded
+ */
 export const GET = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return unauthorizedError();
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => {
+const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`group_read:${ip}`, "api");
@@ -28,7 +39,7 @@ const { id } = await params;
 const db = getDb();
 ensureGroupSupport(db);
 
-if (!isGroupMember(db, id, decoded.sub)) {
+if (!isGroupMember(db, id, userId)) {
   return NextResponse.json({ error: "Not a member" }, { status: 403 });
 }
 
@@ -55,12 +66,23 @@ return NextResponse.json({
   universes: camelizeKeys(universes),
 }); });
 
+/**
+ * PUT /api/groups/{id}
+ * Update a group's name and/or description. Only the owner can update.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing the group id
+ * @returns NextResponse with { group: Group }
+ * @throws 400 - If ID format is invalid or no fields to update
+ * @throws 401 - If authentication fails
+ * @throws 403 - If user is not the group owner
+ * @throws 429 - If rate limit exceeded
+ */
 export const PUT = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return unauthorizedError();
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => {
+const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`group_write:${ip}`, "group_write");
@@ -73,7 +95,7 @@ const { id } = await params;
 const db = getDb();
 ensureGroupSupport(db);
 
-if (!isGroupOwner(db, id, decoded.sub)) {
+if (!isGroupOwner(db, id, userId)) {
   return NextResponse.json({ error: "Not owner" }, { status: 403 });
 }
 
@@ -86,7 +108,7 @@ if (name !== undefined) {
   if (nameError) return NextResponse.json({ error: nameError }, { status: 400 });
 }
 if (description !== undefined) {
-  const descError = validateLength(description, 5000, "Description");
+  const descError = validateLength(description, CONTENT_LIMITS.MEDIUM, "Description");
   if (descError) return NextResponse.json({ error: descError }, { status: 400 });
 }
 
@@ -106,12 +128,23 @@ db.prepare(`UPDATE groups SET ${updates.join(", ")} WHERE id = ?`).run(...values
 const group = db.prepare("SELECT * FROM groups WHERE id = ?").get(id);
 return NextResponse.json({ group: camelizeKeys(group) }); });
 
+/**
+ * DELETE /api/groups/{id}
+ * Delete a group and remove all its members. Only the owner can delete.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing the group id
+ * @returns NextResponse with { success: true }
+ * @throws 400 - If ID format is invalid
+ * @throws 401 - If authentication fails
+ * @throws 403 - If user is not the group owner
+ * @throws 429 - If rate limit exceeded
+ */
 export const DELETE = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return unauthorizedError();
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => {
+const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`group_write:${ip}`, "group_write");
@@ -124,7 +157,7 @@ const { id } = await params;
 const db = getDb();
 ensureGroupSupport(db);
 
-if (!isGroupOwner(db, id, decoded.sub)) {
+if (!isGroupOwner(db, id, userId)) {
   return NextResponse.json({ error: "Not owner" }, { status: 403 });
 }
 

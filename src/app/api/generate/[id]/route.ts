@@ -1,51 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
-import { generateTextStream, isOllamaAvailable, checkOllamaConnection, getUserModels, getActivePersonaContext, buildPersonaPrompt, type PersonaContext } from "@/lib/ollama";
+import { generateTextStream, getUserModels, getActivePersonaContext, buildPersonaPrompt, type PersonaContext } from "@/lib/ollama";
 import { getRetrievedContext, assemblePromptWithBudget, type RetrievedContext } from "@/lib/retrieval";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { queueJob } from "@/lib/job-processor";
-import { OLLAMA_CONFIG } from "@/lib/config";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 import type { DbDatabase } from "@/lib/types";
-import { getAuthToken } from '@/lib/auth-token';
+import { withAuth } from '@/lib/with-auth';
 import { logger } from '@/lib/logger';
 import { validateLength } from '@/lib/validation';
 
-function getSessionSettings(db: DbDatabase, sessionId: string) {
-  const rows = db.prepare(
-    `SELECT key, value FROM session_settings WHERE session_id = ?`
-  ).all(sessionId) as { key: string; value: string }[];
-
-  const map: Record<string, string> = {};
-  for (const row of rows) {
-    map[row.key] = row.value;
-  }
-
-  return {
-    llmModel: map.llm_model || null,
-    embeddingModel: map.embedding_model || null,
-    temperature: map.temperature ? parseFloat(map.temperature) : null,
-    topP: map.top_p ? parseFloat(map.top_p) : null,
-    numCtx: map.num_ctx ? parseInt(map.num_ctx, 10) : null,
-    systemPrompt: map.system_prompt || null,
-    maxResponseLength: map.max_response_length ? parseInt(map.max_response_length, 10) : null,
-  };
-}
-
+/**
+ * POST /api/generate/[id]
+ *
+ * Generates an AI narrative response for the given session. This is the primary
+ * generation endpoint — it retrieves full context (recent messages, wiki lore,
+ * relationships, memories, narrative threads), assembles a structured prompt,
+ * and streams the LLM response as SSE JSON-line chunks. Also queues background
+ * jobs for summarization, embeddings, relationship analysis, and wiki extraction.
+ *
+ * @param request - The incoming Next.js request object containing JSON body with userMessage and optional parentMessageId
+ * @param params - Route parameters containing the session id
+ * @returns Response with SSE stream — each line is JSON: { chunk: string } for content, { done: true, messageId, intent } on completion
+ * @throws 400 - If userMessage is missing or exceeds 10000 characters
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 404 - If session is not found or user is not a participant
+ * @throws 429 - If rate limit exceeded
+ */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   cleanupExpiredEntries();
-  const limit = checkRateLimit(`generate:${decoded.sub}`, "generate");
+  const limit = checkRateLimit(`generate:${userId}`, "generate");
   if (!limit.allowed) return createRateLimitResponse(limit.retryAfter!);
 
   const { id: sessionId } = await params;
@@ -59,7 +51,7 @@ export async function POST(
     WHERE s.id = ? AND (s.owner_id = ? OR s.id IN (
       SELECT session_id FROM session_participants WHERE user_id = ?
     ))
-  `).get(sessionId, decoded.sub, decoded.sub) as {
+  `).get(sessionId, userId, userId) as {
     id: string;
     name: string;
     universe_id: string | null;
@@ -85,15 +77,13 @@ export async function POST(
   // retries internally. The pre-check would reject immediately without
   // giving the actual generation a chance to connect.
 
-  // System prompt base
-  const sessionSettings = getSessionSettings(db, sessionId);
   // Session-aware persona: session persona → global active → undefined
   let persona: PersonaContext | null = null;
   const sessionPersonaId = (session as Record<string, unknown>).persona_id as string | undefined;
   if (sessionPersonaId) {
     const row = db.prepare(
       "SELECT name, description, personality, scenario, first_mes, mes_example, creator_notes, system_prompt, post_history_instructions, tags, writing_style, llm_model FROM personas WHERE id = ? AND user_id = ?"
-    ).get(sessionPersonaId, decoded.sub) as {
+    ).get(sessionPersonaId, userId) as {
       name: string;
       description: string | null;
       personality: string | null;
@@ -129,9 +119,9 @@ export async function POST(
     }
   }
   if (!persona) {
-    persona = getActivePersonaContext(decoded.sub);
+    persona = getActivePersonaContext(userId);
   }
-  const baseSystemPrompt = sessionSettings.systemPrompt || `You are a narrative roleplay engine. You narrate immersive, character-driven stories in response to user actions. Write in a literary style with vivid description. Stay in character and maintain story consistency. Keep responses to 2-4 paragraphs unless the situation demands more.`;
+  const baseSystemPrompt = `You are a narrative roleplay engine. You narrate immersive, character-driven stories in response to user actions. Write in a literary style with vivid description. Stay in character and maintain story consistency. Keep responses to 2-4 paragraphs unless the situation demands more.`;
   const systemPrompt = buildPersonaPrompt(persona, baseSystemPrompt);
 
   // Build context using retrieval pipeline
@@ -162,10 +152,10 @@ export async function POST(
   // Update session timestamp
   db.prepare("UPDATE sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(sessionId);
 
-  // Update scene intent (if scene state record exists)
-  if (ctx.scene.location || ctx.scene.goal) {
+  // Update scene intent
+  if (ctx.intent) {
     db.prepare(
-      `UPDATE scene_states SET emotional_tone = ? WHERE session_id = ?`
+      `UPDATE scene_states SET current_intent = ? WHERE session_id = ?`
     ).run(ctx.intent, sessionId);
   }
 
@@ -177,9 +167,9 @@ export async function POST(
     async start(controller) {
       eventBus.registerController(controller);
       try {
-        // Resolve model: session > persona > user > default
-        const userModels = getUserModels(decoded.sub);
-        const resolvedModel = sessionSettings.llmModel || persona?.llmModel || userModels.llmModel;
+        // Resolve model: persona > user > default
+        const userModels = getUserModels(userId);
+        const resolvedModel = persona?.llmModel || userModels.llmModel;
 
         let chunkCount = 0;
         await generateTextStream(prompt, (chunk) => {
@@ -196,11 +186,11 @@ export async function POST(
 
           controller.enqueue(encoder.encode(JSON.stringify({ chunk }) + "\n"));
         }, {
-          userId: decoded.sub,
+          userId: userId,
           model: resolvedModel,
-          temperature: sessionSettings.temperature ?? undefined,
-          top_p: sessionSettings.topP ?? undefined,
-          num_ctx: sessionSettings.numCtx ?? undefined,
+          temperature: undefined,
+          top_p: undefined,
+          num_ctx: undefined,
         });
 
         // Final write after stream completes — ensures complete content is saved
@@ -220,54 +210,58 @@ export async function POST(
         // Queue deferred extraction jobs — these run during idle processing
         // so they don't block the SSE stream from closing. The job handlers
         // emit SCENE_UPDATED / WIKI_PAGE_CREATED events on completion.
-        queueJob(decoded.sub, "scene_state_extract", {
+        queueJob(userId, "scene_state_extract", {
           sessionId,
-          userId: decoded.sub,
+          userId: userId,
         }, "low", session.universe_id || undefined);
 
-        queueJob(decoded.sub, "wiki_auto_extract", {
+        queueJob(userId, "wiki_auto_extract", {
           sessionId,
-          userId: decoded.sub,
+          userId: userId,
           universeId: session.universe_id || undefined,
           content: fullResponse,
         }, "low", session.universe_id || undefined);
 
         // Queue background jobs for async processing
+        // NOTE: These queue for the AI's response (just persisted above at aiMessageId).
+        // The companion route (sessions/[id]/messages/route.ts) separately queues the
+        // SAME job types for the USER's message. Both are needed — each message type
+        // (user vs AI) gets its own summarization + embedding.
         // High priority: summarize the new message
-        queueJob(decoded.sub, "summarize_messages", {
+        queueJob(userId, "summarize_messages", {
           sessionId,
           messageId: aiMessageId,
           content: fullResponse,
         }, "high", session.universe_id || undefined);
 
         // High priority: generate embeddings for the new message
-        queueJob(decoded.sub, "generate_embeddings", {
+        queueJob(userId, "generate_embeddings", {
           sessionId,
           messageId: aiMessageId,
           content: fullResponse,
           entityType: "message",
           entityId: aiMessageId,
-          userId: decoded.sub,
+          userId: userId,
         }, "high", session.universe_id || undefined);
 
         // Medium priority: analyze relationship impacts
-        queueJob(decoded.sub, "analyze_relationships", {
+        queueJob(userId, "analyze_relationships", {
           sessionId,
           messageId: aiMessageId,
           content: fullResponse,
-          userId: decoded.sub,
+          userId: userId,
         }, "medium", session.universe_id || undefined);
 
         // Low priority: extract wiki event pages from the response
-        queueJob(decoded.sub, "wiki_extract_event", {
+        queueJob(userId, "wiki_extract_event", {
           sessionId,
-          userId: decoded.sub,
+          userId: userId,
         }, "low", session.universe_id || undefined);
 
         // Low priority: analyze narrative threads in the session
-        queueJob(decoded.sub, "thread_analysis", {
+        queueJob(userId, "thread_analysis", {
           sessionId,
-          userId: decoded.sub,
+          userId: userId,
         }, "low", session.universe_id || undefined);
 
         // Send completion signal with intent info

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
-import { getAuthToken } from '@/lib/auth-token';
+import { withAuth } from '@/lib/with-auth';
 import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import { readWikiPage } from "@/lib/wiki/file-io";
 import { camelizeKeys } from "@/lib/response-utils";
@@ -9,19 +8,29 @@ import fs from "fs";
 import path from "path";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * GET /api/wiki/recent
+ *
+ * Returns the most recently modified wiki pages within a universe, sorted by
+ * modification time descending.
+ *
+ * @param request - The incoming Next.js request object (supports ?universe_id and ?limit query params)
+ * @returns NextResponse with { files: Array<{ path, mtime, title, universe }> }
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ * @throws 500 - If scanning wiki files fails
+ */
 export async function GET(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`wiki_read:${ip}`, "wiki_read");
   if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   const universeId = request.nextUrl.searchParams.get("universe_id") || "";
-  const wikiRoot = getWikiRoot(decoded.sub, universeId || undefined);
+  const wikiRoot = getWikiRoot(userId, universeId || undefined);
   if (!fs.existsSync(wikiRoot)) {
     return NextResponse.json({ files: [] });
   }

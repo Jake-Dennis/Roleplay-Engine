@@ -2,18 +2,24 @@ import { withErrorHandler } from '@/lib/with-error-handler';
 import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
-import { getAuthToken } from '@/lib/auth-token';
+import { withAuth } from '@/lib/with-auth';
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from '@/lib/rate-limiter';
 
-export const GET = withErrorHandler(async (request: NextRequest) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+/**
+ * GET /api/invitations
+ * List all pending session invitations for the authenticated user.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { invitations }
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
+export const GET = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 cleanupExpiredEntries();
-const limit = checkRateLimit(`invitations:${decoded.sub}`, "invitations");
+const limit = checkRateLimit(`invitations:${userId}`, "invitations");
 if (!limit.allowed) return createRateLimitResponse(limit.retryAfter!);
 
 const db = getDb();
@@ -27,6 +33,6 @@ const invitations = db.prepare(`
   JOIN users u ON i.inviter_id = u.id
   WHERE i.invitee_id = ? AND i.status = 'pending'
   ORDER BY i.created_at DESC
-`).all(decoded.sub);
+`).all(userId);
 
 return NextResponse.json({ invitations: camelizeKeys(invitations) }); });

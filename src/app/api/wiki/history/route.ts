@@ -1,27 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import { getPageVersions, restoreVersion, recordVersion, createSnapshotFile, getNextVersionNumber } from "@/lib/wiki/history";
 import { readWikiPage } from "@/lib/wiki/file-io";
+// @deprecated: revisions.ts is deprecated — use history.ts (SQLite wiki_versions) instead
 import { saveRevision } from "@/lib/wiki/revisions";
 import { generateIndex } from "@/lib/wiki/index-generator";
 import path from "path";
 import fs from "fs";
-import { getAuthToken } from "@/lib/auth-token";
-import { unauthorizedError, notFoundError, badRequestError, requireJson, serverError } from "@/lib/error-response";
+import { notFoundError, badRequestError, requireJson, serverError } from "@/lib/error-response";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 /**
  * GET /api/wiki/history?slug=entities/my-page
  *
- * Returns the version history for a wiki page.
+ * Returns the version history for a wiki page from the SQLite wiki_versions table.
+ *
+ * @param request - The incoming Next.js request object (requires ?slug query param)
+ * @returns NextResponse with { versions }
+ * @throws 400 - If the slug query parameter is missing
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ * @throws 500 - If retrieving versions fails
  */
 export async function GET(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return unauthorizedError();
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`wiki_read:${ip}`, "wiki_read");
@@ -33,12 +39,10 @@ export async function GET(request: NextRequest) {
   }
 
   const slug = slugParam.split("/");
-  const universeId = request.nextUrl.searchParams.get("universe_id") || "";
-  const wikiRoot = getWikiRoot(decoded.sub, universeId || undefined);
   const pagePath = slug.join("/");
 
   try {
-    const versions = getPageVersions(pagePath, decoded.sub);
+    const versions = getPageVersions(pagePath, userId);
     return NextResponse.json({ versions });
   } catch (err: unknown) {
     return serverError(err);
@@ -48,17 +52,26 @@ export async function GET(request: NextRequest) {
 /**
  * POST /api/wiki/history
  *
- * Body: { action: "restore", versionId: string, slug: string[] }
- *   - Restores a specific version and returns the restored content.
+ * Performs version history actions on a wiki page.
  *
- * Body: { action: "record", slug: string[], changeSummary: string }
- *   - Records the current page state as a new version.
+ * With action "restore" (body: { versionId, slug }): restores a specific version,
+ * saving the current state as a revision first, then regenerates the index.
+ *
+ * With action "record" (body: { slug, changeSummary? }): records the current page
+ * state as a new version in the SQLite wiki_versions table with a snapshot file.
+ *
+ * @param request - The incoming Next.js request object with JSON body
+ * @returns NextResponse with { success: true } or { success: true, versionNumber }
+ * @throws 400 - If action is unknown, or required fields are missing
+ * @throws 401 - If authentication fails
+ * @throws 404 - If the wiki page does not exist
+ * @throws 429 - If rate limit exceeded
+ * @throws 500 - If the history operation fails
  */
 export async function POST(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return unauthorizedError();
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`wiki_write:${ip}`, "wiki_write");
@@ -68,7 +81,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { action, universeId } = body;
 
-  const wikiRoot = getWikiRoot(decoded.sub, universeId);
+  const wikiRoot = getWikiRoot(userId, universeId);
 
   if (action === "restore") {
     const { versionId, slug } = body;
@@ -124,16 +137,14 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // Read current page content
-      const page = readWikiPage(fullPath);
       const rawContent = fs.readFileSync(fullPath, "utf-8");
 
       // Create snapshot file
       const snapshotPath = createSnapshotFile(wikiRoot, slug, rawContent);
 
       // Record version in DB
-      const versionNumber = getNextVersionNumber(relativePath, decoded.sub);
-      recordVersion(relativePath, decoded.sub, versionNumber, changeSummary || "", snapshotPath);
+      const versionNumber = getNextVersionNumber(relativePath, userId);
+      recordVersion(relativePath, userId, versionNumber, changeSummary || "", snapshotPath);
 
       return NextResponse.json({ success: true, versionNumber });
     } catch (err: unknown) {

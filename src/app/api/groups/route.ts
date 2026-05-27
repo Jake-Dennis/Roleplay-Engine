@@ -5,9 +5,19 @@ import { withAuth } from "@/lib/with-auth";
 import { ensureGroupSupport } from "@/lib/group-migrations";
 import type { DbRow } from "@/lib/types";
 import { badRequestError, serverError, requireJson } from "@/lib/error-response";
+import { CONTENT_LIMITS } from "@/lib/config";
 import { validateLength } from "@/lib/validation";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 
+/**
+ * GET /api/groups
+ * List all groups the authenticated user belongs to (as owner or member), including member/session/universe counts.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { groups: Group[] }
+ * @throws 401 - If authentication fails
+ * @throws 500 - If server error occurs
+ */
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
@@ -38,6 +48,16 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * POST /api/groups
+ * Create a new group with the authenticated user as owner.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { group: Group } (201)
+ * @throws 400 - If name is missing or exceeds length limits
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
 export async function POST(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
@@ -58,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     const nameError = validateLength(name, 200, "Name");
     if (nameError) return badRequestError(nameError);
-    const descError = validateLength(description || "", 5000, "Description");
+    const descError = validateLength(description || "", CONTENT_LIMITS.MEDIUM, "Description");
     if (descError) return badRequestError(descError);
 
     const db = getDb();

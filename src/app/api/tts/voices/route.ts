@@ -1,22 +1,20 @@
 import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { getAvailableVoices, checkTTSConnection } from "@/lib/tts";
-import { getAuthToken } from "@/lib/auth-token";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
-async function verifyAuth(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-
-  return null;
-}
-
-export const GET = withErrorHandler(async (request: NextRequest) => { const authError = await verifyAuth(request);
-if (authError) return authError;
+/**
+ * Lists available TTS voices from the connected Kokoro service.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with `{ voices, voiceDetails }`
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
+export const GET = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`api:${ip}`, "api");
@@ -35,8 +33,17 @@ return NextResponse.json({
   voiceDetails: updatedVoices,
 }); });
 
-export const POST = withErrorHandler(async (request: NextRequest) => { const authError = await verifyAuth(request);
-if (authError) return authError;
+/**
+ * Refreshes the TTS voice list from the Kokoro service and returns updated voices.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with `{ voices, voiceDetails }`
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
+export const POST = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`api:${ip}`, "api");

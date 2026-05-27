@@ -1,20 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { readWikiPage } from "@/lib/wiki/file-io";
+// @deprecated: revisions.ts is deprecated — use history.ts (SQLite wiki_versions) instead
 import { listRevisions, saveRevision, getRevision } from "@/lib/wiki/revisions";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import path from "path";
 import fs from "fs";
-import { getAuthToken } from '@/lib/auth-token';
 import { logger } from '@/lib/logger';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * GET /api/wiki-revisions?slug=path/to/page
+ *
+ * Retrieves revision history for a wiki page. If an ?id query param is provided,
+ * returns a specific revision; otherwise returns the full revision list.
+ *
+ * @param request - The incoming Next.js request object (requires ?slug, optional ?id and ?universe_id)
+ * @returns NextResponse with { revisions } or { revision }
+ * @throws 400 - If slug query parameter is missing or path is invalid
+ * @throws 401 - If authentication fails
+ * @throws 404 - If the wiki page or specific revision is not found
+ * @throws 429 - If rate limit exceeded
+ */
 export async function GET(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`wiki_read:${ip}`, "wiki_read");
@@ -24,7 +36,7 @@ export async function GET(request: NextRequest) {
   const slugParam = searchParams.get("slug");
   const revisionId = searchParams.get("id");
   const universeId = request.nextUrl.searchParams.get("universe_id") || "";
-  const wikiRoot = getWikiRoot(decoded.sub, universeId || undefined);
+  const wikiRoot = getWikiRoot(userId, universeId || undefined);
 
   if (!slugParam) {
     return NextResponse.json({ error: "slug query parameter is required" }, { status: 400 });
@@ -56,11 +68,24 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ revisions });
 }
 
+/**
+ * POST /api/wiki-revisions?slug=path/to/page
+ *
+ * Saves a new revision snapshot of a wiki page's current content and frontmatter
+ * to the file-based revisions system (deprecated in favor of history.ts).
+ *
+ * @param request - The incoming Next.js request object (requires ?slug query param)
+ * @returns NextResponse with { success: true, revision }
+ * @throws 400 - If slug query parameter is missing or path is invalid
+ * @throws 401 - If authentication fails
+ * @throws 404 - If the wiki page does not exist
+ * @throws 429 - If rate limit exceeded
+ * @throws 500 - If saving the revision fails
+ */
 export async function POST(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`wiki_write:${ip}`, "wiki_write");
@@ -69,9 +94,9 @@ export async function POST(request: NextRequest) {
   let wikiRoot: string;
   try {
     const body = await request.json();
-    wikiRoot = getWikiRoot(decoded.sub, body.universeId);
+    wikiRoot = getWikiRoot(userId, body.universeId);
   } catch {
-    wikiRoot = getWikiRoot(decoded.sub);
+    wikiRoot = getWikiRoot(userId);
   }
   const searchParams = request.nextUrl.searchParams;
   const slugParam = searchParams.get("slug");

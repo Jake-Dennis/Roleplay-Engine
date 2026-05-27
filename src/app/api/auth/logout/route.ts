@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken, revokeToken, cleanupExpiredDenylistEntries } from "@/lib/auth";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
+import { getAuthToken } from '@/lib/auth-token';
 
+/**
+ * POST /api/auth/logout
+ *
+ * Logs out the current user by revoking their JWT token and clearing the auth-token cookie.
+ * Succeeds gracefully even without a valid token — always clears the cookie.
+ *
+ * @param request - The incoming Next.js request object (cookie with auth-token is read)
+ * @returns NextResponse with { success: true } and cleared auth-token cookie
+ * @throws 429 - If rate limit exceeded for this IP
+ */
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`auth_logout:${ip}`, "api");
@@ -9,7 +20,7 @@ export async function POST(request: NextRequest) {
 
   // Attempt to revoke the current token
   try {
-    const token = request.cookies.get("auth-token")?.value;
+    const token = getAuthToken(request);
     if (token) {
       const payload = await verifyToken(token);
       if (payload) {

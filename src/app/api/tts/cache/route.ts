@@ -1,23 +1,28 @@
 import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { getDb } from "@/lib/db";
 import fs from "fs";
 import path from "path";
 import { APP_CONFIG } from "@/lib/config";
 import { generateSpeech } from "@/lib/tts";
 import crypto from "crypto";
-import { getAuthToken } from '@/lib/auth-token';
 import { isPathWithinRoot } from '@/lib/wiki/path-guard';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * Gets TTS cache statistics and recent entries with cursor-based pagination.
+ *
+ * @param request - The incoming Next.js request object (query params: `cursor`, `limit` max 100)
+ * @returns NextResponse with `{ stats, recentEntries, nextCursor }`
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
 export async function GET(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`api:${ip}`, "api");
@@ -36,7 +41,7 @@ export async function GET(request: NextRequest) {
       MAX(last_used) as lastUsed
     FROM tts_cache
     WHERE user_id = ?
-  `).get(decoded.sub) as {
+  `).get(userId) as {
     totalEntries: number;
     totalDurationMs: number;
     totalUses: number;
@@ -45,7 +50,7 @@ export async function GET(request: NextRequest) {
   } | undefined;
 
   // Get cache size on disk
-  const cacheDir = path.join(APP_CONFIG.dataDir, decoded.sub, "tts_cache");
+  const cacheDir = path.join(APP_CONFIG.dataDir, userId, "tts_cache");
   let diskSize = 0;
   let fileCount = 0;
 
@@ -72,12 +77,12 @@ export async function GET(request: NextRequest) {
     FROM tts_cache
     WHERE user_id = ?
   `;
-  const recentParams: unknown[] = [decoded.sub];
+  const recentParams: unknown[] = [userId];
 
   if (cursor) {
     const cursorRow = db.prepare(
       "SELECT last_used FROM tts_cache WHERE id = ? AND user_id = ?"
-    ).get(cursor, decoded.sub) as { last_used: string | null } | undefined;
+    ).get(cursor, userId) as { last_used: string | null } | undefined;
 
     if (cursorRow) {
       // Handle NULL last_used: use COALESCE for consistent ordering
@@ -125,12 +130,19 @@ export async function GET(request: NextRequest) {
   });
 }
 
+/**
+ * Clears TTS cache entries by action (clear all, expired, or unused).
+ *
+ * @param request - The incoming Next.js request object (query param: `action` = "clear" | "expired" | "unused")
+ * @returns NextResponse with `{ success: true, deletedCount }`
+ * @throws 400 - If the action parameter is invalid
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
 export async function DELETE(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`api:${ip}`, "api");
@@ -145,10 +157,10 @@ export async function DELETE(request: NextRequest) {
     // Clear all cache entries for user
     const entries = db.prepare(
       "SELECT audio_path FROM tts_cache WHERE user_id = ?"
-    ).all(decoded.sub) as { audio_path: string | null }[];
+    ).all(userId) as { audio_path: string | null }[];
 
     // Delete audio files
-    const userRoot = path.join(APP_CONFIG.dataDir, decoded.sub);
+    const userRoot = path.join(APP_CONFIG.dataDir, userId);
     for (const entry of entries) {
       if (entry.audio_path) {
         const fullPath = path.join(userRoot, entry.audio_path);
@@ -166,7 +178,7 @@ export async function DELETE(request: NextRequest) {
     // Delete database entries
     const result = db.prepare(
       "DELETE FROM tts_cache WHERE user_id = ?"
-    ).run(decoded.sub);
+    ).run(userId);
 
     return NextResponse.json({ success: true, deletedCount: result.changes });
   }
@@ -175,7 +187,7 @@ export async function DELETE(request: NextRequest) {
     // Clear entries older than 7 days
     const result = db.prepare(
       "DELETE FROM tts_cache WHERE user_id = ? AND created_at < datetime('now', '-7 days')"
-    ).run(decoded.sub);
+    ).run(userId);
 
     return NextResponse.json({ success: true, deletedCount: result.changes });
   }
@@ -184,7 +196,7 @@ export async function DELETE(request: NextRequest) {
     // Clear entries never used
     const result = db.prepare(
       "DELETE FROM tts_cache WHERE user_id = ? AND use_count = 0"
-    ).run(decoded.sub);
+    ).run(userId);
 
     return NextResponse.json({ success: true, deletedCount: result.changes });
   }
@@ -192,12 +204,20 @@ export async function DELETE(request: NextRequest) {
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 }
 
+/**
+ * Performs cache maintenance actions: refresh a specific cache entry, or combine multiple entries.
+ *
+ * @param request - The incoming Next.js request object with JSON body: `{ action: "refresh" | "combine", cacheId?, cacheIds?, outputName? }`
+ * @returns NextResponse with result varying by action — refresh returns `{ success, audioPath }`, combine returns `{ success, combinedId, durationMs, entryCount }`
+ * @throws 400 - If request body is invalid, cacheId missing, or no audio data to combine
+ * @throws 401 - If authentication fails
+ * @throws 404 - If cache entry not found or no valid entries found
+ * @throws 429 - If rate limit exceeded
+ */
 export async function POST(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`api:${ip}`, "api");
@@ -216,7 +236,7 @@ export async function POST(request: NextRequest) {
 
     const entry = db.prepare(
       "SELECT * FROM tts_cache WHERE id = ? AND user_id = ?"
-    ).get(cacheId, decoded.sub) as {
+    ).get(cacheId, userId) as {
       id: string;
       text_content: string | null;
       voice_name: string;
@@ -230,7 +250,7 @@ export async function POST(request: NextRequest) {
 
     // Delete old audio file
     if (entry.audio_path) {
-      const oldPath = path.join(APP_CONFIG.dataDir, decoded.sub, entry.audio_path);
+      const oldPath = path.join(APP_CONFIG.dataDir, userId, entry.audio_path);
       try {
         if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
       } catch { /* ignore */ }
@@ -245,7 +265,7 @@ export async function POST(request: NextRequest) {
 
     // Save new audio file
     const newFileName = `${crypto.randomUUID()}.${entry.audio_format}`;
-    const cacheDir = path.join(APP_CONFIG.dataDir, decoded.sub, "tts_cache");
+    const cacheDir = path.join(APP_CONFIG.dataDir, userId, "tts_cache");
     if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
     const newFilePath = path.join(cacheDir, newFileName);
     fs.writeFileSync(newFilePath, audioBuffer);
@@ -269,7 +289,7 @@ export async function POST(request: NextRequest) {
     const placeholders = cacheIds.map(() => "?").join(",");
     const entries = db.prepare(
       `SELECT * FROM tts_cache WHERE id IN (${placeholders}) AND user_id = ?`
-    ).all(...cacheIds, decoded.sub) as {
+    ).all(...cacheIds, userId) as {
       id: string;
       text_content: string | null;
       voice_name: string;
@@ -287,7 +307,7 @@ export async function POST(request: NextRequest) {
       entries
         .filter((e) => e.audio_path)
         .map((e) => {
-          const fullPath = path.join(APP_CONFIG.dataDir, decoded.sub, e.audio_path!);
+          const fullPath = path.join(APP_CONFIG.dataDir, userId, e.audio_path!);
           return fs.existsSync(fullPath) ? fs.readFileSync(fullPath) : Buffer.alloc(0);
         })
     );
@@ -299,7 +319,7 @@ export async function POST(request: NextRequest) {
     // Save combined file
     const sanitizedName = path.basename(outputName || `combined_${Date.now()}`);
     const combinedFileName = `${sanitizedName}.mp3`;
-    const cacheDir = path.join(APP_CONFIG.dataDir, decoded.sub, "tts_cache");
+    const cacheDir = path.join(APP_CONFIG.dataDir, userId, "tts_cache");
     if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
     const combinedFilePath = path.join(cacheDir, combinedFileName);
     if (!isPathWithinRoot(combinedFilePath, cacheDir)) {
@@ -316,7 +336,7 @@ export async function POST(request: NextRequest) {
       "INSERT INTO tts_cache (id, user_id, text_hash, voice_name, text_content, audio_format, audio_path, duration_ms, created_at, last_used, use_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0)"
     ).run(
       combinedId,
-      decoded.sub,
+      userId,
       crypto.createHash("md5").update(combinedText || "").digest("hex"),
       entries[0].voice_name,
       combinedText,

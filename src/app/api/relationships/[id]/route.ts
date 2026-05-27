@@ -1,11 +1,10 @@
 import { withErrorHandler } from '@/lib/with-error-handler';
 import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { getDb } from "@/lib/db";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
 import type { DbDatabase, DbResult } from "@/lib/types";
-import { getAuthToken } from '@/lib/auth-token';
 import { unauthorizedError, notFoundError, requireJson } from '@/lib/error-response';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
@@ -29,11 +28,20 @@ function hasEntityAccess(db: DbDatabase, entityType: string, entityId: string, u
   return null;
 }
 
+/**
+ * Gets a single relationship by ID.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing `{ id }` — the relationship UUID
+ * @returns NextResponse with `{ relationship }` — the relationship in camelCase
+ * @throws 401 - If authentication fails
+ * @throws 404 - If the relationship is not found or user lacks access
+ * @throws 429 - If rate limit exceeded
+ */
 export const GET = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return unauthorizedError();
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`relationship_read:${ip}`, "api");
@@ -43,15 +51,25 @@ const { id } = await params;
 const db = getDb();
 ensureGroupSupport(db);
 
-const rel = hasEntityAccess(db, "relationships", id, decoded.sub);
+const rel = hasEntityAccess(db, "relationships", id, userId);
 if (!rel) return notFoundError("Relationship");
 return NextResponse.json({ relationship: camelizeKeys(rel) }); });
 
+/**
+ * Updates a relationship's emotional state, shared history, stage, or decay rates.
+ *
+ * @param request - The incoming Next.js request object with JSON body: `{ emotionalState?, sharedHistory?, relationshipStage?, decayRates? }`
+ * @param params - Route parameters containing `{ id }` — the relationship UUID
+ * @returns NextResponse with `{ relationship }` — the updated relationship in camelCase
+ * @throws 400 - If request body is not valid JSON
+ * @throws 401 - If authentication fails
+ * @throws 404 - If the relationship is not found or user lacks access
+ * @throws 429 - If rate limit exceeded
+ */
 export const PUT = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return unauthorizedError();
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`relationship_write:${ip}`, "relationship_write");
@@ -63,7 +81,7 @@ const { id } = await params;
 const db = getDb();
 ensureGroupSupport(db);
 
-const existing = hasEntityAccess(db, "relationships", id, decoded.sub);
+const existing = hasEntityAccess(db, "relationships", id, userId);
 if (!existing) return notFoundError("Relationship");
 
 const { emotionalState, sharedHistory, relationshipStage, decayRates } = body;
@@ -80,11 +98,20 @@ db.prepare(
 const rel = db.prepare("SELECT * FROM relationships WHERE id = ?").get(id);
 return NextResponse.json({ relationship: camelizeKeys(rel) }); });
 
+/**
+ * Deletes a relationship by ID.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing `{ id }` — the relationship UUID
+ * @returns NextResponse with `{ success: true }`
+ * @throws 401 - If authentication fails
+ * @throws 404 - If the relationship is not found or user lacks access
+ * @throws 429 - If rate limit exceeded
+ */
 export const DELETE = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return unauthorizedError();
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`relationship_write:${ip}`, "relationship_write");
@@ -94,7 +121,7 @@ const { id } = await params;
 const db = getDb();
 ensureGroupSupport(db);
 
-const existing = hasEntityAccess(db, "relationships", id, decoded.sub);
+const existing = hasEntityAccess(db, "relationships", id, userId);
 if (!existing) return notFoundError("Relationship");
 
 db.prepare("DELETE FROM relationships WHERE id = ?").run(id);

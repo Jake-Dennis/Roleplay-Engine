@@ -7,12 +7,18 @@ import { scanUnverifiedLoreForContradictions } from "@/lib/semantic-contradictio
 import type { DbParams, PaginatedRow } from "@/lib/types";
 import { logger } from '@/lib/logger';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
+import { getDb } from "@/lib/db";
 
 /**
- * POST /api/contradictions/check
+ * POST /api/contradictions
  * Run semantic + rule-based contradiction check on a specific entity.
  *
- * Body: { entityType: string, entityId: string }
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with contradiction detection results
+ * @throws 400 - If entityType or entityId are missing
+ * @throws 401 - If authentication fails
+ * @throws 500 - If contradiction detection fails internally
+ * @throws 429 - If rate limit exceeded
  */
 export async function POST(request: NextRequest) {
   const authResult = await withAuth(request);
@@ -52,10 +58,14 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * POST /api/contradictions/scan
+ * PUT /api/contradictions
  * Scan all unverified lore for semantic contradictions (idle-time enrichment).
  *
- * Body: {} (no params needed, uses authenticated user)
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with scan results
+ * @throws 401 - If authentication fails
+ * @throws 500 - If lore scan fails internally
+ * @throws 429 - If rate limit exceeded
  */
 export async function PUT(request: NextRequest) {
   const authResult = await withAuth(request);
@@ -81,8 +91,12 @@ export async function PUT(request: NextRequest) {
 
 /**
  * GET /api/contradictions
- * Get all contradictions for the authenticated user.
- * Combines rule-based and semantic contradictions.
+ * Get all rule-based contradictions for the authenticated user with optional entity filtering and cursor pagination.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { contradictions, nextCursor }
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
  */
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);
@@ -100,7 +114,7 @@ export async function GET(request: NextRequest) {
   const limitParam = searchParams.get("limit");
   const limit = limitParam ? Math.min(parseInt(limitParam, 10), 100) : 20;
 
-  const db = require("@/lib/db").getDb();
+  const db = getDb();
 
   // Get rule-based contradictions from entity_validations
   let conditions = "WHERE user_id = ? AND state = 'under_review'";

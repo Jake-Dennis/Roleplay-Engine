@@ -14,6 +14,15 @@ import { writeWikiPage } from '@/lib/wiki/file-io';
 import { generateIndex } from '@/lib/wiki/index-generator';
 import path from "path";
 
+/**
+ * Lists universes accessible to the user, with optional filtering by group or scope.
+ *
+ * @param request - The incoming Next.js request object (query params: `group_id`, `scope` = "personal")
+ * @returns NextResponse with `{ universes }` — array of camelCase universe objects with parsed boundaries
+ * @throws 401 - If authentication fails
+ * @throws 403 - If not a member of the requested group
+ * @throws 429 - If rate limit exceeded
+ */
 export const GET = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
 if ("error" in authResult) return authResult.error;
 const { userId } = authResult.auth;
@@ -36,15 +45,15 @@ if (groupId) {
     return forbiddenError();
   }
   universes = db.prepare(
-    `SELECT u.id, u.user_id, u.group_id, u.name, u.description, u.canon_mode, u.lore_source, u.tone, u.boundaries, u.created_at
-     FROM universes u
-     WHERE u.group_id = ?
-     ORDER BY u.created_at DESC`
+      `SELECT u.id, u.user_id, u.group_id, u.name, u.description, u.canon_mode, u.lore_source, u.tone, u.time_period, u.boundaries, u.created_at
+       FROM universes u
+       WHERE u.group_id = ?
+       ORDER BY u.created_at DESC`
   ).all(groupId) as DbResult[];
 } else if (scope === "personal") {
   // Only personal universes
   universes = db.prepare(
-    `SELECT u.id, u.user_id, u.group_id, u.name, u.description, u.canon_mode, u.lore_source, u.tone, u.boundaries, u.created_at
+    `SELECT u.id, u.user_id, u.group_id, u.name, u.description, u.canon_mode, u.lore_source, u.tone, u.time_period, u.boundaries, u.created_at
      FROM universes u
      WHERE u.user_id = ? AND u.group_id IS NULL
      ORDER BY u.created_at DESC`
@@ -52,7 +61,7 @@ if (groupId) {
 } else {
   // Return ALL universes the user has access to (personal + all groups)
   universes = db.prepare(
-    `SELECT u.id, u.user_id, u.group_id, u.name, u.description, u.canon_mode, u.lore_source, u.tone, u.boundaries, u.created_at
+    `SELECT u.id, u.user_id, u.group_id, u.name, u.description, u.canon_mode, u.lore_source, u.tone, u.time_period, u.boundaries, u.created_at
      FROM universes u
      WHERE u.user_id = ? OR u.group_id IN (
        SELECT group_id FROM group_members WHERE user_id = ?
@@ -68,6 +77,17 @@ const parsed = universes.map((u) => ({
 
 return NextResponse.json({ universes: camelizeKeys(parsed) }); });
 
+/**
+ * Creates a new universe with an initial wiki page.
+ *
+ * @param request - The incoming Next.js request object with JSON body: `{ name, description?, canon_mode?, lore_source?, tone?, time_period?, boundaries?, group_id? }`
+ * @returns NextResponse with `{ universe }` (201) — the created universe in camelCase with parsed boundaries
+ * @throws 400 - If name is missing, validation fails, or canon_mode is invalid
+ * @throws 401 - If authentication fails
+ * @throws 403 - If not a member of the target group
+ * @throws 429 - If rate limit exceeded
+ * @throws 500 - If universe retrieval fails after insert
+ */
 export const POST = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
 if ("error" in authResult) return authResult.error;
 const { userId } = authResult.auth;
@@ -78,7 +98,7 @@ if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   requireJson(request);
   const body = await request.json();
-const { name, description, canon_mode = "strict", lore_source, tone, boundaries, group_id } = body;
+const { name, description, canon_mode = "strict", lore_source, tone, time_period, boundaries, group_id } = body;
 
 if (!name || !name.trim()) {
   return badRequestError("Universe name is required");
@@ -108,8 +128,8 @@ const boundariesJson = Array.isArray(boundaries)
     : null;
 
 db.prepare(
-  "INSERT INTO universes (id, user_id, group_id, name, description, canon_mode, lore_source, tone, boundaries) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-).run(id, userId, group_id || null, name.trim(), description || null, canon_mode, lore_source || null, tone || null, boundariesJson);
+  "INSERT INTO universes (id, user_id, group_id, name, description, canon_mode, lore_source, tone, time_period, boundaries) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+).run(id, userId, group_id || null, name.trim(), description || null, canon_mode, lore_source || null, tone || null, time_period || null, boundariesJson);
 
 // Create initial wiki page with universe info
 const wikiRoot = getWikiRoot(userId, id);
@@ -127,6 +147,7 @@ const pageContent = [
   ``,
   description ? `${description}\n` : "",
   tone ? `**Tone:** ${tone}\n` : "",
+  time_period ? `**Time Period:** ${time_period}\n` : "",
   lore_source ? `**Lore Source:** ${lore_source}\n` : "",
   boundariesText ? `**Boundaries:**\n${boundariesText}\n` : "",
 ].filter(Boolean).join("\n");
@@ -134,13 +155,14 @@ writeWikiPage(path.join(wikiRoot, "concepts", "about.md"), pageContent, {
   title: `${name.trim()} — Universe Overview`,
   type: "concept",
   status: "draft",
+  time_period: time_period || null,
   tags: ["auto-generated", "universe-info"],
 });
 generateIndex(wikiRoot);
 
 const universe = db
   .prepare(
-    "SELECT id, user_id, group_id, name, canon_mode, lore_source, tone, boundaries, created_at FROM universes WHERE id = ?"
+    "SELECT id, user_id, group_id, name, canon_mode, lore_source, tone, time_period, boundaries, created_at FROM universes WHERE id = ?"
   )
   .get(id) as Record<string, unknown> | undefined;
 

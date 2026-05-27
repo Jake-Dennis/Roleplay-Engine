@@ -9,6 +9,18 @@ import { forbiddenError, badRequestError, requireJson } from "@/lib/error-respon
 import { validateLength } from '@/lib/validation';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * GET /api/sessions
+ *
+ * Lists all sessions the authenticated user has access to. Supports filtering
+ * by group_id and scope ("personal" for user's own sessions only).
+ *
+ * @param request - The incoming Next.js request object with optional query params: group_id, scope
+ * @returns NextResponse with { sessions: Session[] }
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 403 - If user is not a member of the specified group
+ * @throws 429 - If rate limit exceeded
+ */
 export const GET = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
 if ("error" in authResult) return authResult.error;
 const { userId } = authResult.auth;
@@ -63,6 +75,20 @@ if (groupId) {
 
 return NextResponse.json({ sessions: camelizeKeys(sessions) }); });
 
+/**
+ * POST /api/sessions
+ *
+ * Creates a new roleplay session in the specified universe. The creator
+ * is automatically added as a participant with 'player' role and a
+ * scene_state is initialized.
+ *
+ * @param request - The incoming Next.js request object containing JSON body with name, universe_id, optional timeline_id, type, group_id
+ * @returns NextResponse with { session: Session } (201)
+ * @throws 400 - If name or universe_id is missing, or name exceeds 200 characters
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 403 - If user is not a member of the specified group
+ * @throws 429 - If rate limit exceeded
+ */
 export const POST = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
 if ("error" in authResult) return authResult.error;
 const { userId } = authResult.auth;

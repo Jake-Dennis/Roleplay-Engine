@@ -3,19 +3,30 @@ import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
 import { ensureGroupSupport } from "@/lib/group-migrations";
-import { getAuthToken } from '@/lib/auth-token';
+import { withAuth } from '@/lib/with-auth';
+import { CONTENT_LIMITS } from '@/lib/config';
 import { validateLength } from '@/lib/validation';
 import { isValidUUID } from '@/lib/validation/uuid-validator';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * GET /api/personas/{id}
+ * Get a single persona by id.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing the persona id
+ * @returns NextResponse with { persona: Persona }
+ * @throws 400 - If ID format is invalid
+ * @throws 401 - If authentication fails
+ * @throws 404 - If persona not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const GET = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => {
+const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`persona_read:${ip}`, "api");
@@ -30,7 +41,7 @@ ensureGroupSupport(db);
 
 const persona = db.prepare(
   "SELECT * FROM personas WHERE id = ? AND user_id = ?"
-).get(id, decoded.sub);
+).get(id, userId);
 
 if (!persona) {
   return NextResponse.json({ error: "Persona not found" }, { status: 404 });
@@ -38,12 +49,23 @@ if (!persona) {
 
 return NextResponse.json({ persona: camelizeKeys(persona) }); });
 
+/**
+ * PUT /api/personas/{id}
+ * Update a persona's fields. Supports partial updates of all persona properties.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing the persona id
+ * @returns NextResponse with { persona: Persona }
+ * @throws 400 - If ID format is invalid or validation fails
+ * @throws 401 - If authentication fails
+ * @throws 404 - If persona not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const PUT = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => {
+const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`persona_write:${ip}`, "persona_write");
@@ -59,7 +81,7 @@ ensureGroupSupport(db);
 // Verify ownership
 const existing = db.prepare(
   "SELECT * FROM personas WHERE id = ? AND user_id = ?"
-).get(id, decoded.sub);
+).get(id, userId);
 
 if (!existing) {
   return NextResponse.json({ error: "Persona not found" }, { status: 404 });
@@ -74,7 +96,7 @@ if (name !== undefined) {
   if (nameError) return NextResponse.json({ error: nameError }, { status: 400 });
 }
 if (description !== undefined) {
-  const descError = validateLength(description, 5000, "Description");
+  const descError = validateLength(description, CONTENT_LIMITS.MEDIUM, "Description");
   if (descError) return NextResponse.json({ error: descError }, { status: 400 });
 }
 
@@ -106,12 +128,23 @@ const persona = db.prepare("SELECT * FROM personas WHERE id = ?").get(id);
 
 return NextResponse.json({ persona: camelizeKeys(persona) }); });
 
+/**
+ * DELETE /api/personas/{id}
+ * Delete a persona by id.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing the persona id
+ * @returns NextResponse with { success: true }
+ * @throws 400 - If ID format is invalid
+ * @throws 401 - If authentication fails
+ * @throws 404 - If persona not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const DELETE = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => {
+const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`persona_write:${ip}`, "persona_write");
@@ -127,7 +160,7 @@ ensureGroupSupport(db);
 // Verify ownership
 const existing = db.prepare(
   "SELECT * FROM personas WHERE id = ? AND user_id = ?"
-).get(id, decoded.sub);
+).get(id, userId);
 
 if (!existing) {
   return NextResponse.json({ error: "Persona not found" }, { status: 404 });

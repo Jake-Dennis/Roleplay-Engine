@@ -5,12 +5,24 @@ import { withAuth } from "@/lib/with-auth";
 import { getDb } from "@/lib/db";
 import { rowToJson } from "@/lib/row-to-json";
 import type { DbParams, PaginatedRow } from "@/lib/types";
+import { CONTENT_LIMITS } from '@/lib/config';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 const VALID_STATUSES = ["active", "paused", "resolved", "abandoned"];
 const VALID_ESCALATION = ["low", "medium", "high", "critical"];
 const VALID_ARC_TYPES = ["thread", "arc", "subplot", "main_plot"];
 
+/**
+ * GET /api/narrative-threads
+ * List narrative threads with optional filters (sessionId, universe_id, status, arcType) and cursor pagination.
+ * Supports single thread lookup by id query parameter.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { threads, nextCursor } or { thread } (single)
+ * @throws 401 - If authentication fails
+ * @throws 404 - If single thread id is provided but not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const GET = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
 if ("error" in authResult) return authResult.error;
 const { userId } = authResult.auth;
@@ -88,6 +100,16 @@ if (rows.length > limit) {
 const threads = resultThreads.map(rowToJson);
 return NextResponse.json({ threads, nextCursor }); });
 
+/**
+ * POST /api/narrative-threads
+ * Create a new narrative thread.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { thread } (201)
+ * @throws 400 - If title is missing, exceeds length limits, or invalid arc_type/escalation_level
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
 export const POST = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
 if ("error" in authResult) return authResult.error;
 const { userId } = authResult.auth;
@@ -106,7 +128,7 @@ if (!title || title.trim().length === 0) {
 if (title.length > 200) {
   return NextResponse.json({ error: "title must be 200 characters or less" }, { status: 400 });
 }
-if (description && description.length > 5000) {
+if (description && description.length > CONTENT_LIMITS.MEDIUM) {
   return NextResponse.json({ error: "description must be 5000 characters or less" }, { status: 400 });
 }
 if (arcType && !VALID_ARC_TYPES.includes(arcType)) {
@@ -140,6 +162,17 @@ db.prepare(
 const row = db.prepare("SELECT * FROM narrative_threads WHERE id = ?").get(id);
 return NextResponse.json({ thread: rowToJson(row) }, { status: 201 }); });
 
+/**
+ * PUT /api/narrative-threads
+ * Update an existing narrative thread. Supports partial updates of title, description, status, arc_type, escalation_level, unresolved_items, and universe_id.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { thread }
+ * @throws 400 - If id is missing or validation fails
+ * @throws 401 - If authentication fails
+ * @throws 404 - If thread not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const PUT = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
 if ("error" in authResult) return authResult.error;
 const { userId } = authResult.auth;
@@ -167,7 +200,7 @@ if (title !== undefined) {
   if (title.trim().length === 0) return NextResponse.json({ error: "title cannot be empty" }, { status: 400 });
   if (title.length > 200) return NextResponse.json({ error: "title must be 200 characters or less" }, { status: 400 });
 }
-if (description !== undefined && description.length > 5000) {
+if (description !== undefined && description.length > CONTENT_LIMITS.MEDIUM) {
   return NextResponse.json({ error: "description must be 5000 characters or less" }, { status: 400 });
 }
 if (status !== undefined && !VALID_STATUSES.includes(status)) {
@@ -202,6 +235,17 @@ db.prepare(`UPDATE narrative_threads SET ${updates.join(", ")} WHERE id = ? AND 
 const row = db.prepare("SELECT * FROM narrative_threads WHERE id = ?").get(id);
 return NextResponse.json({ thread: rowToJson(row) }); });
 
+/**
+ * DELETE /api/narrative-threads
+ * Delete a narrative thread by id (query parameter).
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { success: true }
+ * @throws 400 - If id query parameter is missing
+ * @throws 401 - If authentication fails
+ * @throws 404 - If thread not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const DELETE = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
 if ("error" in authResult) return authResult.error;
 const { userId } = authResult.auth;

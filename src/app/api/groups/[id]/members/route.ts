@@ -2,18 +2,30 @@ import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
-import { getAuthToken } from "@/lib/auth-token";
+import { withAuth } from '@/lib/with-auth';
 import { ensureGroupSupport, isGroupOwner } from "@/lib/group-migrations";
 import { validateLength } from "@/lib/validation";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * POST /api/groups/{id}/members
+ * Add a member to a group by username or user_id. Only the group owner can add members.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing the group id
+ * @returns NextResponse with { success: true, userId }
+ * @throws 400 - If username/user_id is missing or validation fails
+ * @throws 401 - If authentication fails
+ * @throws 403 - If user is not the group owner
+ * @throws 404 - If username does not match any user
+ * @throws 409 - If user is already a member
+ * @throws 429 - If rate limit exceeded
+ */
 export const POST = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => {
+const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`group_write:${ip}`, "group_write");
@@ -23,7 +35,7 @@ const { id: groupId } = await params;
 const db = getDb();
 ensureGroupSupport(db);
 
-if (!isGroupOwner(db, groupId, decoded.sub)) {
+if (!isGroupOwner(db, groupId, userId)) {
   return NextResponse.json({ error: "Not owner" }, { status: 403 });
 }
 
@@ -67,12 +79,23 @@ db.prepare(
 
 return NextResponse.json({ success: true, userId: targetUserId }); });
 
+/**
+ * DELETE /api/groups/{id}/members
+ * Remove a member from a group by user_id. Only the group owner can remove members. Cannot remove the owner.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing the group id
+ * @returns NextResponse with { success: true }
+ * @throws 400 - If user_id is missing or attempting to remove the owner
+ * @throws 401 - If authentication fails
+ * @throws 403 - If user is not the group owner
+ * @throws 429 - If rate limit exceeded
+ */
 export const DELETE = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string }> }) => {
+const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`group_write:${ip}`, "group_write");
@@ -82,7 +105,7 @@ const { id: groupId } = await params;
 const db = getDb();
 ensureGroupSupport(db);
 
-if (!isGroupOwner(db, groupId, decoded.sub)) {
+if (!isGroupOwner(db, groupId, userId)) {
   return NextResponse.json({ error: "Not owner" }, { status: 403 });
 }
 

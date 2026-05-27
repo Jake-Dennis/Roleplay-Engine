@@ -1,9 +1,8 @@
 import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
 import { ensureParticipantColumns } from "@/lib/session-columns";
-import { getAuthToken } from '@/lib/auth-token';
+import { withAuth } from '@/lib/with-auth';
 import { unauthorizedError, notFoundError, requireJson } from '@/lib/error-response';
 import { logger } from '@/lib/logger';
 import { safeParseWarn } from "@/lib/safe-json";
@@ -13,16 +12,29 @@ import { isValidUUID } from '@/lib/validation/uuid-validator';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 import { queueJob } from '@/lib/job-processor';
 
+/**
+ * GET /api/sessions/[id]
+ *
+ * Retrieves a single session with all associated data: messages, participants,
+ * scene state, turn configuration, and ownership info. Messages include
+ * branch indicators (has_siblings) for conversation branching support.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing the session id
+ * @returns NextResponse with { session, messages, sceneState, participants, turnConfig, isOwner }
+ * @throws 400 - If the session ID format is invalid
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 404 - If session is not found
+ * @throws 429 - If rate limit exceeded
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-  const token = getAuthToken(request);
-  if (!token) return unauthorizedError();
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`session_read:${ip}`, "session_read");
@@ -42,7 +54,7 @@ export async function GET(
     WHERE s.id = ? AND (s.owner_id = ? OR s.id IN (
       SELECT session_id FROM session_participants WHERE user_id = ?
     ))
-  `).get(id, decoded.sub, decoded.sub);
+  `).get(id, userId, userId);
 
   if (!session) {
     return notFoundError("Session");
@@ -127,7 +139,7 @@ export async function GET(
     sceneState: sceneState ? camelizeKeys(sceneState) : null,
     participants: camelizeKeys(participants),
     turnConfig,
-    isOwner: (session as Record<string, unknown>).owner_id === decoded.sub,
+    isOwner: (session as Record<string, unknown>).owner_id === userId,
   });
   } catch (err: unknown) {
     logger.error("[sessions/[id]] GET failed:", err);
@@ -135,15 +147,27 @@ export async function GET(
   }
 }
 
+/**
+ * PUT /api/sessions/[id]
+ *
+ * Updates a session's name and/or status. Only the session owner can
+ * perform this operation.
+ *
+ * @param request - The incoming Next.js request object containing JSON body with optional name and/or status
+ * @param params - Route parameters containing the session id
+ * @returns NextResponse with { session: Session }
+ * @throws 400 - If the session ID format is invalid or name exceeds 200 characters
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 404 - If session is not found or user is not the owner
+ * @throws 429 - If rate limit exceeded
+ */
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const token = getAuthToken(request);
-  if (!token) return unauthorizedError();
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`session_write:${ip}`, "session_write");
@@ -158,7 +182,7 @@ export async function PUT(
   // Verify ownership
   const session = db.prepare(
     "SELECT * FROM sessions WHERE id = ? AND owner_id = ?"
-  ).get(id, decoded.sub);
+  ).get(id, userId);
 
   if (!session) {
     return NextResponse.json({ error: "Session not found or not owner" }, { status: 404 });
@@ -182,15 +206,28 @@ export async function PUT(
   return NextResponse.json({ session: camelizeKeys(updated) });
 }
 
+/**
+ * DELETE /api/sessions/[id]
+ *
+ * Deletes a session and all associated data (messages, participants, scene state,
+ * embeddings, summaries, TTS cache jobs). Only the session owner can perform
+ * this operation. Queues universe-level re-extraction jobs after deletion.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing the session id
+ * @returns NextResponse with { success: true }
+ * @throws 400 - If the session ID format is invalid
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 404 - If session is not found or user is not the owner
+ * @throws 429 - If rate limit exceeded
+ */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const token = getAuthToken(request);
-  if (!token) return unauthorizedError();
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`session_write:${ip}`, "session_write");
@@ -204,7 +241,7 @@ export async function DELETE(
 
   const session = db.prepare(
     "SELECT * FROM sessions WHERE id = ? AND owner_id = ?"
-  ).get(id, decoded.sub);
+  ).get(id, userId);
 
   if (!session) {
     return NextResponse.json({ error: "Session not found or not owner" }, { status: 404 });
@@ -217,7 +254,7 @@ export async function DELETE(
   db.prepare("DELETE FROM message_summaries WHERE source_message_id IN (SELECT id FROM messages WHERE session_id = ?)").run(id);
   db.prepare("DELETE FROM embedding_vectors WHERE embedding_id IN (SELECT ei.id FROM embedding_index ei WHERE ei.entity_type = 'message' AND ei.entity_id IN (SELECT id FROM messages WHERE session_id = ?))").run(id);
   db.prepare("DELETE FROM embedding_index WHERE entity_type = 'message' AND entity_id IN (SELECT id FROM messages WHERE session_id = ?)").run(id);
-  db.prepare("DELETE FROM tts_cache WHERE user_id = ? AND text_content IN (SELECT content FROM messages WHERE session_id = ?)").run(decoded.sub, id);
+  db.prepare("DELETE FROM tts_cache WHERE user_id = ? AND text_content IN (SELECT content FROM messages WHERE session_id = ?)").run(userId, id);
 
   // Remove all jobs referencing this session
   db.prepare("DELETE FROM job_queue WHERE status IN ('queued', 'processing', 'failed') AND json_extract(payload, '$.sessionId') = ?").run(id);
@@ -230,14 +267,14 @@ export async function DELETE(
 
   // Queue universe-level re-extraction if this session was in a universe
   if (universeId) {
-    queueJob(decoded.sub, "scene_state_extract", {
+    queueJob(userId, "scene_state_extract", {
       sessionId: id,
-      userId: decoded.sub,
+      userId,
       universeId,
     }, "low", universeId);
-    queueJob(decoded.sub, "analyze_relationships", {
+    queueJob(userId, "analyze_relationships", {
       sessionId: id,
-      userId: decoded.sub,
+      userId,
     }, "low", universeId);
   }
 

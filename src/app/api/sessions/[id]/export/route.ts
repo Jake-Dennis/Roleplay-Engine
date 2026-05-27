@@ -1,8 +1,7 @@
 import { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
 import { notFoundError, unauthorizedError, badRequestError, serverError } from "@/lib/error-response";
-import { getAuthToken } from '@/lib/auth-token';
+import { withAuth } from '@/lib/with-auth';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 interface ExportMessage {
@@ -33,16 +32,29 @@ function formatAsText(messages: ExportMessage[]): string {
   ).join("\n");
 }
 
+/**
+ * GET /api/sessions/[id]/export
+ *
+ * Exports all session messages in the requested format. Supports JSON,
+ * Markdown (md), and plain text (txt) formats. Returns the file as a
+ * downloadable attachment with Content-Disposition set.
+ *
+ * @param request - The incoming Next.js request object with optional query param format ("json" | "md" | "txt", default "json")
+ * @param params - Route parameters containing the session id
+ * @returns Response with file download — Content-Type varies by format, Content-Disposition: attachment
+ * @throws 400 - If format parameter is invalid (not json, md, or txt)
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 404 - If session is not found
+ * @throws 429 - If rate limit exceeded
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const token = getAuthToken(request);
-    if (!token) return unauthorizedError();
-
-    const decoded = await verifyToken(token);
-    if (!decoded) return unauthorizedError();
+    const authResult = await withAuth(request);
+    if ('error' in authResult) return authResult.error;
+    const { userId } = authResult.auth;
 
     const ip = getClientIp(request);
     const rateLimit = checkRateLimit(`session_read:${ip}`, "session_read");
@@ -63,7 +75,7 @@ export async function GET(
       SELECT * FROM sessions WHERE id = ? AND (owner_id = ? OR id IN (
         SELECT session_id FROM session_participants WHERE user_id = ?
       ))
-    `).get(sessionId, decoded.sub, decoded.sub);
+    `    ).get(sessionId, userId, userId);
 
     if (!session) {
       return notFoundError("Session");

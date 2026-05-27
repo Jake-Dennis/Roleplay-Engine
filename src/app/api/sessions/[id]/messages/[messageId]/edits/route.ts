@@ -1,16 +1,26 @@
 import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
-import { getAuthToken } from '@/lib/auth-token';
+import { withAuth } from '@/lib/with-auth';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * GET /api/sessions/[id]/messages/[messageId]/edits
+ *
+ * Retrieves the edit history for a specific message. Returns all edits
+ * sorted by most recent first, enriched with usernames of who made each edit.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing session id and message id
+ * @returns NextResponse with { edits: Edit[] } where each edit includes id, userId, username, oldContent, newContent, editedAt
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 404 - If session or message is not found
+ * @throws 429 - If rate limit exceeded
+ */
 export const GET = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string; messageId: string }> }) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+{ params }: { params: Promise<{ id: string; messageId: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`session_read:${ip}`, "session_read");
@@ -24,7 +34,7 @@ const session = db.prepare(`
   SELECT id FROM sessions WHERE id = ? AND (owner_id = ? OR id IN (
     SELECT session_id FROM session_participants WHERE user_id = ?
   ))
-`).get(sessionId, decoded.sub, decoded.sub);
+`).get(sessionId, userId, userId);
 
 if (!session) {
   return NextResponse.json({ error: "Session not found" }, { status: 404 });

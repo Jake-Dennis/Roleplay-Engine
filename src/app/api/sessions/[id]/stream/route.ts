@@ -1,10 +1,9 @@
 import { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { eventBus, SessionEvents } from "@/lib/event-bus";
-import { getAuthToken } from '@/lib/auth-token';
 import { TIMEOUTS } from "@/lib/config";
-import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limiter';
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -29,16 +28,21 @@ export const runtime = "nodejs";
  *  - turn:updated          turn state changed
  *  - session:updated       general session change (polling fallback)
  *  - heartbeat             keep-alive every 30s
+ *
+ * @param request - The incoming Next.js request object (reads last-event-id header for reconnection)
+ * @param params - Route parameters containing the session id
+ * @returns Response with SSE stream (text/event-stream) — emits typed events with JSON data payloads
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 404 - If session is not found
+ * @throws 429 - If rate limit exceeded or too many SSE connections (max connections reached)
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const token = getAuthToken(request);
-  if (!token) return new Response("Unauthorized", { status: 401 });
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return new Response("Invalid token", { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`session_read:${ip}`, "session_read");
@@ -53,7 +57,7 @@ export async function GET(
   const db = getDb();
   const session = db.prepare(
     "SELECT id FROM sessions WHERE id = ? AND (owner_id = ? OR id IN (SELECT session_id FROM session_participants WHERE user_id = ?))"
-  ).get(sessionId, decoded.sub, decoded.sub);
+  ).get(sessionId, userId, userId);
 
   if (!session) {
     return new Response("Session not found", { status: 404 });
@@ -71,7 +75,7 @@ export async function GET(
   let lastTimestamp = lastMessage?.max_ts || "";
 
   // Track this connection
-  const connectionId = `${sessionId}:${decoded.sub}:${Date.now()}`;
+  const connectionId = `${sessionId}:${userId}:${Date.now()}`;
 
   // D6: Check connection limit before allowing new connection
   if (!eventBus.canConnect(sessionId)) {
@@ -147,10 +151,8 @@ export async function GET(
 
       const unsubscribers = eventTypes.map((eventType) =>
         eventBus.on(`${eventType}:${sessionId}`, (data: Record<string, unknown>) => {
-          const eventId = data._eventId;
-          const eventName = data._eventName;
-          // Clean up internal fields
-          const { _eventId, _eventName, ...payload } = data;
+          // Extract event ID and strip internal metadata from payload
+          const { _eventId: eventId, ...payload } = data;
           try {
             controller.enqueue(
               encoder.encode(

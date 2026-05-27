@@ -1,27 +1,26 @@
 import { NextRequest } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { eventBus, SessionEvents } from "@/lib/event-bus";
-import { getAuthToken } from '@/lib/auth-token';
 import { TIMEOUTS } from "@/lib/config";
-import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limiter';
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 /**
  * GET /api/jobs/stream
- *
  * SSE endpoint for real-time job progress events.
- * Emits:
- *  - job:progress   { jobId, progress, message }
- *  - job:completed  { jobId, type }
+ * Emits job:progress and job:completed events, with a heartbeat every 30s.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns Response with SSE stream (Content-Type: text/event-stream)
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
  */
 export async function GET(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return new Response("Unauthorized", { status: 401 });
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return new Response("Invalid token", { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`api:${ip}`, "api");
@@ -38,7 +37,7 @@ export async function GET(request: NextRequest) {
       // Send initial connected event
       controller.enqueue(
         encoder.encode(
-          `id: 0\nevent: connected\ndata: ${JSON.stringify({ userId: decoded.sub })}\n\n`
+          `id: 0\nevent: connected\ndata: ${JSON.stringify({ userId: userId })}\n\n`
         )
       );
 

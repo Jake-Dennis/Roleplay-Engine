@@ -3,22 +3,23 @@ import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
-import { getAuthToken } from '@/lib/auth-token';
+import { withAuth } from '@/lib/with-auth';
 import { safeParse } from '@/lib/safe-json';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 /**
  * GET /api/voice-assignments
- * Query: ?entityType=npc&entityId=xxx  → single entity assignment
- * Query: ?entityType=voice_profile     → all voice profiles for user
- * Returns the voice assignment for an entity, or null
+ * Get voice assignment for an entity by entityType and entityId, or list all voice profiles.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { assignment } or { profiles } or { assignment: null }
+ * @throws 400 - If entityType or entityId are missing (non-profile mode)
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
  */
-export const GET = withErrorHandler(async (request: NextRequest) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+export const GET = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`api:${ip}`, "api");
@@ -37,7 +38,7 @@ if (entityType === "voice_profile") {
      FROM voice_assignments
      WHERE user_id = ? AND entity_type = 'voice_profile'
      ORDER BY created_at DESC`
-  ).all(decoded.sub) as {
+  ).all(userId) as {
     id: string;
     entity_id: string;
     voice_name: string;
@@ -65,7 +66,7 @@ const assignment = db.prepare(
   `SELECT id, entity_type, entity_id, voice_name, voice_speed, volume
    FROM voice_assignments
    WHERE user_id = ? AND entity_type = ? AND entity_id = ?`
-).get(decoded.sub, entityType, entityId) as {
+).get(userId, entityType, entityId) as {
   id: string;
   entity_type: string;
   entity_id: string;
@@ -82,13 +83,18 @@ return NextResponse.json({ assignment: camelizeKeys(assignment) }); });
 
 /**
  * PUT /api/voice-assignments
- * Create or update a voice assignment
+ * Create or update a voice assignment for an entity (NPC, etc.).
+ * Uses upsert: creates if not exists, updates if it does.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { success: true }
+ * @throws 400 - If entityType, entityId, or voiceName are missing
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
  */
-export const PUT = withErrorHandler(async (request: NextRequest) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+export const PUT = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`api:${ip}`, "api");
@@ -110,33 +116,37 @@ const db = getDb();
 // Upsert
 const existing = db.prepare(
   "SELECT id FROM voice_assignments WHERE user_id = ? AND entity_type = ? AND entity_id = ?"
-).get(decoded.sub, entityType, entityId);
+).get(userId, entityType, entityId);
 
 if (existing) {
   db.prepare(
     `UPDATE voice_assignments
      SET voice_name = ?, voice_speed = ?, volume = ?, updated_at = CURRENT_TIMESTAMP
      WHERE user_id = ? AND entity_type = ? AND entity_id = ?`
-  ).run(voiceName, voiceSpeed, volume, decoded.sub, entityType, entityId);
+  ).run(voiceName, voiceSpeed, volume, userId, entityType, entityId);
 } else {
   const id = crypto.randomUUID();
   db.prepare(
     `INSERT INTO voice_assignments (id, user_id, entity_type, entity_id, voice_name, voice_speed, volume)
      VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).run(id, decoded.sub, entityType, entityId, voiceName, voiceSpeed, volume);
+  ).run(id, userId, entityType, entityId, voiceName, voiceSpeed, volume);
 }
 
 return NextResponse.json({ success: true }); });
 
 /**
  * POST /api/voice-assignments
- * Create a new voice profile
+ * Create a new voice profile with named slots.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { success: true }
+ * @throws 400 - If id, name, or slots are missing or slots is not an array
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
  */
-export const POST = withErrorHandler(async (request: NextRequest) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+export const POST = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`api:${ip}`, "api");
@@ -158,20 +168,23 @@ const db = getDb();
 db.prepare(
   `INSERT INTO voice_assignments (id, user_id, entity_type, entity_id, voice_name, voice_speed, volume)
    VALUES (?, ?, 'voice_profile', ?, ?, 0, 0)`
-).run(crypto.randomUUID(), decoded.sub, id, JSON.stringify({ name, slots }));
+).run(crypto.randomUUID(), userId, id, JSON.stringify({ name, slots }));
 
 return NextResponse.json({ success: true }); });
 
 /**
  * DELETE /api/voice-assignments
- * Query: ?entityType=npc&entityId=xxx        → delete entity assignment
- * Query: ?profileId=xxx                       → delete voice profile
+ * Delete a voice assignment by entityType and entityId, or delete a voice profile by profileId.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { success: true }
+ * @throws 400 - If entityType/entityId are missing (when not deleting by profileId)
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
  */
-export const DELETE = withErrorHandler(async (request: NextRequest) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+export const DELETE = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`api:${ip}`, "api");
@@ -185,7 +198,7 @@ if (profileId) {
   const db = getDb();
   db.prepare(
     "DELETE FROM voice_assignments WHERE user_id = ? AND entity_type = 'voice_profile' AND entity_id = ?"
-  ).run(decoded.sub, profileId);
+  ).run(userId, profileId);
 
   return NextResponse.json({ success: true });
 }
@@ -202,6 +215,6 @@ const db = getDb();
 
 db.prepare(
   "DELETE FROM voice_assignments WHERE user_id = ? AND entity_type = ? AND entity_id = ?"
-).run(decoded.sub, entityType, entityId);
+).run(userId, entityType, entityId);
 
 return NextResponse.json({ success: true }); });

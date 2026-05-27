@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { OLLAMA_CONFIG, TIMEOUTS } from "@/lib/config";
-import { getAuthToken } from "@/lib/auth-token";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 export interface OllamaModelInfo {
@@ -17,12 +16,21 @@ export interface OllamaModelInfo {
   };
 }
 
+/**
+ * GET /api/models/ollama
+ * Fetch available Ollama models, categorized into LLM and embedding models.
+ * Returns connection status, model details, and configured defaults.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { connected, host, models, llmModels, embeddingModels, defaultLLM, defaultEmbedding }
+ * @throws 401 - If authentication fails
+ * @throws 502 - If Ollama is unreachable or responds with an error
+ * @throws 429 - If rate limit exceeded
+ */
 export async function GET(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`api:${ip}`, "api");
@@ -88,7 +96,7 @@ export async function GET(request: NextRequest) {
       defaultLLM: OLLAMA_CONFIG.model,
       defaultEmbedding: OLLAMA_CONFIG.embeddingModel,
     });
-  } catch (err: unknown) {
+  } catch {
     return NextResponse.json(
       {
         error: "Failed to connect to Ollama",

@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 import path from "path";
 import fs from "fs";
-import { getAuthToken } from '@/lib/auth-token';
 import { serverError, requireJson } from '@/lib/error-response';
 import { validateLength } from '@/lib/validation';
 
@@ -13,14 +12,29 @@ const ALLOWED_EXTENSIONS = new Set([
   ".txt", ".md", ".csv", ".json", ".xml", ".pdf",
 ]);
 
+/**
+ * POST /api/wiki/sources/upload
+ *
+ * Uploads a source document file to the wiki's raw storage directory.
+ * Validates filename, file extension (.txt, .md, .csv, .json, .xml, .pdf),
+ * content size (max 10MB), and prevents path traversal.
+ *
+ * @param request - The incoming Next.js request object with JSON body { filename, content, universeId? }
+ * @returns NextResponse with { success: true, filename, size }
+ * @throws 400 - If filename or content is missing, or filename is invalid
+ * @throws 401 - If authentication fails
+ * @throws 413 - If content exceeds the maximum file size
+ * @throws 415 - If file extension is not allowed
+ * @throws 429 - If rate limit exceeded
+ * @throws 500 - If writing the file fails
+ */
 export async function POST(request: NextRequest) {
-  const token = getAuthToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const decoded = await verifyToken(token);
-  if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   cleanupExpiredEntries();
-  const limit = checkRateLimit(`upload:${decoded.sub}`, "upload");
+  const limit = checkRateLimit(`upload:${userId}`, "upload");
   if (!limit.allowed) return createRateLimitResponse(limit.retryAfter!);
 
     requireJson(request);
@@ -64,7 +78,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const wikiRoot = getWikiRoot(decoded.sub, universeId);
+  const wikiRoot = getWikiRoot(userId, universeId);
   const rawDir = path.join(wikiRoot, "raw");
   const filePath = path.join(rawDir, safeFilename);
 

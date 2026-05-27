@@ -1,9 +1,8 @@
 import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
 import { unauthorizedError, notFoundError, badRequestError, serverError } from "@/lib/error-response";
-import { getAuthToken } from '@/lib/auth-token';
+import { withAuth } from '@/lib/with-auth';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 /**
@@ -27,16 +26,30 @@ function escapeHtmlPreservingMarks(text: string): string {
     .replace(MARK_CLOSE, '</mark>');
 }
 
+/**
+ * GET /api/sessions/[id]/messages/search
+ *
+ * Full-text search across session messages using FTS5. Returns matching
+ * messages with highlighted snippets (via <mark> tags). Results are
+ * sanitized to prevent XSS from malicious message content while preserving
+ * search highlighting.
+ *
+ * @param request - The incoming Next.js request object with required query param q (search term)
+ * @param params - Route parameters containing the session id
+ * @returns NextResponse with { results: Message[], total: number } — each result includes a snippet with FTS5 highlighting
+ * @throws 400 - If query parameter q is missing
+ * @throws 401 - If authentication fails or token is missing
+ * @throws 404 - If session is not found
+ * @throws 429 - If rate limit exceeded
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const token = getAuthToken(request);
-    if (!token) return unauthorizedError();
-
-    const decoded = await verifyToken(token);
-    if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    const authResult = await withAuth(request);
+    if ('error' in authResult) return authResult.error;
+    const { userId } = authResult.auth;
 
     const ip = getClientIp(request);
     const rateLimit = checkRateLimit(`session_read:${ip}`, "session_read");
@@ -51,7 +64,7 @@ export async function GET(
       SELECT * FROM sessions WHERE id = ? AND (owner_id = ? OR id IN (
         SELECT session_id FROM session_participants WHERE user_id = ?
       ))
-    `).get(sessionId, decoded.sub, decoded.sub);
+    `).get(sessionId, userId, userId);
 
     if (!session) {
       return notFoundError("Session");

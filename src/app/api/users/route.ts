@@ -1,19 +1,26 @@
 import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
-import { getAuthToken } from "@/lib/auth-token";
-import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
+import { withAuth } from '@/lib/with-auth';
+import { ensureGroupSupport } from "@/lib/group-migrations";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 
-export const GET = withErrorHandler(async (request: NextRequest) => { const token = getAuthToken(request);
-if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-const decoded = await verifyToken(token);
-if (!decoded) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+/**
+ * GET /api/users
+ * Search users by username, optionally excluding members of a specific group.
+ * Supports cursor-based pagination.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { users: { id, username }[], nextCursor }
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
+export const GET = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 cleanupExpiredEntries();
-const rl = checkRateLimit(`user_search:${decoded.sub}`, "user_search");
+const rl = checkRateLimit(`user_search:${userId}`, "user_search");
 if (!rl.allowed) return createRateLimitResponse(rl.retryAfter!);
 
 const url = new URL(request.url);

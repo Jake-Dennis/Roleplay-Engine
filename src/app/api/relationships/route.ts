@@ -5,24 +5,18 @@ import { withAuth } from "@/lib/with-auth";
 import { getDb } from "@/lib/db";
 import { writeRelationshipFiles, type RelationshipRow } from "@/lib/relationship-markdown";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
-import type { DbDatabase, DbResult } from "@/lib/types";
+import type { DbResult } from "@/lib/types";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
-function getUniverseOwnerId(db: DbDatabase, universeId: string): string | null {
-  const universe = db.prepare(
-    `SELECT u.user_id, u.group_id, g.owner_id as group_owner_id
-     FROM universes u
-     LEFT JOIN groups g ON u.group_id = g.id
-     WHERE u.id = ?`
-  ).get(universeId) as DbResult | undefined;
-
-  if (!universe) return null;
-  if (universe.group_id) {
-    return universe.group_owner_id as string;
-  }
-  return universe.user_id as string;
-}
-
+/**
+ * Lists relationships with optional filtering by universe or group.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with `{ relationships }` — array of camelCase relationship objects
+ * @throws 401 - If authentication fails
+ * @throws 403 - If not a member of the requested group
+ * @throws 429 - If rate limit exceeded
+ */
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
@@ -80,6 +74,15 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ relationships: camelizeKeys(relationships) });
 }
 
+/**
+ * Creates a new relationship between two entities.
+ *
+ * @param request - The incoming Next.js request object with JSON body: `{ sourceEntity, targetEntity, emotionalState?, sharedHistory?, relationshipStage?, decayRates?, universe_id? }`
+ * @returns NextResponse with `{ relationship }` (201) — the created relationship in camelCase
+ * @throws 400 - If sourceEntity or targetEntity is missing
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
 export async function POST(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
@@ -100,8 +103,6 @@ export async function POST(request: NextRequest) {
   const db = getDb();
   ensureGroupSupport(db);
   const id = crypto.randomUUID();
-
-  const fileOwnerId = universe_id ? getUniverseOwnerId(db, universe_id) : userId;
 
   db.prepare(
     "INSERT INTO relationships (id, user_id, universe_id, source_entity, target_entity, emotional_state, shared_history, relationship_stage, decay_rates) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"

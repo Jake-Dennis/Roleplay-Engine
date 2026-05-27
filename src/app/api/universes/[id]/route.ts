@@ -1,10 +1,9 @@
 import { withErrorHandler } from '@/lib/with-error-handler';
 import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { withAuth } from '@/lib/with-auth';
 import { getDb } from "@/lib/db";
 import type { DbDatabase } from "@/lib/types";
-import { getAuthToken } from '@/lib/auth-token';
 import { unauthorizedError, notFoundError, badRequestError, requireJson } from '@/lib/error-response';
 import { parseBoundaries } from '@/lib/universe-utils';
 import { validateLength } from '@/lib/validation';
@@ -27,16 +26,21 @@ function hasUniverseAccess(db: DbDatabase, universeId: string, userId: string): 
   return !!universe;
 }
 
+/**
+ * Gets a single universe by ID.
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing `{ id }` — the universe UUID
+ * @returns NextResponse with `{ universe }` — the universe in camelCase with parsed boundaries
+ * @throws 400 - If the ID format is invalid
+ * @throws 401 - If authentication fails
+ * @throws 404 - If the universe is not found or user lacks access
+ * @throws 429 - If rate limit exceeded
+ */
 export const GET = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) {
-  return unauthorizedError();
-}
-
-const decoded = await verifyToken(token);
-if (!decoded) {
-  return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-}
+{ params }: { params: Promise<{ id: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`universe_read:${ip}`, "api");
@@ -49,13 +53,13 @@ const { id } = await params;
 
 const db = getDb();
 
-if (!hasUniverseAccess(db, id, decoded.sub)) {
+if (!hasUniverseAccess(db, id, userId)) {
   return notFoundError("Universe");
 }
 
 const universe = db
   .prepare(
-    "SELECT id, user_id, session_id, name, description, canon_mode, lore_source, tone, boundaries, created_at FROM universes WHERE id = ?"
+    "SELECT id, user_id, session_id, name, description, canon_mode, lore_source, tone, time_period, boundaries, created_at FROM universes WHERE id = ?"
   )
   .get(id) as Record<string, unknown> | undefined;
 
@@ -67,16 +71,22 @@ const parsed = { ...universe, boundaries: parseBoundaries(universe.boundaries as
 
 return NextResponse.json({ universe: camelizeKeys(parsed) }); });
 
+/**
+ * Updates a universe's fields and queues a wiki sync job.
+ *
+ * @param request - The incoming Next.js request object with JSON body: `{ name?, description?, canon_mode?, lore_source?, tone?, time_period?, boundaries? }`
+ * @param params - Route parameters containing `{ id }` — the universe UUID
+ * @returns NextResponse with `{ universe }` — the updated universe in camelCase with parsed boundaries
+ * @throws 400 - If the ID format is invalid, request body is invalid, name is empty, canon_mode is invalid, or no fields to update
+ * @throws 401 - If authentication fails
+ * @throws 404 - If the universe is not found or user lacks access
+ * @throws 429 - If rate limit exceeded
+ * @throws 500 - If universe retrieval fails after update
+ */
 export const PUT = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) {
-  return unauthorizedError();
-}
-
-const decoded = await verifyToken(token);
-if (!decoded) {
-  return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-}
+{ params }: { params: Promise<{ id: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`universe_write:${ip}`, "universe_write");
@@ -98,13 +108,13 @@ const existing = db.prepare(
    LEFT JOIN sessions s ON u.session_id = s.id
    WHERE u.id = ?
    AND (u.user_id = ? OR s.owner_id = ?)`
-).get(id, decoded.sub, decoded.sub);
+).get(id, userId, userId);
 
 if (!existing) {
   return notFoundError("Universe");
 }
 
-const { name, description, canon_mode, lore_source, tone, boundaries } = body;
+const { name, description, canon_mode, lore_source, tone, time_period, boundaries } = body;
 
 if (name !== undefined && (!name || !name.trim())) {
   return badRequestError("Universe name cannot be empty");
@@ -138,6 +148,7 @@ if (description !== undefined) { updates.push("description = ?"); values.push(de
 if (canon_mode !== undefined) { updates.push("canon_mode = ?"); values.push(canon_mode); }
 if (lore_source !== undefined) { updates.push("lore_source = ?"); values.push(lore_source || null); }
 if (tone !== undefined) { updates.push("tone = ?"); values.push(tone || null); }
+if (time_period !== undefined) { updates.push("time_period = ?"); values.push(time_period || null); }
 if (boundaries !== undefined) { updates.push("boundaries = ?"); values.push(boundariesJson); }
 
 if (updates.length === 0) {
@@ -148,11 +159,11 @@ values.push(id);
 db.prepare(`UPDATE universes SET ${updates.join(", ")} WHERE id = ?`).run(...values);
 
 // Queue wiki sync to update the universe overview page
-queueJob(decoded.sub, "universe_wiki_sync", { userId: decoded.sub, universeId: id }, "low", id);
+queueJob(userId, "universe_wiki_sync", { userId: userId, universeId: id }, "low", id);
 
 const universe = db
   .prepare(
-    "SELECT id, user_id, session_id, name, description, canon_mode, lore_source, tone, boundaries, created_at FROM universes WHERE id = ?"
+    "SELECT id, user_id, session_id, name, description, canon_mode, lore_source, tone, time_period, boundaries, created_at FROM universes WHERE id = ?"
   )
   .get(id) as Record<string, unknown> | undefined;
 
@@ -164,16 +175,22 @@ const parsed = { ...universe, boundaries: parseBoundaries(universe.boundaries as
 
 return NextResponse.json({ universe: camelizeKeys(parsed) }); });
 
+/**
+ * Deletes a universe and its associated data (relationships, narrative threads, wiki directory, etc.).
+ *
+ * @param request - The incoming Next.js request object
+ * @param params - Route parameters containing `{ id }` — the universe UUID
+ * @returns NextResponse with `{ success: true }`
+ * @throws 400 - If the ID format is invalid
+ * @throws 401 - If authentication fails
+ * @throws 404 - If the universe is not found or user lacks access
+ * @throws 409 - If dependent sessions still exist
+ * @throws 429 - If rate limit exceeded
+ */
 export const DELETE = withErrorHandler(async (request: NextRequest,
-{ params }: { params: Promise<{ id: string }> }) => { const token = getAuthToken(request);
-if (!token) {
-  return unauthorizedError();
-}
-
-const decoded = await verifyToken(token);
-if (!decoded) {
-  return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-}
+{ params }: { params: Promise<{ id: string }> }) => { const authResult = await withAuth(request);
+if ('error' in authResult) return authResult.error;
+const { userId } = authResult.auth;
 
 const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`universe_write:${ip}`, "universe_write");
@@ -193,7 +210,7 @@ const existing = db.prepare(
    LEFT JOIN sessions s ON u.session_id = s.id
    WHERE u.id = ?
    AND (u.user_id = ? OR s.owner_id = ?)`
-).get(id, decoded.sub, decoded.sub);
+).get(id, userId, userId);
 
 if (!existing) {
   return notFoundError("Universe");
@@ -209,7 +226,7 @@ if (sessionCount.count > 0) {
 }
 
 // Clean up wiki directory for this universe
-const wikiRoot = getWikiRoot(decoded.sub, id);
+const wikiRoot = getWikiRoot(userId, id);
 if (fs.existsSync(wikiRoot)) {
   fs.rmSync(wikiRoot, { recursive: true, force: true });
 }

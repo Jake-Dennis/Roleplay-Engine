@@ -7,8 +7,14 @@ import { getClientIp } from "@/lib/rate-limiter";
 import { logger } from "@/lib/logger";
 
 /**
- * Readiness probe — returns 200 only when all critical dependencies are reachable.
+ * GET /api/health/ready
+ * Readiness probe — returns 200 only when all critical dependencies (Ollama, Kokoro TTS, DB) are reachable.
  * Returns 503 if any service is down. Restricted to localhost or authenticated.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { status, services, timestamp }
+ * @throws 401 - If not authorized (not localhost and no valid token)
+ * @throws 503 - If any critical dependency is unavailable
  */
 export async function GET(request: NextRequest) {
   if (!await isAuthorized(request)) {

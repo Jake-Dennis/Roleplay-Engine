@@ -15,11 +15,21 @@ import {
   type JobPriority,
   type JobStatus,
 } from "@/lib/job-processor";
-import { queueIdleJobs, processIdleTime, shouldProcessIdleTime } from "@/lib/idle-processing";
+import { queueIdleJobs, processIdleTime } from "@/lib/idle-processing";
 import { badRequestError, requireJson } from "@/lib/error-response";
 import { logger } from "@/lib/logger";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
+/**
+ * GET /api/jobs
+ * List the authenticated user's jobs and job statistics.
+ * Optionally filter by status, type, or universe_id.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { jobs, stats }
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
 export async function GET(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
@@ -47,6 +57,17 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ jobs, stats });
 }
 
+/**
+ * POST /api/jobs
+ * Manage the job queue. Supports actions: queue, process, process-next, cancel, cancel-all,
+ * retry, retry-all, queue-idle, and process-idle.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse varies by action — { success, jobId }, { success, results }, etc.
+ * @throws 400 - If action or required fields are invalid/missing
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
 export async function POST(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
@@ -164,6 +185,15 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/**
+ * DELETE /api/jobs
+ * Cancel a specific job by id, or cancel all queued jobs for the authenticated user.
+ *
+ * @param request - The incoming Next.js request object
+ * @returns NextResponse with { success } or { success, cancelledCount }
+ * @throws 401 - If authentication fails
+ * @throws 429 - If rate limit exceeded
+ */
 export async function DELETE(request: NextRequest) {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
