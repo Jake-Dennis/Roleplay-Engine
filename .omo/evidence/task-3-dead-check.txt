@@ -1,0 +1,25 @@
+Task 3 — Dead Event Annotation Verification
+==============================================
+Source: .omo/refs/events.md
+Date: 2026-05-27
+
+Dead events documented with ⚠️ / 🟡 annotations:
+
+⚠️  Never emitted (subscribed but never emitted):
+  1. JOB_COMPLETED  (#15) — subscribed by jobs/stream and session/stream
+  2. THREAD_UPDATED (#16) — subscribed by session/stream
+  3. WIKI_PAGE_UPDATED (#17) — subscribed by session/stream
+
+🟡  Unused declaration (no emitter, no subscriber):
+  4. TTS_QUEUED     (#18) — no references outside SessionEvents definition
+  5. TTS_COMPLETED  (#19) — no references outside SessionEvents definition
+
+🔷  SSE-synthetic (not EventBus-emitted):
+  6. SESSION_UPDATED (#20) — generated directly in SSE heartbeat fallback
+
+Total annotations present: 6
+  - 3 × ⚠️ "Never emitted"
+  - 2 × 🟡 "Unused declaration"
+  - 1 × 🔷 "SSE-synthetic"
+
+All 5+ required annotations present. ✓

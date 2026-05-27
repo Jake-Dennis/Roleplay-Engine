@@ -1,0 +1,79 @@
+task-1-count-check.txt
+========================
+Schema Reference: Table Count Verification
+Date: 2026-05-27
+Source: .omo/refs/schema.md and scripts/init-db.ts
+
+TABLE INVENTORY
+===============
+
+A. Standard tables from scripts/init-db.ts: 30
+   1. users
+   2. sessions
+   3. session_participants
+   4. session_config
+   5. universes
+   6. timelines
+   7. timeline_layers
+   8. scene_states
+   9. relationships
+  10. relationship_evolution
+  11. narrative_anchors
+  12. entity_mentions
+  13. contradiction_flags
+  14. npcs
+  15. locations
+  16. events
+  17. messages
+  18. message_summaries
+  19. narrative_threads
+  20. job_queue
+  21. embedding_index
+  22. embedding_vectors
+  23. backlinks
+  24. wiki_versions
+  25. entity_validations
+  26. voice_assignments
+  27. tts_cache
+  28. token_denylist
+  29. narrative_memories
+  30. decision_points
+
+B. Virtual tables from scripts/init-db.ts: 5
+  31. messages_fts (FTS5)
+  32. vec_messages (vec0)
+  33. vec_npcs (vec0)
+  34. vec_memories (vec0)
+  35. vec_lore (vec0)
+
+C. Standard tables from src/lib/group-migrations.ts: 3
+  36. groups
+  37. group_members
+  38. personas
+
+D. Ad-hoc table from src/app/api/sessions/[id]/invite/route.ts: 1
+  39. invitations
+
+E. Ad-hoc table from src/app/api/sessions/[id]/messages/[messageId]/route.ts: 1
+  40. message_edits
+
+TOTALS
+======
+  Standard tables (A + C + D + E): 30 + 3 + 1 + 1 = 35
+  FTS5 virtual (B):                  1
+  vec0 virtual (B):                  4
+  --------------------------------------
+  Grand total:                      40
+
+  Indexes documented:               35
+  Triggers documented:               3
+  Unique constraints documented:     5
+
+VERIFICATION: TARGET MATCHES
+============================
+  Task stated: 35 standard + 4 vec0 + 1 FTS5 = 40
+  Actual:      35 standard + 4 vec0 + 1 FTS5 = 40
+  Result: MATCH
+
+  Note: message_edits table discovered in messages/[messageId]/route.ts
+  (not listed in the task's table enumeration but counted in the 35 standard)

@@ -1,0 +1,90 @@
+﻿PLAN COMPLIANCE AUDIT
+======================
+Date: 2026-05-27
+Plan: .omo/plans/ref-docs.md
+Files audited: .omo/refs/schema.md, .omo/refs/api-catalog.md, .omo/refs/events.md
+Evidence files: task-1-count-check.txt, task-1-spot-check.txt, task-2-count-check.txt, task-2-spot-check.txt, task-3-count-check.txt, task-3-dead-check.txt
+
+MUST HAVE [4/4]
+===============
+
+[✓] 1. Pipe-table formatting consistent across all 3 docs
+     - schema.md: 40 tables use consistent | Column | Type | Constraints | Notes | pipe tables
+     - api-catalog.md: Consistent bullet-list format per spec (no pipe tables mandated by template)
+     - events.md: Consistent bullet-list per event + 2 summary pipe tables (Dead Events, SSE System Events)
+     - All tables have matching column counts and proper alignment within each doc
+
+[✓] 2. Dynamic routes use [param] notation matching file paths
+     - All dynamic params in api-catalog.md use [param] notation: [id], [messageId], [layerId], [entityType], [entityId], [...slug]
+     - Verified against actual Next.js file paths under src/app/api/
+
+[✓] 3. Dead events explicitly marked with ⚠️ badges
+     - Found in events.md: JOB_COMPLETED ⚠️, THREAD_UPDATED ⚠️, WIKI_PAGE_UPDATED ⚠️
+     - Unused declarations marked: TTS_QUEUED 🟡, TTS_COMPLETED 🟡
+     - SSE-synthetic marked: SESSION_UPDATED 🔷
+     - Total: 6 badge annotations on 5 dead/synthetic events
+
+[✓] 4. "Last Updated" timestamp at top of each file
+     - schema.md line 3: "**Last Updated**: 2026-05-27"
+     - api-catalog.md line 3: "**Last Updated:** 2026-05-27"
+     - events.md line 3: "**Last Updated:** 2026-05-27"
+
+
+MUST NOT HAVE [5/5]
+===================
+
+[✓] 1. No code changes to src/ or data/ directories
+     - All 3 files created exclusively under .omo/refs/
+     - No files modified outside .omo/
+
+[✓] 2. No architecture recommendations, improvement suggestions, TODOs, or diagrams
+     - Grep for TODO/FIXME/HACK across .omo/refs/: ZERO matches
+     - Grep for mermaid/diagram/img tags: ZERO matches
+     - Files are purely structural documentation
+
+[✓] 3. No analysis beyond structural documentation
+     - All content describes existing code structure: tables, routes, events
+     - No comparative analysis, performance notes, or improvement suggestions
+
+[✓] 4. No cross-referencing issues, bugs, or code quality findings
+     - No bug reports, issue references, or quality assessments in any file
+
+[✓] 5. No fourth "bonus" document
+     - Exactly 3 files in .omo/refs/: schema.md, api-catalog.md, events.md
+     - No extras, no index.md, no summary document
+
+
+DEFINITION OF DONE [4/4]
+========================
+
+[✓] 1. All 3 files exist under .omo/refs/
+     - .omo/refs/schema.md ✓
+     - .omo/refs/api-catalog.md ✓
+     - .omo/refs/events.md ✓
+
+[✓] 2. Counts verified: 40 tables, 94 routes, 20 events
+     - task-1-count-check.txt: 40 tables documented (35 standard + 4 vec0 + 1 FTS5) — MATCH
+     - task-2-count-check.txt: 94 route files documented — MATCH
+     - task-3-count-check.txt: 20 event constants documented — MATCH
+
+[✓] 3. Spot-check evidence files exist with PASS results
+     - task-1-spot-check.txt: PASS — 5 tables spot-checked, all columns + indexes correct
+     - task-2-spot-check.txt: PASS — 3 routes spot-checked, all methods/auth/params correct
+     - task-3-dead-check.txt: VERIFIED — 6 annotations present (5 expected minimum)
+
+[✓] 4. Dead events annotated with ⚠️ in events.md
+     - 3 × ⚠️ (never emitted), 2 × 🟡 (unused), 1 × 🔷 (SSE-synthetic)
+
+
+TASKS [3/3]
+============
+
+[✓] Task 1: Create schema.md — COMPLETE (40 tables documented, counts MATCH)
+[✓] Task 2: Create api-catalog.md — COMPLETE (94 routes documented, counts MATCH)
+[✓] Task 3: Create events.md — COMPLETE (20 events documented, dead events annotated)
+
+
+VERDICT: APPROVE
+=================
+All Must Have [4/4] present. All Must NOT Have [5/5] clean.
+Definition of Done [4/4] satisfied. Tasks [3/3] complete.

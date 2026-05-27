@@ -1,0 +1,40 @@
+TASK: Spot Check — API Endpoint Catalog
+===========================================
+Verifying 3 endpoints against source code:
+
+### 1. GET /api/sessions
+- **File**: src/app/api/sessions/route.ts
+- **Auth**: withAuth           ✓ (line 5 import, line 12 usage)
+- **Query Params**: group_id, scope  ✓ (lines 24-25)
+- **Body**: (none)            ✓
+- **Response**: { sessions }  ✓ (line 64)
+- **Errors**: 401 (withAuth returns error), 403 (forbiddenError), 429 (rate limit)
+- **Handler**: withErrorHandler ✓ (line 12 wraps GET)
+- **Rate Limit Key**: session_read  ✓ (line 17)
+- **Catalog match**: ALL FIELDS CORRECT ✓
+
+### 2. POST /api/sessions
+- **File**: src/app/api/sessions/route.ts
+- **Auth**: withAuth            ✓ (line 5 import, line 66 usage)
+- **Query Params**: (none)     ✓
+- **Body**: { name, universe_id, timeline_id?, type?, group_id? }  ✓ (line 76)
+- **Response**: { session } (201)  ✓ (line 112)
+- **Errors**: 400 (badRequestError for name/universe_id), 401 (withAuth), 403 (forbiddenError for unauthorized group), 429 (rate limit)
+- **Handler**: withErrorHandler ✓ (line 66 wraps POST)
+- **Rate Limit Key**: session_write  ✓ (line 71)
+- **Catalog match**: ALL FIELDS CORRECT ✓
+
+### 3. DELETE /api/sessions/[id]
+- **File**: src/app/api/sessions/[id]/route.ts
+- **Auth**: withAuth            ✓ (line 5 import, line 184 usage)
+- **Query Params**: (none)     ✓
+- **Body**: (none)             ✓
+- **Response**: { success: true }  ✓ (line 237)
+- **Errors**: 400 (invalid UUID), 401 (withAuth), 404 (not found/not owner), 429 (rate limit)
+- **Handler**: Raw async function (not withErrorHandler, uses try/catch implicitly - or doesn't actually, let me check)
+  Actually DELETE at line 180 is a raw async function, no withErrorHandler.
+  ✓ (catalog says "Raw DELETE export")
+- **Rate Limit Key**: session_write  ✓ (line 190)
+- **Catalog match**: ALL FIELDS CORRECT ✓
+
+### Result: ALL 3 SPOT CHECKS PASS ✓

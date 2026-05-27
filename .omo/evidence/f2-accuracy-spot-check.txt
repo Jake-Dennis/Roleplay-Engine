@@ -1,0 +1,97 @@
+ACCURACY SPOT-CHECK
+====================
+
+Performed: 2026-05-27
+Documents verified: api-catalog.md, schema.md, events.md
+
+---
+
+ROUTES
+------
+
+Method checked via: grep `export async function` or `export const` for HTTP handlers
+
+1. POST /api/sessions/[id]/messages
+   - Catalog file: src/app/api/sessions/[id]/messages/route.ts
+   - Test-Path: EXISTS
+   - HTTP Method: POST (export async function POST at line 79)
+   - Handler type in catalog: "Raw POST export (try/catch)"
+   - Handler type in code: raw export async function POST (matches)
+   - VERDICT: MATCH
+
+2. POST /api/tts/stream
+   - Catalog file: src/app/api/tts/stream/route.ts
+   - Test-Path: EXISTS
+   - HTTP Method: POST (export async function POST at line 13)
+   - Handler type in catalog: "Raw POST export"
+   - Handler type in code: raw export async function POST (matches)
+   - VERDICT: MATCH
+
+3. PUT /api/wiki/lock/[...slug]
+   - Catalog file: src/app/api/wiki/lock/[...slug]/route.ts
+   - Test-Path: EXISTS
+   - HTTP Method: PUT (export async function PUT at line 11)
+   - Handler type in catalog: "Raw PUT export"
+   - Handler type in code: raw export async function PUT (matches)
+   - VERDICT: MATCH
+
+Routes: 3/3
+
+---
+
+TABLES
+------
+
+Method checked via: grep `CREATE TABLE` in scripts/init-db.ts + ## header in schema.md
+
+1. sessions
+   - CREATE TABLE in init-db.ts: YES (line 38)
+   - ## header in schema.md: YES (line 76)
+   - VERDICT: FOUND
+
+2. npcs
+   - CREATE TABLE in init-db.ts: YES (line 204)
+   - ## header in schema.md: YES (line 317)
+   - VERDICT: FOUND
+
+3. voice_assignments
+   - CREATE TABLE in init-db.ts: YES (line 399)
+   - ## header in schema.md: YES (line 590)
+   - VERDICT: FOUND
+
+Tables: 3/3
+
+---
+
+EVENTS
+------
+
+Method checked via: grep SessionEvents.XXX in src/lib/event-bus.ts + ## header in events.md
+
+1. MESSAGE_CREATED ("message:created")
+   - SessionEvents member: YES (event-bus.ts line 235)
+   - ## header in events.md: YES (line 20 - "### 1. MESSAGE_CREATED")
+   - VERDICT: FOUND
+
+2. JOB_PROGRESS ("job:progress")
+   - SessionEvents member: YES (event-bus.ts line 252)
+   - ## header in events.md: YES (line 225 - "### 13. JOB_PROGRESS")
+   - VERDICT: FOUND
+
+3. WIKI_PAGE_CREATED ("wiki:page_created")
+   - SessionEvents member: YES (event-bus.ts line 255)
+   - ## header in events.md: YES (line 245 - "### 14. WIKI_PAGE_CREATED")
+   - VERDICT: FOUND
+
+Events: 3/3
+
+---
+
+SUMMARY
+-------
+
+Routes [3/3] | Tables [3/3] | Events [3/3] | VERDICT: PASS
+
+All 9 spot-checks passed. The three reference documents (api-catalog.md,
+schema.md, events.md) accurately reflect the current state of the codebase
+for the randomly sampled items.

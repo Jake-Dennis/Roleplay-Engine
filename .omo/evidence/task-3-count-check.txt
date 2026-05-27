@@ -1,0 +1,30 @@
+Task 3 — Event Count Verification
+====================================
+Source: src/lib/event-bus.ts (SessionEvents const object)
+Date: 2026-05-27
+
+Total SessionEvents constants: 20
+
+Enumeration:
+  1. MESSAGE_CREATED        = "message:created"
+  2. MESSAGE_UPDATED        = "message:updated"
+  3. MESSAGE_DELETED        = "message:deleted"
+  4. GENERATION_STARTED     = "generation:started"
+  5. GENERATION_DONE        = "generation:done"
+  6. TTS_QUEUED             = "tts:queued"
+  7. TTS_COMPLETED          = "tts:completed"
+  8. PARTICIPANT_JOINED     = "participant:joined"
+  9. PARTICIPANT_LEFT       = "participant:left"
+ 10. PARTICIPANT_KICKED     = "participant:kicked"
+ 11. PARTICIPANT_INVITED    = "participant:invited"
+ 12. PARTICIPANT_ROLE_CHANGED = "participant:role_changed"
+ 13. TURN_UPDATED           = "turn:updated"
+ 14. SCENE_UPDATED          = "scene:updated"
+ 15. THREAD_UPDATED         = "thread:updated"
+ 16. JOB_COMPLETED          = "job:completed"
+ 17. JOB_PROGRESS           = "job:progress"
+ 18. SESSION_UPDATED        = "session:updated"
+ 19. WIKI_PAGE_CREATED      = "wiki:page_created"
+ 20. WIKI_PAGE_UPDATED      = "wiki:page_updated"
+
+Count: 20 — matches expected total.

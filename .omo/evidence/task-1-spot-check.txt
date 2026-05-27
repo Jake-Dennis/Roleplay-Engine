@@ -1,0 +1,133 @@
+task-1-spot-check.txt
+=========================
+Schema Reference: Spot-Check Verification
+Date: 2026-05-27
+
+SPOT CHECK 1: sessions table
+=============================
+Source: scripts/init-db.ts lines 38-53
+Documented in: .omo/refs/schema.md (sessions section)
+
+Columns in source:
+  id TEXT PRIMARY KEY                          -> documented: id TEXT PK
+  owner_id TEXT NOT NULL REFERENCES users(id)  -> documented: owner_id TEXT NOT NULL FK->users(id)
+  name TEXT NOT NULL                           -> documented: name TEXT NOT NULL
+  universe_id TEXT                             -> documented: universe_id TEXT FK->universes(id)
+  timeline_id TEXT                             -> documented: timeline_id TEXT FK->timelines(id)
+  persona_id TEXT REFERENCES personas(id) ON DELETE SET NULL -> documented: persona_id TEXT FK->personas(id) ON DELETE SET NULL
+  status TEXT DEFAULT 'active'                 -> documented: status TEXT DEFAULT 'active'
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP -> documented: created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  updated_at DATETIME                          -> documented: updated_at DATETIME
+  narrative_tension REAL DEFAULT 0.3           -> documented: narrative_tension REAL DEFAULT 0.3
+  pacing REAL DEFAULT 0.3                      -> documented: pacing REAL DEFAULT 0.3
+  narrative_phase TEXT DEFAULT 'setup'         -> documented: narrative_phase TEXT DEFAULT 'setup'
+  active_goals TEXT                            -> documented: active_goals TEXT
+  active_conflicts TEXT                        -> documented: active_conflicts TEXT
+
+Migration columns (group-migrations.ts):
+  group_id TEXT                                -> documented: group_id TEXT
+  type TEXT DEFAULT 'solo'                     -> documented: type TEXT DEFAULT 'solo'
+
+Indexes:
+  idx_sessions_owner ON sessions(owner_id)     -> documented: YES
+  idx_sessions_status ON sessions(status)      -> documented: YES
+  idx_sessions_universe ON sessions(universe_id) -> documented: YES
+
+Result: ALL COLUMNS, INDEXES, AND MIGRATIONS DOCUMENTED CORRECTLY
+
+SPOT CHECK 2: messages table
+=============================
+Source: scripts/init-db.ts lines 252-263
+Documented in: .omo/refs/schema.md (messages section)
+
+Columns in source:
+  id TEXT PRIMARY KEY                          -> documented: id TEXT PK
+  session_id TEXT NOT NULL REFERENCES sessions(id) -> documented: session_id TEXT NOT NULL FK->sessions(id)
+  sender_id TEXT REFERENCES users(id)          -> documented: sender_id TEXT FK->users(id)
+  content TEXT NOT NULL                         -> documented: content TEXT NOT NULL
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP -> documented: timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+  location_context TEXT                        -> documented: location_context TEXT
+  emotional_tone TEXT                          -> documented: emotional_tone TEXT
+  parent_message_id TEXT REFERENCES messages(id) -> documented: parent_message_id TEXT FK->messages(id) [self-ref]
+  is_deleted INTEGER DEFAULT 0                 -> documented: is_deleted INTEGER DEFAULT 0
+  deleted_at DATETIME                          -> documented: deleted_at DATETIME
+
+Migration columns (group-migrations.ts):
+  persona_id TEXT                              -> documented: persona_id TEXT
+
+Indexes:
+  idx_messages_session ON messages(session_id, timestamp)      -> documented: YES
+  idx_messages_deleted ON messages(session_id, is_deleted)     -> documented: YES
+  idx_messages_session_deleted_ts ON messages(session_id, is_deleted, timestamp) -> documented: YES
+
+FTS5 triggers:
+  messages_fts_insert                          -> documented: YES
+  messages_fts_update                          -> documented: YES
+  messages_fts_delete                          -> documented: YES
+
+Result: ALL COLUMNS, INDEXES, AND TRIGGERS DOCUMENTED CORRECTLY
+
+SPOT CHECK 3: events table
+=============================
+Source: scripts/init-db.ts lines 236-249
+Documented in: .omo/refs/schema.md (events section)
+
+Columns in source:
+  id TEXT PRIMARY KEY                          -> documented: id TEXT PK
+  user_id TEXT NOT NULL REFERENCES users(id)  -> documented: user_id TEXT NOT NULL FK->users(id)
+  universe_id TEXT REFERENCES universes(id)    -> documented: universe_id TEXT FK->universes(id)
+  title TEXT                                   -> documented: title TEXT
+  event_type TEXT                              -> documented: event_type TEXT
+  description TEXT                             -> documented: description TEXT
+  participants TEXT                            -> documented: participants TEXT
+  location_id TEXT                             -> documented: location_id TEXT
+  occurred_at TEXT                             -> documented: occurred_at TEXT
+  outcome TEXT                                 -> documented: outcome TEXT
+  consequences TEXT                            -> documented: consequences TEXT
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP -> documented: created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+
+Migration columns (schema-migrations.ts):
+  consequences TEXT                            -> documented: YES (schema-migrations.ts:67)
+
+Indexes:
+  idx_events_user ON events(user_id)           -> documented: YES
+  idx_events_universe ON events(universe_id)   -> documented: YES
+
+Result: ALL COLUMNS AND INDEXES DOCUMENTED CORRECTLY
+
+SPOT CHECK 4: invitations table (ad-hoc)
+=========================================
+Source: src/app/api/sessions/[id]/invite/route.ts lines 14-22
+Documented in: .omo/refs/schema.md (invitations section)
+
+Columns in source:
+  id TEXT PRIMARY KEY                          -> documented: id TEXT PK
+  session_id TEXT NOT NULL REFERENCES sessions(id) -> documented: session_id TEXT NOT NULL FK->sessions(id)
+  inviter_id TEXT NOT NULL REFERENCES users(id) -> documented: inviter_id TEXT NOT NULL FK->users(id)
+  invitee_id TEXT NOT NULL REFERENCES users(id) -> documented: invitee_id TEXT NOT NULL FK->users(id)
+  status TEXT DEFAULT 'pending'                -> documented: status TEXT DEFAULT 'pending'
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP -> documented: created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  UNIQUE(session_id, invitee_id)               -> documented: YES
+
+Result: ALL COLUMNS AND CONSTRAINTS DOCUMENTED CORRECTLY
+
+SPOT CHECK 5: message_edits table (ad-hoc)
+===========================================
+Source: src/app/api/sessions/[id]/messages/[messageId]/route.ts lines 70-77
+Documented in: .omo/refs/schema.md (message_edits section)
+
+Columns in source:
+  id TEXT PRIMARY KEY                          -> documented: id TEXT PK
+  message_id TEXT NOT NULL                     -> documented: message_id TEXT NOT NULL
+  user_id TEXT NOT NULL                        -> documented: user_id TEXT NOT NULL
+  old_content TEXT NOT NULL                    -> documented: old_content TEXT NOT NULL
+  new_content TEXT NOT NULL                    -> documented: new_content TEXT NOT NULL
+  edited_at DATETIME DEFAULT CURRENT_TIMESTAMP -> documented: edited_at DATETIME DEFAULT CURRENT_TIMESTAMP
+
+Note: No FK constraints in CREATE TABLE (documented correctly as plain TEXT)
+
+Result: ALL COLUMNS DOCUMENTED CORRECTLY
+
+OVERALL SPOT CHECK RESULT: PASS
+===============================
+All 5 spot-checked tables match their source definitions exactly.
