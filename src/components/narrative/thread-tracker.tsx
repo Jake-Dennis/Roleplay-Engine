@@ -9,6 +9,8 @@
 
 "use client";
 
+import { useState } from "react";
+import { TIME } from "@/lib/config";
 import { GitBranch, CheckCircle, PauseCircle, XCircle } from "lucide-react";
 
 interface NarrativeThread {
@@ -45,6 +47,8 @@ export function ThreadTracker({
   onThreadClick,
   filter = "all",
 }: ThreadTrackerProps) {
+  const [now] = useState(() => Date.now());
+
   const filtered =
     filter === "all"
       ? threads
@@ -67,7 +71,7 @@ export function ThreadTracker({
       {filtered.map((thread) => {
         const Icon = STATUS_ICONS[thread.status] || GitBranch;
         const daysAgo = Math.round(
-          (Date.now() - new Date(thread.updated_at).getTime()) / (1000 * 60 * 60 * 24)
+          (now - new Date(thread.updated_at).getTime()) / TIME.ONE_DAY
         );
 
         return (

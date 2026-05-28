@@ -9,7 +9,7 @@
  */
 
 import { useState, useRef, useCallback } from "react";
-import { buildRelationshipGraph, VizNode, VizEdge, EMOTION_COLORS, STAGE_COLORS } from "@/lib/relationship-viz";
+import { buildRelationshipGraph, VizNode, VizEdge, EMOTION_COLORS } from "@/lib/relationship-viz";
 
 interface Relationship {
   id: string;

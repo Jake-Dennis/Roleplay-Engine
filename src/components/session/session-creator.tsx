@@ -35,7 +35,7 @@ interface SessionCreatorProps {
   onCancel?: () => void;
 }
 
-export function SessionCreator({ universes, onCreate, onCancel }: SessionCreatorProps) {
+export function SessionCreator({ universes, onCreate }: SessionCreatorProps) {
   const [name, setName] = useState("");
   const [universeId, setUniverseId] = useState("");
   const [type, setType] = useState("solo");

@@ -18,7 +18,7 @@ interface TimelineLayer {
   description: string | null;
   start_year: number | null;
   end_year: number | null;
-  metadata: Record<string, any> | null;
+  metadata: Record<string, unknown> | null;
   created_at: string;
 }
 
@@ -182,8 +182,8 @@ export function CharacterEditor({
 
       {/* Character list */}
       {layers.map((layer) => {
-        const role = layer.metadata?.role || "neutral";
-        const canonStatus = layer.metadata?.canonStatus || "canon";
+        const role = (layer.metadata?.role as string | undefined) || "neutral";
+        const canonStatus = (layer.metadata?.canonStatus as string | undefined) || "canon";
         return (
           <div
             key={layer.id}

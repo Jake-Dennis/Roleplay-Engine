@@ -3,6 +3,7 @@ import { useRef, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { buildLinkGraph } from '@/lib/wiki/wikilinks';
 import type { WikiPage } from '@/lib/wiki/file-io';
+import type cytoscape from 'cytoscape';
 import { useRouter } from 'next/navigation';
 import { Loader2, AlertTriangle, GitBranch, RefreshCw } from 'lucide-react';
 
@@ -110,7 +111,7 @@ function ErrorState({ error, onRetry }: { error: string; onRetry?: () => void })
 }
 
 export default function GraphView({ pages, basePath = '/wiki', isLoading, error, onRetry }: GraphViewProps) {
-  const cyRef = useRef<any>(null);
+  const cyRef = useRef<cytoscape.Core | null>(null);
   const router = useRouter();
 
   if (isLoading) {

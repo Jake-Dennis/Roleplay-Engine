@@ -20,7 +20,7 @@
  *   />
  */
 
-import { memo, useRef } from "react";
+import { memo, useState } from "react";
 import {
   Send,
   Loader2,
@@ -42,14 +42,14 @@ import { classifyIntent, type Intent } from "@/lib/intent-analyzer";
 
 interface Message {
   id: string;
-  session_id: string;
-  sender_id: string | null;
+  sessionId: string;
+  senderId: string | null;
   content: string;
   timestamp: string;
-  sender_name: string | null;
-  persona_name: string | null;
-  persona_avatar: string | null;
-  has_siblings?: number;
+  senderName: string | null;
+  personaName: string | null;
+  personaAvatar: string | null;
+  hasSiblings?: number;
 }
 
 interface MessageItemProps {
@@ -97,13 +97,13 @@ const MessageItem = memo(function MessageItem({
     <div id={`msg-${message.id}`} className={`group flex ${isAI ? "" : "flex-row-reverse"}`}>
       <div className={`max-w-[75%] rounded-xl px-4 py-3 ${isAI ? "border border-border-default bg-bg-elevated" : "bg-accent/10"}`}>
         <p className="text-xxs font-medium text-text-muted mb-1 flex items-center gap-1.5">
-          <span>{isAI ? "AI Narrator" : (message.persona_name || message.sender_name || "You")}</span>
-          {!isAI && message.persona_name && (
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-bg-raised px-1.5 py-0.5 text-xxs text-text-muted">
-              <User className="h-2.5 w-2.5" />
-              {message.persona_name}
-            </span>
-          )}
+            <span>{isAI ? "AI Narrator" : (message.personaName || message.senderName || "You")}</span>
+              {!isAI && message.personaName && (
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-bg-raised px-1.5 py-0.5 text-xxs text-text-muted">
+                  <User className="h-2.5 w-2.5" />
+                  {message.personaName}
+                </span>
+              )}
           {!isAI && intent && (
             <span className="inline-flex items-center gap-0.5 rounded-full bg-bg-raised px-1.5 py-0.5 text-xxs text-text-muted capitalize">
               {intentIcons[intent]}
@@ -142,7 +142,7 @@ const MessageItem = memo(function MessageItem({
               <span>
                 {new Date(message.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </span>
-              {message.has_siblings && (
+              {message.hasSiblings && (
                 <span className="inline-flex items-center gap-0.5 text-accent" title="Conversation branch">
                   <GitBranch className="h-2.5 w-2.5" />
                 </span>
@@ -238,17 +238,10 @@ export function ChatWindow({
   onEditHistoryClose,
   disabled = false,
 }: ChatWindowProps) {
-  const seenMessageIds = useRef<Set<string>>(new Set());
-  const initializedRef = useRef(false);
-
-  // Pre-populate seen set with existing messages on first render
-  // so only NEWLY added messages get the entrance animation
-  if (!initializedRef.current) {
-    for (const msg of messages) {
-      seenMessageIds.current.add(msg.id);
-    }
-    initializedRef.current = true;
-  }
+  // Track which message IDs existed on mount (for entrance animations).
+  // New message IDs (added later) are NOT in this initial set, so they animate.
+  // Uses useState lazy init to avoid ref access during render (React 19 rule).
+  const [initialMessageIds] = useState(() => new Set(messages.map((m) => m.id)));
 
   return (
     <div className="flex flex-col h-full">
@@ -267,14 +260,13 @@ export function ChatWindow({
           <div className="space-y-3">
             {(() => {
               // Filter out empty user messages (AI messages preserved for streaming transition)
-              const visibleMessages = messages.filter((m) => m.sender_id === null || (m.content && m.content.trim()));
+              const visibleMessages = messages.filter((m) => m.senderId === null || (m.content && m.content.trim()));
               const lastMsgId = visibleMessages[visibleMessages.length - 1]?.id;
               return visibleMessages.map((message) => {
-                const isAI = message.sender_id === null;
+                const isAI = message.senderId === null;
                 const isEditing = editingId === message.id;
                 const isLastAI = isAI && message.id === lastMsgId;
-                const wasSeen = seenMessageIds.current.has(message.id);
-                if (!wasSeen) seenMessageIds.current.add(message.id);
+                const wasSeen = initialMessageIds.has(message.id);
                 const animationClass = wasSeen ? "" : "animate-message-slide";
 
               return (

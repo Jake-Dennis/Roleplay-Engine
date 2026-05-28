@@ -10,7 +10,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback } from "react";
 import { ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 
 interface GraphNode {
@@ -50,51 +50,36 @@ export function RelationshipGraph({
   height = 600,
 }: RelationshipGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [nodes, setNodes] = useState<GraphNode[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [dragging, setDragging] = useState<string | null>(null);
-  const [isPanning, setIsPanning] = useState(false);
-  const panStart = useRef({ x: 0, y: 0 });
+  const [nodes, setNodes] = useState<GraphNode[]>(() => {
+    // Initialize with circular layout + force simulation
+    if (initialNodes.length === 0) return [];
 
-  // Initialize node positions
-  useEffect(() => {
     const centerX = width / 2;
     const centerY = height / 2;
     const radius = Math.min(width, height) * 0.3;
 
-    const initialized = initialNodes.map((node, i) => {
+    let current = initialNodes.map((node, i) => {
       const angle = (2 * Math.PI * i) / initialNodes.length;
       return {
         ...node,
         x: centerX + radius * Math.cos(angle),
         y: centerY + radius * Math.sin(angle),
-      };
+      } as GraphNode;
     });
-
-    setNodes(initialized);
-  }, [initialNodes, width, height]);
-
-  // Simple force-directed layout (runs once on mount)
-  useEffect(() => {
-    if (nodes.length === 0) return;
 
     const iterations = 100;
     const repulsion = 5000;
     const attraction = 0.01;
     const damping = 0.85;
 
-    let currentNodes = [...nodes];
-
     for (let iter = 0; iter < iterations; iter++) {
-      const forces = currentNodes.map(() => ({ fx: 0, fy: 0 }));
+      const forces = current.map(() => ({ fx: 0, fy: 0 }));
 
       // Repulsion between all nodes
-      for (let i = 0; i < currentNodes.length; i++) {
-        for (let j = i + 1; j < currentNodes.length; j++) {
-          const dx = currentNodes[j].x! - currentNodes[i].x!;
-          const dy = currentNodes[j].y! - currentNodes[i].y!;
+      for (let i = 0; i < current.length; i++) {
+        for (let j = i + 1; j < current.length; j++) {
+          const dx = current[j].x! - current[i].x!;
+          const dy = current[j].y! - current[i].y!;
           const dist = Math.sqrt(dx * dx + dy * dy) || 1;
           const force = repulsion / (dist * dist);
           const fx = (dx / dist) * force;
@@ -108,12 +93,12 @@ export function RelationshipGraph({
 
       // Attraction along edges
       for (const edge of edges) {
-        const sourceIdx = currentNodes.findIndex((n) => n.id === edge.source);
-        const targetIdx = currentNodes.findIndex((n) => n.id === edge.target);
+        const sourceIdx = current.findIndex((n) => n.id === edge.source);
+        const targetIdx = current.findIndex((n) => n.id === edge.target);
         if (sourceIdx === -1 || targetIdx === -1) continue;
 
-        const dx = currentNodes[targetIdx].x! - currentNodes[sourceIdx].x!;
-        const dy = currentNodes[targetIdx].y! - currentNodes[sourceIdx].y!;
+        const dx = current[targetIdx].x! - current[sourceIdx].x!;
+        const dy = current[targetIdx].y! - current[sourceIdx].y!;
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
         const force = dist * attraction;
         const fx = (dx / dist) * force;
@@ -125,15 +110,21 @@ export function RelationshipGraph({
       }
 
       // Apply forces
-      currentNodes = currentNodes.map((node, i) => ({
+      current = current.map((node, i) => ({
         ...node,
         x: node.x! + forces[i].fx * damping * 0.1,
         y: node.y! + forces[i].fy * damping * 0.1,
       }));
     }
 
-    setNodes(currentNodes);
-  }, [edges, nodes.length]);
+    return current;
+  });
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [isPanning, setIsPanning] = useState(false);
+  const panStart = useRef({ x: 0, y: 0 });
 
   // Handle node drag
   const handleNodeMouseDown = useCallback(

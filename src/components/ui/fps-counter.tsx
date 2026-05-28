@@ -11,14 +11,14 @@ import { Gauge } from "lucide-react";
  */
 export function FPSCounter() {
   const fpsRef = useRef(30);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(() => {
+    try {
+      return localStorage.getItem("fps-counter-visible") === "true";
+    } catch {
+      return false;
+    }
+  });
   const [displayFPS, setDisplayFPS] = useState(30);
-
-  // Load visibility preference
-  useEffect(() => {
-    const stored = localStorage.getItem("fps-counter-visible");
-    if (stored === "true") setVisible(true);
-  }, []);
 
   // Keyboard toggle: Ctrl+Shift+F
   useEffect(() => {

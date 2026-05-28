@@ -85,8 +85,43 @@ export function SessionRecapPanel({ sessionId, onClose }: SessionRecapPanelProps
   useEffect(() => {
     if (!jobId || status !== "running") return;
 
-    // Poll immediately
-    pollJob(jobId);
+    // Poll immediately — inline logic to avoid set-state-in-effect
+    (async () => {
+      try {
+        const res = await fetch(`/api/jobs`);
+        if (!res.ok) return;
+        const json = await res.json();
+        const job = (json.jobs || []).find((j: { id: string }) => j.id === jobId);
+        if (!job) return;
+
+        setProgress(job.progress || 0);
+        setProgressMessage(job.progress_message || null);
+
+        if (job.status === "completed") {
+          setStatus("completed");
+          const result = job.result
+            ? typeof job.result === "string"
+              ? safeParse<Record<string, unknown>>(job.result)
+              : job.result
+            : null;
+          setRecap(result?.recap || result?.content || job.progress_message || "Recap generated successfully.");
+          if (pollRef.current) clearInterval(pollRef.current);
+          return;
+        } else if (job.status === "failed") {
+          setStatus("failed");
+          setError(job.error || "Recap generation failed.");
+          if (pollRef.current) clearInterval(pollRef.current);
+          return;
+        } else if (job.status === "cancelled") {
+          setStatus("failed");
+          setError("Recap generation was cancelled.");
+          if (pollRef.current) clearInterval(pollRef.current);
+          return;
+        }
+      } catch {
+        // Network error — keep polling
+      }
+    })();
 
     // Then every 2s
     pollRef.current = setInterval(() => pollJob(jobId), 2000);

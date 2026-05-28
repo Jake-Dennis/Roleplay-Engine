@@ -7,14 +7,14 @@ interface RevisionEntry {
   id: string;
   timestamp: string;
   content: string;
-  frontmatter: Record<string, any>;
+  frontmatter: Record<string, unknown>;
   lastModified: string;
 }
 
 interface RevisionHistoryProps {
   slug: string[];
   currentContent: string;
-  currentFrontmatter: Record<string, any>;
+  currentFrontmatter: Record<string, unknown>;
 }
 
 /**
@@ -52,7 +52,7 @@ function formatTimestamp(ts: string): string {
   });
 }
 
-export default function RevisionHistory({ slug, currentContent, currentFrontmatter }: RevisionHistoryProps) {
+export default function RevisionHistory({ slug, currentContent }: RevisionHistoryProps) {
   const [revisions, setRevisions] = useState<RevisionEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,22 +62,22 @@ export default function RevisionHistory({ slug, currentContent, currentFrontmatt
   const pagePath = slug.join('/');
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
+    const frame = requestAnimationFrame(async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-    fetch(`/api/wiki-revisions?slug=${encodeURIComponent(pagePath)}`)
-      .then(res => {
+        const res = await fetch(`/api/wiki-revisions?slug=${encodeURIComponent(pagePath)}`);
         if (!res.ok) throw new Error('Failed to load revisions');
-        return res.json();
-      })
-      .then(data => {
+        const data = await res.json();
         setRevisions(data.revisions || []);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to load revisions');
+      } finally {
         setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message);
-        setLoading(false);
-      });
+      }
+    });
+    return () => cancelAnimationFrame(frame);
   }, [pagePath]);
 
   const handleViewRevision = async (revision: RevisionEntry) => {
@@ -163,7 +163,7 @@ export default function RevisionHistory({ slug, currentContent, currentFrontmatt
         <div className="mb-3 border border-border-default rounded-lg overflow-hidden">
           <div className="flex items-center justify-between px-3 py-2 bg-bg-elevated border-b border-border-default">
             <span className="text-xs font-medium text-text-primary">
-              {selectedRevision.frontmatter?.title || 'Untitled'}
+              {(selectedRevision.frontmatter?.title as string) || 'Untitled'}
             </span>
             <div className="flex items-center gap-1">
               <button
@@ -202,7 +202,7 @@ export default function RevisionHistory({ slug, currentContent, currentFrontmatt
               <div className="flex items-center gap-2">
                 <FileText size={12} className="text-text-muted shrink-0" />
                 <span className="text-text-primary truncate text-xs">
-                  {rev.frontmatter?.title || 'Untitled'}
+                  {(rev.frontmatter?.title as string) || 'Untitled'}
                 </span>
               </div>
               <div className="text-text-muted text-xs mt-0.5">

@@ -36,8 +36,11 @@ export function StreamingText({ content, isStreaming, className = "" }: Streamin
       }, 100);
       return () => clearInterval(interval);
     } else {
-      setElapsed(0);
-      startTimeRef.current = null;
+      const frame = requestAnimationFrame(() => {
+        setElapsed(0);
+        startTimeRef.current = null;
+      });
+      return () => cancelAnimationFrame(frame);
     }
   }, [isStreaming]);
 

@@ -22,7 +22,7 @@ interface TimelineLayer {
   description: string | null;
   start_year: number | null;
   end_year: number | null;
-  metadata: Record<string, any> | null;
+  metadata: Record<string, unknown> | null;
   created_at: string;
 }
 
@@ -50,7 +50,21 @@ export function LayerManager({ timelineId }: LayerManagerProps) {
     }
   }, [timelineId, activeTab]);
 
-  useEffect(() => { loadLayers(); }, [loadLayers]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`/api/timelines/${timelineId}/layers?layerType=${activeTab}`);
+        if (res.ok) {
+          const json = await res.json();
+          setLayers(json.layers || []);
+        }
+      } catch {
+        // ignore
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [timelineId, activeTab]);
 
   const tabs: { key: LayerType; label: string; icon: React.ReactNode }[] = [
     { key: "era", label: "Eras", icon: <Calendar className="h-3 w-3" /> },

@@ -28,7 +28,6 @@ interface CharacterDeclarationModalProps {
 
 export function CharacterDeclarationModal({
   open,
-  sessionId: _sessionId,
   takenCharacters,
   onJoin,
   onCancel,
@@ -72,7 +71,7 @@ export function CharacterDeclarationModal({
         </div>
 
         <p className="text-xs text-text-muted mb-4">
-          Choose the character name you'll play as in this session. This name will be visible to other participants.
+          Choose the character name you&apos;ll play as in this session. This name will be visible to other participants.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

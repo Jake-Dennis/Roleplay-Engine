@@ -8,7 +8,7 @@
  */
 
 import { useState } from "react";
-import { Calendar, Trash2, X } from "lucide-react";
+import { Calendar, Trash2 } from "lucide-react";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 interface TimelineLayer {
@@ -18,7 +18,7 @@ interface TimelineLayer {
   description: string | null;
   start_year: number | null;
   end_year: number | null;
-  metadata: Record<string, any> | null;
+  metadata: Record<string, unknown> | null;
   created_at: string;
 }
 

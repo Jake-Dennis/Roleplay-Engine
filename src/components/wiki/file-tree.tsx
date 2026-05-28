@@ -3,17 +3,9 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Folder, FileText, ChevronRight, ChevronDown, Users, BookOpen, FileText as FileIcon, GitBranch, Plus, AlertTriangle, RefreshCw } from 'lucide-react';
 
-interface TreeNode {
-  name: string;
-  path: string;
-  type: 'folder' | 'file';
-  frontmatter?: Record<string, any>;
-  children?: TreeNode[];
-}
-
 interface FileTreeProps {
   wikiRoot?: string;
-  pages: Array<{ path: string; frontmatter: Record<string, any> }>;
+  pages: Array<{ path: string; frontmatter: Record<string, unknown> }>;
   currentPage?: string;
   basePath?: string;
   orphanPaths?: string[];
@@ -116,7 +108,7 @@ export default function FileTree({ pages, currentPage, basePath = '/wiki', orpha
   }
 
   // Group pages by folder
-  const folders: Record<string, Array<{ path: string; frontmatter: Record<string, any> }>> = {};
+  const folders: Record<string, Array<{ path: string; frontmatter: Record<string, unknown> }>> = {};
   for (const page of pages) {
     const parts = page.path.replace(/\\/g, '/').split('/');
     const folder = parts[parts.length - 2] || 'root';
@@ -164,11 +156,12 @@ export default function FileTree({ pages, currentPage, basePath = '/wiki', orpha
           {expanded.has(folder) && (
             <div className="ml-4">
               {folders[folder].map(page => {
-                const name = page.frontmatter.title || page.path.split('/').pop()?.replace('.md', '');
+                const fm = page.frontmatter;
+                const name = (fm.title as string | undefined) || page.path.split('/').pop()?.replace('.md', '');
                 const isActive = page.path === currentPage;
-                const Icon = TYPE_ICONS[page.frontmatter.type as keyof typeof TYPE_ICONS] || FileText;
+                const Icon = TYPE_ICONS[fm.type as keyof typeof TYPE_ICONS] || FileText;
                 const isOrphan = orphanSet.has(page.path);
-                const folderName = typeToFolder[page.frontmatter.type] || folder;
+                const folderName = typeToFolder[fm.type as string] || folder;
                 return (
                   <Link
                     key={page.path}

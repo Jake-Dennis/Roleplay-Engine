@@ -36,21 +36,21 @@ export default function TemplateSelector({ open, onClose, onSelect }: TemplateSe
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
-    setError(null);
-    fetch("/api/wiki/templates")
-      .then((res) => {
+    const frame = requestAnimationFrame(async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetch("/api/wiki/templates");
         if (!res.ok) throw new Error("Failed to load templates");
-        return res.json();
-      })
-      .then((data) => {
+        const data = await res.json();
         setTemplates(data.templates || []);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to load templates");
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
+      }
+    });
+    return () => cancelAnimationFrame(frame);
   }, [open]);
 
   if (!open) return null;

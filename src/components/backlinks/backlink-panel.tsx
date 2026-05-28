@@ -14,7 +14,9 @@
 
 "use client";
 
-import { Link2, ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { TIME } from "@/lib/config";
+import { Link2 } from "lucide-react";
 
 interface Backlink {
   id: string;
@@ -43,11 +45,11 @@ const LINK_TYPE_LABELS: Record<string, string> = {
 };
 
 export function BacklinkPanel({
-  entityType,
-  entityId,
   backlinks,
   onNavigate,
 }: BacklinkPanelProps) {
+  const [now] = useState(() => Date.now());
+
   if (backlinks.length === 0) {
     return (
       <div className="rounded-xl border border-border-default bg-bg-elevated px-6 py-8 text-center">
@@ -70,7 +72,7 @@ export function BacklinkPanel({
 
       {backlinks.map((link) => {
         const daysAgo = Math.round(
-          (Date.now() - new Date(link.created_at).getTime()) / (1000 * 60 * 60 * 24)
+          (now - new Date(link.created_at).getTime()) / TIME.ONE_DAY
         );
 
         return (
@@ -101,7 +103,7 @@ export function BacklinkPanel({
 
             {link.context_snippet && (
               <p className="mt-2 text-xs text-text-secondary line-clamp-2">
-                "{link.context_snippet}"
+                &ldquo;{link.context_snippet}&rdquo;
               </p>
             )}
           </div>

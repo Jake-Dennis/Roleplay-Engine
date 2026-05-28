@@ -2,6 +2,7 @@
 
 import React, { Suspense } from 'react';
 import { FileQuestion, AlertCircle, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import dynamic from 'next/dynamic';
 
 // Lazy import MarkdownRenderer to avoid circular dependency
@@ -103,13 +104,13 @@ export default function EmbedTransclusion({
     const { width, height } = parseDimensions(dimensions);
     return (
       <div className="wiki-embed wiki-embed-image my-4">
-        <img
+        <Image
           src={`/api/wiki/file?name=${encodeURIComponent(target)}&universe_id=${universeId || ''}`}
           alt={target}
-          width={width ? parseInt(width, 10) : undefined}
-          height={height ? parseInt(height, 10) : undefined}
+          width={width ? parseInt(width, 10) : 800}
+          height={height ? parseInt(height, 10) : 600}
           className="max-w-full h-auto rounded-lg border border-border"
-          loading="lazy"
+          unoptimized
         />
       </div>
     );

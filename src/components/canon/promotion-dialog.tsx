@@ -42,7 +42,6 @@ export function PromotionDialog({
   if (!open) return null;
 
   const currentOption = LAYER_OPTIONS.find((l) => l.key === currentLayer);
-  const selectedOption = LAYER_OPTIONS.find((l) => l.key === selectedLayer);
 
   function handleConfirm() {
     if (selectedLayer === "immutable_canon" && !showConfirm) {

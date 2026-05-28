@@ -28,38 +28,33 @@ interface EmotionGraphProps {
 }
 
 export function EmotionGraph({ emotions, size = 200, animated = true }: EmotionGraphProps) {
-  const [displayValues, setDisplayValues] = useState<Record<string, number>>({});
+  const [displayValues, setDisplayValues] = useState<Record<string, number>>({...emotions});
 
   // Animate to target values
   useEffect(() => {
     if (!animated) {
-      setDisplayValues(emotions);
-      return;
-    }
-
-    const target = { ...emotions };
-    const current = { ...displayValues };
-
-    // Initialize missing values
-    for (const emotion of EMOTIONS) {
-      if (current[emotion] === undefined) current[emotion] = 0;
+      // Defer to next frame to avoid synchronous setState during effect
+      const frame = requestAnimationFrame(() => setDisplayValues(emotions));
+      return () => cancelAnimationFrame(frame);
     }
 
     const interval = setInterval(() => {
-      let done = true;
-      const next = { ...current };
-      for (const emotion of EMOTIONS) {
-        const t = target[emotion] || 0;
-        const c = current[emotion] || 0;
-        if (Math.abs(t - c) > 0.01) {
-          next[emotion] = c + (t - c) * 0.15;
-          done = false;
-        } else {
-          next[emotion] = t;
+      setDisplayValues((prev) => {
+        let done = true;
+        const next = { ...prev };
+        for (const emotion of EMOTIONS) {
+          const t = emotions[emotion] || 0;
+          const c = prev[emotion] || 0;
+          if (Math.abs(t - c) > 0.01) {
+            next[emotion] = c + (t - c) * 0.15;
+            done = false;
+          } else {
+            next[emotion] = t;
+          }
         }
-      }
-      setDisplayValues(next);
-      if (done) clearInterval(interval);
+        if (done) clearInterval(interval);
+        return next;
+      });
     }, 16);
 
     return () => clearInterval(interval);

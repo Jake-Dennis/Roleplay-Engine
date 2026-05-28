@@ -48,7 +48,7 @@ export function LayerViewer({ stats, total }: LayerViewerProps) {
         >
           All ({total})
         </button>
-        {LAYERS.map(({ key, label, icon: Icon, color, bg }) => {
+        {LAYERS.map(({ key, icon: Icon, color, bg }) => {
           const count = stats[key as keyof LayerStats] || 0;
           if (count === 0) return null;
           return (

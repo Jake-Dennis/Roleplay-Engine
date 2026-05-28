@@ -9,17 +9,25 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Cpu, Volume2, RefreshCw } from "lucide-react";
 import { useConnectionStatus } from "@/hooks/use-connection-status";
 
 export function ConnectionIndicator() {
   const { ollama, kokoro, lastChecked, refresh } = useConnectionStatus();
   const [hovering, setHovering] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
 
-  function formatTime(ts: number | null): string {
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  function formatTime(ts: number | null, currentTime: number): string {
     if (!ts) return "never";
-    const diff = Math.floor((Date.now() - ts) / 1000);
+    const diff = Math.floor((currentTime - ts) / 1000);
     if (diff < 5) return "just now";
     if (diff < 60) return `${diff}s ago`;
     return `${Math.floor(diff / 60)}m ago`;
@@ -93,7 +101,7 @@ export function ConnectionIndicator() {
         {/* Last checked */}
         {hovering && (
           <span className="text-text-muted">
-            Checked {formatTime(lastChecked)}
+            Checked {formatTime(lastChecked, now)}
           </span>
         )}
 

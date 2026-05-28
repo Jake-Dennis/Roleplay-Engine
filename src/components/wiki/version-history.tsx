@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { History, X, ChevronRight, RotateCcw, Clock } from 'lucide-react';
+import { History, RotateCcw, Clock } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/date-formatter';
 import { useApp } from '@/contexts/app-context';
 
@@ -46,11 +46,25 @@ export default function VersionHistory({ slug, onRestore }: VersionHistoryProps)
         setError(err.message);
         setLoading(false);
       });
-  }, [pagePath]);
+  }, [pagePath, activeUniverse?.id]);
 
   useEffect(() => {
-    loadVersions();
-  }, [loadVersions]);
+    const frame = requestAnimationFrame(async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetch(`/api/wiki/history?slug=${encodeURIComponent(pagePath)}&universe_id=${activeUniverse?.id || ''}`);
+        if (!res.ok) throw new Error('Failed to load version history');
+        const data = await res.json();
+        setVersions(data.versions || []);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to load version history');
+      } finally {
+        setLoading(false);
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [pagePath, activeUniverse?.id]);
 
   const handleRestore = async (versionId: string) => {
     setRestoring(versionId);

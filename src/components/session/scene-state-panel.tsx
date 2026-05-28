@@ -16,7 +16,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { MapPin, Target, Palette, Users, GitBranch, MessageCircle } from "lucide-react";
 import { safeParse } from "@/lib/safe-json";
 
@@ -42,29 +42,28 @@ interface SceneStatePanelProps {
   onClose: () => void;
 }
 
-export function SceneStatePanel({ scene, onSave, onClose }: SceneStatePanelProps) {
-  const [edit, setEdit] = useState({
-    location: scene?.active_location_id || "",
-    goal: scene?.current_goal || "",
-    tone: scene?.emotional_tone || "",
-    activeNpcs: safeParse<string[]>(scene?.active_npcs ?? null) ?? [],
-    activeThreads: safeParse<string[]>(scene?.active_threads ?? null) ?? [],
-    sceneSummary: scene?.scene_summary || "",
-  });
+interface DirtyEdit {
+  location?: string;
+  goal?: string;
+  tone?: string;
+  activeNpcs?: string[];
+  activeThreads?: string[];
+  sceneSummary?: string;
+}
 
-  // Sync edit state when scene prop updates (e.g., after SSE refresh)
-  useEffect(() => {
-    if (scene) {
-      setEdit({
-        location: scene.active_location_id || "",
-        goal: scene.current_goal || "",
-        tone: scene.emotional_tone || "",
-        activeNpcs: safeParse<string[]>(scene.active_npcs ?? null) ?? [],
-        activeThreads: safeParse<string[]>(scene.active_threads ?? null) ?? [],
-        sceneSummary: scene.scene_summary || "",
-      });
-    }
-  }, [scene]);
+export function SceneStatePanel({ scene, onSave, onClose }: SceneStatePanelProps) {
+  const [dirty, setDirty] = useState<DirtyEdit>({});
+
+  // Derive edit values from scene prop + user's dirty overrides
+  // This eliminates the need for a useEffect sync when scene changes (avoids set-state-in-effect)
+  const edit = {
+    location: dirty.location ?? scene?.active_location_id ?? "",
+    goal: dirty.goal ?? scene?.current_goal ?? "",
+    tone: dirty.tone ?? scene?.emotional_tone ?? "",
+    activeNpcs: dirty.activeNpcs ?? safeParse<string[]>(scene?.active_npcs ?? null) ?? [],
+    activeThreads: dirty.activeThreads ?? safeParse<string[]>(scene?.active_threads ?? null) ?? [],
+    sceneSummary: dirty.sceneSummary ?? scene?.scene_summary ?? "",
+  };
 
   function handleSave() {
     onSave({
@@ -86,7 +85,7 @@ export function SceneStatePanel({ scene, onSave, onClose }: SceneStatePanelProps
           </label>
           <input
             value={edit.location}
-            onChange={(e) => setEdit({ ...edit, location: e.target.value })}
+            onChange={(e) => setDirty((prev) => ({ ...prev, location: e.target.value }))}
             className="w-full rounded border border-border-default bg-bg-elevated px-2 py-1 text-xs text-text-primary"
             placeholder="e.g. Dark Forest"
           />
@@ -97,7 +96,7 @@ export function SceneStatePanel({ scene, onSave, onClose }: SceneStatePanelProps
           </label>
           <input
             value={edit.goal}
-            onChange={(e) => setEdit({ ...edit, goal: e.target.value })}
+            onChange={(e) => setDirty((prev) => ({ ...prev, goal: e.target.value }))}
             className="w-full rounded border border-border-default bg-bg-elevated px-2 py-1 text-xs text-text-primary"
             placeholder="e.g. Find the artifact"
           />
@@ -108,7 +107,7 @@ export function SceneStatePanel({ scene, onSave, onClose }: SceneStatePanelProps
           </label>
           <input
             value={edit.tone}
-            onChange={(e) => setEdit({ ...edit, tone: e.target.value })}
+            onChange={(e) => setDirty((prev) => ({ ...prev, tone: e.target.value }))}
             className="w-full rounded border border-border-default bg-bg-elevated px-2 py-1 text-xs text-text-primary"
             placeholder="e.g. Mysterious"
           />
@@ -123,7 +122,10 @@ export function SceneStatePanel({ scene, onSave, onClose }: SceneStatePanelProps
         <input
           value={edit.activeNpcs.join(", ")}
           onChange={(e) =>
-            setEdit({ ...edit, activeNpcs: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })
+            setDirty((prev) => ({
+              ...prev,
+              activeNpcs: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+            }))
           }
           className="w-full rounded border border-border-default bg-bg-elevated px-2 py-1 text-xs text-text-primary"
           placeholder="e.g. Haleth, Aragorn, Gandalf"
@@ -138,7 +140,10 @@ export function SceneStatePanel({ scene, onSave, onClose }: SceneStatePanelProps
         <input
           value={edit.activeThreads.join(", ")}
           onChange={(e) =>
-            setEdit({ ...edit, activeThreads: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })
+            setDirty((prev) => ({
+              ...prev,
+              activeThreads: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+            }))
           }
           className="w-full rounded border border-border-default bg-bg-elevated px-2 py-1 text-xs text-text-primary"
           placeholder="e.g. Missing traveler, Orc sightings"
@@ -152,7 +157,7 @@ export function SceneStatePanel({ scene, onSave, onClose }: SceneStatePanelProps
         </label>
         <textarea
           value={edit.sceneSummary}
-          onChange={(e) => setEdit({ ...edit, sceneSummary: e.target.value })}
+          onChange={(e) => setDirty((prev) => ({ ...prev, sceneSummary: e.target.value }))}
           className="w-full rounded border border-border-default bg-bg-elevated px-2 py-1 text-xs text-text-primary resize-none"
           placeholder="Brief description of the current scene..."
           rows={2}

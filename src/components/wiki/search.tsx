@@ -1,13 +1,22 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import FlexSearch from 'flexsearch';
+import type { Document as FlexSearchDocument, DocumentValue } from 'flexsearch';
 import { useRouter } from 'next/navigation';
 import { Search as SearchIcon, X, Loader2, AlertCircle, Lightbulb } from 'lucide-react';
 
 interface WikiPage {
   path: string;
   content: string;
-  frontmatter: Record<string, any>;
+  frontmatter: Record<string, unknown>;
+}
+
+interface SearchDocument {
+  path: string;
+  content: string;
+  title: string;
+  type: string;
+  [key: string]: DocumentValue | DocumentValue[];
 }
 
 interface SearchProps {
@@ -65,36 +74,39 @@ export default function Search({ pages, basePath = '/wiki', isSearching = false,
   const [results, setResults] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const indexRef = useRef<any>(null);
+  const indexRef = useRef<FlexSearchDocument<SearchDocument> | null>(null);
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [indexError, setIndexError] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const index = new FlexSearch.Document({
-        document: {
-          id: 'path',
-          index: ['content', 'title'],
-          store: ['title', 'type', 'path'],
-        },
-        tokenize: 'forward',
-      });
-
-      pages.forEach(page => {
-        index.add({
-          path: page.path,
-          content: page.content,
-          title: page.frontmatter.title || '',
-          type: page.frontmatter.type || 'entity',
+    const frame = requestAnimationFrame(() => {
+      try {
+        const index = new FlexSearch.Document({
+          document: {
+            id: 'path',
+            index: ['content', 'title'],
+            store: ['title', 'type', 'path'],
+          },
+          tokenize: 'forward',
         });
-      });
 
-      indexRef.current = index;
-      setIndexError(null);
-    } catch (err: unknown) {
-      setIndexError('Failed to initialize search index');
-    }
+        pages.forEach(page => {
+          index.add({
+            path: page.path,
+            content: page.content,
+            title: (page.frontmatter.title as string | undefined) || '',
+            type: (page.frontmatter.type as string | undefined) || 'entity',
+          });
+        });
+
+        indexRef.current = index as unknown as FlexSearchDocument<SearchDocument>;
+        setIndexError(null);
+      } catch {
+        setIndexError('Failed to initialize search index');
+      }
+    });
+    return () => cancelAnimationFrame(frame);
   }, [pages]);
 
   useEffect(() => {
@@ -127,7 +139,8 @@ export default function Search({ pages, basePath = '/wiki', isSearching = false,
   const navigateToPage = (path: string) => {
     const page = pages.find(p => p.path === path);
     if (page) {
-      const folderName = typeToFolder[page.frontmatter.type] || page.frontmatter.type;
+      const pageType = page.frontmatter.type as string | undefined;
+      const folderName = typeToFolder[pageType ?? ''] || pageType || '';
       router.push(`${basePath}/${folderName}/${page.path.split('/').pop()?.replace('.md', '')}`);
       setIsOpen(false);
       setQuery('');
@@ -194,8 +207,8 @@ export default function Search({ pages, basePath = '/wiki', isSearching = false,
                   role="option"
                   aria-selected={i === selectedIndex}
                 >
-                  <p className="text-sm font-medium">{page.frontmatter.title || page.path.split('/').pop()?.replace('.md', '')}</p>
-                  <p className="text-xs text-text-muted">{page.frontmatter.type} &bull; {page.path.split('/').pop()}</p>
+                  <p className="text-sm font-medium">{(page.frontmatter.title as string) || page.path.split('/').pop()?.replace('.md', '')}</p>
+                  <p className="text-xs text-text-muted">{page.frontmatter.type as string} &bull; {page.path.split('/').pop()}</p>
                 </button>
               );
             })

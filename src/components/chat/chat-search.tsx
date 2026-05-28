@@ -30,9 +30,11 @@ export function ChatSearch({ sessionId }: ChatSearchProps) {
   // Debounced search
   useEffect(() => {
     if (!query.trim()) {
-      setResults([]);
-      setLoading(false);
-      return;
+      const frame = requestAnimationFrame(() => {
+        setResults([]);
+        setLoading(false);
+      });
+      return () => cancelAnimationFrame(frame);
     }
 
     const timer = setTimeout(() => {

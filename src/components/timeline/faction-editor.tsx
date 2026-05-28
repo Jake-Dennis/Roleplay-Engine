@@ -18,7 +18,7 @@ interface TimelineLayer {
   description: string | null;
   start_year: number | null;
   end_year: number | null;
-  metadata: Record<string, any> | null;
+  metadata: Record<string, unknown> | null;
   created_at: string;
 }
 
@@ -172,8 +172,8 @@ export function FactionEditor({
 
       {/* Faction list */}
       {layers.map((layer) => {
-        const alignment = layer.metadata?.alignment || "neutral";
-        const territory = layer.metadata?.territory;
+        const alignment = (layer.metadata?.alignment as string | undefined) || "neutral";
+        const territory = layer.metadata?.territory as string | undefined;
         return (
           <div
             key={layer.id}

@@ -25,16 +25,21 @@ export function EditHistory({ messageId, sessionId, onClose }: EditHistoryProps)
 
   // M3: Re-fetch every time the modal opens (not just on first open)
   useEffect(() => {
-    setLoading(true);
-    setEdits([]);
-    setExpandedEdit(null);
-    fetch(`/api/sessions/${sessionId}/messages/${messageId}/edits`)
-      .then((res) => res.json())
-      .then((data) => {
+    const frame = requestAnimationFrame(async () => {
+      try {
+        setLoading(true);
+        setEdits([]);
+        setExpandedEdit(null);
+        const res = await fetch(`/api/sessions/${sessionId}/messages/${messageId}/edits`);
+        const data = await res.json();
         setEdits(data.edits || []);
+      } catch {
+        // ignore
+      } finally {
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      }
+    });
+    return () => cancelAnimationFrame(frame);
   }, [messageId, sessionId]);
 
   return (

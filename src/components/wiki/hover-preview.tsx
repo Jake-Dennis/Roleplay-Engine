@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Loader2, FileX } from 'lucide-react';
+import { CONTENT_LIMITS } from '@/lib/config';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -114,7 +115,6 @@ function clampPosition(x: number, y: number): { x: number; y: number } {
 export function useHoverPreview(
   target: string,
   existingPages: string[] = [],
-  wikiRoute: string = '/wiki',
   universeId?: string
 ): UseHoverPreviewReturn {
   const [visible, setVisible] = useState(false);
@@ -197,7 +197,7 @@ export function useHoverPreview(
       const plainText = stripMarkdown(rawContent);
       const preview: PreviewData = {
         title: page.frontmatter?.title || slug,
-        content: plainText.slice(0, 200),
+        content: plainText.slice(0, CONTENT_LIMITS.SHORT),
         type: page.frontmatter?.type,
         status: page.frontmatter?.status,
       };
@@ -216,7 +216,7 @@ export function useHoverPreview(
         setLoading(false);
       }
     }
-  }, [target, existingPages, wikiRoute, normalizeTarget, universeId]);
+  }, [target, existingPages, normalizeTarget, universeId]);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -226,7 +226,7 @@ export function useHoverPreview(
   }, []);
 
   const onMouseEnter = useCallback(
-    (_e: React.MouseEvent) => {
+    () => {
       clearTimer();
       timerRef.current = setTimeout(() => {
         setVisible(true);
@@ -278,8 +278,8 @@ export default function HoverPreview({ visible, position, loading, data, error }
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    return () => setMounted(false);
+    const frame = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   if (!mounted || !visible) return null;

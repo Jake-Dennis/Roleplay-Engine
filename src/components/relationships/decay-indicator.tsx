@@ -7,6 +7,7 @@
  * - Critical: > 14 days (red)
  */
 
+import { TIME } from "@/lib/config";
 import { Clock, AlertTriangle, HeartOff } from "lucide-react";
 
 export interface DecayStatus {
@@ -19,7 +20,7 @@ export function getDecayStatus(updatedAt: string | null): DecayStatus {
   if (!updatedAt) return { daysSinceUpdate: 0, status: "critical", label: "Unknown" };
 
   const lastUpdate = new Date(updatedAt).getTime();
-  const daysSinceUpdate = (Date.now() - lastUpdate) / (1000 * 60 * 60 * 24);
+  const daysSinceUpdate = (Date.now() - lastUpdate) / TIME.ONE_DAY;
 
   if (daysSinceUpdate < 7) {
     return { daysSinceUpdate: Math.round(daysSinceUpdate), status: "healthy", label: "Healthy" };

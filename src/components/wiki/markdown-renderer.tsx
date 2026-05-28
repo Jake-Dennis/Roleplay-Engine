@@ -150,7 +150,7 @@ function WikiLink({
     ? href.replace(new RegExp(`^${wikiRoute}/`), '')
     : '';
 
-  const hover = useHoverPreview(pageName, existingPages, wikiRoute, universeId);
+  const hover = useHoverPreview(pageName, existingPages, universeId);
 
   return (
     <>

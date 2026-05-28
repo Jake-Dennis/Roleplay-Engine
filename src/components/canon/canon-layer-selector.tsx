@@ -28,7 +28,6 @@ interface CanonLayerSelectorProps {
 export function CanonLayerSelector({
   value,
   onChange,
-  entityType,
   disabled = false,
 }: CanonLayerSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
