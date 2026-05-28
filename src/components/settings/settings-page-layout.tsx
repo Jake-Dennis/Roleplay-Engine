@@ -1,10 +1,11 @@
+import { Children, type ReactNode } from "react";
 import Link from "next/link";
 
 interface SettingsPageLayoutProps {
   title: string;
   description?: string;
   backHref?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export default function SettingsPageLayout({
@@ -13,7 +14,7 @@ export default function SettingsPageLayout({
   backHref,
   children,
 }: SettingsPageLayoutProps) {
-  const childrenArray = React.Children.toArray(children);
+  const childrenArray = Children.toArray(children);
   const hasMultipleChildren = childrenArray.length > 1;
 
   return (
@@ -35,7 +36,7 @@ export default function SettingsPageLayout({
         </div>
       </div>
       {hasMultipleChildren
-        ? childrenArray.reduce<React.ReactNode[]>(
+        ? childrenArray.reduce<ReactNode[]>(
             (acc, child, index) => {
               if (index === 0) return [child];
               return [...acc, <hr key={`sep-${index}`} />, child];

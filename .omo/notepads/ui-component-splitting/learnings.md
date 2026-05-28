@@ -35,5 +35,15 @@ All 4 settings pages (`user`, `groups`, `universes`, `sessions`) share an identi
 ### Future work (Tasks 19-22)
 - The `groups` settings page has a different header with `justify-between` and a "New" action button on the right — it wraps `backHref` + title inside an inner flex container. The wrapper's `backHref` render is unconditional (not wrapped in an extra div), so groups would need to either accept a slightly different layout or be refactored separately.
 
+### Revision notes
+- **v1 (initial):** Used `ArrowLeft` icon from `lucide-react`, simple `{children}` passthrough
+- **v2 (final):** Replaced `ArrowLeft` with `← Back` text to avoid lucide-react dependency in server component; added `<hr>` separators between multiple top-level children via `React.Children.toArray().reduce()`
+
+### `<hr>` separator behavior
+When `children` contain multiple top-level elements, they are rendered with `<hr />` separators between each element. A single child/fragment renders without extra `<hr>` elements. This matches the sectioned structure of settings pages (e.g., TTS preferences section followed by password change section).
+
+### Deviation from existing pages
+The existing pages use `ArrowLeft` icon from `lucide-react`. The final wrapper uses `← Back` text instead — this avoids importing a lucide icon in a server component and keeps the component dependency-free. If the icon is desired during refactoring, the component could be extended with an optional `backIcon` slot, or children can include the icon.
+
 ### Type checking
 - `npx tsc --noEmit --pretty false` passes — only pre-existing `bun:test` errors in test files remain.
