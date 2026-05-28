@@ -4,18 +4,18 @@ import { Filter } from "lucide-react";
 import { JOB_TYPES, JOB_TYPE_LABELS } from "@/lib/jobs/types";
 
 interface FilterBarProps {
-  statusFilter: string;
-  typeFilter: string;
-  onStatusChange: (status: string) => void;
-  onTypeChange: (type: string) => void;
+  status: string;
+  type: string;
+  onStatusChange: (s: string) => void;
+  onTypeChange: (t: string) => void;
   onStatusFilterLoad?: (status: string) => void;
 }
 
-const STATUSES = ["all", "queued", "processing", "completed", "failed", "cancelled"];
+const STATUS_OPTIONS = ["all", "queued", "processing", "completed", "failed", "cancelled"];
 
 export function FilterBar({
-  statusFilter,
-  typeFilter,
+  status,
+  type: typeFilter,
   onStatusChange,
   onTypeChange,
   onStatusFilterLoad,
@@ -24,7 +24,7 @@ export function FilterBar({
     <div className="mb-4 flex items-center gap-3">
       <Filter className="h-4 w-4 text-text-muted" />
       <div className="flex gap-1.5">
-        {STATUSES.map((s) => (
+        {STATUS_OPTIONS.map((s) => (
           <button
             key={s}
             onClick={() => {
@@ -32,7 +32,7 @@ export function FilterBar({
               onStatusFilterLoad?.(s);
             }}
             className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
-              statusFilter === s
+              status === s
                 ? "bg-accent/10 text-text-accent"
                 : "text-text-muted hover:bg-bg-raised hover:text-text-secondary"
             }`}
