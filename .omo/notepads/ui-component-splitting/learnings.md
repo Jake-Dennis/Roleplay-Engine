@@ -149,6 +149,54 @@ Reduced `src/app/(app)/admin/jobs/page.tsx` from 582 lines to ~180 lines by repl
 
 ---
 
+## Task 4: Refactor Admin Jobs Page
+
+**Date:** 2026-05-29
+
+### What was done
+- Refactored `src/app/(app)/admin/jobs/page.tsx` from 582 lines down to 310 lines (~47% reduction)
+- Replaced 3 inline JSX sections with shared components: StatsCards, FilterBar, JobTable
+- Removed duplicate constants/interfaces (85 lines): `JOB_TYPES`, `JOB_TYPE_LABELS`, `Job`, `Stats` — now imported from `@/lib/jobs/types`
+- Removed imports: `StatusBadge`, `statusToVariant`, `JobProgress`, `formatRelativeTime`, `AlertTriangle`, `Filter`, `ListTodo`, `RotateCcw`
+
+### Shared components used
+| Component | Usage | Props |
+|-----------|-------|-------|
+| `StatsCards` | Custom 4-card layout (Queued, Processing, Failed, Completed Today) | `stats`, `items: StatCardItem[]`, `className="grid-cols-4"` |
+| `FilterBar` | Status + type filter buttons | `status`, `type`, `onStatusChange`, `onTypeChange` |
+| `JobTable` | Admin table variant (no expand, no cards) | `jobs`, `loading`, `variant="table"`, `onCancel`, `onRetry`, `actionLoading` |
+
+### Components NOT used (admin-specific reasons)
+- **JobsHeader**: Admin header uses Shield icon + "Admin: Job Queue" title + single Refresh button. JobsHeader's toolbar (Queue Idle, Process Next, Process All, Retry Failed, Cancel All) is irrelevant for admin.
+- **ReindexSection**: Admin page doesn't manage wiki reindexing — that's on the regular jobs page.
+
+### Admin-specific logic preserved inline
+- **Date range filters**: FilterBar doesn't support date range. Two `<input type="date">` elements kept inline, positioned below FilterBar in the same flex row.
+- **Auto-refresh indicator**: Pulsing dot + "Auto-refreshing every 10s" text — preserved inline for admin visibility.
+- **ConfirmationDialogs**: Admin requires confirmation before both cancel AND retry (regular page only confirms cancel). Both ConfirmationDialog instances kept inline.
+- **SSE subscription**: Same `/api/jobs/stream` endpoint as regular page. Admin uses `job:progress` to update individual job progress, plus `job:completed`/`job:failed` to full-refresh.
+
+### Key observations
+1. **StatsCards accepts custom `items`** — The admin page uses 4 custom stat cards that differ from the default 5 (replaces Completed+Total with "Completed Today"). The `items` prop on StatsCards allows this customization via `StatCardItem[]`.
+2. **`variant="table"` on JobTable** — The admin table renders columns: Status, Type, Created, Attempts, Progress/Error, Actions. Same columns as the original inline table.
+3. **Confirmation before retry** — Unlike the regular jobs page (which retries directly on button click), the admin page requires an extra confirmation step: `onRetry={(id) => setRetryTarget(id)}` → ConfirmationDialog → `handleRetry(retryTarget)`.
+4. **`actionLoading` shared with JobTable** — The admin page's `actionLoading` state is passed to JobTable, which disables action buttons during API calls. Matches behavior of the original inline actions.
+5. **No `expandedId`** — Admin page uses `variant="table"` so `expandedId` and `onToggleExpand` are omitted from JobTable props entirely. Saves 2 state variables vs the regular jobs page.
+
+### Line count comparison
+- Before: 582 lines (all inline JSX)
+- After: 310 lines (shared components + orchestration)
+- Reduction: 46.7%
+
+### Files modified
+- src/app/(app)/admin/jobs/page.tsx — Major refactor (582 → 310 lines)
+
+### Verification
+- `npx tsc --noEmit --pretty false` passes — only pre-existing `bun:test` errors in test files remain.
+- LSP diagnostics clean on the refactored file.
+
+---
+
 ## Task ??: Extract Persona page inline UI into reusable components
 
 **Date:** 2026-05-29
@@ -190,3 +238,57 @@ Reduced `src/app/(app)/admin/jobs/page.tsx` from 582 lines to ~180 lines by repl
 - Page slimmed from 598 -> ~260 lines (form state, handlers, effects, component composition)
 - No CSS/behavior changes
 - `npx tsc --noEmit --pretty false` passes (only pre-existing `bun:test` errors)
+
+---
+
+## Task 19c: Extract SessionHeader, GenerationErrorBanner, TTSPlayback
+
+**Date:** 2026-05-29
+
+### Source
+`src/app/(app)/session/[id]/page.tsx` — 1012 lines, 13 already-extracted components remaining.
+
+### Components extracted
+
+| Component | File | Type | Props | Notes |
+|-----------|------|------|-------|-------|
+| `SessionHeader` | `src/components/session/session-header.tsx` | Client | `sessionId`, `sessionName`, `messageCount`, `isGroup`, `personas`, `personasLoading`, `activePersonaId`, `hasSceneState`, `showScenePanel/ParticipantPanel/PrivatePanel/RelationshipTimeline/RecapPanel`, `activeLocationId?`, `onPersonaChange`, `onToggleScenePanel/ParticipantPanel/PrivatePanel/RelationshipTimeline/RecapPanel` | Manages persona dropdown state and click-outside handler internally. Conditionally renders MapPin button based on `hasSceneState`. |
+| `GenerationErrorBanner` | `src/components/session/generation-error-banner.tsx` | Client | `message: string \| null`, `onDismiss: () => void` | Returns `null` when `message` is falsy. Minimal presentational component. |
+| `TTSPlayback` | `src/components/session/tts-playback.tsx` | Client | `children: (props: TTSPlaybackRenderProps) => React.ReactNode` | Render-prop pattern. Encapsulates all TTS audio state (`ttsPlayingId`, `ttsAudioRef`, `ttsBlobUrlRef`), voice assignment loading, audio cleanup, and `handleTtsPlay` (streaming + fallback). Renders nothing itself — delegates rendering to children render prop. |
+
+### Key decisions
+
+- **`SessionHeader`** manages persona dropdown open/close state internally (`showPersonaSelector`, `personaDropdownRef`, click-outside handler). The page doesn't need to know about it.
+- **`SessionHeader`** imports `ChatSearch` and `ChatExport` internally since they're always rendered as part of the header bar.
+- **`SessionHeader`** receives `hasSceneState` boolean (not the full `sceneState` object) to conditionally render the MapPin button. This keeps the prop interface minimal and decouples from the session hook's shape.
+- **`GenerationErrorBanner`** uses `"use client"` despite minimal interactivity — the `onClick` dismiss handler requires client rendering.
+- **`TTSPlayback`** uses a **render-prop pattern** (function as children) rather than callbacks or `forwardRef`. This fully encapsulates TTS state (`ttsPlayingId`, refs, effects) while giving the parent reactive access to `ttsPlayingId` and `handleTtsPlay` without extra state management.
+  - Uses `ttsPlayingIdRef` (a ref synced to state via `useEffect`) inside `handleTtsPlay` to avoid recreating the callback when `ttsPlayingId` changes — prevents infinite render cycles with `useCallback`.
+  - Loads narrator voice assignment from `/api/voice-assignments` on mount, same as original page code.
+  - The `handleTtsPlay` callback depends only on `[defaultVoice]`, recreating only when voice assignment loads from the API.
+- **Page file** lost ~150 lines (header JSX ~130 lines, error banner ~12 lines, TTS handler/effects/state ~100 lines minus the 3 new import lines and TTSPlayback JSX overhead). Net reduction: ~240 lines (from 1012 to ~770).
+
+### Props interface design (anti-pattern avoided)
+
+The original page passed `sceneState` to the header via direct closure access and used `sceneState && (...)` to conditionally render the MapPin button. The extracted `SessionHeader` could have accepted the full `sceneState` object, but this would couple the component to the session hook's shape. Instead, `hasSceneState: boolean` and `activeLocationId?: string | null` are the only scene-related props — minimal surface area.
+
+### TTS state removed from page
+- `ttsPlayingId` (useState) — now inside TTSPlayback
+- `defaultVoice` (useState) — now inside TTSPlayback
+- `ttsAudioRef` (useRef) — now inside TTSPlayback
+- `ttsBlobUrlRef` (useRef) — now inside TTSPlayback
+- Voice assignment loading effect — now inside TTSPlayback
+- Audio cleanup on unmount effect — now inside TTSPlayback
+- `handleTtsPlay` function (~100 lines) — now inside TTSPlayback
+- `showPersonaSelector` (useState) — now inside SessionHeader
+- `personaDropdownRef` (useRef) — now inside SessionHeader
+- Click-outside handler effect — now inside SessionHeader
+
+### Imports moved from page to SessionHeader
+- `Link` from `next/link`
+- `ArrowLeft`, `MapPin`, `Users`, `Lock`, `Heart`, `User`, `Loader2`, `ChevronDown`, `ChevronUp` from `lucide-react`
+- `ChatSearch` from `@/components/chat/chat-search`
+- `ChatExport` from `@/components/chat/chat-export`
+
+### Type checking
+- `npx tsc --noEmit --pretty false` passes — only pre-existing `bun:test` errors remain.

@@ -2,10 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import {
-  ArrowLeft,
-  MapPin,
   Compass,
   Swords,
   MessageCircle,
@@ -13,14 +10,7 @@ import {
   Moon,
   Footprints,
   Wand2,
-  Users,
-  Heart,
   Sparkles,
-  Lock,
-  User,
-  Loader2,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 
 import type { Intent } from "@/lib/intent-analyzer";
@@ -32,10 +22,11 @@ import type { Message } from "@/hooks/use-session";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { WikiToast, type WikiToastItem } from "@/components/ui/wiki-toast";
 import { ChatWindow } from "@/components/chat/chat-window";
-import { ChatSearch } from "@/components/chat/chat-search";
-import { ChatExport } from "@/components/chat/chat-export";
 import { TypingIndicator } from "@/components/chat/typing-indicator";
 import { ParticipantList } from "@/components/session/participant-list";
+import { SessionHeader } from "@/components/session/session-header";
+import { GenerationErrorBanner } from "@/components/session/generation-error-banner";
+import { TTSPlayback } from "@/components/session/tts-playback";
 import { CharacterDeclarationModal } from "@/components/session/character-declaration-modal";
 import { SceneStatePanel } from "@/components/session/scene-state-panel";
 import { PrivateStatePanel } from "@/components/session/private-state-panel";
@@ -84,8 +75,6 @@ export default function SessionChatPage() {
   const [personas, setPersonas] = useState<{ id: string; name: string }[]>([]);
   const [personasLoading, setPersonasLoading] = useState(true);
   const [activePersonaId, setActivePersonaId] = useState<string | null>(null);
-  const [showPersonaSelector, setShowPersonaSelector] = useState(false);
-  const personaDropdownRef = useRef<HTMLDivElement>(null);
 
   // Wiki auto-extract toast state
   const [wikiToasts, setWikiToasts] = useState<WikiToastItem[]>([]);
@@ -97,8 +86,9 @@ export default function SessionChatPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [ttsPlayingId, setTtsPlayingId] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [choices, setChoices] = useState<string[] | null>(null);
+  const [isRegeneratingChoices, setIsRegeneratingChoices] = useState(false);
   const [showScenePanel, setShowScenePanel] = useState(false);
   const [showParticipantPanel, setShowParticipantPanel] = useState(false);
   const [showPrivatePanel, setShowPrivatePanel] = useState(() => {
@@ -158,39 +148,10 @@ export default function SessionChatPage() {
     }
   };
 
-  // Click-outside handler for persona dropdown
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (personaDropdownRef.current && !personaDropdownRef.current.contains(e.target as Node)) {
-        setShowPersonaSelector(false);
-      }
-    }
-    if (showPersonaSelector) {
-      document.addEventListener("click", handleClickOutside);
-      return () => document.removeEventListener("click", handleClickOutside);
-    }
-  }, [showPersonaSelector]);
-
   const isGroup = session?.type === "group";
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
-  const ttsBlobUrlRef = useRef<string | null>(null);
-
-  // M7: Cleanup TTS audio on unmount
-  useEffect(() => {
-    return () => {
-      if (ttsAudioRef.current) {
-        ttsAudioRef.current.pause();
-        ttsAudioRef.current = null;
-      }
-      if (ttsBlobUrlRef.current) {
-        URL.revokeObjectURL(ttsBlobUrlRef.current);
-        ttsBlobUrlRef.current = null;
-      }
-    };
-  }, []);
 
   // Memoized intent icon mapping
   const intentIcons = useMemo<Record<Intent, React.ReactNode>>(() => ({
@@ -351,6 +312,7 @@ export default function SessionChatPage() {
     setStreaming(true);
     setStreamContent("");
     setGenerationError(null);
+    setChoices(null);
 
     let doneReceived = false;
 
@@ -403,6 +365,9 @@ export default function SessionChatPage() {
             setGenerationError(parsed.error as string);
             setStreaming(false);
           }
+          if (parsed?.choices) {
+            setChoices(parsed.choices as string[]);
+          }
         }
       }
 
@@ -439,6 +404,36 @@ export default function SessionChatPage() {
     if (!msgRes.ok) return;
 
     await triggerGeneration(content);
+  }
+
+  // Select a narrative choice — fills input and focuses
+  function handleChoiceSelect(option: string) {
+    setInput(option);
+    setChoices(null);
+    // Focus the input after state update
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+  }
+
+  // Regenerate branching narrative choices via the API
+  async function handleRegenerateChoices() {
+    setIsRegeneratingChoices(true);
+    try {
+      const res = await fetch(`/api/generate/${sessionId}/regenerate-choices`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.choices && Array.isArray(data.choices) && data.choices.length > 0) {
+          setChoices(data.choices);
+        }
+      }
+    } catch {
+      // Silent — keep existing choices
+    } finally {
+      setIsRegeneratingChoices(false);
+    }
   }
 
   // Handle key press
@@ -512,112 +507,6 @@ export default function SessionChatPage() {
     }
   }
 
-  // TTS playback - uses streaming when available, falls back to non-streaming
-  async function handleTtsPlay(messageId: string, content: string) {
-    if (ttsPlayingId === messageId) {
-      // Stop
-      ttsAudioRef.current?.pause();
-      ttsAudioRef.current = null;
-      if (ttsBlobUrlRef.current) {
-        URL.revokeObjectURL(ttsBlobUrlRef.current);
-        ttsBlobUrlRef.current = null;
-      }
-      setTtsPlayingId(null);
-      return;
-    }
-
-    try {
-      // Try streaming first
-      const streamRes = await fetch(`/api/tts/stream`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: content, voice: "af_bella" }),
-      });
-
-      if (streamRes.ok && streamRes.body) {
-        // Streaming response - use MediaSource for chunked playback
-        const mediaSource = new MediaSource();
-        const audio = new Audio();
-
-        ttsAudioRef.current = audio;
-
-        mediaSource.addEventListener("sourceopen", async () => {
-          const sourceBuffer = mediaSource.addSourceBuffer('audio/mpeg');
-          const reader = streamRes.body!.getReader();
-
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              while (sourceBuffer.updating) {
-                await new Promise((r) => setTimeout(r, 10));
-              }
-              sourceBuffer.appendBuffer(value);
-            }
-            mediaSource.endOfStream();
-          } catch {
-            // Stream error
-          }
-        });
-
-        audio.src = URL.createObjectURL(mediaSource);
-        setTtsPlayingId(messageId);
-
-        audio.onended = () => {
-          setTtsPlayingId(null);
-        };
-
-        audio.onerror = () => {
-          setTtsPlayingId(null);
-        };
-
-        await audio.play();
-        return;
-      }
-
-      // Fallback to non-streaming
-      const res = await fetch(`/api/tts/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: content, voice: "af_bella" }),
-      });
-
-      if (!res.ok) return;
-
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-
-      // Clean up previous audio
-      if (ttsAudioRef.current) {
-        ttsAudioRef.current.pause();
-      }
-      if (ttsBlobUrlRef.current) {
-        URL.revokeObjectURL(ttsBlobUrlRef.current);
-      }
-
-      const audio = new Audio(url);
-      ttsAudioRef.current = audio;
-      ttsBlobUrlRef.current = url;
-
-      audio.onended = () => {
-        URL.revokeObjectURL(url);
-        ttsBlobUrlRef.current = null;
-        setTtsPlayingId(null);
-      };
-
-      audio.onerror = () => {
-        URL.revokeObjectURL(url);
-        ttsBlobUrlRef.current = null;
-        setTtsPlayingId(null);
-      };
-
-      setTtsPlayingId(messageId);
-      await audio.play();
-    } catch {
-      setTtsPlayingId(null);
-    }
-  }
-
   // -----------------------------------------------------------------------
   // Scene state update
   // -----------------------------------------------------------------------
@@ -670,145 +559,43 @@ export default function SessionChatPage() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border-default pb-3">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/session"
-            className="rounded p-1 text-text-muted transition-colors hover:bg-bg-raised hover:text-text-secondary"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm font-semibold text-text-primary">
-                {session.name}
-              </h1>
-              {/* Persona selector */}
-              <div ref={personaDropdownRef} className="relative">
-                <button
-                  onClick={(e) => { e.stopPropagation(); setShowPersonaSelector(!showPersonaSelector); }}
-                  className="flex items-center gap-1 rounded p-1 text-text-muted transition-colors hover:bg-bg-raised hover:text-accent"
-                  title="Change persona"
-                >
-                  <User className="h-3 w-3" />
-                  {personasLoading ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <span className="text-xxs max-w-[120px] truncate">
-                      {personas.find(p => p.id === activePersonaId)?.name || "No persona"}
-                    </span>
-                  )}
-                  {showPersonaSelector ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                </button>
-                {showPersonaSelector && (
-                  <div className="absolute left-0 top-full mt-1 min-w-[180px] rounded-lg border border-border-default bg-bg-elevated shadow-lg z-10">
-                    {personasLoading ? (
-                      <div className="flex items-center gap-2 px-3 py-2 text-xs text-text-muted">
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        Loading...
-                      </div>
-                    ) : personas.length === 0 ? (
-                      <div className="px-3 py-2 text-xs text-text-muted">
-                        No personas.{" "}
-                        <Link href="/personas" className="text-accent hover:underline">
-                          Create persona
-                        </Link>
-                      </div>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => { handlePersonaChange(null); setShowPersonaSelector(false); }}
-                          className={`w-full text-left px-3 py-2 text-xs transition-colors ${
-                            !activePersonaId ? "bg-accent/10 text-accent" : "text-text-secondary hover:bg-bg-raised"
-                          }`}
-                        >
-                          No persona (username)
-                        </button>
-                        {personas.map(p => (
-                          <button
-                            key={p.id}
-                            onClick={() => { handlePersonaChange(p.id); setShowPersonaSelector(false); }}
-                            className={`w-full text-left px-3 py-2 text-xs transition-colors ${
-                              p.id === activePersonaId ? "bg-accent/10 text-accent" : "text-text-secondary hover:bg-bg-raised"
-                            }`}
-                          >
-                            {p.name}
-                          </button>
-                        ))}
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-              {sceneState && (
-                <button
-                  onClick={() => setShowScenePanel(!showScenePanel)}
-                  className="rounded p-1 text-text-muted transition-colors hover:bg-bg-raised hover:text-accent"
-                  title="Scene State"
-                >
-                  <MapPin className="h-3 w-3" />
-                </button>
-              )}
-              {isGroup && (
-                <button
-                  onClick={() => setShowParticipantPanel(!showParticipantPanel)}
-                  className={`rounded p-1 transition-colors hover:bg-bg-raised ${
-                    showParticipantPanel ? "text-accent" : "text-text-muted hover:text-accent"
-                  }`}
-                  title="Participants"
-                >
-                  <Users className="h-3 w-3" />
-                </button>
-              )}
-              <button
-                onClick={() => setShowPrivatePanel(!showPrivatePanel)}
-                className={`rounded p-1 transition-colors hover:bg-bg-raised ${
-                  showPrivatePanel ? "text-accent" : "text-text-muted hover:text-accent"
-                }`}
-                title="Private State"
-              >
-                <Lock className="h-3 w-3" />
-              </button>
-              <button
-                onClick={() => setShowRelationshipTimeline(!showRelationshipTimeline)}
-                className={`rounded p-1 transition-colors hover:bg-bg-raised ${
-                  showRelationshipTimeline ? "text-accent" : "text-text-muted hover:text-accent"
-                }`}
-                title="Relationship Timeline"
-              >
-                <Heart className="h-3 w-3" />
-              </button>
-              <button
-                onClick={() => setShowRecapPanel(!showRecapPanel)}
-                className={`rounded p-1 transition-colors hover:bg-bg-raised ${
-                  showRecapPanel ? "text-accent" : "text-text-muted hover:text-accent"
-                }`}
-                title="Session Recap"
-              >
-                <Sparkles className="h-3 w-3" />
-              </button>
-              <ChatExport sessionId={sessionId} />
-            </div>
-            <p className="text-xxs text-text-muted">
-              {allMessages.length} message{allMessages.length !== 1 ? "s" : ""}
-              {sceneState?.active_location_id &&
-                ` · ${sceneState.active_location_id}`}
-            </p>
-          </div>
-        </div>
-        <ChatSearch sessionId={sessionId} />
-      </div>
+      <SessionHeader
+        sessionId={sessionId}
+        sessionName={session.name}
+        messageCount={allMessages.length}
+        isGroup={isGroup}
+        personas={personas}
+        personasLoading={personasLoading}
+        activePersonaId={activePersonaId}
+        hasSceneState={!!sceneState}
+        showScenePanel={showScenePanel}
+        showParticipantPanel={showParticipantPanel}
+        showPrivatePanel={showPrivatePanel}
+        showRelationshipTimeline={showRelationshipTimeline}
+        showRecapPanel={showRecapPanel}
+        activeLocationId={sceneState?.active_location_id}
+        onPersonaChange={handlePersonaChange}
+        onToggleScenePanel={() => setShowScenePanel(!showScenePanel)}
+        onToggleParticipantPanel={() => setShowParticipantPanel(!showParticipantPanel)}
+        onTogglePrivatePanel={() => setShowPrivatePanel(!showPrivatePanel)}
+        onToggleRelationshipTimeline={() => setShowRelationshipTimeline(!showRelationshipTimeline)}
+        onToggleRecapPanel={() => setShowRecapPanel(!showRecapPanel)}
+      />
+
       {showScenePanel && (
-        <SceneStatePanel
-          scene={sceneState}
-          onSave={(data) => handleSceneSave(data)}
-          onClose={() => setShowScenePanel(false)}
-        />
+        <div className="shrink-0">
+          <SceneStatePanel
+            scene={sceneState}
+            onSave={(data) => handleSceneSave(data)}
+            onClose={() => setShowScenePanel(false)}
+          />
+        </div>
       )}
 
       {/* Participant Panel (group sessions) */}
       {showParticipantPanel && isGroup && (
-        <ParticipantList
+        <div className="shrink-0">
+          <ParticipantList
           participants={participants}
           isOwner={isOwner}
           turnConfig={turnConfig}
@@ -820,130 +607,140 @@ export default function SessionChatPage() {
           onClaimTurn={handleClaimTurn}
           onRoleChange={handleRoleChange}
           onClose={() => setShowParticipantPanel(false)}
-        />
+          />
+        </div>
       )}
 
       {/* Private State Panel */}
       {showPrivatePanel && (
-        <PrivateStatePanel
-          sessionId={sessionId}
-          onClose={() => setShowPrivatePanel(false)}
-        />
+        <div className="shrink-0">
+          <PrivateStatePanel
+            sessionId={sessionId}
+            onClose={() => setShowPrivatePanel(false)}
+          />
+        </div>
       )}
 
       {/* Relationship Timeline Panel */}
       {showRelationshipTimeline && (
-        <RelationshipTimeline
-          sessionId={sessionId}
-          sessionUniverseId={session?.universe_id}
-          onClose={() => setShowRelationshipTimeline(false)}
-        />
+        <div className="shrink-0">
+          <RelationshipTimeline
+            sessionId={sessionId}
+            sessionUniverseId={session?.universe_id}
+            onClose={() => setShowRelationshipTimeline(false)}
+          />
+        </div>
       )}
 
       {/* Session Recap Panel */}
       {showRecapPanel && (
-        <SessionRecapPanel
-          sessionId={sessionId}
-          onClose={() => setShowRecapPanel(false)}
-        />
-      )}
-
-      {/* Generation Error Banner */}
-      {generationError && (
-        <div className="mb-2 flex items-center gap-2 rounded-lg border border-error/30 bg-error/10 px-3 py-2">
-          <span className="flex-1 text-xs text-error">{generationError}</span>
-          <button
-            onClick={() => setGenerationError(null)}
-            className="rounded p-1 text-error/70 transition-colors hover:text-error hover:bg-error/10"
-          >
-            ✕
-          </button>
+        <div className="shrink-0">
+          <SessionRecapPanel
+            sessionId={sessionId}
+            onClose={() => setShowRecapPanel(false)}
+          />
         </div>
       )}
 
-      {/* Typing Indicator */}
-      {streaming && !streamContent && <TypingIndicator />}
-
-      {/* Chat Window */}
-      <ChatWindow
-        messages={allMessages}
-        isStreaming={streaming}
-        streamingContent={streamContent}
-        input={input}
-        editingId={editingId}
-        editContent={editContent}
-        copiedId={copiedId}
-        ttsPlayingId={ttsPlayingId}
-        intentIcons={intentIcons}
-        onCopy={handleCopy}
-        onStartEdit={handleStartEdit}
-        onSaveEdit={handleSaveEdit}
-        onCancelEdit={() => setEditingId(null)}
-        onDelete={(id) => setConfirmAction({ type: "delete", id })}
-        onRegenerate={handleRegenerate}
-        onTtsPlay={handleTtsPlay}
-        onEditContentChange={setEditContent}
-        onShowEditHistory={setEditHistoryMessageId}
-        onSend={handleSend}
-        onInputChange={setInput}
-        onKeyDown={handleKeyDown}
-        scrollRef={messagesEndRef}
-        inputRef={inputRef}
-        sessionId={sessionId}
-        editHistoryMessageId={editHistoryMessageId}
-        onEditHistoryClose={() => setEditHistoryMessageId(null)}
-        disabled={isObserver}
+      {/* Generation Error Banner */}
+      <GenerationErrorBanner
+        message={generationError}
+        onDismiss={() => setGenerationError(null)}
       />
 
-      {/* Confirmation Dialogs */}
-      <ConfirmationDialog
-        open={confirmAction?.type === "leave"}
-        onClose={() => setConfirmAction(null)}
-        onConfirm={handleLeave}
-        title="Leave Session"
-        message="Are you sure you want to leave this session?"
-        confirmVariant="danger"
-      />
-      <ConfirmationDialog
-        open={confirmAction?.type === "delete"}
-        onClose={() => setConfirmAction(null)}
-        onConfirm={() => confirmAction?.id && handleDelete(confirmAction.id)}
-        title="Delete Message"
-        message="Delete this message and all subsequent messages? This cannot be undone."
-        confirmVariant="danger"
-      />
+      <TTSPlayback>
+        {({ ttsPlayingId, handleTtsPlay }) => (
+          <>
+            {/* Typing Indicator */}
+            {streaming && !streamContent && <div className="shrink-0"><TypingIndicator /></div>}
 
-      {/* Character Declaration Modal */}
-      <CharacterDeclarationModal
-        open={showCharacterModal}
-        sessionId={sessionId}
-        takenCharacters={participants
-          .filter((p) => p.character_name)
-          .map((p) => p.character_name!)}
-        onJoin={async (characterName) => {
-          const res = await fetch(`/api/sessions/${sessionId}/join`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ character_name: characterName }),
-          });
-          if (!res.ok) {
-            const errorBody = await res.json();
-            throw new Error(errorBody.error || "Failed to join session");
-          }
-          setShowCharacterModal(false);
-        }}
-        onCancel={() => setShowCharacterModal(false)}
-      />
+            {/* Chat Window */}
+            <ChatWindow
+              messages={allMessages}
+              isStreaming={streaming}
+              streamingContent={streamContent}
+              input={input}
+              editingId={editingId}
+              editContent={editContent}
+              copiedId={copiedId}
+              ttsPlayingId={ttsPlayingId}
+              intentIcons={intentIcons}
+              onCopy={handleCopy}
+              onStartEdit={handleStartEdit}
+              onSaveEdit={handleSaveEdit}
+              onCancelEdit={() => setEditingId(null)}
+              onDelete={(id) => setConfirmAction({ type: "delete", id })}
+              onRegenerate={handleRegenerate}
+              onTtsPlay={handleTtsPlay}
+              onEditContentChange={setEditContent}
+              onShowEditHistory={setEditHistoryMessageId}
+              onSend={handleSend}
+              onInputChange={setInput}
+              onKeyDown={handleKeyDown}
+              scrollRef={messagesEndRef}
+              inputRef={inputRef}
+              sessionId={sessionId}
+              editHistoryMessageId={editHistoryMessageId}
+              onEditHistoryClose={() => setEditHistoryMessageId(null)}
+              disabled={isObserver}
+              choices={choices}
+              onChoiceSelect={handleChoiceSelect}
+              onRegenerateChoices={handleRegenerateChoices}
+              isRegeneratingChoices={isRegeneratingChoices}
+            />
 
-      {/* Wiki auto-extract toast notifications */}
-      <WikiToast toasts={wikiToasts} />
+            {/* Confirmation Dialogs */}
+            <ConfirmationDialog
+              open={confirmAction?.type === "leave"}
+              onClose={() => setConfirmAction(null)}
+              onConfirm={handleLeave}
+              title="Leave Session"
+              message="Are you sure you want to leave this session?"
+              confirmVariant="danger"
+            />
+            <ConfirmationDialog
+              open={confirmAction?.type === "delete"}
+              onClose={() => setConfirmAction(null)}
+              onConfirm={() => confirmAction?.id && handleDelete(confirmAction.id)}
+              title="Delete Message"
+              message="Delete this message and all subsequent messages? This cannot be undone."
+              confirmVariant="danger"
+            />
 
-      {/* Narrative State Debug Panel */}
-      <NarrativeStatePanel
-        sessionId={sessionId}
-        sceneState={sceneState}
-        session={session as unknown as Record<string, unknown> | null}
-      />
+            {/* Character Declaration Modal */}
+            <CharacterDeclarationModal
+              open={showCharacterModal}
+              sessionId={sessionId}
+              takenCharacters={participants
+                .filter((p) => p.character_name)
+                .map((p) => p.character_name!)}
+              onJoin={async (characterName) => {
+                const res = await fetch(`/api/sessions/${sessionId}/join`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ character_name: characterName }),
+                });
+                if (!res.ok) {
+                  const errorBody = await res.json();
+                  throw new Error(errorBody.error || "Failed to join session");
+                }
+                setShowCharacterModal(false);
+              }}
+              onCancel={() => setShowCharacterModal(false)}
+            />
+
+            {/* Wiki auto-extract toast notifications */}
+            <WikiToast toasts={wikiToasts} />
+
+            {/* Narrative State Debug Panel */}
+            <NarrativeStatePanel
+              sessionId={sessionId}
+              sceneState={sceneState}
+              session={session as unknown as Record<string, unknown> | null}
+            />
+          </>
+        )}
+      </TTSPlayback>
     </div>
   );
 }
