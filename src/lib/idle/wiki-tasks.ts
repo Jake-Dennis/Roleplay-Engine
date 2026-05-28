@@ -11,6 +11,7 @@ import { parseEmotionalState } from "@/lib/emotion-utils";
 import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import { listWikiPages, writeWikiPage, WikiFrontmatter } from "@/lib/wiki/file-io";
 import { generateIndex } from "@/lib/wiki/index-generator";
+// @deprecated: logger.ts is deprecated — use history.ts (SQLite wiki_versions) instead
 import { appendLog } from "@/lib/wiki/logger";
 import { generateText } from "@/lib/ollama";
 import { PROMPTS } from "@/lib/prompts";
@@ -46,7 +47,7 @@ export async function wikiCompressSummaries(userId: string, universeId?: string)
       try {
         // Summarize the page content and update frontmatter
         const prompt = PROMPTS.wikiSummarizePage(page.content.slice(0, 500));
-        const summary = await generateText(prompt, { temperature: 0.2, num_ctx: 2048, userId });
+        const summary = await generateText(prompt, { temperature: 0.2, userId });
 
         const updatedFrontmatter: WikiFrontmatter = {
           title: page.frontmatter.title as string || path.basename(page.path, ".md"),
@@ -360,7 +361,7 @@ export async function wikiArchive(userId: string, universeId?: string): Promise<
     try {
       // Summarize before archiving
       const prompt = PROMPTS.wikiSummarizePageOneSentence(page.content.slice(0, CONTENT_LIMITS.PREVIEW));
-      const summary = await generateText(prompt, { temperature: 0.2, num_ctx: 2048, userId });
+      const summary = await generateText(prompt, { temperature: 0.2, userId });
 
       const updatedFrontmatter: WikiFrontmatter = {
         title: page.frontmatter.title as string,
@@ -423,7 +424,7 @@ export async function wikiDecayRelationships(userId: string, universeId?: string
   for (const rel of relationships) {
     const rates = rel.decay_rates ? { ...DEFAULT_DECAY_RATES, ...safeParseWarn<Partial<typeof DEFAULT_DECAY_RATES>>(rel.decay_rates, "relationship decay_rates", {}) } : DEFAULT_DECAY_RATES;
     const lastUpdate = rel.updated_at ? new Date(rel.updated_at) : new Date();
-    const daysSinceUpdate = (Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24);
+    const daysSinceUpdate = (Date.now() - lastUpdate.getTime()) / TIME.ONE_DAY;
     if (daysSinceUpdate < 1) continue;
 
     const previousState = rel.emotional_state || "neutral";

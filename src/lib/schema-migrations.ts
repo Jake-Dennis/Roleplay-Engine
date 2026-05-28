@@ -36,94 +36,378 @@ export function runSchemaMigrations(): void {
       "CREATE INDEX IF NOT EXISTS idx_token_denylist_expires ON token_denylist(expires_at)"
     ).run();
   } catch {
+    // Table already exists — safe to ignore
+  }
+
+  // Migration: Add events table for databases created before Phase 0 - Task 4
+  try {
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS events (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        universe_id TEXT REFERENCES universes(id),
+        title TEXT,
+        event_type TEXT,
+        description TEXT,
+        participants TEXT,
+        location_id TEXT,
+        occurred_at TEXT,
+        outcome TEXT,
+        consequences TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+  } catch {
+    // Table already exists — safe to ignore
+  }
+
+  // Migration: Add consequences column to events table if missing
+  try {
+    db.prepare(
+      "ALTER TABLE events ADD COLUMN consequences TEXT"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add index on events.user_id for fast lookups
+  try {
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS idx_events_user ON events(user_id)"
+    ).run();
+  } catch {
     // Index already exists — safe to ignore
   }
 
-  // Migration: Add session_config table (Turn Config - Wave 4)
-  // Used by GET /api/sessions/[id] for turn_mode, turn_order, current_turn
-  // The turn route creates this inline, but the session GET route does not.
+  // Migration: Add index on events.universe_id for fast lookups
+  try {
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS idx_events_universe ON events(universe_id)"
+    ).run();
+  } catch {
+    // Index already exists — safe to ignore
+  }
+
+  // Migration: Add current_intent column to scene_states (Phase 0 - Task 1)
+  try {
+    db.prepare(
+      "ALTER TABLE scene_states ADD COLUMN current_intent TEXT"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add polymorphic columns to message_summaries (Phase 0 - Task 2)
+  try {
+    db.prepare(
+      "ALTER TABLE message_summaries ADD COLUMN message_id TEXT REFERENCES messages(id)"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+  try {
+    db.prepare(
+      "ALTER TABLE message_summaries ADD COLUMN summary_type TEXT"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+  try {
+    db.prepare(
+      "ALTER TABLE message_summaries ADD COLUMN content TEXT"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add description to narrative_threads (Phase 0 - Task 5)
+  try {
+    db.prepare("ALTER TABLE narrative_threads ADD COLUMN description TEXT").run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add arc_type to narrative_threads (Phase 0 - Task 5)
+  try {
+    db.prepare("ALTER TABLE narrative_threads ADD COLUMN arc_type TEXT DEFAULT 'thread'").run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add updated_at to narrative_threads (Phase 0 - Task 5)
+  try {
+    db.prepare("ALTER TABLE narrative_threads ADD COLUMN updated_at DATETIME").run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add resolved_at to narrative_threads (Phase 0 - Task 5)
+  try {
+    db.prepare("ALTER TABLE narrative_threads ADD COLUMN resolved_at DATETIME").run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add name to narrative_threads
+  try {
+    db.prepare("ALTER TABLE narrative_threads ADD COLUMN name TEXT").run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add summary to narrative_threads
+  try {
+    db.prepare("ALTER TABLE narrative_threads ADD COLUMN summary TEXT").run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add key_entities to narrative_threads
+  try {
+    db.prepare("ALTER TABLE narrative_threads ADD COLUMN key_entities TEXT").run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add unresolved_items to narrative_threads
+  try {
+    db.prepare("ALTER TABLE narrative_threads ADD COLUMN unresolved_items TEXT").run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add entity_mentions table (Task 21)
   try {
     db.prepare(`
-      CREATE TABLE IF NOT EXISTS session_config (
+      CREATE TABLE IF NOT EXISTS entity_mentions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        entity_name TEXT NOT NULL,
+        source_table TEXT NOT NULL,
+        source_id TEXT NOT NULL,
+        frequency INTEGER DEFAULT 1,
+        last_seen_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, entity_name, source_table, source_id)
+      )
+    `).run();
+  } catch {
+    // Table already exists — safe to ignore
+  }
+
+  try {
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS idx_entity_mentions_user ON entity_mentions(user_id)"
+    ).run();
+  } catch {
+    // Index already exists — safe to ignore
+  }
+
+  try {
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS idx_entity_mentions_name ON entity_mentions(entity_name)"
+    ).run();
+  } catch {
+    // Index already exists — safe to ignore
+  }
+
+  // Migration: Add contradiction_flags table (Task 23)
+  try {
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS contradiction_flags (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        entity_name TEXT NOT NULL,
+        page_a TEXT NOT NULL,
+        page_b TEXT NOT NULL,
+        claim_a TEXT NOT NULL,
+        claim_b TEXT NOT NULL,
+        contradiction_type TEXT DEFAULT 'unknown',
+        severity TEXT DEFAULT 'medium',
+        status TEXT DEFAULT 'open',
+        detected_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        resolved_at DATETIME,
+        resolution TEXT
+      )
+    `).run();
+  } catch {
+    // Table already exists — safe to ignore
+  }
+
+  try {
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS idx_contradiction_flags_user ON contradiction_flags(user_id)"
+    ).run();
+  } catch {
+    // Index already exists — safe to ignore
+  }
+
+  try {
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS idx_contradiction_flags_status ON contradiction_flags(status)"
+    ).run();
+  } catch {
+    // Index already exists — safe to ignore
+  }
+
+  try {
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS idx_contradiction_flags_entity ON contradiction_flags(entity_name)"
+    ).run();
+  } catch {
+    // Index already exists — safe to ignore
+  }
+
+  // Migration: Add relationship_evolution table (Task 26)
+  try {
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS relationship_evolution (
+        id TEXT PRIMARY KEY,
+        relationship_id TEXT NOT NULL REFERENCES relationships(id),
+        user_id TEXT NOT NULL REFERENCES users(id),
+        emotional_state TEXT,
+        relationship_stage TEXT,
+        trigger_event TEXT,
+        recorded_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+  } catch {
+    // Table already exists — safe to ignore
+  }
+
+  try {
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS idx_relationship_evolution_rel ON relationship_evolution(relationship_id)"
+    ).run();
+  } catch {
+    // Index already exists — safe to ignore
+  }
+
+  // Migration: Add narrative_anchors table (Task 27)
+  try {
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS narrative_anchors (
+        id TEXT PRIMARY KEY,
+        relationship_id TEXT NOT NULL REFERENCES relationships(id),
+        user_id TEXT NOT NULL REFERENCES users(id),
+        anchor_type TEXT NOT NULL,
+        description TEXT,
+        emotional_impact TEXT,
+        irreversible INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+  } catch {
+    // Table already exists — safe to ignore
+  }
+
+  try {
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS idx_narrative_anchors_rel ON narrative_anchors(relationship_id)"
+    ).run();
+  } catch {
+    // Index already exists — safe to ignore
+  }
+
+  try {
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS idx_narrative_anchors_user ON narrative_anchors(user_id)"
+    ).run();
+  } catch {
+    // Index already exists — safe to ignore
+  }
+
+  // Migration: Add scene_type to scene_states (Task 31)
+  try {
+    db.prepare(
+      "ALTER TABLE scene_states ADD COLUMN scene_type TEXT"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add scene_tension to scene_states (Task 31)
+  try {
+    db.prepare(
+      "ALTER TABLE scene_states ADD COLUMN scene_tension REAL DEFAULT 0.5"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add conflict_type to scene_states (Task 31)
+  try {
+    db.prepare(
+      "ALTER TABLE scene_states ADD COLUMN conflict_type TEXT"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add stakes to scene_states (Task 31)
+  try {
+    db.prepare(
+      "ALTER TABLE scene_states ADD COLUMN stakes TEXT"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add narrative_tension to sessions (Task 30)
+  try {
+    db.prepare(
+      "ALTER TABLE sessions ADD COLUMN narrative_tension REAL DEFAULT 0.3"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add pacing to sessions (Task 30)
+  try {
+    db.prepare(
+      "ALTER TABLE sessions ADD COLUMN pacing REAL DEFAULT 0.3"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add narrative_phase to sessions (Task 30)
+  try {
+    db.prepare(
+      "ALTER TABLE sessions ADD COLUMN narrative_phase TEXT DEFAULT 'setup'"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add active_goals to sessions (Task 30)
+  try {
+    db.prepare(
+      "ALTER TABLE sessions ADD COLUMN active_goals TEXT"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add active_conflicts to sessions (Task 30)
+  try {
+    db.prepare(
+      "ALTER TABLE sessions ADD COLUMN active_conflicts TEXT"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add decision_points table (Task 34)
+  try {
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS decision_points (
         id TEXT PRIMARY KEY,
         session_id TEXT NOT NULL REFERENCES sessions(id),
-        key TEXT NOT NULL,
-        value TEXT,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(session_id, key)
-      )
-    `).run();
-  } catch {
-    // Table already exists — safe to ignore
-  }
-
-  // Migration: Add index on session_config(session_id, key) for fast lookups
-  try {
-    db.prepare(
-      "CREATE INDEX IF NOT EXISTS idx_session_config_lookup ON session_config(session_id, key)"
-    ).run();
-  } catch {
-    // Index already exists — safe to ignore
-  }
-
-  // Migration: Add private_state column to session_participants (Wave 4 - Dual State Consolidation)
-  try {
-    db.prepare(
-      "ALTER TABLE session_participants ADD COLUMN private_state TEXT"
-    ).run();
-  } catch {
-    // Column already exists — safe to ignore
-  }
-
-  // Migration: Add npcs table (NPCs - Wave 5)
-  try {
-    db.prepare(`
-      CREATE TABLE IF NOT EXISTS npcs (
-        id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL REFERENCES users(id),
-        universe_id TEXT REFERENCES universes(id),
-        name TEXT NOT NULL,
-        description TEXT,
-        personality_traits TEXT,
-        behavior_patterns TEXT,
-        voice_id TEXT,
-        is_canon BOOLEAN DEFAULT 0,
-        evolution_log TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME
-      )
-    `).run();
-  } catch {
-    // Table already exists — safe to ignore
-  }
-
-  // Migration: Add indexes for npcs table
-  try {
-    db.prepare(
-      "CREATE INDEX IF NOT EXISTS idx_npcs_user ON npcs(user_id)"
-    ).run();
-  } catch {
-    // Index already exists — safe to ignore
-  }
-
-  try {
-    db.prepare(
-      "CREATE INDEX IF NOT EXISTS idx_npcs_universe ON npcs(universe_id)"
-    ).run();
-  } catch {
-    // Index already exists — safe to ignore
-  }
-
-  // Migration: Add wiki_versions table (Wiki Versioning)
-  try {
-    db.prepare(`
-      CREATE TABLE IF NOT EXISTS wiki_versions (
-        id TEXT PRIMARY KEY,
-        page_path TEXT NOT NULL,
-        user_id TEXT NOT NULL REFERENCES users(id),
-        version_number INTEGER NOT NULL,
-        change_summary TEXT,
-        file_snapshot_path TEXT,
+        prompt TEXT NOT NULL,
+        choices_made TEXT,
+        narrative_context TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `).run();
@@ -131,153 +415,28 @@ export function runSchemaMigrations(): void {
     // Table already exists — safe to ignore
   }
 
-  // Migration: Add FTS5 virtual table for message search with sync triggers
-  try {
-    db.exec(`
-      CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(content, session_id, sender_id)
-    `);
-    db.exec(`
-      CREATE TRIGGER IF NOT EXISTS messages_fts_insert AFTER INSERT ON messages
-      BEGIN
-        INSERT INTO messages_fts(rowid, content, session_id, sender_id)
-        VALUES (new.rowid, new.content, new.session_id, new.sender_id);
-      END
-    `);
-    db.exec(`
-      CREATE TRIGGER IF NOT EXISTS messages_fts_update AFTER UPDATE ON messages
-      BEGIN
-        UPDATE messages_fts SET content = new.content, session_id = new.session_id, sender_id = new.sender_id
-        WHERE rowid = new.rowid;
-      END
-    `);
-    db.exec(`
-      CREATE TRIGGER IF NOT EXISTS messages_fts_delete AFTER DELETE ON messages
-      BEGIN
-        DELETE FROM messages_fts WHERE rowid = old.rowid;
-      END
-    `);
-    // Backfill existing messages into FTS5 index
-    db.exec(`
-      INSERT OR IGNORE INTO messages_fts(rowid, content, session_id, sender_id)
-      SELECT rowid, content, session_id, sender_id FROM messages
-    `);
-  } catch {
-    // FTS5 table or triggers already exist — safe to ignore
-  }
-
-  // Migration: Add result column to job_queue (Session Recap - Wave 3)
   try {
     db.prepare(
-      "ALTER TABLE job_queue ADD COLUMN result TEXT"
-    ).run();
-  } catch {
-    // Column already exists — safe to ignore
-  }
-
-  // Migration: Add personas table (Personas - Wave 6)
-  try {
-    db.prepare(`
-      CREATE TABLE IF NOT EXISTS personas (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL REFERENCES users(id),
-        name TEXT NOT NULL,
-        description TEXT,
-        personality TEXT,
-        scenario TEXT,
-        first_mes TEXT,
-        mes_example TEXT,
-        creator_notes TEXT,
-        system_prompt TEXT,
-        post_history_instructions TEXT,
-        tags TEXT,
-        writing_style TEXT,
-        avatar_url TEXT,
-        llm_model TEXT,
-        tts_voice TEXT,
-        is_active INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `).run();
-  } catch {
-    // Table already exists — safe to ignore
-  }
-
-  // Migration: Add index on personas(user_id) for fast lookups
-  try {
-    db.prepare(
-      "CREATE INDEX IF NOT EXISTS idx_personas_user ON personas(user_id)"
+      "CREATE INDEX IF NOT EXISTS idx_decision_points_session ON decision_points(session_id)"
     ).run();
   } catch {
     // Index already exists — safe to ignore
   }
 
-  // Migration: Add persona_id column to sessions (Personas - Wave 6)
   try {
     db.prepare(
-      "ALTER TABLE sessions ADD COLUMN persona_id TEXT REFERENCES personas(id) ON DELETE SET NULL"
+      "CREATE INDEX IF NOT EXISTS idx_decision_points_user ON decision_points(user_id)"
+    ).run();
+  } catch {
+    // Index already exists — safe to ignore
+  }
+
+  // Migration: Add time_period column to universes table
+  try {
+    db.prepare(
+      "ALTER TABLE universes ADD COLUMN time_period TEXT"
     ).run();
   } catch {
     // Column already exists — safe to ignore
-  }
-
-  // Migration: Add description column to universes
-  try {
-    db.prepare(
-      "ALTER TABLE universes ADD COLUMN description TEXT"
-    ).run();
-  } catch {
-    // Column already exists — safe to ignore
-  }
-
-  // Migration: Add missing locations table (queried by embeddings, backlinks, contradictions)
-  try {
-    db.prepare(`
-      CREATE TABLE IF NOT EXISTS locations (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL REFERENCES users(id),
-        universe_id TEXT REFERENCES universes(id),
-        name TEXT NOT NULL,
-        description TEXT,
-        known_info TEXT,
-        hidden_info TEXT,
-        tags TEXT,
-        is_canon BOOLEAN DEFAULT 0,
-        canon_layer TEXT DEFAULT 'generated_lore',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `    ).run();
-  } catch {
-    // Table already exists — safe to ignore
-  }
-
-  // Migration: Add retry_count to job_queue
-  try {
-    db.prepare(
-      "ALTER TABLE job_queue ADD COLUMN retry_count INTEGER DEFAULT 0"
-    ).run();
-  } catch {
-    // Column already exists — safe to ignore
-  }
-
-  // Migration: Add max_retries to job_queue
-  try {
-    db.prepare(
-      "ALTER TABLE job_queue ADD COLUMN max_retries INTEGER DEFAULT 3"
-    ).run();
-  } catch {
-    // Column already exists — safe to ignore
-  }
-
-  // Migration: Add embedding_vectors table (created at runtime by ensureVectorTable())
-  try {
-    db.prepare(`
-      CREATE TABLE IF NOT EXISTS embedding_vectors (
-        embedding_id TEXT PRIMARY KEY REFERENCES embedding_index(id),
-        vector_data TEXT NOT NULL
-      )
-    `).run();
-  } catch {
-    // Table already exists — safe to ignore
   }
 }

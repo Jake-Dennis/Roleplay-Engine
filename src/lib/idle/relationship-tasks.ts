@@ -9,7 +9,6 @@
 import { getDb } from "@/lib/db";
 import {
   queueJob,
-  processJobsByType,
   processUserJobs,
 } from "@/lib/job-processor";
 import { getSessionsNeedingRelationshipAnalysis, processRelationshipAnalysis } from "@/lib/relationship-analysis";

@@ -38,19 +38,52 @@ export async function processEmbeddings(
   // Generate embedding via Ollama
   const vector = await generateEmbedding(textContent);
 
+  // Look up universe_id for this entity (separate queries avoid parameter-count bugs in CASE WHEN subquery)
+  let universeId: string | null = null;
+  switch (entityType) {
+    case "message": {
+      const row = db.prepare(
+        "SELECT s.universe_id FROM messages m JOIN sessions s ON s.id = m.session_id WHERE m.id = ?"
+      ).get(entityId) as { universe_id: string | null } | undefined;
+      universeId = row?.universe_id ?? null;
+      break;
+    }
+    case "location": {
+      const row = db.prepare(
+        "SELECT universe_id FROM locations WHERE id = ?"
+      ).get(entityId) as { universe_id: string | null } | undefined;
+      universeId = row?.universe_id ?? null;
+      break;
+    }
+    case "npc": {
+      const row = db.prepare(
+        "SELECT universe_id FROM npcs WHERE id = ?"
+      ).get(entityId) as { universe_id: string | null } | undefined;
+      universeId = row?.universe_id ?? null;
+      break;
+    }
+    case "event": {
+      const row = db.prepare(
+        "SELECT universe_id FROM events WHERE id = ?"
+      ).get(entityId) as { universe_id: string | null } | undefined;
+      universeId = row?.universe_id ?? null;
+      break;
+    }
+    case "narrative_memory": {
+      const row = db.prepare(
+        "SELECT universe_id FROM narrative_memories WHERE id = ?"
+      ).get(entityId) as { universe_id: string | null } | undefined;
+      universeId = row?.universe_id ?? null;
+      break;
+    }
+  }
+
   // Store in embedding_index
   const embeddingId = crypto.randomUUID();
   db.prepare(`
     INSERT OR REPLACE INTO embedding_index (id, user_id, universe_id, entity_type, entity_id, text_content, created_at)
-    VALUES (?, ?, (SELECT universe_id FROM sessions WHERE id = (
-      CASE WHEN ? = 'message' THEN (SELECT session_id FROM messages WHERE id = ?)
-           WHEN ? = 'location' THEN (SELECT universe_id FROM locations WHERE id = ?)
-           WHEN ? = 'npc' THEN (SELECT universe_id FROM npcs WHERE id = ?)
-           WHEN ? = 'event' THEN (SELECT universe_id FROM events WHERE id = ?)
-           WHEN ? = 'narrative_memory' THEN (SELECT universe_id FROM narrative_memories WHERE id = ?)
-      END
-    )), ?, ?, ?, CURRENT_TIMESTAMP)
-  `).run(embeddingId, userId, entityType, entityId, entityType, entityId, entityType, entityId, entityType, entityId, entityType, entityId, entityType, entityId, entityType, entityId);
+    VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+  `).run(embeddingId, userId, universeId, entityType, entityId, textContent);
 
   // Store vector in a separate table (embedding vectors are too large for TEXT column)
   ensureVectorTable(db);

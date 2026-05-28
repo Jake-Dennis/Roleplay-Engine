@@ -17,6 +17,7 @@
  * - Archive (90+ days): Minimal summary + archival
  */
 
+import { TIME, MEMORY_CONFIG } from "@/lib/config";
 import { getDb } from "@/lib/db";
 import { generateText } from "@/lib/ollama";
 
@@ -25,9 +26,7 @@ export interface CompressionResult {
   archivedCount: number;
 }
 
-// Compression thresholds
-const MEMORY_COMPRESSION_THRESHOLD = 100;
-const MESSAGE_COMPRESSION_THRESHOLD = 500;
+// Compression thresholds — imported from config.ts via MEMORY_CONFIG
 
 /**
  * Compress and archive old memories for a user
@@ -36,8 +35,6 @@ export async function processMemoryCompression(
   userId: string,
   sessionId?: string
 ): Promise<CompressionResult> {
-  const db = getDb();
-
   let compressedCount = 0;
   let archivedCount = 0;
 
@@ -75,7 +72,7 @@ async function compressNarrativeMemories(
   }
 
   const count = db.prepare(countQuery).get(...countParams) as { count: number } | undefined;
-  if ((count?.count || 0) < MEMORY_COMPRESSION_THRESHOLD) {
+  if ((count?.count || 0) < MEMORY_CONFIG.MEMORY_COMPRESSION_THRESHOLD) {
     return { compressed: 0, archived: 0 };
   }
 
@@ -84,7 +81,7 @@ async function compressNarrativeMemories(
     SELECT id, content, type, importance, created_at
     FROM narrative_memories
     WHERE user_id = ?
-      AND created_at < datetime('now', '-7 days')
+      AND created_at < datetime('now', '-${MEMORY_CONFIG.RECENT_DAYS} days')
   `;
   const memoryParams: (string | number)[] = [userId];
 
@@ -107,9 +104,9 @@ async function compressNarrativeMemories(
   let archived = 0;
 
   for (const memory of memories) {
-    const age = (Date.now() - new Date(memory.created_at).getTime()) / (1000 * 60 * 60 * 24);
+    const age = (Date.now() - new Date(memory.created_at).getTime()) / TIME.ONE_DAY;
 
-    if (age >= 90) {
+    if (age >= MEMORY_CONFIG.LONG_TERM_DAYS) {
       // Archive: create minimal summary and mark as archived
       const summary = await summarizeContent(memory.content, "minimal");
       if (summary) {
@@ -120,7 +117,7 @@ async function compressNarrativeMemories(
         `).run(summary, `archived:${memory.type}`, memory.id);
         archived++;
       }
-    } else if (age >= 30) {
+    } else if (age >= MEMORY_CONFIG.SHORT_TERM_DAYS) {
       // Long-term: heavy summarization
       const summary = await summarizeContent(memory.content, "heavy");
       if (summary) {
@@ -131,7 +128,7 @@ async function compressNarrativeMemories(
         `).run(summary, memory.id);
         compressed++;
       }
-    } else if (age >= 7) {
+    } else if (age >= MEMORY_CONFIG.RECENT_DAYS) {
       // Short-term: light summarization
       const summary = await summarizeContent(memory.content, "light");
       if (summary) {
@@ -159,7 +156,7 @@ async function compressMessages(sessionId: string): Promise<{ compressed: number
     "SELECT COUNT(*) as count FROM messages WHERE session_id = ? AND is_deleted = 0"
   ).get(sessionId) as { count: number } | undefined;
 
-  if ((count?.count || 0) < MESSAGE_COMPRESSION_THRESHOLD) {
+  if ((count?.count || 0) < MEMORY_CONFIG.MESSAGE_COMPRESSION_THRESHOLD) {
     return { compressed: 0, archived: 0 };
   }
 
@@ -169,7 +166,7 @@ async function compressMessages(sessionId: string): Promise<{ compressed: number
     FROM messages m
     WHERE m.session_id = ?
       AND m.is_deleted = 0
-      AND m.timestamp < datetime('now', '-30 days')
+      AND m.timestamp < datetime('now', '-${MEMORY_CONFIG.SHORT_TERM_DAYS} days')
       AND m.id NOT IN (SELECT source_message_id FROM message_summaries)
     ORDER BY m.timestamp ASC
     LIMIT 100
@@ -186,7 +183,7 @@ async function compressMessages(sessionId: string): Promise<{ compressed: number
 
   // Group into batches and summarize
   const batchSize = 10;
-  let compressed = 0;
+  const compressed = 0;
   let archived = 0;
 
   for (let i = 0; i < messages.length; i += batchSize) {
@@ -231,7 +228,7 @@ Content:
 ${content}`;
 
   try {
-    const response = await generateText(prompt, { temperature: 0.2, num_ctx: 2048 });
+    const response = await generateText(prompt, { temperature: 0.2 });
     return response.trim() || null;
   } catch {
     return null;
@@ -253,7 +250,7 @@ async function summarizeBatch(
 ${messageText}`;
 
   try {
-    const response = await generateText(prompt, { temperature: 0.2, num_ctx: 4096 });
+    const response = await generateText(prompt, { temperature: 0.2 });
     return response.trim() || null;
   } catch {
     return null;
@@ -270,7 +267,7 @@ export function needsMemoryCompression(userId: string): boolean {
     "SELECT COUNT(*) as count FROM narrative_memories WHERE user_id = ?"
   ).get(userId) as { count: number } | undefined;
 
-  return (memoryCount?.count || 0) >= MEMORY_COMPRESSION_THRESHOLD;
+  return (memoryCount?.count || 0) >= MEMORY_CONFIG.MEMORY_COMPRESSION_THRESHOLD;
 }
 
 /**

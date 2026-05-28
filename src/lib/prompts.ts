@@ -202,6 +202,34 @@ ${messageText}
   // Auto-Extract
   // -----------------------------------------------------------------------
 
+  /** Extract relationships from a single AI response for wiki auto-creation */
+  extractRelationshipsFromResponse: (aiResponse: string, existingTitles: string) =>
+    `Analyze this AI narrative response and extract relationships between named entities that are central to the story world.
+
+Return JSON array:
+[
+  {
+    "source": "entity name",
+    "target": "entity name",
+    "nature": "friendly|hostile|romantic|professional|familial|rivalry|other",
+    "description": "description of the relationship dynamic"
+  }
+]
+
+Existing wiki pages: ${existingTitles || "none"}
+
+Rules:
+- Extract ONLY relationships between clearly named entities
+- Both source and target must be named entities present in the scene
+- Nature describes the current dynamic between them
+- Skip passing mentions. Max 5 relationships total.
+- Return empty array [] if nothing to extract
+
+AI Response to analyze:
+<user_content>
+${aiResponse}
+</user_content>`,
+
   /** Extract named entities from a single generation response for wiki auto-creation */
   extractEntitiesFromResponse: (aiResponse: string, universeContext: string, existingTitles: string) =>
     `Analyze this AI narrative response and extract named entities important to the story world.

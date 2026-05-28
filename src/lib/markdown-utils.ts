@@ -52,13 +52,13 @@ export function buildMarkdown(frontmatter: MarkdownFrontmatter, body: string = "
  * Parse YAML frontmatter from markdown content
  * Returns { frontmatter, body }
  */
-export function parseFrontmatter(content: string): { frontmatter: Record<string, any>; body: string } {
+export function parseFrontmatter(content: string): { frontmatter: Record<string, unknown>; body: string } {
   const match = content.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
   if (!match) return { frontmatter: {}, body: content };
 
   const frontmatterStr = match[1];
   const body = match[2] || "";
-  const frontmatter: Record<string, any> = {};
+  const frontmatter: Record<string, unknown> = {};
 
   for (const line of frontmatterStr.split("\n")) {
     const colonIdx = line.indexOf(":");

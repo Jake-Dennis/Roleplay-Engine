@@ -67,8 +67,6 @@ export function parseWikilinksFromContent(content: string): Wikilink[] {
  */
 export function inferLinkType(name: string, context: string, entityType?: string): string {
   const contextLower = context.toLowerCase();
-  const nameLower = name.toLowerCase();
-
   // Explicit patterns
   if (contextLower.includes("caused by") || contextLower.includes("result of")) {
     return "caused_by";

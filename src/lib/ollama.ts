@@ -300,7 +300,7 @@ export async function generateText(
       ...OLLAMA_CONFIG.options,
       temperature: options?.temperature ?? OLLAMA_CONFIG.options.temperature,
       top_p: options?.top_p ?? OLLAMA_CONFIG.options.top_p,
-      num_ctx: options?.num_ctx ?? OLLAMA_CONFIG.options.num_ctx,
+      ...(options?.num_ctx !== undefined ? { num_ctx: options.num_ctx } : {}),
     },
   };
 
@@ -324,7 +324,7 @@ export async function generateText(
 
       const data = await response.json();
       ollamaAvailable = true;
-      return validateLlmOutput(data.response || "");
+      return validateLlmOutput(data.response || data.thinking || "");
     } catch (err: unknown) {
       lastError = err as Error;
       ollamaAvailable = false;
@@ -355,7 +355,7 @@ export async function generateTextStream(
       ...OLLAMA_CONFIG.options,
       temperature: options?.temperature ?? OLLAMA_CONFIG.options.temperature,
       top_p: options?.top_p ?? OLLAMA_CONFIG.options.top_p,
-      num_ctx: options?.num_ctx ?? OLLAMA_CONFIG.options.num_ctx,
+      ...(options?.num_ctx !== undefined ? { num_ctx: options.num_ctx } : {}),
     },
   };
 
@@ -409,17 +409,29 @@ export async function generateEmbedding(
     input: text,
   };
 
-  const response = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/embed`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(requestBody),
-    signal: AbortSignal.timeout(OLLAMA_CONFIG.embeddingTimeout),
-  });
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const response = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/embed`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+        signal: AbortSignal.timeout(OLLAMA_CONFIG.embeddingTimeout),
+      });
 
-  if (!response.ok) {
-    throw new Error(`Ollama embed responded with ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Ollama embed responded with ${response.status}`);
+      }
+
+      const data: OllamaEmbedResponse = await response.json();
+      ollamaAvailable = true;
+      return data.embeddings[0] || [];
+    } catch (err: unknown) {
+      ollamaAvailable = false;
+
+      // Exponential backoff: 2s, 4s, 8s, 16s... capped at 60s — gives GPU time to free memory
+      const delay = Math.min(OLLAMA_CONFIG.retryDelay * Math.pow(2, attempt - 1), 60000);
+      logger.warn(`[embedding] Attempt ${attempt} failed: ${(err as Error).message}. Retrying in ${delay}ms...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
   }
-
-  const data: OllamaEmbedResponse = await response.json();
-  return data.embeddings[0] || [];
 }

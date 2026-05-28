@@ -16,6 +16,7 @@ import { getDb } from "@/lib/db";
 import { parseEmotionalState } from "@/lib/emotion-utils";
 import { syncRelationshipToFilesystem } from "@/lib/relationship-markdown";
 import { EMOTION_HALF_LIVES } from "@/lib/relationship-constants";
+import { TIME } from "@/lib/config";
 import { safeParseWarn } from "@/lib/safe-json";
 import type { RelationshipRow, EmotionalState, DecayConfig } from "@/lib/relationship-types";
 
@@ -104,10 +105,28 @@ export function processRelationshipDecay(userId: string): DecayResult {
 
     // Calculate days since last update
     const lastUpdate = rel.updated_at ? new Date(rel.updated_at) : new Date();
-    const daysSinceUpdate = (Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24);
+    const daysSinceUpdate = (Date.now() - lastUpdate.getTime()) / TIME.ONE_DAY;
 
     // Skip if recently updated (within 24 hours)
     if (daysSinceUpdate < 1) continue;
+
+    // Check for narrative anchors — anchored relationships decay slower
+    const irreversibleAnchors = db.prepare(
+      "SELECT COUNT(*) as cnt FROM narrative_anchors WHERE relationship_id = ? AND irreversible = 1"
+    ).get(rel.id) as { cnt: number } | undefined;
+    const anyAnchors = db.prepare(
+      "SELECT COUNT(*) as cnt FROM narrative_anchors WHERE relationship_id = ?"
+    ).get(rel.id) as { cnt: number } | undefined;
+
+    if (irreversibleAnchors && irreversibleAnchors.cnt > 0) {
+      // Irreversible anchors — skip decay entirely
+      continue;
+    }
+    if (anyAnchors && anyAnchors.cnt > 0) {
+      // Anchored relationships decay at half speed (double the half-life)
+      rates.emotionalHalfLifeDays *= 2;
+      rates.stageRegressionDays *= 2;
+    }
 
     const previousState = rel.emotional_state || "neutral";
     const previousStage = rel.relationship_stage || "acquaintances";
@@ -241,7 +260,7 @@ export function needsDecayProcessing(userId: string): boolean {
 
   if (!lastDecay?.last_update) return true;
 
-  const hoursSinceDecay = (Date.now() - new Date(lastDecay.last_update).getTime()) / (1000 * 60 * 60);
+  const hoursSinceDecay = (Date.now() - new Date(lastDecay.last_update).getTime()) / TIME.ONE_HOUR;
   return hoursSinceDecay >= 24;
 }
 
@@ -318,10 +337,22 @@ export async function applyDecayToAllRelationships(
 
   for (const rel of relationships) {
     const lastUpdate = rel.updated_at ? new Date(rel.updated_at) : new Date();
-    const daysSinceUpdate = (Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24);
+    const daysSinceUpdate = (Date.now() - lastUpdate.getTime()) / TIME.ONE_DAY;
 
     // Skip if recently updated (within 24 hours)
     if (daysSinceUpdate < 1) continue;
+
+    // Check for narrative anchors — anchored relationships decay slower
+    const irreversibleAnchors = db.prepare(
+      "SELECT COUNT(*) as cnt FROM narrative_anchors WHERE relationship_id = ? AND irreversible = 1"
+    ).get(rel.id) as { cnt: number } | undefined;
+    const anyAnchors = db.prepare(
+      "SELECT COUNT(*) as cnt FROM narrative_anchors WHERE relationship_id = ?"
+    ).get(rel.id) as { cnt: number } | undefined;
+
+    if (irreversibleAnchors && irreversibleAnchors.cnt > 0) {
+      continue;
+    }
 
     // Parse emotional state
     const emotions = parseEmotionalState(rel.emotional_state);
@@ -330,9 +361,12 @@ export async function applyDecayToAllRelationships(
     const previousEmotions = { ...emotions };
     const newEmotions: EmotionalState = {};
 
-    // Apply per-emotion decay
+    // Apply per-emotion decay (double half-life for anchored relationships)
     for (const [emotion, value] of Object.entries(emotions)) {
-      const halfLife = EMOTION_HALF_LIVES[emotion] || DEFAULT_DECAY_RATES.emotionalHalfLifeDays;
+      let halfLife = EMOTION_HALF_LIVES[emotion] || DEFAULT_DECAY_RATES.emotionalHalfLifeDays;
+      if (anyAnchors && anyAnchors.cnt > 0) {
+        halfLife *= 2;
+      }
       const decayedValue = applyEmotionDecay(value, daysSinceUpdate, halfLife);
       newEmotions[emotion] = Math.round(decayedValue * 100) / 100;
     }

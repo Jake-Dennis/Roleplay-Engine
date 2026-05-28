@@ -190,7 +190,7 @@ Format as JSON array:
 Only include relationships that have changed or are newly formed.`;
 
   try {
-    const response = await generateText(prompt, { temperature: 0.3, num_ctx: 8192 });
+    const response = await generateText(prompt, { temperature: 0.3 });
 
     const jsonMatch = response.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return { relationships: [] };

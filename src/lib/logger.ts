@@ -16,8 +16,8 @@ let requestStorage: any = null;
 
 if (!isDev && typeof window === 'undefined') {
   try {
-    const ah = require('async_hooks');
-    requestStorage = new ah.AsyncLocalStorage();
+    const asyncHooks = await import('node:async_hooks');
+    requestStorage = new asyncHooks.AsyncLocalStorage();
   } catch {
     // async_hooks unavailable — request IDs fall back to explicit passing
   }
@@ -103,7 +103,8 @@ export interface StructuredLogger {
   withCorrelationId(id: string): StructuredLogger;
 }
 
-function createLogger(correlationId?: string): StructuredLogger {
+function createLogger(_correlationId?: string): StructuredLogger {
+  void _correlationId;
   return {
     debug: (...args: unknown[]) => log('DEBUG', ...args),
     info: (...args: unknown[]) => log('INFO', ...args),
@@ -111,51 +112,6 @@ function createLogger(correlationId?: string): StructuredLogger {
     error: (...args: unknown[]) => log('ERROR', ...args),
     withCorrelationId(id: string) {
       return createLogger(id);
-    },
-  };
-}
-
-// Override log methods to inject correlationId when set
-function createLoggerWithCorrelation(cid: string): StructuredLogger {
-  return {
-    debug: (...args: unknown[]) => {
-      const { message, metadata } = extractMetadata(args);
-      if (isDev) {
-        const formatted = formatDev('DEBUG', message, cid);
-        Object.keys(metadata).length > 0 ? console.log(formatted, metadata) : console.log(formatted);
-      } else {
-        console.log(JSON.stringify(buildEntry('DEBUG', message, metadata, cid)));
-      }
-    },
-    info: (...args: unknown[]) => {
-      const { message, metadata } = extractMetadata(args);
-      if (isDev) {
-        const formatted = formatDev('INFO', message, cid);
-        Object.keys(metadata).length > 0 ? console.log(formatted, metadata) : console.log(formatted);
-      } else {
-        console.log(JSON.stringify(buildEntry('INFO', message, metadata, cid)));
-      }
-    },
-    warn: (...args: unknown[]) => {
-      const { message, metadata } = extractMetadata(args);
-      if (isDev) {
-        const formatted = formatDev('WARN', message, cid);
-        Object.keys(metadata).length > 0 ? console.warn(formatted, metadata) : console.warn(formatted);
-      } else {
-        console.warn(JSON.stringify(buildEntry('WARN', message, metadata, cid)));
-      }
-    },
-    error: (...args: unknown[]) => {
-      const { message, metadata } = extractMetadata(args);
-      if (isDev) {
-        const formatted = formatDev('ERROR', message, cid);
-        Object.keys(metadata).length > 0 ? console.error(formatted, metadata) : console.error(formatted);
-      } else {
-        console.error(JSON.stringify(buildEntry('ERROR', message, metadata, cid)));
-      }
-    },
-    withCorrelationId(id: string) {
-      return createLoggerWithCorrelation(id);
     },
   };
 }

@@ -6,7 +6,7 @@
  * Tracks event history in-memory (last 100 events per session).
  */
 
-import type { DbRow } from '@/lib/types';
+import { TIME, EVENT_BUS_CONFIG } from '@/lib/config';
 
 type EventHandler<T = unknown> = (data: T) => void;
 
@@ -21,11 +21,8 @@ class EventBus {
   private counter = 0;
   // Store recent events per session for reconnection
   private eventHistory = new Map<string, StoredEvent[]>();
-  private readonly MAX_HISTORY = 100;
   // Track active connections per session
   private connectionCount = new Map<string, number>();
-  // D6: Max concurrent connections per session
-  private readonly MAX_CONNECTIONS = 50;
   // Track active SSE stream controllers for graceful shutdown
   private activeControllers = new Set<ReadableStreamDefaultController>();
   // Periodic cleanup interval for abandoned session data
@@ -33,7 +30,7 @@ class EventBus {
 
   constructor() {
     // Start periodic cleanup every 60 seconds
-    this.cleanupInterval = setInterval(() => this.cleanup(), 60_000);
+    this.cleanupInterval = setInterval(() => this.cleanup(), TIME.ONE_MINUTE);
     // Prevent the interval from keeping the process alive
     if (typeof this.cleanupInterval === "object" && "unref" in this.cleanupInterval) {
       (this.cleanupInterval as { unref: () => void }).unref();
@@ -82,8 +79,8 @@ class EventBus {
       const history = this.eventHistory.get(sessionId)!;
       history.push({ id, name: event, data });
       // Trim to max history
-      if (history.length > this.MAX_HISTORY) {
-        history.splice(0, history.length - this.MAX_HISTORY);
+      if (history.length > EVENT_BUS_CONFIG.MAX_HISTORY) {
+        history.splice(0, history.length - EVENT_BUS_CONFIG.MAX_HISTORY);
       }
     }
 
@@ -105,8 +102,8 @@ class EventBus {
    */
   addConnection(sessionId: string): number {
     const count = (this.connectionCount.get(sessionId) || 0) + 1;
-    // D6: Enforce max 50 concurrent connections
-    if (count > this.MAX_CONNECTIONS) {
+    // D6: Enforce max concurrent connections
+    if (count > EVENT_BUS_CONFIG.MAX_CONNECTIONS) {
       return -1;
     }
     this.connectionCount.set(sessionId, count);
@@ -117,14 +114,14 @@ class EventBus {
    * Check if a new connection can be added
    */
   canConnect(sessionId: string): boolean {
-    return (this.connectionCount.get(sessionId) || 0) < this.MAX_CONNECTIONS;
+    return (this.connectionCount.get(sessionId) || 0) < EVENT_BUS_CONFIG.MAX_CONNECTIONS;
   }
 
   /**
    * Get max connections limit
    */
   getMaxConnections(): number {
-    return this.MAX_CONNECTIONS;
+    return EVENT_BUS_CONFIG.MAX_CONNECTIONS;
   }
 
   removeConnection(sessionId: string): number {

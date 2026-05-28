@@ -73,7 +73,7 @@ Return JSON in this exact format:
 If no lore is extracted, return an empty array for lore_extracted.`;
 
   try {
-    const response = await generateText(prompt, { temperature: 0.2, num_ctx: 4096 });
+    const response = await generateText(prompt, { temperature: 0.2 });
 
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {

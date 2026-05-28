@@ -14,7 +14,7 @@ const JWT_SECRET = new TextEncoder().encode(
 
 /**
  * Edge-compatible JWT verification (no DB access).
- * Used by middleware where better-sqlite3 is unavailable.
+ * Used by the proxy where better-sqlite3 is unavailable.
  */
 export async function verifyTokenBasic(
   token: string

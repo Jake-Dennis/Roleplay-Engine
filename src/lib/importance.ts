@@ -37,7 +37,7 @@ export interface ImportanceResult {
 }
 
 // Numeric mapping for importance levels
-const LEVEL_VALUES: Record<ImportanceLevel, number> = {
+export const LEVEL_VALUES: Record<ImportanceLevel, number> = {
   low: 1,
   medium: 2,
   high: 3,

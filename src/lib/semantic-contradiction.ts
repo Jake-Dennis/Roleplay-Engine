@@ -1,4 +1,7 @@
 /**
+ * @deprecated Use src/lib/wiki/lint.ts (SQLite-based contradiction detection) instead.
+ * This module is kept for reference only and will be removed in a future cleanup.
+ *
  * Semantic Contradiction Detection
  *
  * Uses embedding similarity to find related canon entries, then compares
@@ -181,7 +184,6 @@ export async function compareForContradiction(
   try {
     const response = await generateText(prompt, {
       temperature: 0.1,
-      num_ctx: 4096,
     });
 
     // Extract JSON from response
@@ -214,6 +216,7 @@ export async function detectSemanticContradictions(
   _entityType: string = "",
   entityId: string = ""
 ): Promise<SemanticContradiction[]> {
+  void _entityType;
   // Find similar canon entries
   const similarEntries = await findSimilarCanonEntries(userId, content, 10, 0.7);
 

@@ -1,10 +1,10 @@
 import { logger } from '@/lib/logger';
 import { serverError } from '@/lib/error-response';
 
-type RouteHandler = (...args: any[]) => Promise<Response>;
-
-export function withErrorHandler(handler: RouteHandler): RouteHandler {
-  return async (...args) => {
+export function withErrorHandler<T extends unknown[]>(
+  handler: (...args: T) => Promise<Response>
+): (...args: T) => Promise<Response> {
+  return async (...args: T) => {
     try {
       return await handler(...args);
     } catch (err: unknown) {

@@ -20,17 +20,17 @@ import {
   processUserJobs,
   processJobsByType,
   queueJob,
-  type JobType,
+  reapOldJobs,
+  backfillRelationshipEvolution,
 } from "@/lib/job-processor";
 import { getSessionsNeedingSummaries } from "@/lib/summarization";
-import { getEntitiesNeedingEmbeddings, processEmbeddings } from "@/lib/embeddings";
-import { getSessionsNeedingRelationshipAnalysis, processRelationshipAnalysis } from "@/lib/relationship-analysis";
+import { getEntitiesNeedingEmbeddings } from "@/lib/embeddings";
+
 import { needsDecayProcessing } from "@/lib/relationship-decay";
 import { needsMemoryCompression } from "@/lib/memory-compression";
-import { IDLE_TIERS } from "@/lib/config";
+import { IDLE_TIERS, TIME, CONTENT_LIMITS } from "@/lib/config";
 
 // Extracted idle task modules
-import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import {
   wikiCompressSummaries,
   wikiRefineRelationships,
@@ -43,9 +43,9 @@ import {
 import {
   processRelationshipIdleAnalysis,
   queueRelationshipIdleJobs,
-  processRelationshipIdleTier,
   processRemainingQueuedJobs,
 } from "./idle/relationship-tasks";
+import { processEntityMentions } from "./entity-extraction";
 
 // Processing tier thresholds (in milliseconds)
 const TIER_THRESHOLDS = {
@@ -72,6 +72,7 @@ export interface IdleProcessingResult {
   wikiRumorsGenerated: number;
   wikiEntitiesEnriched: number;
   wikiRelationshipsDecayed: number;
+  entityMentionsExtracted: number;
 }
 
 // Track last processing time in memory (resets on server restart)
@@ -82,7 +83,7 @@ const lastProcessingTime = new Map<string, number>();
  */
 let lastCleanupTime = 0;
 const CLEANUP_THROTTLE_MS = 60_000; // 60 seconds
-const STALE_ENTRY_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
+const STALE_ENTRY_MAX_AGE_MS = TIME.ONE_DAY; // 24 hours
 
 /**
  * Remove entries older than 24 hours to prevent unbounded Map growth.
@@ -102,7 +103,7 @@ function cleanupStaleProcessingEntries(): void {
 
 /**
  * Process idle-time jobs for a user when they make a request.
- * Called from middleware on authenticated requests.
+ * Called from the Next.js proxy on authenticated requests.
  */
 export async function processIdleTime(userId: string, universeId: string | null = null): Promise<IdleProcessingResult> {
   // Throttled stale-entry cleanup
@@ -133,6 +134,7 @@ export async function processIdleTime(userId: string, universeId: string | null 
       wikiRumorsGenerated: 0,
       wikiEntitiesEnriched: 0,
       wikiRelationshipsDecayed: 0,
+      entityMentionsExtracted: 0,
     };
   }
 
@@ -152,6 +154,7 @@ export async function processIdleTime(userId: string, universeId: string | null 
     wikiRumorsGenerated: 0,
     wikiEntitiesEnriched: 0,
     wikiRelationshipsDecayed: 0,
+    entityMentionsExtracted: 0,
   };
 
   // Update last processing time
@@ -202,6 +205,12 @@ export async function processIdleTime(userId: string, universeId: string | null 
     // Relationship analysis
     const analyzedCount = await processRelationshipIdleAnalysis(userId);
     result.relationshipsAnalyzed += analyzedCount;
+
+    // Entity mention extraction from memories and summaries
+    try {
+      const mentionResult = await processEntityMentions(userId);
+      result.entityMentionsExtracted = mentionResult.count;
+    } catch { /* non-fatal */ }
   }
 
   // Tier 3 (15+ minutes): Lore expansion + semantic contradiction scan
@@ -222,9 +231,19 @@ export async function processIdleTime(userId: string, universeId: string | null 
     } catch { /* non-fatal */ }
   }
 
-  // Tier 4 (30+ minutes): Decay, compression, summarization
+  // Tier 4 (30+ minutes): Decay, compression, summarization, job reaping
   if (idleTime >= TIER_THRESHOLDS.tier4_30min) {
     result.tiersProcessed.push("30min");
+
+    // Reap old completed/failed/cancelled jobs
+    try {
+      reapOldJobs();
+    } catch { /* non-fatal */ }
+
+    // Backfill relationship evolution entries (idempotent — skips existing)
+    try {
+      backfillRelationshipEvolution(userId);
+    } catch { /* non-fatal */ }
 
     // Wiki: decay relationships via wiki pages
     try {
@@ -255,12 +274,12 @@ export async function processIdleTime(userId: string, universeId: string | null 
         const pendingUpdates: { id: string; content: string; importance: string | null }[] = [];
 
         for (const memory of memories) {
-          const age = (Date.now() - new Date(memory.created_at).getTime()) / (1000 * 60 * 60 * 24);
+          const age = (Date.now() - new Date(memory.created_at).getTime()) / TIME.ONE_DAY;
           if (age >= 90) {
             pendingUpdates.push({ id: memory.id, content: `[ARCHIVED] ${memory.content.slice(0, 100)}`, importance: "archived" });
             result.memoriesCompressed++;
           } else if (age >= 30) {
-            pendingUpdates.push({ id: memory.id, content: memory.content.slice(0, 200), importance: "low" });
+            pendingUpdates.push({ id: memory.id, content: memory.content.slice(0, CONTENT_LIMITS.SHORT), importance: "low" });
             result.memoriesCompressed++;
           } else if (age >= 7) {
             pendingUpdates.push({ id: memory.id, content: memory.content.slice(0, 500), importance: null });

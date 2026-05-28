@@ -1,4 +1,7 @@
 /**
+ * @deprecated Use src/lib/wiki/lint.ts (SQLite-based contradiction detection) instead.
+ * This module is kept for reference only and will be removed in a future cleanup.
+ *
  * Rule-based + Semantic Contradiction Detection
  *
  * Checks lore entities against canon rules for contradictions:
@@ -8,6 +11,7 @@
  * - Semantic contradictions (embedding similarity + LLM comparison)
  */
 
+import fs from "fs";
 import { getDb } from "./db";
 import { detectSemanticContradictions, SemanticContradiction } from "./semantic-contradiction";
 import type { CanonEntity, EntityRow } from "./relationship-types";
@@ -209,7 +213,6 @@ export function detectAllContradictions(userId: string): {
   byType: Record<string, number>;
 } {
   const db = getDb();
-  let total = 0;
   const byType: Record<string, number> = {};
 
   // Check all NPCs
@@ -270,7 +273,6 @@ export async function detectAllContradictionsWithSemantic(
       ).get(entityId, userId) as { name: string; file_path: string | null } | undefined;
       if (row?.file_path) {
         try {
-          const fs = require("fs");
           if (fs.existsSync(row.file_path)) {
             content = fs.readFileSync(row.file_path, "utf-8").slice(0, 2000);
           }

@@ -25,7 +25,6 @@ import type {
   EmotionalState,
   SharedHistoryEntry,
   DecayConfig,
-  RelationshipFrontmatter,
   RelationshipMarkdownData,
 } from "@/lib/relationship-types";
 

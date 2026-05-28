@@ -107,7 +107,7 @@ Messages:
 ${messageText}`;
 
   try {
-    const response = await generateText(prompt, { temperature: 0.3, num_ctx: 4096 });
+    const response = await generateText(prompt, { temperature: 0.3 });
 
     // Extract JSON from response
     const jsonMatch = response.match(/\{[\s\S]*\}/);

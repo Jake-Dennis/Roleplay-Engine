@@ -59,11 +59,11 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
 /**
  * Extract the client IP address from a request.
  *
- * Reads the `x-real-ip` header set by middleware, which extracts the real
- * client IP using `request.ip` (Edge runtime) — resistant to spoofing via
+ * Reads the `x-real-ip` header set by the Next.js proxy, which extracts the real
+ * client IP using `request.ip` — resistant to spoofing via
  * forged X-Forwarded-For headers.
  *
- * When TRUSTED_PROXIES is set (comma-separated IPs), the middleware trusts
+ * When TRUSTED_PROXIES is set (comma-separated IPs), the proxy trusts
  * X-Forwarded-For instead — required for deployments behind reverse proxies
  * (nginx, Cloudflare, etc.).
  */

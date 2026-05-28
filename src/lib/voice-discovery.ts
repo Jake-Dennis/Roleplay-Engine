@@ -6,7 +6,7 @@
  * Supports re-discovery and caching.
  */
 
-import { TTS_CONFIG, TIMEOUTS } from "./config";
+import { TTS_CONFIG, TIMEOUTS, TIME } from "./config";
 
 export interface VoiceInfo {
   id: string;
@@ -130,5 +130,5 @@ export function getLastDiscovery(): number | null {
  */
 export function needsRediscovery(): boolean {
   if (!lastDiscovery) return true;
-  return Date.now() - lastDiscovery > 60 * 60 * 1000; // 1 hour
+  return Date.now() - lastDiscovery > TIME.ONE_HOUR; // 1 hour
 }

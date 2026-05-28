@@ -10,7 +10,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { APP_CONFIG, AUTH_CONFIG, TIMEOUTS } from '@/lib/config';
+import { APP_CONFIG, TIMEOUTS } from '@/lib/config';
 
 export async function runStartupChecks(): Promise<void> {
   // JWT_SECRET check

@@ -1,3 +1,23 @@
+/**
+ * Context Retrieval Pipeline
+ *
+ * WHAT: Assembles the context window for LLM generation. Retrieves scene state,
+ * narrative memories, lore, relationships, recent messages, and active threads.
+ * Entry point: getRetrievedContext(userId, sessionId, universeId, messageContent, options?)
+ *
+ * Pipeline order:
+ * 1. Scene context (location, NPCs, tone)
+ * 2. Lore retrieval (nearby wiki entries, ranked by relevance)
+ * 3. Memory retrieval (narrative memories, importance-ranked)
+ * 4. Relationship context (current emotional state)
+ * 5. Recent messages (truncated to budget)
+ * 6. Active narrative threads
+ * 7. Intent analysis (keyword → semantic)
+ *
+ * Budget enforcement: applyContextBudget() trims each section to its token allocation
+ * defined in PROMPT_BUDGET (from config.ts). Total context: 6000 tokens.
+ */
+
 import fs from "fs";
 import path from "path";
 import { getDb } from "@/lib/db";
@@ -6,6 +26,8 @@ import { readWikiPage, listWikiPages } from "@/lib/wiki/file-io";
 import { parseWikiIndex, scoreWikiEntry, resolveWikiPagePath } from "@/lib/wiki/index-utils";
 import { safeParseWarn } from "@/lib/safe-json";
 import { getWikiRoot } from "@/lib/wiki/wiki-root";
+import { generateEmbedding } from "@/lib/ollama";
+import { calculateImportance, type ImportanceScores } from "@/lib/importance";
 
 // H5: Re-export prompt assembly function from canonical source (prompt-builder.ts)
 export { assemblePromptWithBudget } from "@/lib/prompt-builder";
@@ -18,8 +40,14 @@ export interface SceneContext {
   location: string | null;
   goal: string | null;
   tone: string | null;
+  currentIntent: string | null;
   activeNpcs: string[];
   activeThreads: string[];
+  /** New narrative state fields (Task 31) */
+  sceneType?: string | null;
+  sceneTension?: number | null;
+  conflictType?: string | null;
+  stakes?: string | null;
 }
 
 export interface LoreContext {
@@ -27,7 +55,15 @@ export interface LoreContext {
 }
 
 export interface RelationshipContext {
-  relationships: { source: string; target: string; state: string | null }[];
+  relationships: {
+    source: string;
+    target: string;
+    state: string | null;           // current emotional_state string (e.g., "like")
+    emotionalState?: Record<string, number>;  // parsed emotion vector from DB JSON
+    stage?: string | null;          // relationship_stage
+    sharedHistory?: { type: string; summary: string; at: string }[];  // parsed from JSON (last 2)
+    updatedAt?: string | null;      // for decay calculation
+  }[];
 }
 
 export interface MessageContext {
@@ -41,6 +77,58 @@ export interface RetrievedContext {
   recentMessages: MessageContext;
   canonContext: string | null;
   intent: Intent;
+
+  /** Narrative memories retrieved for the current context */
+  memories?: {
+    entries: { content: string; type: string; importance: number; created_at: string }[];
+  };
+
+  /** Active narrative threads in the current session/universe */
+  narrativeThreads?: {
+    title: string; status: string; description?: string; escalation_level?: string;
+  }[];
+
+  /** Message summaries for when raw messages are truncated */
+  messageSummaries?: {
+    summary: string; type: string;
+  }[];
+
+  /** Active entity names appearing in the narrative (Task 25) */
+  activeEntities?: string[];
+
+  /** Relationship evolution history (Task 28) */
+  relationshipEvolution?: Array<{
+    relationshipId: string;
+    source: string;
+    target: string;
+    emotionalState: string | null;
+    relationshipStage: string | null;
+    triggerEvent: string | null;
+    recordedAt: string;
+  }>;
+
+  /** Narrative anchors — significant relationship moments that resist decay (Task 27) */
+  relationshipAnchors?: Array<{
+    description: string;
+    anchor_type: string;
+    emotional_impact?: string;
+  }>;
+
+  /** Decision points — narrative choices presented and selected (Task 34) */
+  decisionPoints?: Array<{
+    prompt: string;
+    choicesMade: string[];
+    context: string | null;
+  }>;
+
+  /** Session-level narrative state (Task 35) */
+  narrativeState?: {
+    tension: number | null;
+    pacing: number | null;
+    narrativePhase: string | null;
+    activeGoals: string | null;
+    activeConflicts: string | null;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -65,6 +153,33 @@ function parseJsonOrSplit(val: string | null): string[] {
   return val.split(",").map((s) => s.trim()).filter(Boolean);
 }
 
+/**
+ * Compute cosine similarity between two vectors for hybrid scoring.
+ * Returns a value in [0, 1] where 1 = identical, 0 = orthogonal or opposite.
+ */
+function cosineSimilarity(a: number[], b: number[]): number {
+  if (a.length !== b.length || a.length === 0) return 0;
+
+  let dotProduct = 0;
+  let magnitudeA = 0;
+  let magnitudeB = 0;
+
+  for (let i = 0; i < a.length; i++) {
+    const ai = a[i];
+    const bi = b[i];
+    if (!isFinite(ai) || !isFinite(bi)) return 0;
+    dotProduct += ai * bi;
+    magnitudeA += ai * ai;
+    magnitudeB += bi * bi;
+  }
+
+  const magProduct = Math.sqrt(magnitudeA) * Math.sqrt(magnitudeB);
+  if (magProduct === 0) return 0;
+
+  const cos = dotProduct / magProduct;
+  return Math.max(0, Math.min(1, cos));
+}
+
 // ---------------------------------------------------------------------------
 // Retrieval functions
 // ---------------------------------------------------------------------------
@@ -75,7 +190,8 @@ function parseJsonOrSplit(val: string | null): string[] {
 export function getSceneContext(sessionId: string): SceneContext {
   const db = getDb();
   const result = db.prepare(
-    `SELECT active_location_id, current_goal, emotional_tone, active_npcs, active_threads
+    `SELECT active_location_id, current_goal, emotional_tone, current_intent, active_npcs, active_threads,
+            scene_type, scene_tension, conflict_type, stakes
      FROM scene_states
      WHERE session_id = ?
      ORDER BY updated_at DESC LIMIT 1`
@@ -83,21 +199,166 @@ export function getSceneContext(sessionId: string): SceneContext {
     active_location_id: string | null;
     current_goal: string | null;
     emotional_tone: string | null;
+    current_intent: string | null;
     active_npcs: string | null;
     active_threads: string | null;
+    scene_type: string | null;
+    scene_tension: number | null;
+    conflict_type: string | null;
+    stakes: string | null;
   } | undefined;
 
   if (!result) {
-    return { location: null, goal: null, tone: null, activeNpcs: [], activeThreads: [] };
+    return { location: null, goal: null, tone: null, currentIntent: null, activeNpcs: [], activeThreads: [] };
   }
 
   return {
     location: result.active_location_id,
     goal: result.current_goal,
     tone: result.emotional_tone,
+    currentIntent: result.current_intent,
     activeNpcs: parseJsonOrSplit(result.active_npcs),
     activeThreads: parseJsonOrSplit(result.active_threads),
+    sceneType: result.scene_type ?? null,
+    sceneTension: result.scene_tension ?? null,
+    conflictType: result.conflict_type ?? null,
+    stakes: result.stakes ?? null,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Memory retrieval
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch narrative memories with importance-based ranking.
+ * 
+ * Parses importance JSON, calculates composite scores via calculateImportance(),
+ * filters archived entries, and sorts by composite score descending.
+ * Falls back to created_at ordering when importance data is unavailable.
+ */
+export function getMemoryContext(
+  userId: string,
+  sessionId?: string,
+  universeId?: string,
+  limit: number = 10
+): RetrievedContext['memories'] {
+  const db = getDb();
+  let query = `SELECT content, type, importance, created_at FROM narrative_memories WHERE user_id = ?`;
+  const params: (string | number)[] = [userId];
+  
+  if (sessionId) { query += ` AND session_id = ?`; params.push(sessionId); }
+  if (universeId) { query += ` AND universe_id = ?`; params.push(universeId); }
+  
+  query += ` ORDER BY created_at DESC LIMIT ?`;
+  params.push(limit);
+  
+  const rows = db.prepare(query).all(...params) as { content: string; type: string; importance: string | null; created_at: string }[];
+  
+  if (rows.length === 0) return undefined;
+  
+  // Parse importance JSON and rank by composite score
+  const parsed = rows
+    .map(r => {
+      let scores: ImportanceScores | null = null;
+      if (typeof r.importance === 'string') {
+        try { scores = JSON.parse(r.importance); } catch { /* ignore */ }
+      }
+      return { ...r, importanceScores: scores };
+    })
+    .filter(r => r.importanceScores !== null);
+  
+  if (parsed.length > 0) {
+    // Calculate composite scores and filter archived
+    const withComposite = parsed.map(r => ({
+      ...r,
+      result: calculateImportance(r.importanceScores!)
+    }));
+    
+    const nonArchived = withComposite.filter(r => r.result.tier !== 'archived');
+    // Sort: high first, then normal, then low
+    nonArchived.sort((a, b) => b.result.composite - a.result.composite);
+    
+    return {
+      entries: nonArchived.map(r => ({
+        content: r.content,
+        type: r.type,
+        importance: r.result.composite,
+        created_at: r.created_at
+      }))
+    };
+  }
+  
+  // Fallback: return as-is sorted by created_at
+  return {
+    entries: rows.map(r => ({
+      content: r.content,
+      type: r.type,
+      importance: Number(r.importance ?? 0) || 0,
+      created_at: r.created_at
+    }))
+  };
+}
+
+/**
+ * Fetch recent message summaries for a session.
+ * Returns the most recent non-archived summaries ordered by creation time.
+ */
+export function getMessageSummaries(
+  sessionId: string,
+  count: number = 5
+): RetrievedContext['messageSummaries'] {
+  const db = getDb();
+  try {
+    const rows = db.prepare(
+      `SELECT ms.summary, ms.summary_type as type
+       FROM message_summaries ms
+       JOIN messages m ON m.id = ms.message_id
+       WHERE m.session_id = ? AND m.is_deleted = 0
+         AND ms.summary_type != 'archived'
+       ORDER BY ms.created_at DESC LIMIT ?`
+    ).all(sessionId, count) as { summary: string; type: string }[];
+    
+    if (rows.length === 0) return undefined;
+    
+    return rows.map(r => ({
+      summary: r.summary,
+      type: r.type
+    }));
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Fetch active narrative threads for a session/universe.
+ * Returns threads in active or dormant status, sorted by escalation level then creation time.
+ */
+export function getActiveThreads(
+  sessionId: string,
+  universeId?: string
+): RetrievedContext['narrativeThreads'] {
+  const db = getDb();
+  try {
+    let query = `SELECT title, status, description, escalation_level FROM narrative_threads
+                 WHERE session_id = ? AND status IN ('active', 'dormant')`;
+    const params: (string | number)[] = [sessionId];
+    if (universeId) { query += ` AND universe_id = ?`; params.push(universeId); }
+    query += ` ORDER BY escalation_level DESC, created_at DESC`;
+
+    const rows = db.prepare(query).all(...params) as { title: string; status: string; description: string | null; escalation_level: string | null }[];
+
+    if (rows.length === 0) return undefined;
+
+    return rows.map(r => ({
+      title: r.title,
+      status: r.status,
+      description: r.description || undefined,
+      escalation_level: r.escalation_level ?? undefined
+    }));
+  } catch {
+    return undefined;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -223,6 +484,98 @@ export async function getWikiContext(
     }
 
     if (entries.length > 0) {
+      // --- Vector search hybrid scoring (additive enhancement) ---
+      try {
+        const queryEmbedding = await generateEmbedding(query);
+        if (queryEmbedding && queryEmbedding.length > 0) {
+          const db2 = getDb();
+          const entryNames = entries.map(e => e.name);
+          
+          // Load stored embeddings for these entry names from embedding_vectors
+          const vectorRows = db2.prepare(
+            `SELECT ei.entity_id, ev.vector_data
+             FROM embedding_vectors ev
+             JOIN embedding_index ei ON ev.embedding_id = ei.id
+             WHERE ei.user_id = ? AND ei.entity_id IN (${entryNames.map(() => '?').join(',')})`
+          ).all(userId, ...entryNames) as { entity_id: string; vector_data: string }[];
+          
+          if (vectorRows.length > 0) {
+            // Build lookup map: entity_id → vector
+            const vectorMap = new Map<string, number[]>();
+            for (const vr of vectorRows) {
+              try {
+                const parsed = JSON.parse(vr.vector_data);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  vectorMap.set(vr.entity_id, parsed);
+                }
+              } catch { /* skip invalid vectors */ }
+            }
+            
+            if (vectorMap.size > 0) {
+              // Query entity mentions for scoring boost (Task 25)
+              let mentionNames: string[] = [];
+              try {
+                const db3 = getDb();
+                const mentionRows = db3.prepare(
+                  "SELECT DISTINCT entity_name FROM entity_mentions WHERE user_id = ? AND frequency > 1 ORDER BY frequency DESC LIMIT 10"
+                ).all(userId) as { entity_name: string }[];
+                mentionNames = mentionRows.map(m => m.entity_name.toLowerCase());
+              } catch { /* non-blocking */ }
+
+              // Compute hybrid scores: 0.6 × keyword_score + 0.4 × vector_similarity
+              const withHybridScores = entries.map((entry, idx) => {
+                const storedVector = vectorMap.get(entry.name);
+                let vectorSimilarity = 0;
+                if (storedVector) {
+                  vectorSimilarity = cosineSimilarity(queryEmbedding, storedVector);
+                }
+                // keyword proxy: position-based (higher rank = higher score)
+                const keywordScore = idx < vectorRows.length ? (vectorRows.length - idx) / vectorRows.length : 0.1;
+                const hybridScore = vectorSimilarity > 0
+                  ? 0.6 * keywordScore + 0.4 * vectorSimilarity
+                  : keywordScore;
+                // Entity mention boost (Task 25)
+                const entryName = entry.name.toLowerCase();
+                const entityBoost = mentionNames.length > 0 && mentionNames.some(m => entryName.includes(m) || m.includes(entryName)) ? 0.2 : 0;
+                return { entry, hybridScore: hybridScore + entityBoost };
+              });
+              
+              // Re-sort by hybrid score descending
+              withHybridScores.sort((a, b) => b.hybridScore - a.hybridScore);
+              
+              return {
+                entries: withHybridScores.slice(0, 10).map(e => e.entry)
+              };
+            }
+          }
+        }
+      } catch {
+        // Vector search unavailable — fall back to keyword-only results
+      }
+
+      // --- Entity mention boost (Task 25) ---
+      try {
+        const db3 = getDb();
+        const mentions = db3.prepare(
+          "SELECT DISTINCT entity_name FROM entity_mentions WHERE user_id = ? AND frequency > 1 ORDER BY frequency DESC LIMIT 10"
+        ).all(userId) as { entity_name: string }[];
+
+        if (mentions.length > 0) {
+          const mentionNames = mentions.map(m => m.entity_name.toLowerCase());
+          const withEntityBoost = entries.map((entry, idx) => {
+            const entryName = entry.name.toLowerCase();
+            const isMatched = mentionNames.some(m => entryName.includes(m) || m.includes(entryName));
+            const entityBoost = isMatched ? 0.2 : 0;
+            const keywordScore = entries.length > 0 ? (entries.length - idx) / entries.length : 0.1;
+            return { entry, score: keywordScore + entityBoost, entityBoost };
+          });
+          withEntityBoost.sort((a, b) => b.score - a.score);
+          return { entries: withEntityBoost.slice(0, 10).map(e => e.entry) };
+        }
+      } catch {
+        // Entity boost is non-blocking
+      }
+
       return { entries };
     }
 
@@ -238,23 +591,148 @@ export async function getWikiContext(
 export function getRelationshipContext(universeId: string): RelationshipContext {
   try {
     const db = getDb();
-    // relationships table: source_entity, target_entity, emotional_state
     const relationships = db.prepare(
-      `SELECT r.source_entity, r.target_entity, r.emotional_state
+      `SELECT r.source_entity, r.target_entity, r.emotional_state,
+              r.relationship_stage, r.shared_history, r.updated_at
        FROM relationships r
        WHERE r.universe_id = ?
        ORDER BY r.updated_at DESC`
-    ).all(universeId) as { source_entity: string; target_entity: string; emotional_state: string | null }[];
+    ).all(universeId) as {
+      source_entity: string; target_entity: string; emotional_state: string | null;
+      relationship_stage: string | null; shared_history: string | null; updated_at: string | null;
+    }[];
 
     return {
-      relationships: (relationships || []).map((r) => ({
-        source: r.source_entity,
-        target: r.target_entity,
-        state: r.emotional_state,
-      })),
+      relationships: (relationships || []).map((r) => {
+        // Parse emotional_state JSON object if it's a valid JSON object
+        let emotionalState: Record<string, number> | undefined;
+        try {
+          if (r.emotional_state && r.emotional_state !== 'null') {
+            const parsed = JSON.parse(r.emotional_state);
+            if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+              emotionalState = parsed as Record<string, number>;
+            }
+          }
+        } catch { /* keep undefined — not a JSON object, use raw state */ }
+
+        // Parse shared_history JSON array (last 2 entries only)
+        let sharedHistory: { type: string; summary: string; at: string }[] | undefined;
+        try {
+          if (r.shared_history && r.shared_history !== 'null') {
+            const parsed = JSON.parse(r.shared_history);
+            if (Array.isArray(parsed)) {
+              sharedHistory = parsed.slice(0, 2) as { type: string; summary: string; at: string }[];
+            }
+          }
+        } catch { /* keep undefined */ }
+
+        return {
+          source: r.source_entity,
+          target: r.target_entity,
+          state: r.emotional_state,
+          emotionalState,
+          stage: r.relationship_stage,
+          sharedHistory,
+          updatedAt: r.updated_at,
+        };
+      }),
     };
   } catch {
     return { relationships: [] };
+  }
+}
+
+/**
+ * Fetch relationship evolution history for a universe.
+ * Returns up to the last 3 evolution entries per relationship,
+ * ordered by recorded_at DESC.
+ */
+export function getRelationshipEvolution(
+  universeId: string,
+  limit: number = 3
+): RetrievedContext['relationshipEvolution'] {
+  try {
+    const db = getDb();
+    // Use a correlated subquery or window function to get last N per relationship
+    const rows = db.prepare(`
+      SELECT re.*, r.source_entity, r.target_entity
+      FROM relationship_evolution re
+      JOIN relationships r ON re.relationship_id = r.id
+      WHERE r.universe_id = ?
+      ORDER BY re.recorded_at DESC
+    `).all(universeId) as {
+      relationship_id: string;
+      source_entity: string;
+      target_entity: string;
+      emotional_state: string | null;
+      relationship_stage: string | null;
+      trigger_event: string | null;
+      recorded_at: string;
+      [key: string]: unknown;
+    }[];
+
+    if (rows.length === 0) return undefined;
+
+    // Group by relationship_id, take last N per group
+    const grouped = new Map<string, typeof rows>();
+    for (const row of rows) {
+      if (!grouped.has(row.relationship_id)) {
+        grouped.set(row.relationship_id, []);
+      }
+      if (grouped.get(row.relationship_id)!.length < limit) {
+        grouped.get(row.relationship_id)!.push(row);
+      }
+    }
+
+    const result = Array.from(grouped.values()).flat().map(row => ({
+      relationshipId: row.relationship_id,
+      source: row.source_entity,
+      target: row.target_entity,
+      emotionalState: row.emotional_state,
+      relationshipStage: row.relationship_stage,
+      triggerEvent: row.trigger_event,
+      recordedAt: row.recorded_at,
+    }));
+
+    return result;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Fetch recent decision points for a session.
+ * Returns the 3 most recent decisions ordered by created_at DESC.
+ * Only includes decisions where narrative context is still active
+ * (not superseded by a more recent state change in the same session).
+ */
+export function getDecisionPoints(
+  sessionId: string,
+  limit: number = 3
+): RetrievedContext['decisionPoints'] {
+  try {
+    const db = getDb();
+    const rows = db.prepare(`
+      SELECT prompt, choices_made, narrative_context
+      FROM decision_points
+      WHERE session_id = ?
+      ORDER BY created_at DESC
+      LIMIT ?
+    `).all(sessionId, limit) as {
+      prompt: string;
+      choices_made: string | null;
+      narrative_context: string | null;
+    }[];
+
+    if (rows.length === 0) return undefined;
+
+    return rows.map(r => ({
+      prompt: r.prompt,
+      choicesMade: safeParseWarn<string[]>(r.choices_made, "decision choices_made", []) ?? [],
+      context: r.narrative_context ?? null,
+    }));
+  } catch {
+    return undefined;
   }
 }
 
@@ -352,20 +830,72 @@ export async function getRetrievedContext(
   const db = getDb();
   const scene = getSceneContext(sessionId);
 
-  // Look up userId from session for wiki context
+  // Look up userId from session for wiki context + narrative state
   const session = db.prepare(
-    "SELECT owner_id FROM sessions WHERE id = ?"
-  ).get(sessionId) as { owner_id: string } | undefined;
+    "SELECT owner_id, narrative_tension, pacing, narrative_phase, active_goals, active_conflicts FROM sessions WHERE id = ?"
+  ).get(sessionId) as { owner_id: string; narrative_tension: number | null; pacing: number | null; narrative_phase: string | null; active_goals: string | null; active_conflicts: string | null; } | undefined;
   const userId = session?.owner_id || "";
 
   const lore = userId
     ? await getWikiContext(userId, universeId, scene)
     : { entries: [] };
   const relationships = getRelationshipContext(universeId);
+  const relationshipEvolution = getRelationshipEvolution(universeId);
   const recentMessages = getRecentMessages(sessionId);
   const canonContext = getCanonContext(universeId);
 
   const intent = userMessage ? classifyIntent(userMessage) : "social";
+
+  // New retrieval integrations (Tasks 8-10)
+  const memories = getMemoryContext(userId, sessionId, universeId);
+  const narrativeThreads = getActiveThreads(sessionId, universeId);
+  const messageSummaries = getMessageSummaries(sessionId);
+
+  // Active entities from entity_mentions (Task 25)
+  let activeEntities: string[] | undefined;
+  try {
+    const mentionRows = db.prepare(
+      "SELECT entity_name FROM entity_mentions WHERE user_id = ? AND frequency > 1 GROUP BY entity_name ORDER BY MAX(frequency) DESC LIMIT 5"
+    ).all(userId) as { entity_name: string }[];
+    if (mentionRows.length > 0) {
+      activeEntities = mentionRows.map(r => r.entity_name);
+    }
+  } catch { /* non-blocking */ }
+
+  // Narrative anchors — significant relationship moments (Task 27)
+  let relationshipAnchors: RetrievedContext["relationshipAnchors"];
+  try {
+    const anchorRows = db.prepare(`
+      SELECT na.description, na.anchor_type, na.emotional_impact
+      FROM narrative_anchors na
+      JOIN relationships r ON r.id = na.relationship_id
+      WHERE na.user_id = ? AND r.universe_id = ?
+      ORDER BY na.created_at DESC
+      LIMIT 20
+    `).all(userId, universeId) as { description: string; anchor_type: string; emotional_impact: string | null }[];
+    if (anchorRows.length > 0) {
+      relationshipAnchors = anchorRows.map((a) => ({
+        description: a.description,
+        anchor_type: a.anchor_type,
+        emotional_impact: a.emotional_impact ?? undefined,
+      }));
+    }
+  } catch { /* non-blocking — anchors are optional context */ }
+
+  // Decision points — narrative choices (Task 34)
+  const decisionPoints = getDecisionPoints(sessionId);
+
+  // Narrative state — session-level narrative fields (Task 35)
+  let narrativeState: RetrievedContext["narrativeState"];
+  if (session && (session.narrative_tension != null || session.pacing != null || session.narrative_phase != null || session.active_goals != null || session.active_conflicts != null)) {
+    narrativeState = {
+      tension: session.narrative_tension ?? null,
+      pacing: session.pacing ?? null,
+      narrativePhase: session.narrative_phase ?? null,
+      activeGoals: session.active_goals ?? null,
+      activeConflicts: session.active_conflicts ?? null,
+    };
+  }
 
   return {
     scene,
@@ -374,5 +904,13 @@ export async function getRetrievedContext(
     recentMessages,
     canonContext,
     intent,
+    memories: memories ?? undefined,
+    narrativeThreads: narrativeThreads ?? undefined,
+    messageSummaries: messageSummaries ?? undefined,
+    activeEntities: activeEntities ?? undefined,
+    relationshipEvolution: relationshipEvolution ?? undefined,
+    relationshipAnchors: relationshipAnchors ?? undefined,
+    decisionPoints: decisionPoints ?? undefined,
+    narrativeState: narrativeState ?? undefined,
   };
 }
