@@ -35,7 +35,7 @@ const relationships = db.prepare(
 console.log(`Found ${relationships.length} relationships in database`);
 
 let created = 0;
-let skipped = 0;
+const skipped = 0;
 let errors = 0;
 
 for (const rel of relationships) {

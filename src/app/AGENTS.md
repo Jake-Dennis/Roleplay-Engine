@@ -21,7 +21,7 @@ src/app/
 │   ├── timeline/           # Timeline pages + error.tsx
 │   ├── wiki/[...slug]/     # Catch-all wiki route
 │   └── ...                 # 13 route groups total
-├── api/                    # 75 REST route handlers (see api/AGENTS.md)
+├── api/                    # 94 REST route handlers (see api/AGENTS.md)
 ├── login/                  # Auth pages (outside route group)
 └── register/
 ```
@@ -34,9 +34,9 @@ src/app/
 - **Root layout**: `dynamic = "force-dynamic"` — all routes SSR, no SSG/ISR.
 
 ## AUTH FLOW
-- Unauthenticated → middleware redirects to `/login`.
-- Authenticated → middleware redirects away from `/login`/`/register`.
-- Per-route token verification in API handlers (not middleware).
+- Unauthenticated → proxy redirects to `/login`.
+- Authenticated → proxy redirects away from `/login`/`/register`.
+- Per-route token verification in API handlers (not proxy).
 
 ## ANTI-PATTERNS
 - **Do NOT move `app-layout-shell.tsx`** — co-located in `(app)/` by design.

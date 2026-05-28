@@ -7,6 +7,7 @@
 ```
 src/lib/
 ├── auth.ts / auth-token.ts     # JWT, bcrypt, token extraction
+├── jobs/                       # Job processing (14 files, see jobs/AGENTS.md)
 ├── db.ts                       # SQLite singleton (WAL mode, foreign keys)
 ├── ollama.ts                   # Ollama client (text, stream, embeddings)
 ├── prompt-builder.ts           # Prompt assembly for LLM calls
@@ -40,13 +41,13 @@ src/lib/
 ```
 
 ## CONVENTIONS
-- **Flat structure** — all utilities are siblings. Only `wiki/` has a subdirectory.
+- **Flat structure** — all utilities are siblings. Only `wiki/` and `jobs/` have subdirectories.
 - **No barrel exports** — import directly from file path.
 - **Raw SQL** — `db.prepare("...").get/all/run()` with `?` parameters. No ORM.
 - **Types co-located** — interfaces live with their implementation files.
 - **Config centralized** — `config.ts` exports all app constants.
 
 ## ANTI-PATTERNS
-- **Do NOT create new subdirectories** unless a clear subsystem emerges (wiki/ is the only one).
+- **Do NOT create new subdirectories** unless a clear subsystem emerges (only wiki/ and jobs/ exist).
 - **Do NOT add ORM** — raw better-sqlite3 is the pattern.
 - **Do NOT import from `data/`** — runtime storage, not source code.

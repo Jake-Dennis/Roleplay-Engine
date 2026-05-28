@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // OMO working directory (gitignored, not source code):
+    ".omo/**",
+    // Scripts directory (build/migration scripts, not application code):
+    "scripts/**",
+    // Obsidian docs tooling (external, not application code):
+    "obsidian-docs/**",
   ]),
 ]);
 

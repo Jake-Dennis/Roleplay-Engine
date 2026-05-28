@@ -277,7 +277,7 @@ function main(): void {
   console.log("── Phase 2: Lore File Archiving ──────────────────────────────");
 
   let totalFilesArchived = 0;
-  let totalFilesSkipped = 0;
+  const totalFilesSkipped = 0;
   let totalBytesArchived = 0;
   let totalLoreDirsCleaned = 0;
   let totalLoreDirsRemaining = 0;

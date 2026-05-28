@@ -1,4 +1,7 @@
 import type { NextConfig } from "next";
+import bundleAnalyzer from "@next/bundle-analyzer";
+
+const withBundleAnalyzer = bundleAnalyzer({ enabled: true });
 
 const nextConfig: NextConfig = {
   async headers() {
@@ -28,7 +31,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;",
+            value: `default-src 'self'; script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ""}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;`,
           },
         ],
       },
@@ -38,5 +41,5 @@ const nextConfig: NextConfig = {
 };
 
 export default process.env.ANALYZE === "true"
-  ? require("@next/bundle-analyzer")({ enabled: true })(nextConfig)
+  ? withBundleAnalyzer(nextConfig)
   : nextConfig;

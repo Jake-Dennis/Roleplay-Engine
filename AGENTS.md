@@ -19,11 +19,11 @@ Roleplay-Engine/
 ├── src/
 │   ├── app/                    # Next.js App Router
 │   │   ├── (app)/              # Route group: authenticated pages (sidebar layout)
-│   │   ├── api/                # 75 REST route handlers (route.ts)
+│   │   ├── api/                # 94 REST route handlers (route.ts)
 │   │   ├── login/ / register/  # Auth pages (outside route group)
 │   │   ├── layout.tsx          # Root layout — force-dynamic, Inter font
 │   │   └── page.tsx            # Redirects to /login
-│   ├── components/             # 56 .tsx files, 12 feature directories
+│   ├── components/             # 71 .tsx files, 12 feature directories
 │   │   ├── wiki/               # 12 wiki UI components
 │   │   ├── ui/                 # 7 shared primitives (Modal, LoadingState, etc.)
 │   │   ├── chat/ / session/    # Session/chat components
@@ -33,7 +33,8 @@ Roleplay-Engine/
 │   ├── contexts/               # 2 files: app-context.tsx + active-universe.tsx (compat shim)
 │   ├── hooks/                  # 10 custom hooks (use-* prefix)
 │   ├── lib/                    # 37 flat utility files + wiki/ subdirectory
-│   │   └── wiki/               # 14-file wiki subsystem (I/O, wikilinks, ingest, query, lint)
+│   │   ├── wiki/               # 14-file wiki subsystem (I/O, wikilinks, ingest, query, lint)
+│   │   └── jobs/               # 14-file job processing (types, queue, handlers, see lib/jobs/AGENTS.md)
 │   └── middleware.ts           # Edge middleware (auth redirects, mostly no-op)
 ├── data/                       # Runtime data (gitignored): SQLite DBs + per-user wiki markdown
 ├── scripts/                    # One-off migration/utility scripts
@@ -44,7 +45,7 @@ Roleplay-Engine/
 ## WHERE TO LOOK
 | Task | Location | Notes |
 |------|----------|-------|
-| Add API endpoint | `src/app/api/{resource}/route.ts` | Raw SQL, inline auth check, NextResponse.json errors |
+| Add API endpoint | `src/app/api/{resource}/route.ts` | Raw SQL, inline auth check, withErrorHandler, NextResponse.json errors |
 | Add UI component | `src/components/{feature}/` | Feature-specific or `ui/` for shared primitives |
 | Add wiki feature | `src/lib/wiki/` + `src/components/wiki/` | Lib for logic, components for rendering |
 | Add custom hook | `src/hooks/use-{name}.ts` | Return shape: `{ data, loading, error, refresh }` |
@@ -54,13 +55,62 @@ Roleplay-Engine/
 | Change styling | `src/app/globals.css` | Tailwind v4 `@theme` tokens, no tailwind.config |
 | Auth logic | `src/lib/auth.ts` + `src/lib/auth-token.ts` | JWT via jose, bcrypt(12), cookie + header fallback |
 | Background jobs | `src/lib/job-processor.ts` + `src/lib/idle-processing.ts` | No persistent workers, on-demand triggers |
+| Add job handler | `src/lib/jobs/{handler-name}.ts` | Export `async process(job)`, see lib/jobs/AGENTS.md |
+
+## ENTRY POINTS
+
+For complex modules, read files in this order to understand the data flow:
+
+### Auth System
+```
+src/lib/auth.ts           — core: hashing, JWT create/verify, user CRUD
+src/lib/with-auth.ts      — API route auth HOF (extracts token + verifies)
+src/app/api/auth/login/route.ts — login endpoint (authenticateUser → set cookie)
+src/app/login/page.tsx    — client-side login UI
+```
+Supporting: `src/lib/auth-token.ts`, `src/lib/with-error-handler.ts`, `src/app/api/auth/register/route.ts`
+
+### Job Processing System
+```
+src/lib/jobs/types.ts      — job types (20), priorities, statuses, constants
+src/lib/jobs/queue.ts      — queue operations (queueJob, getUserJobs, progress)
+src/lib/job-processor.ts   — orchestrator (processUserJobs, processJobsByType)
+src/lib/idle-processing.ts — 4-tier idle scheduling (5/10/15/30 min)
+```
+Supporting: `src/lib/jobs/` (all handler files), `src/app/api/jobs/route.ts`, `src/app/api/jobs/stream/route.ts`
+
+### SSE/Events System
+```
+src/lib/event-bus.ts       — EventBus class (on/emit/registerController/history)
+src/app/api/sessions/[id]/stream/route.ts — session SSE (message:*, scene:*, job:* events)
+src/app/api/jobs/stream/route.ts          — job progress SSE (job:progress events)
+```
+Supporting: `src/lib/config.ts` (EVENT_BUS_CONFIG, TIMEOUTS)
+
+### Wiki Subsystem
+```
+src/lib/wiki/types.ts     — WikiFrontmatter, WikiPage, ConflictError types
+src/lib/wiki/file-io.ts   — CRUD foundation, file locking, conflict detection
+src/lib/wiki/wikilinks.ts — wikilink parsing and 3-pass resolution
+src/lib/wiki/query.ts     — LLM-powered natural language query + synthesis
+```
+Supporting: `src/lib/wiki/` (validation, lint, ingest, index-generator, orphans, history, etc.)
+
+### Session/Generation Pipeline
+```
+src/app/api/generate/[id]/route.ts — generation endpoint (orchestrates retrieval→prompt→Ollama→SSE)
+src/lib/retrieval.ts     — context retrieval pipeline (getRetrievedContext)
+src/lib/prompt-builder.ts — structured prompt assembly (10-section prompt)
+src/lib/ollama.ts         — LLM client (generateTextStream, embeddings, validation)
+```
+Supporting: `src/app/(app)/session/[id]/page.tsx`, `src/app/api/sessions/[id]/turn/route.ts`, `src/lib/config.ts`
 
 ## CONVENTIONS
-- **Import alias**: `@/*` → `./src/*` (tsconfig.json). 374 uses across 130 files.
+- **Import alias**: `@/*` → `./src/*` (tsconfig.json). 374+ uses across 130+ files.
 - **No barrel exports**: Zero `index.ts` re-export files. Always import from specific file paths.
 - **File naming**: kebab-case for files/dirs, PascalCase for component files.
 - **API routes**: All `route.ts` files. No server actions (`"use server"` = none).
-- **Client/Server split**: Server by default. `"use client"` only when hooks/browser APIs needed. 63% of components are client.
+- **Client/Server split**: Server by default. `"use client"` only when hooks/browser APIs needed. 66% of components are client (47 of 71).
 - **Auth pattern**: Every route does inline token verification. Two extraction styles coexist: direct cookie access (older) and `getAuthToken()` utility (newer).
 - **Error responses**: Always `NextResponse.json({ error: "..." }, { status: N })`.
 - **DB access**: Raw better-sqlite3, no ORM. `db.prepare("...").get/all/run()`. Parameterized with `?`.

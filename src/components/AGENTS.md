@@ -1,7 +1,7 @@
 # UI COMPONENTS — src/components/
 
 ## OVERVIEW
-56 `.tsx` files across 12 feature directories. 63% client components (`"use client"`), 37% server (pure display). No barrel exports.
+71 `.tsx` files across 12 feature directories. 66% client components (`"use client"`, 47 of 71), 34% server (pure display). No barrel exports.
 
 ## STRUCTURE
 ```
@@ -22,8 +22,8 @@ src/components/
 ```
 
 ## CLIENT/SERVER SPLIT
-- **Client (63%)**: All wiki, session, chat, timeline, relationship, narrative, canon, tts components. Any component using hooks (`useState`, `useEffect`, `useRouter`) or browser APIs.
-- **Server (37%)**: `ui/loading-state.tsx`, `ui/empty-state.tsx`, `ui/status-badge.tsx`, `layout/page-header.tsx`. Pure display, no interactivity.
+- **Client (66%)**: All wiki, session, chat, timeline, relationship, narrative, canon, tts components. Any component using hooks (`useState`, `useEffect`, `useRouter`) or browser APIs.
+- **Server (34%)**: `ui/loading-state.tsx`, `ui/empty-state.tsx`, `ui/status-badge.tsx`, `layout/page-header.tsx`, `ui/connection-indicator.tsx`, `ui/confirmation-dialog.tsx`. Pure display, no interactivity.
 - **Rule**: Server by default. Add `"use client"` only when hooks/browser APIs needed.
 
 ## SHARED UI PRIMITIVES (`ui/`)
