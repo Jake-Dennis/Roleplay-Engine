@@ -9,6 +9,11 @@ import { CONTENT_LIMITS } from '@/lib/config';
 import { validateLength } from '@/lib/validation';
 import { isValidUUID } from '@/lib/validation/uuid-validator';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
+import { getWikiRoot } from '@/lib/wiki/wiki-root';
+import { listWikiPages, deleteWikiPage } from '@/lib/wiki/file-io';
+import { queueJob } from '@/lib/job-processor';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * Gets a single NPC by ID.
@@ -113,6 +118,10 @@ db.prepare(
 
 const npc = db.prepare("SELECT * FROM npcs WHERE id = ?").get(id);
 
+// Queue wiki sync to update the corresponding entity page
+const universeId = (existing as Record<string, unknown>)?.universe_id;
+queueJob(userId, "npc_wiki_sync", { userId, npcId: id, universeId: universeId as string | undefined }, "low", universeId as string | undefined);
+
 return NextResponse.json({ npc: camelizeKeys(npc) }); });
 
 /**
@@ -149,6 +158,29 @@ const existing = db.prepare(
 
 if (!existing) {
   return NextResponse.json({ error: "NPC not found" }, { status: 404 });
+}
+
+// Cascade: remove the matching wiki entity page
+const npcName = (existing as Record<string, unknown>)?.name as string | null;
+const universeId = (existing as Record<string, unknown>)?.universe_id as string | null;
+if (npcName && universeId) {
+  try {
+    const wikiRoot = getWikiRoot(userId, universeId);
+    if (fs.existsSync(wikiRoot)) {
+      const allPages = listWikiPages(wikiRoot);
+      const entityPage = allPages.find(
+        (p) =>
+          p.frontmatter.type === "entity" &&
+          p.frontmatter.title?.toLowerCase() === npcName.toLowerCase()
+      );
+      if (entityPage) {
+        deleteWikiPage(entityPage.path);
+      }
+    }
+  } catch (err) {
+    // Non-fatal: wiki cleanup failure shouldn't block NPC deletion
+    console.error(`Failed to remove wiki page for NPC "${npcName}":`, err);
+  }
 }
 
 db.prepare("DELETE FROM npcs WHERE id = ?").run(id);
