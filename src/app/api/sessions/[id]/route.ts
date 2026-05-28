@@ -1,9 +1,10 @@
 import { camelizeKeys } from '@/lib/response-utils';
+import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { ensureParticipantColumns } from "@/lib/session-columns";
 import { withAuth } from '@/lib/with-auth';
-import { unauthorizedError, notFoundError, requireJson } from '@/lib/error-response';
+import { notFoundError, requireJson } from '@/lib/error-response';
 import { logger } from '@/lib/logger';
 import { safeParseWarn } from "@/lib/safe-json";
 import type { DbRow } from "@/lib/types";
@@ -197,11 +198,43 @@ export async function PUT(
     if (nameError) return NextResponse.json({ error: nameError }, { status: 400 });
   }
 
+  // Capture old status before update for diff-based timeline entry creation
+  const oldStatus = (session as Record<string, unknown>).status as string | undefined;
+
   db.prepare(
     "UPDATE sessions SET name = COALESCE(?, name), status = COALESCE(?, status), updated_at = CURRENT_TIMESTAMP WHERE id = ?"
   ).run(name || null, status || null, id);
 
   const updated = db.prepare("SELECT * FROM sessions WHERE id = ?").get(id);
+
+  // Auto-create timeline entry for session end on status transition
+  if (oldStatus === "active" && (status === "ended" || status === "archived")) {
+    try {
+      const entryId = crypto.randomUUID();
+      const sessionName = (updated as Record<string, unknown>).name as string;
+      db.prepare(`
+        INSERT INTO timeline_entries (id, user_id, session_id, thread_id, title, description, occurred_at, entry_type, importance)
+        VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'session_end', 'medium')
+      `).run(entryId, userId, id, null, `Session ${status}: ${sessionName}`, null);
+    } catch {
+      // Non-fatal — timeline entry should not block session update
+    }
+
+    // Queue session recap on session end (min 10 messages)
+    try {
+      const msgCount = db.prepare(
+        "SELECT COUNT(*) as count FROM messages WHERE session_id = ? AND is_deleted = 0"
+      ).get(id) as { count: number } | undefined;
+      if (msgCount && msgCount.count >= 10) {
+        queueJob(userId, "generate_session_recap", {
+          sessionId: id,
+          userId,
+        }, "low", (updated as Record<string, unknown>).universe_id as string | undefined);
+      }
+    } catch {
+      // Non-fatal — failure to queue recap should not block session update
+    }
+  }
 
   return NextResponse.json({ session: camelizeKeys(updated) });
 }
@@ -256,8 +289,14 @@ export async function DELETE(
   db.prepare("DELETE FROM embedding_index WHERE entity_type = 'message' AND entity_id IN (SELECT id FROM messages WHERE session_id = ?)").run(id);
   db.prepare("DELETE FROM tts_cache WHERE user_id = ? AND text_content IN (SELECT content FROM messages WHERE session_id = ?)").run(userId, id);
 
-  // Remove all jobs referencing this session
-  db.prepare("DELETE FROM job_queue WHERE status IN ('queued', 'processing', 'failed') AND json_extract(payload, '$.sessionId') = ?").run(id);
+  // Remove all jobs referencing this session (all statuses)
+  db.prepare("DELETE FROM job_queue WHERE json_extract(payload, '$.sessionId') = ?").run(id);
+  db.prepare("DELETE FROM job_queue WHERE json_extract(payload, '$.session_id') = ?").run(id);
+
+  // Cascade: delete orphaned session-dependent data
+  db.prepare("DELETE FROM session_config WHERE session_id = ?").run(id);
+  db.prepare("DELETE FROM narrative_memories WHERE session_id = ?").run(id);
+  db.prepare("DELETE FROM decision_points WHERE session_id = ?").run(id);
 
   // Delete messages, participants, scene state, session
   db.prepare("DELETE FROM messages WHERE session_id = ?").run(id);

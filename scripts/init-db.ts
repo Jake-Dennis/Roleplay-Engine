@@ -44,7 +44,12 @@ function main() {
       persona_id TEXT REFERENCES personas(id) ON DELETE SET NULL,
       status TEXT DEFAULT 'active',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME
+      updated_at DATETIME,
+      narrative_tension REAL DEFAULT 0.3,
+      pacing REAL DEFAULT 0.3,
+      narrative_phase TEXT DEFAULT 'setup',
+      active_goals TEXT,
+      active_conflicts TEXT
     );
 
     -- Session participants
@@ -60,12 +65,11 @@ function main() {
 
     -- Session config (turn mode, turn order, current turn)
     CREATE TABLE IF NOT EXISTS session_config (
-      id TEXT PRIMARY KEY,
-      session_id TEXT NOT NULL REFERENCES sessions(id),
+      session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
       key TEXT NOT NULL,
       value TEXT,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(session_id, key)
+      PRIMARY KEY (session_id, key)
     );
 
     -- Universes
@@ -77,6 +81,7 @@ function main() {
       canon_mode TEXT DEFAULT 'strict',
       lore_source TEXT,
       tone TEXT,
+      time_period TEXT,
       boundaries TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
@@ -107,6 +112,25 @@ function main() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- Timeline entries — entries on the timeline (auto-populated from sessions, events, threads, phases)
+    CREATE TABLE IF NOT EXISTS timeline_entries (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      session_id TEXT REFERENCES sessions(id) ON DELETE CASCADE,
+      thread_id TEXT REFERENCES narrative_threads(id),
+      title TEXT NOT NULL,
+      description TEXT,
+      occurred_at TEXT NOT NULL,
+      era TEXT,
+      entry_type TEXT DEFAULT 'event',
+      importance TEXT DEFAULT 'medium',
+      metadata TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_timeline_entries_session ON timeline_entries(session_id);
+    CREATE INDEX IF NOT EXISTS idx_timeline_entries_user ON timeline_entries(user_id);
+
     -- Scene states
     CREATE TABLE IF NOT EXISTS scene_states (
       id TEXT PRIMARY KEY,
@@ -114,9 +138,14 @@ function main() {
       active_location_id TEXT,
       current_goal TEXT,
       emotional_tone TEXT,
+      current_intent TEXT,
       active_npcs TEXT,
       active_threads TEXT,
       scene_summary TEXT,
+      scene_type TEXT,
+      scene_tension REAL DEFAULT 0.5,
+      conflict_type TEXT,
+      stakes TEXT,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -133,6 +162,62 @@ function main() {
       decay_rates TEXT,
       updated_at DATETIME
     );
+
+    -- Relationship evolution history
+    CREATE TABLE IF NOT EXISTS relationship_evolution (
+      id TEXT PRIMARY KEY,
+      relationship_id TEXT NOT NULL REFERENCES relationships(id),
+      user_id TEXT NOT NULL REFERENCES users(id),
+      emotional_state TEXT,
+      relationship_stage TEXT,
+      trigger_event TEXT,
+      recorded_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Narrative anchors (Task 27)
+    CREATE TABLE IF NOT EXISTS narrative_anchors (
+      id TEXT PRIMARY KEY,
+      relationship_id TEXT NOT NULL REFERENCES relationships(id),
+      user_id TEXT NOT NULL REFERENCES users(id),
+      anchor_type TEXT NOT NULL,
+      description TEXT,
+      emotional_impact TEXT,
+      irreversible INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Entity mentions tracking
+    CREATE TABLE IF NOT EXISTS entity_mentions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      entity_name TEXT NOT NULL,
+      source_table TEXT NOT NULL,
+      source_id TEXT NOT NULL,
+      frequency INTEGER DEFAULT 1,
+      last_seen_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, entity_name, source_table, source_id)
+    );
+
+    -- Contradiction flags (wiki linting — Task 23)
+    CREATE TABLE IF NOT EXISTS contradiction_flags (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      entity_name TEXT NOT NULL,
+      page_a TEXT NOT NULL,
+      page_b TEXT NOT NULL,
+      claim_a TEXT NOT NULL,
+      claim_b TEXT NOT NULL,
+      contradiction_type TEXT DEFAULT 'unknown',
+      severity TEXT DEFAULT 'medium',
+      status TEXT DEFAULT 'open',
+      detected_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      resolved_at DATETIME,
+      resolution TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_contradiction_flags_user ON contradiction_flags(user_id);
+    CREATE INDEX IF NOT EXISTS idx_contradiction_flags_status ON contradiction_flags(status);
+    CREATE INDEX IF NOT EXISTS idx_contradiction_flags_entity ON contradiction_flags(entity_name);
 
     -- NPCs
     CREATE TABLE IF NOT EXISTS npcs (
@@ -164,6 +249,22 @@ function main() {
       canon_layer TEXT DEFAULT 'generated_lore',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Events (queried by contradictions, backlinks, semantic analysis)
+    CREATE TABLE IF NOT EXISTS events (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      universe_id TEXT REFERENCES universes(id),
+      title TEXT,
+      event_type TEXT,
+      description TEXT,
+      participants TEXT,          -- JSON array of participant IDs
+      location_id TEXT,
+      occurred_at TEXT,           -- Can be vague: "age 12" or "Tuesday"
+      outcome TEXT,
+      consequences TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
     -- Messages
@@ -204,6 +305,9 @@ function main() {
     CREATE TABLE IF NOT EXISTS message_summaries (
       id TEXT PRIMARY KEY,
       source_message_id TEXT REFERENCES messages(id),
+      message_id TEXT,                   -- polymorphic access (message-summarizer.ts)
+      summary_type TEXT,                 -- 'semantic' | 'emotional' | 'relationship_impact' | 'lore_extracted'
+      content TEXT,                      -- summary content for each type (polymorphic)
       summary TEXT,
       emotional_tone TEXT,
       relationship_effects TEXT,
@@ -218,10 +322,17 @@ function main() {
       universe_id TEXT REFERENCES universes(id),
       session_id TEXT REFERENCES sessions(id),
       title TEXT NOT NULL,
+      description TEXT,
+      arc_type TEXT DEFAULT 'thread',
       status TEXT DEFAULT 'active',
       escalation_level TEXT DEFAULT 'low',
+      name TEXT,
+      summary TEXT,
+      key_entities TEXT,
       unresolved_items TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME,
+      resolved_at DATETIME
     );
 
     -- Job queue
@@ -240,7 +351,7 @@ function main() {
       error TEXT,
       result TEXT,
       retry_count INTEGER DEFAULT 0,
-      max_retries INTEGER DEFAULT 3
+      max_retries INTEGER DEFAULT 999
     );
 
     -- Embedding index
@@ -345,7 +456,7 @@ function main() {
     CREATE TABLE IF NOT EXISTS narrative_memories (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),
-      session_id TEXT REFERENCES sessions(id),
+      session_id TEXT REFERENCES sessions(id) ON DELETE CASCADE,
       universe_id TEXT REFERENCES universes(id),
       type TEXT NOT NULL,
       content TEXT NOT NULL,
@@ -367,6 +478,13 @@ function main() {
     CREATE INDEX IF NOT EXISTS idx_embedding_universe ON embedding_index(universe_id);
     CREATE INDEX IF NOT EXISTS idx_relationships_user ON relationships(user_id);
     CREATE INDEX IF NOT EXISTS idx_relationships_universe ON relationships(universe_id);
+    CREATE INDEX IF NOT EXISTS idx_relationship_evolution_rel ON relationship_evolution(relationship_id);
+    CREATE INDEX IF NOT EXISTS idx_narrative_anchors_rel ON narrative_anchors(relationship_id);
+    CREATE INDEX IF NOT EXISTS idx_narrative_anchors_user ON narrative_anchors(user_id);
+    CREATE INDEX IF NOT EXISTS idx_entity_mentions_user ON entity_mentions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_entity_mentions_name ON entity_mentions(entity_name);
+    CREATE INDEX IF NOT EXISTS idx_events_user ON events(user_id);
+    CREATE INDEX IF NOT EXISTS idx_events_universe ON events(universe_id);
     CREATE INDEX IF NOT EXISTS idx_npcs_user ON npcs(user_id);
     CREATE INDEX IF NOT EXISTS idx_npcs_universe ON npcs(universe_id);
     CREATE INDEX IF NOT EXISTS idx_voice_assignments_entity ON voice_assignments(user_id, entity_type, entity_id);
@@ -376,6 +494,19 @@ function main() {
     CREATE INDEX IF NOT EXISTS idx_backlinks_universe ON backlinks(universe_id);
     CREATE INDEX IF NOT EXISTS idx_timelines_universe ON timelines(universe_id);
     CREATE INDEX IF NOT EXISTS idx_session_config_lookup ON session_config(session_id, key);
+
+    -- Decision points
+    CREATE TABLE IF NOT EXISTS decision_points (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      prompt TEXT NOT NULL,
+      choices_made TEXT,
+      narrative_context TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_decision_points_session ON decision_points(session_id);
+    CREATE INDEX IF NOT EXISTS idx_decision_points_user ON decision_points(user_id);
 
     -- Composite indexes for query optimization
     CREATE INDEX IF NOT EXISTS idx_messages_session_deleted_ts ON messages(session_id, is_deleted, timestamp);
@@ -403,6 +534,11 @@ function main() {
         embedding float[1024],
         metadata TEXT
       );
+
+      CREATE VIRTUAL TABLE IF NOT EXISTS vec_lore USING vec0(
+        embedding float[1024],
+        metadata TEXT
+      );
     `);
     console.log("sqlite-vec virtual tables created");
   } catch (e) {
@@ -414,3 +550,4 @@ function main() {
 }
 
 main();
+
