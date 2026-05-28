@@ -124,5 +124,8 @@ ensureGroupSupport(db);
 const existing = hasEntityAccess(db, "relationships", id, userId);
 if (!existing) return notFoundError("Relationship");
 
+// Cascade: delete child records first
+db.prepare("DELETE FROM relationship_evolution WHERE relationship_id = ?").run(id);
+db.prepare("DELETE FROM narrative_anchors WHERE relationship_id = ?").run(id);
 db.prepare("DELETE FROM relationships WHERE id = ?").run(id);
 return NextResponse.json({ success: true }); });

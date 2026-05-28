@@ -90,7 +90,7 @@ function main() {
     CREATE TABLE IF NOT EXISTS timelines (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),
-      universe_id TEXT REFERENCES universes(id),
+      universe_id TEXT REFERENCES universes(id) ON DELETE CASCADE,
       era TEXT,
       year INTEGER,
       restrictions TEXT,
@@ -101,8 +101,8 @@ function main() {
     CREATE TABLE IF NOT EXISTS timeline_layers (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),
-      timeline_id TEXT REFERENCES timelines(id),
-      universe_id TEXT REFERENCES universes(id),
+      timeline_id TEXT REFERENCES timelines(id) ON DELETE CASCADE,
+      universe_id TEXT REFERENCES universes(id) ON DELETE CASCADE,
       layer_type TEXT NOT NULL, -- 'era', 'faction', 'active_characters'
       name TEXT NOT NULL,
       description TEXT,
@@ -117,7 +117,7 @@ function main() {
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),
       session_id TEXT REFERENCES sessions(id) ON DELETE CASCADE,
-      thread_id TEXT REFERENCES narrative_threads(id),
+      thread_id TEXT REFERENCES narrative_threads(id) ON DELETE CASCADE,
       title TEXT NOT NULL,
       description TEXT,
       occurred_at TEXT NOT NULL,
@@ -166,7 +166,7 @@ function main() {
     -- Relationship evolution history
     CREATE TABLE IF NOT EXISTS relationship_evolution (
       id TEXT PRIMARY KEY,
-      relationship_id TEXT NOT NULL REFERENCES relationships(id),
+      relationship_id TEXT NOT NULL REFERENCES relationships(id) ON DELETE CASCADE,
       user_id TEXT NOT NULL REFERENCES users(id),
       emotional_state TEXT,
       relationship_stage TEXT,
@@ -177,7 +177,7 @@ function main() {
     -- Narrative anchors (Task 27)
     CREATE TABLE IF NOT EXISTS narrative_anchors (
       id TEXT PRIMARY KEY,
-      relationship_id TEXT NOT NULL REFERENCES relationships(id),
+      relationship_id TEXT NOT NULL REFERENCES relationships(id) ON DELETE CASCADE,
       user_id TEXT NOT NULL REFERENCES users(id),
       anchor_type TEXT NOT NULL,
       description TEXT,
@@ -223,7 +223,7 @@ function main() {
     CREATE TABLE IF NOT EXISTS npcs (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),
-      universe_id TEXT REFERENCES universes(id),
+      universe_id TEXT REFERENCES universes(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
       description TEXT,
       personality_traits TEXT,
@@ -239,7 +239,7 @@ function main() {
     CREATE TABLE IF NOT EXISTS locations (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),
-      universe_id TEXT REFERENCES universes(id),
+      universe_id TEXT REFERENCES universes(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
       description TEXT,
       known_info TEXT,
@@ -255,7 +255,7 @@ function main() {
     CREATE TABLE IF NOT EXISTS events (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),
-      universe_id TEXT REFERENCES universes(id),
+      universe_id TEXT REFERENCES universes(id) ON DELETE CASCADE,
       title TEXT,
       event_type TEXT,
       description TEXT,
@@ -457,7 +457,7 @@ function main() {
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),
       session_id TEXT REFERENCES sessions(id) ON DELETE CASCADE,
-      universe_id TEXT REFERENCES universes(id),
+      universe_id TEXT REFERENCES universes(id) ON DELETE CASCADE,
       type TEXT NOT NULL,
       content TEXT NOT NULL,
       importance TEXT,

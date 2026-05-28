@@ -232,8 +232,16 @@ if (fs.existsSync(wikiRoot)) {
 }
 
 // Delete all dependent records (cascade)
+db.prepare("DELETE FROM relationship_evolution WHERE relationship_id IN (SELECT id FROM relationships WHERE universe_id = ?)").run(id);
+db.prepare("DELETE FROM narrative_anchors WHERE relationship_id IN (SELECT id FROM relationships WHERE universe_id = ?)").run(id);
 db.prepare("DELETE FROM relationships WHERE universe_id = ?").run(id);
 db.prepare("DELETE FROM narrative_threads WHERE universe_id = ?").run(id);
+db.prepare("DELETE FROM timeline_layers WHERE universe_id = ?").run(id);
+db.prepare("DELETE FROM timelines WHERE universe_id = ?").run(id);
+db.prepare("DELETE FROM npcs WHERE universe_id = ?").run(id);
+db.prepare("DELETE FROM locations WHERE universe_id = ?").run(id);
+db.prepare("DELETE FROM events WHERE universe_id = ?").run(id);
+db.prepare("DELETE FROM narrative_memories WHERE universe_id = ?").run(id);
 db.prepare("DELETE FROM entity_validations WHERE universe_id = ?").run(id);
 db.prepare("DELETE FROM backlinks WHERE universe_id = ?").run(id);
 db.prepare("DELETE FROM embedding_index WHERE universe_id = ?").run(id);

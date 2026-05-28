@@ -267,5 +267,7 @@ const existing = db.prepare(
 ).get(id, userId);
 if (!existing) return NextResponse.json({ error: "Thread not found" }, { status: 404 });
 
+// Cascade: delete child records first
+db.prepare("DELETE FROM timeline_entries WHERE thread_id = ?").run(id);
 db.prepare("DELETE FROM narrative_threads WHERE id = ? AND user_id = ?").run(id, userId);
 return NextResponse.json({ success: true }); });

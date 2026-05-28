@@ -12,6 +12,9 @@ import { validateLength } from '@/lib/validation';
 import { isValidUUID } from '@/lib/validation/uuid-validator';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 import { queueJob } from '@/lib/job-processor';
+import { getWikiRoot } from '@/lib/wiki/wiki-root';
+import { listWikiPages, deleteWikiPage } from '@/lib/wiki/file-io';
+import fs from 'fs';
 
 /**
  * GET /api/sessions/[id]
@@ -303,6 +306,26 @@ export async function DELETE(
   db.prepare("DELETE FROM session_participants WHERE session_id = ?").run(id);
   db.prepare("DELETE FROM scene_states WHERE session_id = ?").run(id);
   db.prepare("DELETE FROM sessions WHERE id = ?").run(id);
+
+  // Clean up auto-extracted wiki pages tagged with this session
+  if (universeId) {
+    try {
+      const wikiRoot = getWikiRoot(userId, universeId);
+      if (fs.existsSync(wikiRoot)) {
+        const allPages = listWikiPages(wikiRoot);
+        const sessionTag = `source:session-${id}`;
+        for (const page of allPages) {
+          if (page.frontmatter.tags?.includes(sessionTag)) {
+            try {
+              deleteWikiPage(page.path);
+            } catch { /* skip locked or failed pages */ }
+          }
+        }
+      }
+    } catch (err) {
+      logger.warn(`Failed to clean up wiki pages for session ${id}:`, err);
+    }
+  }
 
   // Queue universe-level re-extraction if this session was in a universe
   if (universeId) {
