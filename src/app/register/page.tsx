@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AUTH_CONFIG } from "@/lib/config";
 import { MessageSquare } from "lucide-react";
 
 export default function RegisterPage() {
@@ -90,8 +91,8 @@ export default function RegisterPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary placeholder-text-muted transition-colors focus:border-accent"
                 placeholder="Choose a username"
-                minLength={3}
-                maxLength={20}
+                minLength={AUTH_CONFIG.usernameMinLength}
+                maxLength={AUTH_CONFIG.usernameMaxLength}
                 required
                 autoFocus
               />
@@ -110,7 +111,7 @@ export default function RegisterPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary placeholder-text-muted transition-colors focus:border-accent"
                 placeholder="Create a password"
-                minLength={8}
+                minLength={AUTH_CONFIG.passwordMinLength}
                 required
               />
               <p className="mt-1 text-xxs text-text-muted">
@@ -128,7 +129,7 @@ export default function RegisterPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary placeholder-text-muted transition-colors focus:border-accent"
                 placeholder="Confirm your password"
-                minLength={8}
+                minLength={AUTH_CONFIG.passwordMinLength}
                 required
               />
             </div>

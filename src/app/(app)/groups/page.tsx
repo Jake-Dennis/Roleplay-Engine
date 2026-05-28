@@ -22,7 +22,7 @@ export default function GroupsPage() {
   const [localGroups, setLocalGroups] = useState<Group[]>([]);
 
   useEffect(() => {
-    setLocalGroups(groups as Group[]);
+    queueMicrotask(() => setLocalGroups(groups as Group[]));
   }, [groups]);
 
   async function deleteGroup(id: string) {

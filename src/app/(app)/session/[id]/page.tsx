@@ -14,20 +14,16 @@ import {
   Footprints,
   Wand2,
   Users,
-  UserPlus,
-  UserMinus,
-  Footprints as TurnIcon,
-  GitBranch,
+  Heart,
   Sparkles,
   Lock,
-  Settings,
   User,
   Loader2,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
 
-import { classifyIntent, type Intent } from "@/lib/intent-analyzer";
+import type { Intent } from "@/lib/intent-analyzer";
 import { useRenderLoop } from "@/hooks/use-render-loop";
 import { useSession } from "@/hooks/use-session";
 import { useApp } from "@/contexts/app-context";
@@ -43,9 +39,10 @@ import { ParticipantList } from "@/components/session/participant-list";
 import { CharacterDeclarationModal } from "@/components/session/character-declaration-modal";
 import { SceneStatePanel } from "@/components/session/scene-state-panel";
 import { PrivateStatePanel } from "@/components/session/private-state-panel";
-import { SessionSettingsPanel } from "@/components/session/session-settings-panel";
 import { SessionRecapPanel } from "@/components/session/session-recap-panel";
+import { RelationshipTimeline } from "@/components/relationships/relationship-timeline";
 import { logger } from "@/lib/logger";
+import { NarrativeStatePanel } from "@/components/debug/narrative-state-panel";
 
 export default function SessionChatPage() {
   const params = useParams();
@@ -81,26 +78,18 @@ export default function SessionChatPage() {
       });
       refreshAll();
     }
-  }, [session?.id]); // Only re-run when session ID changes
+  }, [session, refreshAll, setActiveSession]);
 
-  // Load personas
-  useEffect(() => {
-    setPersonasLoading(true);
-    fetch("/api/personas")
-      .then((res) => res.json())
-      .then((data) => {
-        const list = data.personas || [];
-        setPersonas(list);
-        // Only set global active persona if session doesn't have its own personaId
-        // (session.personaId takes precedence — set by the restore effect below)
-        if (!session?.personaId) {
-          const active = list.find((p: { isActive: number }) => p.isActive === 1);
-          if (active) setActivePersonaId(active.id);
-        }
-      })
-      .catch((err) => logger.warn("persona list load failed", err))
-      .finally(() => setPersonasLoading(false));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps — only on mount
+  // Persona state (declared before useEffect that references them)
+  const [personas, setPersonas] = useState<{ id: string; name: string }[]>([]);
+  const [personasLoading, setPersonasLoading] = useState(true);
+  const [activePersonaId, setActivePersonaId] = useState<string | null>(null);
+  const [showPersonaSelector, setShowPersonaSelector] = useState(false);
+  const personaDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Wiki auto-extract toast state
+  const [wikiToasts, setWikiToasts] = useState<WikiToastItem[]>([]);
+  const wikiToastCounterRef = useRef(0);
 
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -118,31 +107,42 @@ export default function SessionChatPage() {
     }
     return false;
   });
-  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [showRelationshipTimeline, setShowRelationshipTimeline] = useState(false);
   const [showRecapPanel, setShowRecapPanel] = useState(false);
   const [inviteUsername, setInviteUsername] = useState("");
   const [editHistoryMessageId, setEditHistoryMessageId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ type: "leave" | "delete"; id?: string } | null>(null);
   const [showCharacterModal, setShowCharacterModal] = useState(false);
-  const [joinError, setJoinError] = useState("");
 
-  // Persona state
-  const [personas, setPersonas] = useState<{ id: string; name: string }[]>([]);
-  const [personasLoading, setPersonasLoading] = useState(true);
-  const [activePersonaId, setActivePersonaId] = useState<string | null>(null);
-  const [showPersonaSelector, setShowPersonaSelector] = useState(false);
-  const personaDropdownRef = useRef<HTMLDivElement>(null);
-
-  // Wiki auto-extract toast state
-  const [wikiToasts, setWikiToasts] = useState<WikiToastItem[]>([]);
-  const wikiToastCounterRef = useRef(0);
+  // Load personas
+  useEffect(() => {
+    queueMicrotask(() => {
+      setPersonasLoading(true);
+      fetch("/api/personas")
+        .then((res) => res.json())
+        .then((data) => {
+          const list = data.personas || [];
+          setPersonas(list);
+          // Only set global active persona if session doesn't have its own personaId
+          // (session.personaId takes precedence — set by the restore effect below)
+          if (!session?.personaId) {
+            const active = list.find((p: { isActive: number }) => p.isActive === 1);
+            if (active) setActivePersonaId(active.id);
+          }
+        })
+        .catch((err) => logger.warn("persona list load failed", err))
+        .finally(() => setPersonasLoading(false));
+    });
+  }, [session]);
 
   // Restore session's selected persona on mount
   useEffect(() => {
-    if (session?.personaId) {
-      setActivePersonaId(session.personaId);
-    }
-  }, [session?.personaId]);
+    queueMicrotask(() => {
+      if (session?.personaId) {
+        setActivePersonaId(session.personaId);
+      }
+    });
+  }, [session]);
 
   // Persist persona change to session
   const handlePersonaChange = async (personaId: string | null) => {
@@ -304,7 +304,7 @@ export default function SessionChatPage() {
   }
 
   async function handleKick(participantId: string) {
-    const res = await fetch(`/api/sessions/${sessionId}/kick`, {
+    await fetch(`/api/sessions/${sessionId}/kick`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ participant_id: participantId }),
@@ -318,7 +318,7 @@ export default function SessionChatPage() {
   }
 
   async function handleSetTurnMode(mode: string) {
-    const res = await fetch(`/api/sessions/${sessionId}/turn`, {
+    await fetch(`/api/sessions/${sessionId}/turn`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ turnMode: mode }),
@@ -334,7 +334,7 @@ export default function SessionChatPage() {
   }
 
   async function handleRoleChange(participantId: string, role: string) {
-    const res = await fetch(`/api/sessions/${sessionId}/participants/role`, {
+    await fetch(`/api/sessions/${sessionId}/participants/role`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ participant_id: participantId, role }),
@@ -769,17 +769,15 @@ export default function SessionChatPage() {
               >
                 <Lock className="h-3 w-3" />
               </button>
-              {isOwner && (
-                <button
-                  onClick={() => setShowSettingsPanel(!showSettingsPanel)}
-                  className={`rounded p-1 transition-colors hover:bg-bg-raised ${
-                    showSettingsPanel ? "text-accent" : "text-text-muted hover:text-accent"
-                  }`}
-                  title="Session Settings"
-                >
-                  <Settings className="h-3 w-3" />
-                </button>
-              )}
+              <button
+                onClick={() => setShowRelationshipTimeline(!showRelationshipTimeline)}
+                className={`rounded p-1 transition-colors hover:bg-bg-raised ${
+                  showRelationshipTimeline ? "text-accent" : "text-text-muted hover:text-accent"
+                }`}
+                title="Relationship Timeline"
+              >
+                <Heart className="h-3 w-3" />
+              </button>
               <button
                 onClick={() => setShowRecapPanel(!showRecapPanel)}
                 className={`rounded p-1 transition-colors hover:bg-bg-raised ${
@@ -833,11 +831,12 @@ export default function SessionChatPage() {
         />
       )}
 
-      {/* Session Settings Panel (owner only) */}
-      {showSettingsPanel && isOwner && (
-        <SessionSettingsPanel
+      {/* Relationship Timeline Panel */}
+      {showRelationshipTimeline && (
+        <RelationshipTimeline
           sessionId={sessionId}
-          onClose={() => setShowSettingsPanel(false)}
+          sessionUniverseId={session?.universe_id}
+          onClose={() => setShowRelationshipTimeline(false)}
         />
       )}
 
@@ -938,6 +937,13 @@ export default function SessionChatPage() {
 
       {/* Wiki auto-extract toast notifications */}
       <WikiToast toasts={wikiToasts} />
+
+      {/* Narrative State Debug Panel */}
+      <NarrativeStatePanel
+        sessionId={sessionId}
+        sceneState={sceneState}
+        session={session as unknown as Record<string, unknown> | null}
+      />
     </div>
   );
 }

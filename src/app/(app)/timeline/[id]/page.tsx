@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useCallback } from "react";
+import { CONTENT_LIMITS } from "@/lib/config";
 import { ArrowLeft, Clock, Trash2, Layers } from "lucide-react";
 import Link from "next/link";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
@@ -55,7 +56,7 @@ export default function TimelineDetailPage({ params }: { params: Promise<{ id: s
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showLayers, setShowLayers] = useState(false);
 
-  async function loadEntry() {
+  const loadEntry = useCallback(async () => {
     try {
       const res = await fetch(`/api/timeline?id=${id}`);
       if (res.ok) {
@@ -75,9 +76,9 @@ export default function TimelineDetailPage({ params }: { params: Promise<{ id: s
     } finally {
       setLoading(false);
     }
-  }
+  }, [id]);
 
-  useEffect(() => { loadEntry(); }, [id]);
+  useEffect(() => { queueMicrotask(() => loadEntry()); }, [loadEntry]);
 
   async function handleSave() {
     if (!entry || !editTitle.trim() || !editOccurredAt) return;
@@ -181,7 +182,7 @@ export default function TimelineDetailPage({ params }: { params: Promise<{ id: s
             onChange={(e) => setEditDescription(e.target.value)}
             className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary"
             rows={4}
-            maxLength={5000}
+            maxLength={CONTENT_LIMITS.MEDIUM}
           />
         ) : entry.description ? (
           <p className="text-sm text-text-secondary whitespace-pre-wrap">{entry.description}</p>

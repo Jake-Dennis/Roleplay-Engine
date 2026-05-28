@@ -52,7 +52,7 @@ export default function RelationshipsPage() {
   const [savingMarkdown, setSavingMarkdown] = useState(false);
   const [markdownLoaded, setMarkdownLoaded] = useState(false);
 
-  async function loadRelationships() {
+  const loadRelationships = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (activeUniverse) params.set("universe_id", activeUniverse.id);
@@ -65,9 +65,9 @@ export default function RelationshipsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [activeUniverse, activeGroup]);
 
-  useEffect(() => { loadRelationships(); }, [activeUniverse?.id, activeGroup?.id]);
+  useEffect(() => { queueMicrotask(() => loadRelationships()); }, [loadRelationships]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -147,7 +147,6 @@ export default function RelationshipsPage() {
           const emotionTable = Object.entries(emotions)
             .map(([k, v]) => `| ${k} | ${v.toFixed(2)} |`)
             .join("\n");
-          const history = json.history || "";
           const notes = json.relationship.notes || "";
           setMarkdownNotes(notes);
           setMarkdownContent(

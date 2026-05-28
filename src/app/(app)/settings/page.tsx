@@ -1,9 +1,13 @@
 "use client";
 
 import { useState, FormEvent, useEffect } from "react";
-import { Save, Sparkles, Server, Key, Check, Volume2, Wifi, WifiOff, RefreshCw, Cpu } from "lucide-react";
 import { OllamaSettingsSection } from "./ollama-settings";
 import { TTSSettingsSection } from "./tts-settings";
+import { ServerInfoSection } from "@/components/settings/server-info-section";
+import { ConnectionStatusSection } from "@/components/settings/connection-status-section";
+import { NarratorVoiceSection } from "@/components/settings/narrator-voice-section";
+import { ChangePasswordSection } from "@/components/settings/change-password-section";
+import { TIMEOUTS } from "@/lib/config";
 import { logger } from "@/lib/logger";
 
 interface ServerSettings {
@@ -149,7 +153,7 @@ export default function SettingsPage() {
       .catch(() => setLoading(false));
 
     // Load available Ollama models
-    setModelLoading(true);
+    queueMicrotask(() => setModelLoading(true));
     fetch("/api/models/ollama")
       .then((res) => res.json())
       .then((data) => {
@@ -182,7 +186,7 @@ export default function SettingsPage() {
         }),
       });
       setVoiceSuccess(true);
-      setTimeout(() => setVoiceSuccess(false), 3000);
+      setTimeout(() => setVoiceSuccess(false), TIMEOUTS.HEALTH_CHECK);
     } finally {
       setVoiceSaving(false);
     }
@@ -205,7 +209,7 @@ export default function SettingsPage() {
       });
       if (res.ok) {
         setTtsSuccess(true);
-        setTimeout(() => setTtsSuccess(false), 3000);
+        setTimeout(() => setTtsSuccess(false), TIMEOUTS.HEALTH_CHECK);
       }
     } finally {
       setTtsSaving(false);
@@ -280,7 +284,7 @@ export default function SettingsPage() {
       });
       if (res.ok) {
         setModelSaved(true);
-        setTimeout(() => setModelSaved(false), 3000);
+        setTimeout(() => setModelSaved(false), TIMEOUTS.HEALTH_CHECK);
       } else {
         const errorBody = await res.json();
         setModelError(errorBody.error || "Failed to save model settings");
@@ -347,111 +351,14 @@ export default function SettingsPage() {
         <p className="mt-1 text-xs text-text-muted">Manage your account and preferences</p>
       </div>
 
-      {/* Server Info */}
-      <div className="rounded-xl border border-border-default bg-bg-elevated p-5">
-        <div className="flex items-center gap-2.5 mb-4">
-          <Server className="h-4 w-4 text-text-accent" />
-          <h2 className="text-sm font-medium text-text-primary">Server Configuration</h2>
-        </div>
+      <ServerInfoSection loading={loading} settings={settings} />
 
-        {loading ? (
-          <div className="flex items-center gap-2 text-text-muted">
-            <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-            <span className="text-xs">Loading settings...</span>
-          </div>
-        ) : settings ? (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-lg bg-bg-raised px-3.5 py-2.5">
-              <span className="text-xs text-text-secondary">Ollama</span>
-              <span className="text-xs text-text-primary">{settings.ollama.host}</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg bg-bg-raised px-3.5 py-2.5">
-              <span className="text-xs text-text-secondary">Model</span>
-              <span className="text-xs text-text-primary">{settings.ollama.model}</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg bg-bg-raised px-3.5 py-2.5">
-              <span className="text-xs text-text-secondary">TTS Server</span>
-              <span className="text-xs text-text-primary">{settings.tts.host}</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg bg-bg-raised px-3.5 py-2.5">
-              <span className="text-xs text-text-secondary">Default Voice</span>
-              <span className="text-xs text-text-primary">{settings.tts.defaultVoice}</span>
-            </div>
-          </div>
-        ) : (
-          <p className="text-xs text-text-muted">Unable to load server settings</p>
-        )}
-      </div>
-
-      {/* Connection Status */}
-      <div className="rounded-xl border border-border-default bg-bg-elevated p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2.5">
-            <Wifi className="h-4 w-4 text-text-accent" />
-            <h2 className="text-sm font-medium text-text-primary">Connection Status</h2>
-          </div>
-          <button
-            onClick={handleRefreshConnections}
-            disabled={connLoading}
-            className="flex items-center gap-1 rounded-lg bg-bg-raised px-2.5 py-1.5 text-xs text-text-muted hover:text-text-primary disabled:opacity-50"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${connLoading ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
-        </div>
-
-        <div className="space-y-3">
-          {/* Ollama */}
-          <div className={`flex items-center justify-between rounded-lg px-3.5 py-2.5 ${
-            connOllama.status === "connected" ? "bg-success/10" : "bg-bg-raised"
-          }`}>
-            <div className="flex items-center gap-2.5">
-              <div className={`h-2.5 w-2.5 rounded-full ${
-                connOllama.status === "connected" ? "bg-green-500" : "bg-red-500"
-              }`} />
-              <Cpu className="h-4 w-4 text-text-muted" />
-              <div>
-                <p className="text-xs text-text-primary">Ollama</p>
-                <p className="text-xxs text-text-muted">
-                  {connOllama.status === "connected"
-                    ? `${connOllama.modelCount} models available`
-                    : connOllama.error || "Unavailable"}
-                </p>
-              </div>
-            </div>
-            {connOllama.status === "connected" ? (
-              <Check className="h-4 w-4 text-green-500" />
-            ) : (
-              <WifiOff className="h-4 w-4 text-red-500" />
-            )}
-          </div>
-
-          {/* Kokoro */}
-          <div className={`flex items-center justify-between rounded-lg px-3.5 py-2.5 ${
-            connKokoro.status === "connected" ? "bg-success/10" : "bg-bg-raised"
-          }`}>
-            <div className="flex items-center gap-2.5">
-              <div className={`h-2.5 w-2.5 rounded-full ${
-                connKokoro.status === "connected" ? "bg-green-500" : "bg-red-500"
-              }`} />
-              <Volume2 className="h-4 w-4 text-text-muted" />
-              <div>
-                <p className="text-xs text-text-primary">Kokoro TTS</p>
-                <p className="text-xxs text-text-muted">
-                  {connKokoro.status === "connected"
-                    ? `${connKokoro.voiceCount} voices available`
-                    : connKokoro.error || "Unavailable"}
-                </p>
-              </div>
-            </div>
-            {connKokoro.status === "connected" ? (
-              <Check className="h-4 w-4 text-green-500" />
-            ) : (
-              <WifiOff className="h-4 w-4 text-red-500" />
-            )}
-          </div>
-        </div>
-      </div>
+      <ConnectionStatusSection
+        connOllama={connOllama}
+        connKokoro={connKokoro}
+        connLoading={connLoading}
+        handleRefreshConnections={handleRefreshConnections}
+      />
 
       {/* Model Selection */}
       <OllamaSettingsSection
@@ -472,49 +379,14 @@ export default function SettingsPage() {
         handleModelSave={handleModelSave}
       />
 
-      {/* Narrator Voice */}
-      <div className="rounded-xl border border-border-default bg-bg-elevated p-5">
-        <div className="flex items-center gap-2.5 mb-4">
-          <Volume2 className="h-4 w-4 text-text-accent" />
-          <h2 className="text-sm font-medium text-text-primary">Narrator Voice</h2>
-        </div>
-        <p className="text-xs text-text-muted mb-3">
-          Choose the voice used for AI narration in story sessions
-        </p>
-        <div className="flex items-center gap-2">
-          <select
-            value={narratorVoice}
-            onChange={(e) => setNarratorVoice(e.target.value)}
-            disabled={voiceSaving}
-            className="flex-1 rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary focus:border-accent"
-          >
-            <option value="">No voice</option>
-            {voices.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.name || v.id} ({v.gender}, {v.language})
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={handleNarratorVoice}
-            disabled={voiceSaving}
-            className="flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-2 text-xs font-medium text-white hover:bg-accent-hover disabled:opacity-50"
-          >
-            {voiceSaving ? (
-              <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-            ) : (
-              <Save className="h-3.5 w-3.5" />
-            )}
-            Save
-          </button>
-        </div>
-        {voiceSuccess && (
-          <div className="flex items-center gap-1.5 mt-3 rounded-lg border border-success/20 bg-success/10 px-3 py-2 text-xs text-success">
-            <Check className="h-3.5 w-3.5" />
-            Narrator voice saved
-          </div>
-        )}
-      </div>
+      <NarratorVoiceSection
+        voices={voices}
+        narratorVoice={narratorVoice}
+        voiceSaving={voiceSaving}
+        voiceSuccess={voiceSuccess}
+        setNarratorVoice={setNarratorVoice}
+        handleNarratorVoice={handleNarratorVoice}
+      />
 
       {/* TTS Settings & Cache */}
       <TTSSettingsSection
@@ -539,79 +411,18 @@ export default function SettingsPage() {
         handleClearCache={handleClearCache}
       />
 
-      {/* Change Password */}
-      <div className="rounded-xl border border-border-default bg-bg-elevated p-5">
-        <div className="flex items-center gap-2.5 mb-4">
-          <Key className="h-4 w-4 text-text-accent" />
-          <h2 className="text-sm font-medium text-text-primary">Change Password</h2>
-        </div>
-
-        <form onSubmit={handlePasswordChange} className="space-y-3">
-          <div>
-            <label className="mb-1 block text-xs text-text-secondary">
-              Current password
-            </label>
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:border-accent"
-              required
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-text-secondary">
-              New password
-            </label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:border-accent"
-              minLength={8}
-              required
-            />
-            <p className="mt-1 text-xxs text-text-muted">
-              At least 8 characters with a letter and a number
-            </p>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-text-secondary">
-              Confirm new password
-            </label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:border-accent"
-              minLength={8}
-              required
-            />
-          </div>
-
-          {passwordError && (
-            <div className="rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-xs text-error">
-              {passwordError}
-            </div>
-          )}
-
-          {passwordSuccess && (
-            <div className="flex items-center gap-1.5 rounded-lg border border-success/20 bg-success/10 px-3 py-2 text-xs text-success">
-              <Check className="h-3.5 w-3.5" />
-              Password changed successfully
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={passwordSaving || !currentPassword || !newPassword || !confirmPassword}
-            className="flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-xs font-medium text-white hover:bg-accent-hover disabled:opacity-50"
-          >
-            <Save className="h-3.5 w-3.5" />
-            {passwordSaving ? "Changing..." : "Change Password"}
-          </button>
-        </form>
-      </div>
+      <ChangePasswordSection
+        currentPassword={currentPassword}
+        newPassword={newPassword}
+        confirmPassword={confirmPassword}
+        passwordError={passwordError}
+        passwordSuccess={passwordSuccess}
+        passwordSaving={passwordSaving}
+        setCurrentPassword={setCurrentPassword}
+        setNewPassword={setNewPassword}
+        setConfirmPassword={setConfirmPassword}
+        handlePasswordChange={handlePasswordChange}
+      />
     </div>
   );
 }

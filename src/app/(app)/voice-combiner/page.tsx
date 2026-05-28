@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Volume2, Plus, Trash2, Play, Save, Sparkles, Check, Mic } from "lucide-react";
 import { useActiveUniverse } from "@/contexts/active-universe";
+import { TIMEOUTS } from "@/lib/config";
 import { logger } from "@/lib/logger";
 
 interface Voice {
@@ -48,7 +49,7 @@ export default function VoiceCombinerPage() {
 
   // Load profiles when universe changes
   useEffect(() => {
-    setLoadingProfiles(true);
+    queueMicrotask(() => setLoadingProfiles(true));
     fetch("/api/voice-assignments?entityType=voice_profile")
       .then((res) => res.json())
       .then((data) => {
@@ -62,8 +63,10 @@ export default function VoiceCombinerPage() {
         setLoadingProfiles(false);
       });
     // Reset form on universe switch
-    setProfileName("");
-    setSlots([{ voiceId: "", weight: 50 }]);
+    queueMicrotask(() => {
+      setProfileName("");
+      setSlots([{ voiceId: "", weight: 50 }]);
+    });
   }, [activeUniverse?.id]);
 
   const totalWeight = slots.reduce((sum, s) => sum + s.weight, 0);
@@ -185,7 +188,7 @@ export default function VoiceCombinerPage() {
 
       setSavedProfiles((prev) => [...prev, profile]);
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      setTimeout(() => setSuccess(false), TIMEOUTS.HEALTH_CHECK);
       setProfileName("");
       setSlots([{ voiceId: "", weight: 50 }]);
     } catch {

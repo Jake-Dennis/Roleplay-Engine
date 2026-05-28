@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { GitBranch, Sparkles, Trash2, Plus, CheckCircle, PauseCircle, XCircle, AlertTriangle } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { CONTENT_LIMITS } from "@/lib/config";
+import { GitBranch, Sparkles, Trash2, Plus, CheckCircle, PauseCircle, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { ARC_TYPE_LABELS, ESCALATION_COLORS, THREAD_STATUS_ICONS, THREAD_STATUS_COLORS } from "@/lib/entity-constants";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
@@ -36,7 +37,7 @@ export default function NarrativeThreadsPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
-  async function loadThreads() {
+  const loadThreads = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (filterStatus !== "all") params.set("status", filterStatus);
@@ -51,9 +52,9 @@ export default function NarrativeThreadsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [filterStatus, activeUniverse, activeGroup]);
 
-  useEffect(() => { loadThreads(); }, [filterStatus, activeUniverse?.id, activeGroup?.id]);
+  useEffect(() => { queueMicrotask(() => loadThreads()); }, [loadThreads]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -155,7 +156,7 @@ export default function NarrativeThreadsPage() {
                 className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary"
                 placeholder="What is this thread about?"
                 rows={3}
-                maxLength={5000}
+                maxLength={CONTENT_LIMITS.MEDIUM}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { CONTENT_LIMITS } from "@/lib/config";
 import { Clock, Sparkles, Trash2, Plus, ArrowUp, ArrowDown } from "lucide-react";
 import Link from "next/link";
 import { ENTRY_TYPE_LABELS, IMPORTANCE_COLORS } from "@/lib/entity-constants";
@@ -38,7 +39,7 @@ export default function TimelinePage() {
   const [filterEra, setFilterEra] = useState<string>("all");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
-  async function loadEntries() {
+  const loadEntries = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       params.set("sort", sortOrder);
@@ -53,9 +54,9 @@ export default function TimelinePage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [sortOrder, filterEra, activeUniverse, activeGroup]);
 
-  useEffect(() => { loadEntries(); }, [sortOrder, filterEra, activeUniverse?.id, activeGroup?.id]);
+  useEffect(() => { queueMicrotask(() => loadEntries()); }, [loadEntries]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -175,7 +176,7 @@ export default function TimelinePage() {
                 className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary"
                 placeholder="What happened?"
                 rows={3}
-                maxLength={5000}
+                maxLength={CONTENT_LIMITS.MEDIUM}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">

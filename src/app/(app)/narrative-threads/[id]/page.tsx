@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
-import { ArrowLeft, GitBranch, Plus, X, CheckCircle, PauseCircle, AlertTriangle, Trash2 } from "lucide-react";
+import { useEffect, useState, use, useCallback } from "react";
+import { CONTENT_LIMITS } from "@/lib/config";
+import { ArrowLeft, GitBranch, Plus, X, CheckCircle, PauseCircle, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 
 interface NarrativeThread {
@@ -49,7 +50,7 @@ export default function NarrativeThreadDetailPage({ params }: { params: Promise<
   const [newItem, setNewItem] = useState("");
   const [saving, setSaving] = useState(false);
 
-  async function loadThread() {
+  const loadThread = useCallback(async () => {
     try {
       const res = await fetch(`/api/narrative-threads?id=${id}`);
       if (res.ok) {
@@ -63,9 +64,9 @@ export default function NarrativeThreadDetailPage({ params }: { params: Promise<
     } finally {
       setLoading(false);
     }
-  }
+  }, [id]);
 
-  useEffect(() => { loadThread(); }, [id]);
+  useEffect(() => { queueMicrotask(() => loadThread()); }, [loadThread, id]);
 
   async function handleSave() {
     if (!thread || !editTitle.trim()) return;
@@ -199,7 +200,7 @@ export default function NarrativeThreadDetailPage({ params }: { params: Promise<
             onChange={(e) => setEditDescription(e.target.value)}
             className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary"
             rows={4}
-            maxLength={5000}
+            maxLength={CONTENT_LIMITS.MEDIUM}
           />
         ) : thread.description ? (
           <p className="text-sm text-text-secondary whitespace-pre-wrap">{thread.description}</p>

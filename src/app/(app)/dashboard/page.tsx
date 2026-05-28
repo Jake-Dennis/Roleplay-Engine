@@ -40,7 +40,7 @@ export default function DashboardPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [activeGroup?.id]);
+  }, [activeGroup]);
 
   const recentSessions = sessions.slice(0, 5);
 

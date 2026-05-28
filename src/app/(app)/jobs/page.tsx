@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   Play,
-  Pause,
   Trash2,
   RotateCcw,
   Loader2,
@@ -138,9 +137,9 @@ export default function JobsPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeUniverse?.id]);
+  }, [activeUniverse]);
 
-  useEffect(() => { loadJobs(); }, [loadJobs]);
+  useEffect(() => { queueMicrotask(() => loadJobs()); }, [loadJobs]);
 
   // SSE for real-time job progress updates
   useEffect(() => {

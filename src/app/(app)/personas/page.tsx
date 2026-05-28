@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { Plus, User, Pencil, Trash2, Check, X, Sparkles, Save, Image, Tag, BookOpen, MessageSquare, Settings2, FileText, ChevronDown, ChevronUp, Eye, EyeOff } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, User, Trash2, Check, X, Sparkles, Save, BookOpen, MessageSquare, Settings2, FileText, Eye, EyeOff } from "lucide-react";
 import { safeParse } from "@/lib/safe-json";
 import { logger } from "@/lib/logger";
 
@@ -406,7 +406,7 @@ export default function PersonasPage() {
                     <div className="space-y-4">
                       <div>
                         <label className="mb-1 block text-xs text-text-secondary">Scenario</label>
-                        <p className="text-[10px] text-text-muted mb-1">The situation or context for the character. Where are they? What's happening?</p>
+                        <p className="text-[10px] text-text-muted mb-1">The situation or context for the character. Where are they? What&apos;s happening?</p>
                         <textarea
                           value={formScenario}
                           onChange={(e) => setFormScenario(e.target.value)}

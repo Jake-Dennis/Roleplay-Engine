@@ -23,13 +23,13 @@ type RightPanel = 'backlinks' | 'history' | 'outline' | 'links';
 /**
  * Reconstruct raw markdown (frontmatter + body) from page data.
  */
-function toRawMarkdown(content: string, frontmatter: Record<string, any>): string {
+function toRawMarkdown(content: string, frontmatter: Record<string, unknown>): string {
   const fmEntries = Object.entries(frontmatter)
     .filter(([, v]) => v !== undefined && v !== null)
     .map(([k, v]) => {
       if (Array.isArray(v)) return `${k}:\n${v.map((t: string) => `  - ${t}`).join('\n')}`;
       if (typeof v === 'string') return `${k}: ${v}`;
-      return `${k}: ${v}`;
+      return `${k}: ${String(v)}`;
     });
   return `---\n${fmEntries.join('\n')}\n---\n\n${content}`;
 }
@@ -38,7 +38,7 @@ function toRawMarkdown(content: string, frontmatter: Record<string, any>): strin
  * Parse raw markdown into { content, frontmatter }.
  * Handles both with and without frontmatter delimiters.
  */
-function parseRawMarkdown(raw: string): { content: string; frontmatter: Record<string, any> } {
+function parseRawMarkdown(raw: string): { content: string; frontmatter: Record<string, unknown> } {
   const trimmed = raw.trim();
   if (!trimmed.startsWith('---')) {
     return { content: trimmed, frontmatter: {} };
@@ -50,7 +50,7 @@ function parseRawMarkdown(raw: string): { content: string; frontmatter: Record<s
   const fmBlock = trimmed.slice(3, endIdx).trim();
   const body = trimmed.slice(endIdx + 3).trim();
 
-  const frontmatter: Record<string, any> = {};
+  const frontmatter: Record<string, unknown> = {};
   let currentKey: string | null = null;
   let currentArray: string[] = [];
 
@@ -104,13 +104,15 @@ export default function WikiPageView() {
   const [rightPanel, setRightPanel] = useState<RightPanel>('backlinks');
 
   // Embed data for transclusion
-  const [embeds, setEmbeds] = useState<Record<string, { content: string | null; frontmatter: Record<string, any> | null }>>({});
+  const [embeds, setEmbeds] = useState<Record<string, { content: string | null; frontmatter: Record<string, unknown> | null }>>({});
 
   useEffect(() => {
     const pagePath = slug.join('/');
-    setLoading(true);
-    setError(null);
-    setSaveError(null);
+    queueMicrotask(() => {
+      setLoading(true);
+      setError(null);
+      setSaveError(null);
+    });
 
     fetch(`/api/wiki/${pagePath}?universe_id=${activeUniverse?.id || ''}`)
       .then(res => {
@@ -129,7 +131,7 @@ export default function WikiPageView() {
         setError(err.message);
         setLoading(false);
       });
-  }, [slug]);
+  }, [slug, activeUniverse?.id]);
 
   const handleEditStart = () => {
     if (!page) return;

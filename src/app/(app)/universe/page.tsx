@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
+import { useEffect, useState, useCallback, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -21,6 +21,7 @@ interface Universe {
   canon_mode: string;
   lore_source: string | null;
   tone: string | null;
+  time_period: string | null;
   boundaries: string[];
   created_at: string;
 }
@@ -34,6 +35,7 @@ export default function UniverseListPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [tone, setTone] = useState("");
+  const [timePeriod, setTimePeriod] = useState("");
   const [creating, setCreating] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -41,7 +43,7 @@ export default function UniverseListPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  async function loadUniverses() {
+  const loadUniverses = useCallback(async () => {
     try {
       const url = activeGroup ? `/api/universes?group_id=${activeGroup.id}` : "/api/universes?scope=personal";
       const res = await fetch(url);
@@ -53,11 +55,11 @@ export default function UniverseListPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [activeGroup]);
 
   useEffect(() => {
-    loadUniverses();
-  }, [activeGroup?.id]);
+    queueMicrotask(() => loadUniverses());
+  }, [loadUniverses]);
 
   // Clear messages after 3s
   useEffect(() => {
@@ -81,6 +83,7 @@ export default function UniverseListPage() {
           name: name.trim(),
           description: description.trim() || null,
           tone: tone.trim() || null,
+          time_period: timePeriod.trim() || null,
           group_id: activeGroup?.id || null,
         }),
       });
@@ -129,6 +132,7 @@ export default function UniverseListPage() {
     u.name.toLowerCase().includes(search.toLowerCase()) ||
     (u.description && u.description.toLowerCase().includes(search.toLowerCase())) ||
     (u.tone && u.tone.toLowerCase().includes(search.toLowerCase())) ||
+    (u.time_period && u.time_period.toLowerCase().includes(search.toLowerCase())) ||
     u.canon_mode.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -204,13 +208,13 @@ export default function UniverseListPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-text-secondary">Tone (optional)</label>
+              <label className="mb-1.5 block text-xs text-text-secondary">Time Period (optional)</label>
               <input
                 type="text"
-                value={tone}
-                onChange={(e) => setTone(e.target.value)}
+                value={timePeriod}
+                onChange={(e) => setTimePeriod(e.target.value)}
                 className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:border-accent"
-                placeholder="e.g., dark fantasy, lighthearted adventure"
+                placeholder="e.g., medieval, 1920s, far future"
               />
             </div>
             <button
@@ -282,6 +286,11 @@ export default function UniverseListPage() {
               {universe.tone && (
                 <span className="mt-2 inline-block rounded-full bg-bg-raised px-2 py-0.5 text-xxs text-text-muted">
                   {universe.tone}
+                </span>
+              )}
+              {universe.time_period && (
+                <span className="mt-2 inline-block rounded-full bg-accent/10 px-2 py-0.5 text-xxs text-accent">
+                  {universe.time_period}
                 </span>
               )}
               {universe.boundaries.length > 0 && (

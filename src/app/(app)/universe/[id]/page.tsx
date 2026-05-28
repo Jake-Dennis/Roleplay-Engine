@@ -12,6 +12,7 @@ interface Universe {
   canon_mode: string;
   lore_source: string | null;
   tone: string | null;
+  time_period: string | null;
   boundaries: string[];
   created_at: string;
 }
@@ -40,6 +41,7 @@ export default function UniverseDetailPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [tone, setTone] = useState("");
+  const [timePeriod, setTimePeriod] = useState("");
   const [canonMode, setCanonMode] = useState("strict");
   const [loreSource, setLoreSource] = useState("");
   const [boundaries, setBoundaries] = useState("");
@@ -58,6 +60,7 @@ export default function UniverseDetailPage() {
         setName(uData.universe.name);
         setDescription(uData.universe.description || "");
         setTone(uData.universe.tone || "");
+        setTimePeriod(uData.universe.time_period || "");
         setCanonMode(uData.universe.canon_mode);
         setLoreSource(uData.universe.lore_source || "");
         // Boundaries: array → one per line for textarea
@@ -105,6 +108,7 @@ export default function UniverseDetailPage() {
           name: name.trim(),
           description: description.trim() || null,
           tone: tone.trim() || null,
+          time_period: timePeriod.trim() || null,
           canon_mode: canonMode,
           lore_source: loreSource.trim() || null,
           boundaries: boundariesArray,
@@ -197,6 +201,17 @@ export default function UniverseDetailPage() {
               onChange={(e) => setTone(e.target.value)}
               className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:border-accent"
               placeholder="e.g., dark fantasy"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs text-text-secondary">Time Period</label>
+            <input
+              type="text"
+              value={timePeriod}
+              onChange={(e) => setTimePeriod(e.target.value)}
+              className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:border-accent"
+              placeholder="e.g., medieval, 1920s, far future"
             />
           </div>
 

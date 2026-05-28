@@ -20,7 +20,9 @@ import {
   User,
   Users as UsersIcon,
   FolderOpen,
+  Shield,
 } from "lucide-react";
+import { TIME } from "@/lib/config";
 import { renderLoop } from "@/lib/render-loop";
 import { FPSCounter } from "@/components/ui/fps-counter";
 import { ConnectionIndicator } from "@/components/ui/connection-indicator";
@@ -40,6 +42,7 @@ const navItems = [
   { href: "/timeline", label: "Timeline", icon: Clock },
   { href: "/voice-combiner", label: "Voice Mixer", icon: Volume2 },
   { href: "/jobs", label: "Jobs", icon: ListTodo },
+  { href: "/admin/jobs", label: "Admin", icon: Shield },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -282,7 +285,7 @@ const UniverseSelector = memo(function UniverseSelector() {
 export function AppLayoutShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, loading, activeSession, setActiveSession, sessions, refreshAll } = useApp();
+  const { user, loading, activeSession, setActiveSession, sessions } = useApp();
 
   // Sync session from URL — use context data instead of independent fetch
   useEffect(() => {
@@ -384,7 +387,7 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
           {/* Idle status indicator */}
           {isIdle && (
             <div className="fixed bottom-2 left-58 z-40 rounded-md bg-bg-raised/90 px-2.5 py-1 text-xxs text-text-muted backdrop-blur-sm">
-              Idle {Math.floor(idleTime / 60000)}m · Tier {currentTier}
+              Idle {Math.floor(idleTime / TIME.ONE_MINUTE)}m · Tier {currentTier}
             </div>
           )}
 

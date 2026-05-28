@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -37,7 +37,7 @@ export default function SessionListPage() {
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
-  async function loadSessions() {
+  const loadSessions = useCallback(async () => {
     try {
       const url = activeGroup ? `/api/sessions?group_id=${activeGroup.id}` : "/api/sessions?scope=personal";
       const [sessRes, invRes] = await Promise.all([
@@ -53,11 +53,11 @@ export default function SessionListPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [activeGroup]);
 
   useEffect(() => {
-    loadSessions();
-  }, [activeGroup?.id]);
+    queueMicrotask(() => loadSessions());
+  }, [loadSessions]);
 
   async function deleteSession(id: string) {
     await fetch(`/api/sessions/${id}`, { method: "DELETE" });

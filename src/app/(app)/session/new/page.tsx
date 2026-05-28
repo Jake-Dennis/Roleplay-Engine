@@ -15,11 +15,11 @@ interface Universe {
 
 export default function NewSessionPage() {
   const router = useRouter();
-  const { activeUniverse, universes, activeGroup, refreshAll } = useApp();
+  const { universes, activeGroup, refreshAll } = useApp();
   const [universeList, setUniverseList] = useState<Universe[]>([]);
 
   useEffect(() => {
-    setUniverseList(universes.length > 0 ? universes : []);
+    queueMicrotask(() => setUniverseList(universes.length > 0 ? universes : []));
   }, [universes]);
 
   async function handleCreate(data: { name: string; universe_id: string | null; type: string }) {

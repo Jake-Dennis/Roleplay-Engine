@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { NpcList } from "@/components/npcs/npc-list";
 import { NpcEditor } from "@/components/npcs/npc-editor";
 import { logger } from "@/lib/logger";
@@ -41,12 +41,7 @@ export default function NpcsPage() {
   const [formIsCanon, setFormIsCanon] = useState(false);
   const [formUniverseId, setFormUniverseId] = useState("");
 
-  useEffect(() => {
-    loadNpcs();
-    loadUniverses();
-  }, []);
-
-  async function loadNpcs() {
+  const loadNpcs = useCallback(async () => {
     try {
       const res = await fetch("/api/npcs");
       const json = await res.json();
@@ -56,9 +51,9 @@ export default function NpcsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  async function loadUniverses() {
+  const loadUniverses = useCallback(async () => {
     try {
       const res = await fetch("/api/universes");
       const json = await res.json();
@@ -66,7 +61,11 @@ export default function NpcsPage() {
     } catch (err: unknown) {
       logger.warn("Failed to load universes", err);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    queueMicrotask(() => { loadNpcs(); loadUniverses(); });
+  }, [loadNpcs, loadUniverses]);
 
   function startCreate() {
     setFormName("");
