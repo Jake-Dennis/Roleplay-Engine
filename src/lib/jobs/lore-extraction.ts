@@ -162,7 +162,7 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
                 `\n\n## Session Update (${dateStr})\n\n${entity.description || entityName}`;
               const updatedFrontmatter: WikiFrontmatter = {
                 ...existingPage.frontmatter,
-                subtype: existingPage.frontmatter.subtype ?? ENTITY_TYPE_TO_SUBTYPE[entity.entityType],
+                subtype: existingPage.frontmatter.subtype ?? ENTITY_TYPE_TO_SUBTYPE[entity.entityType] as WikiFrontmatter["subtype"] | undefined,
                 updated: new Date().toISOString(),
               };
               writeWikiPage(pagePath, updatedContent, updatedFrontmatter);
