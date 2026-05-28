@@ -6,7 +6,6 @@ import { getRetrievedContext, assemblePromptWithBudget, type RetrievedContext } 
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { queueJob } from "@/lib/job-processor";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
-import type { DbDatabase } from "@/lib/types";
 import { withAuth } from '@/lib/with-auth';
 import { logger } from '@/lib/logger';
 import { validateLength } from '@/lib/validation';
@@ -263,6 +262,42 @@ export async function POST(
           sessionId,
           userId: userId,
         }, "low", session.universe_id || undefined);
+
+        // Check for NPC mentions and queue evolution jobs
+        if (session.universe_id) {
+          try {
+            const npcs = db.prepare(
+              "SELECT id, name FROM npcs WHERE universe_id = ? AND is_canon = 0"
+            ).all(session.universe_id) as { id: string; name: string }[];
+
+            for (const npc of npcs) {
+              if (fullResponse.toLowerCase().includes(npc.name.toLowerCase())) {
+                queueJob(userId, "npc_evolution", {
+                  userId: userId,
+                  universeId: session.universe_id,
+                  npcId: npc.id,
+                }, "low", session.universe_id || undefined);
+              }
+            }
+          } catch {
+            // Non-fatal: failure to queue evolution jobs does not break generation
+          }
+        }
+
+        // Queue session recap every 50 messages
+        try {
+          const msgCount = db.prepare(
+            "SELECT COUNT(*) as count FROM messages WHERE session_id = ? AND is_deleted = 0"
+          ).get(sessionId) as { count: number } | undefined;
+          if (msgCount && msgCount.count > 0 && msgCount.count % 50 === 0) {
+            queueJob(userId, "generate_session_recap", {
+              sessionId,
+              userId,
+            }, "low", session.universe_id || undefined);
+          }
+        } catch {
+          // Non-fatal: failure to queue recap does not break generation
+        }
 
         // Send completion signal with intent info
         controller.enqueue(

@@ -55,7 +55,7 @@ ensureGroupSupport(db);
 
   requireJson(request);
   const body = await request.json();
-const { name, description, personality, scenario, firstMes, mesExample, creatorNotes, systemPrompt, postHistoryInstructions, tags, writingStyle, avatarUrl, llmModel, ttsVoice } = body;
+const { name, description, personality, scenario, firstMes, mesExample, creatorNotes, systemPrompt, postHistoryInstructions, tags, writingStyle, avatarUrl, llmModel, ttsVoice, universeId } = body;
 
 if (!name) {
   return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -78,5 +78,30 @@ db.prepare(
 ).run(id, userId, name, description || null, personality || null, scenario || null, firstMes || null, mesExample || null, creatorNotes || null, systemPrompt || null, postHistoryInstructions || null, tags ? JSON.stringify(tags) : null, writingStyle || null, avatarUrl || null, llmModel || null, ttsVoice || null, isActive);
 
 const persona = db.prepare("SELECT * FROM personas WHERE id = ?").get(id);
+
+// Auto-create NPC record if persona is associated with a universe
+if (universeId) {
+  try {
+    const npcName = name;
+    const existing = db.prepare(
+      "SELECT id FROM npcs WHERE user_id = ? AND universe_id = ? AND LOWER(name) = LOWER(?)"
+    ).get(userId, universeId, npcName) as { id: string } | undefined;
+    if (!existing) {
+      db.prepare(
+        `INSERT INTO npcs (id, user_id, universe_id, name, description, personality_traits, is_canon)
+         VALUES (?, ?, ?, ?, ?, ?, 0)`
+      ).run(
+        crypto.randomUUID(),
+        userId,
+        universeId,
+        npcName,
+        description || null,
+        personality ? JSON.stringify([personality]) : null,
+      );
+    }
+  } catch {
+    // Non-fatal — NPC creation is a best-effort bonus, never blocks persona creation
+  }
+}
 
 return NextResponse.json({ persona: camelizeKeys(persona) }, { status: 201 }); });

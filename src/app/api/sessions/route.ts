@@ -8,6 +8,10 @@ import type { DbResult } from "@/lib/types";
 import { forbiddenError, badRequestError, requireJson } from "@/lib/error-response";
 import { validateLength } from '@/lib/validation';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
+import path from "path";
+import { getWikiRoot } from "@/lib/wiki/wiki-root";
+import { writeWikiPage } from "@/lib/wiki/file-io";
+import { generateIndex } from "@/lib/wiki/index-generator";
 
 /**
  * GET /api/sessions
@@ -99,7 +103,7 @@ if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   requireJson(request);
   const body = await request.json();
-const { name, universe_id, timeline_id, type = "solo", group_id } = body;
+const { name, universe_id, timeline_id, type = "solo", group_id, persona_id } = body;
 
 if (!name) {
   return badRequestError("Session name is required");
@@ -122,8 +126,8 @@ if (group_id && !isGroupMember(db, group_id, userId)) {
 const id = crypto.randomUUID();
 
 db.prepare(
-  "INSERT INTO sessions (id, owner_id, name, universe_id, timeline_id, status, type, group_id) VALUES (?, ?, ?, ?, ?, 'active', ?, ?)"
-).run(id, userId, name, universe_id || null, timeline_id || null, type, group_id || null);
+  "INSERT INTO sessions (id, owner_id, name, universe_id, timeline_id, status, type, group_id, persona_id) VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?)"
+).run(id, userId, name, universe_id || null, timeline_id || null, type, group_id || null, persona_id || null);
 
 db.prepare(
   "INSERT OR IGNORE INTO session_participants (session_id, user_id, role) VALUES (?, ?, 'player')"
@@ -132,6 +136,50 @@ db.prepare(
 db.prepare(
   "INSERT INTO scene_states (id, session_id, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)"
 ).run(crypto.randomUUID(), id);
+
+// Auto-create a wiki page from the persona if both persona and universe are specified
+if (persona_id && universe_id) {
+  try {
+    const persona = db.prepare(
+      "SELECT * FROM personas WHERE id = ? AND user_id = ?"
+    ).get(persona_id, userId) as Record<string, unknown> | undefined;
+
+    if (persona) {
+      const wikiRoot = getWikiRoot(userId, universe_id);
+      const safeName = (persona.name as string || "unknown").replace(/[<>:"/\\|?*]/g, "_").trim();
+      const pageContent = [
+        `## ${persona.name}`,
+        ``,
+        persona.description ? `${persona.description}\n` : "",
+        persona.personality ? `### Personality\n${persona.personality}\n` : "",
+        persona.writing_style ? `### Writing Style\n${persona.writing_style}\n` : "",
+        persona.scenario ? `### Scenario\n${persona.scenario}\n` : "",
+        persona.first_mes ? `### First Message\n${persona.first_mes}\n` : "",
+        persona.mes_example ? `### Example Dialogue\n${persona.mes_example}\n` : "",
+      ].filter(Boolean).join("\n");
+
+      let parsedTags: string[] = [];
+      if (typeof persona.tags === "string") {
+        try { parsedTags = JSON.parse(persona.tags as string); } catch { /* ignore */ }
+      }
+
+      writeWikiPage(path.join(wikiRoot, "entities", `${safeName}.md`), pageContent, {
+        title: persona.name as string,
+        type: "entity",
+        subtype: "character",
+        status: "draft",
+        universe: universe_id,
+        tags: [...parsedTags, "persona", "auto-generated"],
+        persona_id: persona.id as string,
+        source: "persona",
+      });
+      generateIndex(wikiRoot);
+    }
+  } catch (err) {
+    // Wiki creation failure should not break session creation
+    console.error("Failed to auto-create persona wiki page:", err);
+  }
+}
 
 const session = db.prepare("SELECT * FROM sessions WHERE id = ?").get(id);
 

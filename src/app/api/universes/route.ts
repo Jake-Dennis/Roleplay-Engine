@@ -154,6 +154,7 @@ const pageContent = [
 writeWikiPage(path.join(wikiRoot, "concepts", "about.md"), pageContent, {
   title: `${name.trim()} — Universe Overview`,
   type: "concept",
+  subtype: "lore",
   status: "draft",
   time_period: time_period || null,
   tags: ["auto-generated", "universe-info"],

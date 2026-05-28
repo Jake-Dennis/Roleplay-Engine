@@ -1,10 +1,11 @@
+import crypto from "crypto";
 import type { PaginatedRow } from '@/lib/types';
 import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { queueJob } from "@/lib/job-processor";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
-import { unauthorizedError, notFoundError, forbiddenError, badRequestError, serverError, requireJson } from "@/lib/error-response";
+import { notFoundError, forbiddenError, badRequestError, serverError, requireJson } from "@/lib/error-response";
 import { withAuth } from '@/lib/with-auth';
 import { validateLength } from '@/lib/validation';
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from '@/lib/rate-limiter';
@@ -127,7 +128,7 @@ export async function POST(
       SELECT * FROM sessions WHERE id = ? AND (owner_id = ? OR id IN (
         SELECT session_id FROM session_participants WHERE user_id = ?
       ))
-    `).get(sessionId, userId, userId) as { id: string; universe_id: string | null } | undefined;
+    `).get(sessionId, userId, userId) as { id: string; universe_id: string | null; name: string | null } | undefined;
 
     if (!session) {
       return notFoundError("Session");
@@ -173,6 +174,22 @@ export async function POST(
     db.prepare(
       "INSERT INTO messages (id, session_id, sender_id, content, parent_message_id, persona_id) VALUES (?, ?, ?, ?, ?, ?)"
     ).run(messageId, sessionId, userId, content, lastMessage?.id || null, personaId || null);
+
+    // Auto-create timeline entry for session start on first message
+    try {
+      const msgCount = db.prepare(
+        "SELECT COUNT(*) as count FROM messages WHERE session_id = ? AND is_deleted = 0"
+      ).get(sessionId) as { count: number } | undefined;
+      if (msgCount && msgCount.count === 1) {
+        const entryId = crypto.randomUUID();
+        db.prepare(`
+          INSERT INTO timeline_entries (id, user_id, session_id, thread_id, title, description, occurred_at, entry_type, importance)
+          VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'session_start', 'medium')
+        `).run(entryId, userId, sessionId, null, session.name || "Session started", null);
+      }
+    } catch {
+      // Non-fatal — timeline entry creation should not block message sending
+    }
 
     // Emit message created event for SSE
     eventBus.emit(`${SessionEvents.MESSAGE_CREATED}:${sessionId}`, {

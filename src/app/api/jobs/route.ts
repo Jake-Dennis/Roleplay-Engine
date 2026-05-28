@@ -105,13 +105,32 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      const jobPriority = (priority as JobPriority) || "medium";
       const id = queueJob(
         userId,
         type as JobType,
         payload || {},
-        (priority as JobPriority) || "medium",
+        jobPriority,
         universe_id || payload?.universeId || undefined
       );
+
+      // Auto-process high/medium jobs immediately so the user sees results.
+      // Low/idle priorities wait for idle-time processing.
+      // NOTE: We call getNextJob() synchronously (within the handler) then
+      // fire processJob() without awaiting.  This is deliberate:
+      // setImmediate/timers scheduled after returning the response can be
+      // lost when the route handler context is torn down, but a started
+      // Promise lives in the microtask queue and survives as long as the
+      // Node.js process stays alive (which it does under `npm run dev`).
+      if (jobPriority !== "low" && jobPriority !== "idle") {
+        const nextJob = getNextJob(userId, type as JobType, universe_id || payload?.universeId || undefined);
+        if (nextJob) {
+          processJob(nextJob).catch((err) => {
+            logger.error(`Auto-process failed for job ${id}:`, err);
+          });
+        }
+      }
+
       return NextResponse.json({ success: true, jobId: id });
     }
 
