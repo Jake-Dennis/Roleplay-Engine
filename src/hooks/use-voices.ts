@@ -54,8 +54,22 @@ export function useVoices(): UseVoicesResult {
   }, []);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/tts/voices");
+        if (!res.ok) throw new Error(`Failed to load voices: ${res.status}`);
+        const data = await res.json();
+        setVoices(data.voices || []);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Unknown error");
+        setVoices([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   const assignVoice = useCallback(async (
     entityType: string,

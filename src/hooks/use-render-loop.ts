@@ -38,15 +38,13 @@ export function useRenderLoop(
  * Returns a value updated each frame. Use for display-only purposes.
  */
 export function useMeasuredFPS(): number {
-  const fpsRef = useRef(30);
-  const [, forceUpdate] = useState(0);
+  const [fps, setFps] = useState(30);
 
   useRenderLoop(
     useCallback((delta: number) => {
-      fpsRef.current = Math.round(1000 / Math.max(delta, 1));
-      forceUpdate((n) => n + 1);
+      setFps(Math.round(1000 / Math.max(delta, 1)));
     }, [])
   );
 
-  return fpsRef.current;
+  return fps;
 }

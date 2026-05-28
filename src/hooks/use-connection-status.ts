@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { TIMEOUTS } from "@/lib/config";
 
 interface ServiceStatus {
   status: "connected" | "unavailable" | "error" | "loading";
@@ -51,8 +52,22 @@ export function useConnectionStatus(): ConnectionStatus {
   }, []);
 
   useEffect(() => {
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 30000);
+    (async () => {
+      try {
+        const res = await fetch("/api/health");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setOllama(data.ollama || { status: "error" });
+        setKokoro(data.kokoro || { status: "error" });
+        setLastChecked(Date.now());
+      } catch {
+        setOllama({ status: "error", error: "Health check failed" });
+        setKokoro({ status: "error", error: "Health check failed" });
+      } finally {
+        setLoading(false);
+      }
+    })();
+    const interval = setInterval(fetchStatus, TIMEOUTS.HEALTH_CHECK_INTERVAL);
     return () => clearInterval(interval);
   }, [fetchStatus]);
 

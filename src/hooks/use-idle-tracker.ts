@@ -1,11 +1,12 @@
 "use client";
 
+import { TIMEOUTS, IDLE_TIERS } from "@/lib/config";
 import { useEffect, useRef, useState, useCallback } from "react";
 
 interface IdleConfig {
-  /** How often to check idle state and send heartbeat (ms). Default: 30000 */
+  /** How often to check idle state and send heartbeat (ms). Default: TIMEOUTS.HEALTH_CHECK_INTERVAL */
   heartbeatInterval?: number;
-  /** Idle thresholds in ms: [5min, 10min, 15min, 30min]. Default: [300000, 600000, 900000, 1800000] */
+  /** Idle thresholds in ms: [5min, 10min, 15min, 30min]. Default: IDLE_TIERS */
   idleThresholds?: number[];
 }
 
@@ -21,11 +22,14 @@ interface IdleConfig {
  */
 export function useIdleTracker(config: IdleConfig = {}) {
   const {
-    heartbeatInterval = 30000,
-    idleThresholds = [300000, 600000, 900000, 1800000],
+    heartbeatInterval = TIMEOUTS.HEALTH_CHECK_INTERVAL,
+    idleThresholds = [IDLE_TIERS.TIER_1, IDLE_TIERS.TIER_2, IDLE_TIERS.TIER_3, IDLE_TIERS.TIER_4],
   } = config;
 
-  const lastActivityRef = useRef(Date.now());
+  const lastActivityRef = useRef(0);
+  useEffect(() => {
+    lastActivityRef.current = Date.now();
+  }, []);
   const [idleTime, setIdleTime] = useState(0);
   const [currentTier, setCurrentTier] = useState(0);
   const heartbeatSentRef = useRef<Record<number, boolean>>({});

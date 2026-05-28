@@ -44,8 +44,19 @@ export function useAuth(): UseAuthResult {
   }, []);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    (async () => {
+      try {
+        const res = await fetch("/api/auth/me");
+        if (!res.ok) throw new Error("Not authenticated");
+        const data = await res.json();
+        setUser(data.user);
+      } catch {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   const login = useCallback(async (username: string, password: string) => {
     try {

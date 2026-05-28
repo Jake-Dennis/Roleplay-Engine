@@ -17,7 +17,7 @@ interface UseEntityFetchResult<T> {
   refetch: () => Promise<void>;
 }
 
-export function useEntityFetch<T = any>(
+export function useEntityFetch<T = unknown>(
   endpoint: string,
   dataKey?: string
 ): UseEntityFetchResult<T> {
@@ -43,8 +43,23 @@ export function useEntityFetch<T = any>(
   }, [endpoint, dataKey]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(endpoint);
+        if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
+        const json = await res.json();
+        const key = dataKey || endpoint.split("/").pop() || "";
+        setData(json[key] || []);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Unknown error");
+        setData([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [endpoint, dataKey]);
 
   return { data, loading, error, refetch: fetchData };
 }

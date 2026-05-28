@@ -36,13 +36,13 @@ interface Session {
 
 export interface Message {
   id: string;
-  session_id: string;
-  sender_id: string | null;
+  sessionId: string;
+  senderId: string | null;
   content: string;
   timestamp: string;
-  sender_name: string | null;
-  persona_name: string | null;
-  persona_avatar: string | null;
+  senderName: string | null;
+  personaName: string | null;
+  personaAvatar: string | null;
 }
 
 interface SceneState {
@@ -121,8 +121,62 @@ export function useSession(sessionId: string): UseSessionResult {
   }, [sessionId]);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    (async () => {
+      if (!sessionId) return;
+      if (pending.current) return;
+      setLoading(true);
+      setError(null);
+      pending.current = true;
+      try {
+        const res = await fetch(`/api/sessions/${sessionId}`);
+        if (!res.ok) throw new Error(`Failed to load session: ${res.status}`);
+        const data = await res.json();
+        setSession(data.session || null);
+        setMessages(data.messages || []);
+        setSceneState(data.sceneState || null);
+        setParticipants(data.participants || []);
+        setTurnConfig(data.turnConfig || null);
+        setIsOwner(data.isOwner || false);
+        const currentUserParticipant = (data.participants || []).find(
+          (p: Participant) => p.role === "observer"
+        );
+        setIsObserver(!!currentUserParticipant);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Unknown error");
+        setSession(null);
+        setMessages([]);
+        setSceneState(null);
+        setParticipants([]);
+        setTurnConfig(null);
+        setIsOwner(false);
+      } finally {
+        pending.current = false;
+        setLoading(false);
+      }
+    })();
+  }, [sessionId]);
+
+  // SSE subscription for real-time scene updates
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const eventSource = new EventSource(`/api/sessions/${sessionId}/stream`);
+
+    eventSource.addEventListener("scene:updated", () => {
+      // The SSE payload carries only the sessionId; the scene state has
+      // already been persisted to DB by scene-handler. A refresh fetches
+      // the latest session data including sceneState via setSceneState().
+      refresh();
+    });
+
+    eventSource.onerror = () => {
+      // EventSource auto-reconnects by default
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [sessionId, refresh]);
 
   const claimTurn = useCallback(async () => {
     if (!sessionId) return false;
