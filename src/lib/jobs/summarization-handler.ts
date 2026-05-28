@@ -6,6 +6,7 @@
  * - compress_memories: Age-based memory compression with LLM
  */
 
+import { TIME, CONTENT_LIMITS } from "@/lib/config";
 import { getDb } from "@/lib/db";
 import { processSummarization } from "@/lib/summarization";
 import { generateText } from "@/lib/ollama";
@@ -80,12 +81,12 @@ async function handleCompressMemories(jobId: string, payload: JobPayload): Promi
 
   for (let i = 0; i < memories.length; i++) {
     const memory = memories[i];
-    const age = (Date.now() - new Date(memory.created_at).getTime()) / (1000 * 60 * 60 * 24);
+    const age = (Date.now() - new Date(memory.created_at).getTime()) / TIME.ONE_DAY;
 
     if (age >= 90) {
-      const prompt = PROMPTS.memorySummarizeArchived(memory.content.slice(0, 200));
+      const prompt = PROMPTS.memorySummarizeArchived(memory.content.slice(0, CONTENT_LIMITS.SHORT));
       try {
-        const summary = await generateText(prompt, { temperature: 0.2, num_ctx: 2048, userId: userId as string });
+        const summary = await generateText(prompt, { temperature: 0.2, userId: userId as string });
         if (summary?.trim()) {
           db.prepare(`
             UPDATE narrative_memories
@@ -96,9 +97,9 @@ async function handleCompressMemories(jobId: string, payload: JobPayload): Promi
         }
       } catch { /* skip */ }
     } else if (age >= 30) {
-      const prompt = PROMPTS.memorySummarizeOneSentence(memory.content.slice(0, 200));
+      const prompt = PROMPTS.memorySummarizeOneSentence(memory.content.slice(0, CONTENT_LIMITS.SHORT));
       try {
-        const summary = await generateText(prompt, { temperature: 0.2, num_ctx: 2048, userId: userId as string });
+        const summary = await generateText(prompt, { temperature: 0.2, userId: userId as string });
         if (summary?.trim()) {
           db.prepare(`
             UPDATE narrative_memories
@@ -109,13 +110,13 @@ async function handleCompressMemories(jobId: string, payload: JobPayload): Promi
         }
       } catch { /* skip */ }
     } else if (age >= 7) {
-      const prompt = PROMPTS.memorySummarizeShort(memory.content.slice(0, 200));
+      const prompt = PROMPTS.memorySummarizeShort(memory.content.slice(0, CONTENT_LIMITS.SHORT));
       try {
-        const summary = await generateText(prompt, { temperature: 0.2, num_ctx: 2048, userId: userId as string });
+        const summary = await generateText(prompt, { temperature: 0.2, userId: userId as string });
         if (summary?.trim()) {
           db.prepare(`
             UPDATE narrative_memories
-            SET content = ?
+            SET content = ?, importance = 'low'
             WHERE id = ?
           `).run(summary.trim(), memory.id);
           compressedCount++;

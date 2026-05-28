@@ -10,6 +10,7 @@
  * - wiki_extract_event: Extract narrative events from session messages
  */
 
+import crypto from "crypto";
 import { getDb } from "@/lib/db";
 import { generateText } from "@/lib/ollama";
 import { PROMPTS } from "@/lib/prompts";
@@ -19,6 +20,7 @@ import { extractAndCreateWikiEntities } from "@/lib/wiki/auto-extract";
 import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import { listWikiPages, writeWikiPage, readWikiPage, WikiFrontmatter } from "@/lib/wiki/file-io";
 import { generateIndex } from "@/lib/wiki/index-generator";
+// @deprecated: logger.ts is deprecated — use history.ts (SQLite wiki_versions) instead
 import { appendLog } from "@/lib/wiki/logger";
 import path from "path";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
@@ -459,7 +461,7 @@ async function handleWikiExtractEvent(jobId: string, payload: JobPayload): Promi
 
   let extracted = 0;
   try {
-    const response = await generateText(prompt, { temperature: 0.3, num_ctx: 4096, userId: userId as string });
+    const response = await generateText(prompt, { temperature: 0.3, userId: userId as string });
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = safeParseWarn<Record<string, unknown>>(jsonMatch[0], "LLM event extraction");
@@ -480,6 +482,20 @@ async function handleWikiExtractEvent(jobId: string, payload: JobPayload): Promi
 
           writeWikiPage(pagePath, body, frontmatter);
           extracted++;
+
+          // Auto-create timeline entry for wiki event
+          const evTitle = typeof event.title === 'string' ? event.title : "Unknown Event";
+          const evOutcome = typeof event.outcome === 'string' ? event.outcome : null;
+          const evImportance = typeof event.importance === 'string' ? event.importance : "medium";
+          try {
+            const entryId = crypto.randomUUID();
+            db.prepare(`
+              INSERT INTO timeline_entries (id, user_id, session_id, thread_id, title, description, occurred_at, entry_type, importance)
+              VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'wiki_event', ?)
+            `).run(entryId, userId, sessionId, null, `Event: ${evTitle}`, evOutcome, evImportance);
+          } catch {
+            // Non-fatal — timeline entry should not block wiki page creation
+          }
         }
       }
     }

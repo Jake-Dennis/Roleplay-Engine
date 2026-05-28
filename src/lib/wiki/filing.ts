@@ -2,6 +2,7 @@ import path from "path";
 import fs from "fs";
 import { writeWikiPage, readWikiPage, WikiFrontmatter } from "./file-io";
 import { generateIndex } from "./index-generator";
+// @deprecated: logger.ts is deprecated — use history.ts (SQLite wiki_versions) instead
 import { appendLog, LogOperation } from "./logger";
 
 // ---------------------------------------------------------------------------
@@ -73,7 +74,6 @@ function getPageTitle(pagePath: string): string {
 function addCrossReference(
   sourcePagePath: string,
   synthesisTitle: string,
-  synthesisFilename: string
 ): string | null {
   try {
     const page = readWikiPage(sourcePagePath);
@@ -255,7 +255,7 @@ export async function fileAnswer(
   const synthesisTitle = query.trim();
   for (const citation of citations) {
     try {
-      addCrossReference(citation.pagePath, synthesisTitle, synthesisFilename);
+      addCrossReference(citation.pagePath, synthesisTitle);
     } catch (err: unknown) {
       errors.push(
         `Failed to add cross-reference to ${path.basename(citation.pagePath)}: ${err instanceof Error ? err.message : String(err)}`

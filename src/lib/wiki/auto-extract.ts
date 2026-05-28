@@ -1,10 +1,13 @@
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
+import { getDb } from "@/lib/db";
 import { generateText } from "@/lib/ollama";
 import { PROMPTS } from "@/lib/prompts";
 import { logger } from "@/lib/logger";
 import { writeWikiPage, readWikiPage, listWikiPages, sanitizeWikiFilename } from "./file-io";
 import { generateIndex } from "./index-generator";
+// @deprecated: logger.ts is deprecated — use history.ts (SQLite wiki_versions) instead
 import { appendLog } from "./logger";
 import { getWikiRoot } from "./wiki-root";
 import type { WikiFrontmatter } from "./types";
@@ -97,7 +100,7 @@ export async function extractAndCreateWikiEntities(
     let response: string;
     try {
       const prompt = PROMPTS.extractEntitiesFromResponse(aiResponse, "", existingTitles);
-      response = await generateText(prompt, { temperature: 0.3, num_ctx: 8192 });
+      response = await generateText(prompt, { temperature: 0.3 });
     } catch (err) {
       logger.error("[auto-extract] LLM call failed:", err);
       return { created: [], updated: [], skipped: [], errors: ["llm_call_failed"] };
@@ -177,9 +180,118 @@ export async function extractAndCreateWikiEntities(
           writeWikiPage(pagePath, content, frontmatter);
           created.push(entity.name);
         }
+
+        // Auto-create NPC record for character-type entities
+        if (entity.type === "character") {
+          try {
+            const existing = getDb().prepare(
+              "SELECT id FROM npcs WHERE user_id = ? AND universe_id = ? AND LOWER(name) = LOWER(?)"
+            ).get(userId, universeId, entity.name) as { id: string } | undefined;
+            if (!existing) {
+              getDb().prepare(
+                `INSERT INTO npcs (id, user_id, universe_id, name, description, is_canon)
+                 VALUES (?, ?, ?, ?, ?, 0)`
+              ).run(
+                crypto.randomUUID(),
+                userId,
+                universeId,
+                entity.name,
+                entity.description || null,
+              );
+            }
+          } catch {
+            // Non-fatal — NPC creation is a best-effort bonus
+          }
+        }
       } catch (err) {
         logger.error(`[auto-extract] Failed to process entity "${entity.name}":`, err);
         errors.push(entity.name);
+      }
+    }
+
+    // ── Relationship Extraction ─────────────────────────────────────────
+    // Call LLM to extract relationships from the AI response, then create
+    // wiki pages and DB records for each.
+    const CONCEPTS_FOLDER = "concepts";
+    let relationshipResponse: string;
+    try {
+      const relPrompt = PROMPTS.extractRelationshipsFromResponse(aiResponse, existingTitles);
+      relationshipResponse = await generateText(relPrompt, { temperature: 0.3 });
+    } catch (err) {
+      logger.error("[auto-extract] Relationship LLM call failed:", err);
+      errors.push("rel_llm_failed");
+      relationshipResponse = "[]";
+    }
+
+    if (relationshipResponse) {
+      try {
+        const parsed = JSON.parse(relationshipResponse);
+        if (Array.isArray(parsed)) {
+          for (const rel of parsed) {
+            if (!rel?.source || !rel?.target) continue;
+            try {
+              const relSlug = `${rel.source}-${rel.target}`.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-");
+              const relFilename = `relationship_${relSlug}.md`;
+              const relPath = path.join(wikiRoot, CONCEPTS_FOLDER, relFilename);
+
+              // Create or update wiki page
+              if (fs.existsSync(relPath)) {
+                const existingRelPage = readWikiPage(relPath);
+                if (existingRelPage.frontmatter.status === "draft") {
+                  const dateStr = new Date().toISOString().split("T")[0];
+                  const updatedContent =
+                    existingRelPage.content.trimEnd() +
+                    `\n\n## Session Update (${dateStr})\n\n${rel.description || ""}`;
+                  const updatedFrontmatter: WikiFrontmatter = {
+                    ...existingRelPage.frontmatter,
+                    updated: new Date().toISOString(),
+                  };
+                  writeWikiPage(relPath, updatedContent, updatedFrontmatter);
+                  updated.push(relFilename);
+                } else {
+                  skipped.push(relFilename);
+                }
+              } else {
+                const relBody = `**Nature:** ${rel.nature || "unknown"}\n**Entities:** [[${rel.source}]] ↔ [[${rel.target}]]\n\n## Description\n${rel.description || ""}\n\n*Auto-extracted during session ${sessionId}*`;
+                const relFrontmatter: WikiFrontmatter = {
+                  title: `${rel.source} ↔ ${rel.target}`,
+                  type: "concept",
+                  status: "draft",
+                  tags: ["relationship", "auto-generated", `nature:${rel.nature || "unknown"}`, `source:session-${sessionId}`],
+                  created: new Date().toISOString(),
+                  updated: new Date().toISOString(),
+                };
+                writeWikiPage(relPath, relBody, relFrontmatter);
+                created.push(relFilename);
+              }
+
+              // Create DB record
+              const existingRel = getDb().prepare(
+                "SELECT id FROM relationships WHERE user_id = ? AND universe_id = ? AND LOWER(source_entity) = LOWER(?) AND LOWER(target_entity) = LOWER(?)"
+              ).get(userId, universeId, rel.source, rel.target) as { id: string } | undefined;
+              if (!existingRel) {
+                getDb().prepare(
+                  `INSERT INTO relationships (id, user_id, universe_id, source_entity, target_entity, emotional_state, shared_history)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)`
+                ).run(
+                  crypto.randomUUID(),
+                  userId,
+                  universeId,
+                  rel.source,
+                  rel.target,
+                  rel.nature || "unknown",
+                  rel.description || null,
+                );
+              }
+            } catch {
+              // Skip malformed relationship
+              errors.push(`rel_${rel?.source || "?"}-${rel?.target || "?"}`);
+            }
+          }
+        }
+      } catch (err) {
+        logger.error("[auto-extract] Failed to parse relationship response:", err);
+        errors.push("rel_parse");
       }
     }
 

@@ -2,13 +2,13 @@ import path from "path";
 import { listWikiPages, WikiPage } from "./file-io";
 import {
   parseWikilinks,
-  resolveWikilink,
   validateWikilinks,
 } from "./wikilinks";
 import { findOrphans } from "./orphans";
 import { generateText } from "../ollama";
 import { TIME } from "../config";
 import { safeParseWarn } from "@/lib/safe-json";
+import { getDb } from "@/lib/db";
 
 // ---------------------------------------------------------------------------
 // Report Types
@@ -60,6 +60,20 @@ function pageEntity(page: WikiPage): string {
     page.frontmatter.title ||
     path.basename(page.path, ".md").replace(/[-_]/g, " ")
   );
+}
+
+/**
+ * Extract the user ID from a wiki root path.
+ * Wiki root format: {dataDir}/{userId}/wiki[/{universeId}]
+ */
+function extractUserIdFromWikiRoot(wikiRoot: string): string {
+  const normalized = path.resolve(wikiRoot);
+  const parts = normalized.split(path.sep);
+  const wikiIndex = parts.indexOf("wiki");
+  if (wikiIndex >= 1) {
+    return parts[wikiIndex - 1];
+  }
+  return "unknown";
 }
 
 /**
@@ -139,7 +153,7 @@ function detectStaleClaims(
         stale.push({
           pagePath: relPath,
           claim: `Page has been in "draft" status for an extended period`,
-          reason: `Last updated ${Math.round(age / (1000 * 60 * 60 * 24))} days ago; consider reviewing or archiving`,
+          reason: `Last updated ${Math.round(age / TIME.ONE_DAY)} days ago; consider reviewing or archiving`,
         });
       }
     }
@@ -155,7 +169,7 @@ function detectStaleClaims(
         stale.push({
           pagePath: relPath,
           claim: `Page contains ${brokenLinks.length} wikilink(s) that may need verification`,
-          reason: `Page hasn't been updated in ${Math.round((mostRecentUpdate - updated) / (1000 * 60 * 60 * 24))} days; links may be stale`,
+          reason: `Page hasn't been updated in ${Math.round((mostRecentUpdate - updated) / TIME.ONE_DAY)} days; links may be stale`,
         });
       }
     }
@@ -167,7 +181,7 @@ function detectStaleClaims(
         stale.push({
           pagePath: relPath,
           claim: `Page has no "updated" timestamp`,
-          reason: `Created ${Math.round((now - created) / (1000 * 60 * 60 * 24))} days ago but never marked as updated`,
+          reason: `Created ${Math.round((now - created) / TIME.ONE_DAY)} days ago but never marked as updated`,
         });
       }
     }
@@ -330,7 +344,6 @@ If there ARE contradictions, respond with JSON only:
   try {
     const response = await generateText(prompt, {
       temperature: 0.1,
-      num_ctx: 8192,
     });
 
     if (response.includes("NO_CONTRADICTION")) {
@@ -443,6 +456,31 @@ export async function lintWiki(
   // -----------------------------------------------------------------------
   report.contradictions = await detectContradictions(pages, wikiRoot, universeId);
 
+  // Persist contradictions to the contradiction_flags table
+  // Non-blocking: failures do not affect the lint report
+  try {
+    const db = getDb();
+    const userId = extractUserIdFromWikiRoot(wikiRoot);
+    for (const c of report.contradictions) {
+      // Upsert: don't duplicate open contradictions for the same entity + page pair
+      const existing = db.prepare(
+        "SELECT id FROM contradiction_flags WHERE entity_name = ? AND page_a = ? AND page_b = ? AND status = 'open'"
+      ).get(c.entity, c.pageA, c.pageB) as { id: string } | undefined;
+
+      if (existing) {
+        db.prepare(
+          "UPDATE contradiction_flags SET detected_at = CURRENT_TIMESTAMP WHERE id = ?"
+        ).run(existing.id);
+      } else {
+        db.prepare(
+          "INSERT INTO contradiction_flags (id, user_id, entity_name, page_a, page_b, claim_a, claim_b, contradiction_type, severity, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'unknown', 'medium', 'open')"
+        ).run(crypto.randomUUID(), userId, c.entity, c.pageA, c.pageB, c.claimA, c.claimB);
+      }
+    }
+  } catch {
+    // Contradiction persistence is non-blocking — don't fail the lint
+  }
+
   // -----------------------------------------------------------------------
   // 5. Suggestions
   // -----------------------------------------------------------------------
@@ -476,7 +514,7 @@ export async function lintWiki(
   }
 
   // Cross-reference suggestions: find pages about related entities that don't link to each other
-  const crossRefSuggestions = findMissingCrossReferences(pages, wikiRoot);
+  const crossRefSuggestions = findMissingCrossReferences(pages);
   report.suggestions.push(...crossRefSuggestions);
 
   // General wiki health suggestions
@@ -507,7 +545,6 @@ export async function lintWiki(
  */
 function findMissingCrossReferences(
   pages: WikiPage[],
-  wikiRoot: string,
 ): string[] {
   const suggestions: string[] = [];
 

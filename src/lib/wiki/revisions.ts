@@ -1,3 +1,10 @@
+/**
+ * @deprecated Use src/lib/wiki/history.ts (SQLite wiki_versions table) instead.
+ * This file-based revision system is deprecated but kept for backward compatibility.
+ * Will be removed in a future cleanup phase.
+ * Migration path: history.recordVersion() → wiki_versions table
+ */
+
 import fs from "fs";
 import path from "path";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";

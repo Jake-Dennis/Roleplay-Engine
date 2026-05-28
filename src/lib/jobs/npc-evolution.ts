@@ -9,7 +9,7 @@ import { getDb } from "@/lib/db";
 import { generateText } from "@/lib/ollama";
 import { safeParseWarn } from "@/lib/safe-json";
 import type { JobPayload, JobResult } from "@/lib/job-processor";
-import { updateJobProgress, markJobCompleted } from "@/lib/job-processor";
+import { updateJobProgress, markJobCompleted, queueJob } from "@/lib/job-processor";
 
 // ---------------------------------------------------------------------------
 // Job Handler
@@ -98,7 +98,6 @@ export async function handleNpcEvolutionJob(jobId: string, payload: JobPayload):
 
   const response = await generateText(prompt, {
     temperature: 0.4,
-    num_ctx: 8192,
     userId: userId as string,
   });
 
@@ -147,6 +146,13 @@ export async function handleNpcEvolutionJob(jobId: string, payload: JobPayload):
   `).run(newTraits, newBehavior, updatedLog, npcId);
 
   markJobCompleted(jobId);
+
+  // Chain: sync updated NPC traits to wiki entity page (best-effort, non-fatal)
+  try {
+    queueJob(userId as string, "npc_wiki_sync", { userId, npcId, universeId }, "low", universeId as string | undefined);
+  } catch {
+    /* non-fatal — wiki sync failure does not break evolution */
+  }
 
   return {
     success: true,

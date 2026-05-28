@@ -1,9 +1,7 @@
-import fs from "fs";
 import path from "path";
 import FlexSearch from "flexsearch";
 import { generateText } from "@/lib/ollama";
 import { readWikiPage, listWikiPages, WikiPage } from "@/lib/wiki/file-io";
-import { parseWikilinks } from "@/lib/wiki/wikilinks";
 import { parseWikiIndex, scoreWikiEntry, resolveWikiPagePath } from "./index-utils";
 import type { QueryResult } from "./types";
 export type { QueryResult } from "./types";
@@ -384,7 +382,6 @@ async function synthesizeAnswer(
     const prompt = buildSynthesisPrompt(query, pages);
     const response = await generateText(prompt, {
       temperature: 0.3,
-      num_ctx: 16384,
     });
 
     const citations = extractCitationsFromResponse(response, pages);
@@ -394,7 +391,7 @@ async function synthesizeAnswer(
       citations,
       usedFallback,
     };
-  } catch (err: unknown) {
+  } catch {
     // LLM failed — return a fallback answer with page references
     const pageRefs = pages
       .map((p) => `- ${p.frontmatter.title || path.basename(p.path, ".md")} (${p.path})`)

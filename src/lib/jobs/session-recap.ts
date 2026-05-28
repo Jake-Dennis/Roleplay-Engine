@@ -56,7 +56,6 @@ export async function handleSessionRecapJob(jobId: string, payload: JobPayload):
   const prompt = buildRecapPrompt(transcript);
   const recap = await generateText(prompt, {
     temperature: 0.4,
-    num_ctx: Math.min(16384, transcript.length + 2000),
     userId: userId as string,
   });
 

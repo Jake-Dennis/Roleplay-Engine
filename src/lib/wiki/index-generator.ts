@@ -1,5 +1,4 @@
-import { WikiPage, listWikiPages } from './file-io';
-import { parseWikilinks } from './wikilinks';
+import { listWikiPages } from './file-io';
 import fs from 'fs';
 import path from 'path';
 

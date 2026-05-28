@@ -3,9 +3,11 @@ import path from "path";
 import matter from "gray-matter";
 import { writeWikiPage, sanitizeWikiFilename, WikiFrontmatter } from "./file-io";
 import { generateIndex } from "./index-generator";
+// @deprecated: logger.ts is deprecated — use history.ts (SQLite wiki_versions) instead
 import { appendLog } from "./logger";
 import { generateText } from "@/lib/ollama";
 import { logger } from '@/lib/logger';
+import { CONTENT_LIMITS } from "@/lib/config";
 import { safeParseWarn } from "@/lib/safe-json";
 
 /**
@@ -17,12 +19,19 @@ export interface IngestResult {
   errors: string[];
 }
 
+/** Allowed sub-types for entities. */
+const ENTITY_SUBTYPES = ["character", "location", "item", "faction", "organization", "creature"] as const;
+
+/** Allowed sub-types for concepts. */
+const CONCEPT_SUBTYPES = ["theme", "rule", "mechanic", "lore", "event", "tradition"] as const;
+
 /**
  * Extracted entity or concept from a source file.
  */
 interface ExtractedItem {
   title: string;
   type: "entity" | "concept";
+  subtype?: (typeof ENTITY_SUBTYPES | typeof CONCEPT_SUBTYPES)[number];
   description: string;
   tags: string[];
 }
@@ -76,7 +85,14 @@ Source content:
 ${truncated}
 ---
 
-Extract all meaningful entities (characters, locations, objects, factions) and concepts (themes, rules, mechanics, ideas) from this source.
+Extract all meaningful entities and concepts from this source.
+
+Entity types: characters, locations, items, factions, organizations, creatures.
+Concept types: themes, rules, mechanics, lore, events, traditions.
+
+For each item, also determine the most specific subtype:
+- Entity subtypes: "character", "location", "item", "faction", "organization", "creature"
+- Concept subtypes: "theme", "rule", "mechanic", "lore", "event", "tradition"
 
 Return ONLY a valid JSON object with this exact structure:
 {
@@ -84,6 +100,7 @@ Return ONLY a valid JSON object with this exact structure:
     {
       "title": "Name of the entity",
       "type": "entity",
+      "subtype": "character",
       "description": "A concise but informative description (2-4 sentences) capturing key details from the source",
       "tags": ["tag1", "tag2"]
     }
@@ -92,6 +109,7 @@ Return ONLY a valid JSON object with this exact structure:
     {
       "title": "Name of the concept",
       "type": "concept",
+      "subtype": "lore",
       "description": "A concise but informative description (2-4 sentences) capturing key details from the source",
       "tags": ["tag1", "tag2"]
     }
@@ -102,13 +120,13 @@ Rules:
 - Extract ONLY what is explicitly present in the source — do not invent or infer beyond what is written.
 - Each description should be substantive enough to serve as a wiki page body.
 - Tags should be short, lowercase keywords relevant to the item.
+- Select the most specific subtype that fits. If unsure, omit "subtype" entirely.
 - If nothing of a type is found, return an empty array for that type.
 - Return ONLY the JSON object, no markdown fences, no explanation.`;
 
   try {
     const response = await generateText(prompt, {
       temperature: 0.3,
-      num_ctx: 16384,
     });
 
     // Extract JSON from response (handle potential markdown fences)
@@ -122,11 +140,20 @@ Rules:
     if (!parsed) return { entities: [], concepts: [] };
 
     // Validate and normalize
+    function validateSubtype(
+      subtype: unknown,
+      valid: readonly string[]
+    ): string | undefined {
+      if (typeof subtype !== "string") return undefined;
+      return valid.includes(subtype) ? subtype : undefined;
+    }
+
     const entities = (parsed.entities || [])
       .filter((e) => e.title && e.description)
       .map((e) => ({
         ...e,
         type: "entity" as const,
+        subtype: validateSubtype(e.subtype, ENTITY_SUBTYPES) as (typeof ENTITY_SUBTYPES)[number] | undefined,
         tags: Array.isArray(e.tags) ? e.tags : [],
       }));
 
@@ -135,6 +162,7 @@ Rules:
       .map((c) => ({
         ...c,
         type: "concept" as const,
+        subtype: validateSubtype(c.subtype, CONCEPT_SUBTYPES) as (typeof CONCEPT_SUBTYPES)[number] | undefined,
         tags: Array.isArray(c.tags) ? c.tags : [],
       }));
 
@@ -158,11 +186,13 @@ function buildFrontmatter(
   type: WikiFrontmatter["type"],
   universeId: string,
   tags: string[],
-  sourceRef: string
+  sourceRef: string,
+  subtype?: string
 ): WikiFrontmatter {
   return {
     title,
     type,
+    subtype: subtype as WikiFrontmatter["subtype"] | undefined,
     status: "draft",
     universe: universeId,
     tags: [...tags, "auto-generated", `source:${sourceRef}`],
@@ -204,6 +234,9 @@ function createWikiPageForItem(
       const frontmatter: WikiFrontmatter = {
         title: data.title || item.title,
         type: data.type || item.type,
+        subtype: (item.subtype && !data.subtype)
+          ? (item.subtype as WikiFrontmatter["subtype"])
+          : (data.subtype || undefined),
         status: data.status || "draft",
         universe: data.universe || universeId,
         tags: newTags as string[],
@@ -215,7 +248,7 @@ function createWikiPageForItem(
     }
 
     // Create new page
-    const frontmatter = buildFrontmatter(item.title, item.type, universeId, item.tags, sourceRef);
+    const frontmatter = buildFrontmatter(item.title, item.type, universeId, item.tags, sourceRef, item.subtype);
     const body = item.description;
 
     writeWikiPage(pagePath, body, frontmatter);
@@ -254,8 +287,8 @@ function createSourcePage(
     };
 
     // Truncate body for source page — store reference, not full content
-    const preview = sourceContent.length > 5000
-      ? sourceContent.slice(0, 5000) + "\n\n... [full content in original file]"
+    const preview = sourceContent.length > CONTENT_LIMITS.MEDIUM
+      ? sourceContent.slice(0, CONTENT_LIMITS.MEDIUM) + "\n\n... [full content in original file]"
       : sourceContent;
 
     const body = `Source material ingested from:\n\`${sourcePath}\`\n\n---\n\n${preview}`;

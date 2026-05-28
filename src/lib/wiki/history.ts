@@ -1,7 +1,17 @@
+/**
+ * CANONICAL provenance tracking system.
+ * Use this module for all wiki page version tracking.
+ *
+ * Deprecated alternatives:
+ * - revisions.ts (file-based JSON revision snapshots)
+ * - logger.ts (append-only log.md markdown file)
+ *
+ * Migration: history.recordVersion() → wiki_versions table (SQLite)
+ */
+
 import fs from "fs";
 import path from "path";
 import { getDb } from "@/lib/db";
-import { APP_CONFIG } from "@/lib/config";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 
 /**

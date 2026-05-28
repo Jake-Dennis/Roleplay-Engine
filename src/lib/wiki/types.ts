@@ -28,6 +28,19 @@ export interface WikiFrontmatter {
   rejection_reason?: string;
   /** ISO timestamp when the page was rejected. */
   rejected_at?: string;
+  /** ID of the persona this page was auto-created from. */
+  persona_id?: string;
+  /** Source identifier for auto-generated pages (e.g. "persona", "universe"). */
+  source?: string;
+  /**
+   * Sub-type classification for finer-grained browsing.
+   *
+   * Entity sub-types: character, location, item, faction, organization, creature
+   * Concept sub-types: theme, rule, mechanic, lore, event, tradition
+   */
+  subtype?:
+    | "character" | "location" | "item" | "faction" | "organization" | "creature"
+    | "theme" | "rule" | "mechanic" | "lore" | "event" | "tradition";
   /** Additional frontmatter fields beyond the known schema. */
   [key: string]: unknown;
 }

@@ -1,4 +1,4 @@
-import type { WikiPage, Wikilink, LinkGraph, CollisionInfo } from "./types";
+import type { WikiPage, Wikilink, LinkGraph } from "./types";
 export type { Wikilink, LinkGraph, CollisionInfo } from "./types";
 import path from "path";
 
@@ -113,7 +113,7 @@ export function detectCollisions(
 
   const collisions: Array<{ name: string; pages: string[] }> = [];
 
-  for (const [name, entries] of titleMap) {
+  for (const [, entries] of titleMap) {
     if (entries.length < 2) continue;
     // Only flag as collision if entries span multiple distinct universes
     const universes = new Set(entries.map((e) => e.universe));

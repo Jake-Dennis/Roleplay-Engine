@@ -1,3 +1,4 @@
+import { TIME } from "@/lib/config";
 import matter from "gray-matter";
 import fs from "fs";
 import path from "path";
@@ -31,7 +32,7 @@ const lockTimestamps = new Map<string, number>();
  * Throttle for cleanupStaleLocks — prevents running on every lockFile call.
  */
 let lastCleanupTime = 0;
-const CLEANUP_THROTTLE_MS = 60_000; // 60 seconds
+const CLEANUP_THROTTLE_MS = TIME.ONE_MINUTE; // 60 seconds
 
 /**
  * Remove locks older than maxAgeMs to prevent unbounded Map growth

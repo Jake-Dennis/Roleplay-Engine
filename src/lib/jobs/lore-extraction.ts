@@ -9,13 +9,15 @@
 
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
 import { getDb } from "@/lib/db";
 import { generateText } from "@/lib/ollama";
+import { logger } from "@/lib/logger";
 import { PROMPTS } from "@/lib/prompts";
-import { CONTENT_LIMITS } from "@/lib/config";
 import { getWikiRoot } from "@/lib/wiki/wiki-root";
-import { writeWikiPage, sanitizeWikiFilename, WikiFrontmatter } from "@/lib/wiki/file-io";
+import { readWikiPage, writeWikiPage, sanitizeWikiFilename, WikiFrontmatter } from "@/lib/wiki/file-io";
 import { generateIndex } from "@/lib/wiki/index-generator";
+// @deprecated: logger.ts is deprecated — use history.ts (SQLite wiki_versions) instead
 import { appendLog } from "@/lib/wiki/logger";
 import type { JobPayload, JobResult } from "@/lib/job-processor";
 import { updateJobProgress, markJobCompleted } from "@/lib/job-processor";
@@ -24,6 +26,15 @@ import { safeParseWarn } from "@/lib/safe-json";
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+
+/** Map LLM entity types to our frontmatter subtype values. */
+const ENTITY_TYPE_TO_SUBTYPE: Record<string, string | undefined> = {
+  character: "character",
+  location: "location",
+  organization: "organization",
+  object: "item",
+  concept: undefined,
+};
 
 interface ExtractedEntity {
   name: string;
@@ -111,120 +122,231 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
     let extraction: LoreExtractionResult | null = null;
     try {
       const response = await generateText(prompt, {
-        temperature: 0.3,
-        num_ctx: Math.max(CONTENT_LIMITS.MEDIUM, messageText.length + 2000),
+        temperature: 0.1,
         userId: userId as string,
       });
 
+      logger.warn(`[DEBUG lore-extraction] Response length: ${response?.length || 0}, first 200: ${(response || "''").substring(0, 200)}`);
+
       const jsonMatch = response.match(/\{[\s\S]*\}/);
+      logger.warn(`[DEBUG lore-extraction] JSON match: ${jsonMatch ? 'found (len=' + jsonMatch[0].length + ')' : 'NOT FOUND'}`);
       if (jsonMatch) {
         extraction = safeParseWarn<LoreExtractionResult>(jsonMatch[0], "LLM lore extraction");
+        logger.warn(`[DEBUG lore-extraction] extraction parsed: ${extraction ? 'entities=' + extraction.entities?.length + ' events=' + extraction.events?.length + ' rels=' + extraction.relationships?.length : 'NULL'}`);
       }
-    } catch {
-      // Skip failed batches — continue with next
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.warn(`[DEBUG lore-extraction] Error: ${msg}`);
     }
 
     if (extraction) {
-      // Create entity pages
+      // Create entity pages — skip malformed entities individually
       for (const entity of extraction.entities) {
-        const slug = entity.name.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-");
-        const pageKey = `entity:${slug}`;
-        if (existingPages.has(pageKey)) continue;
-
-        const filename = sanitizeWikiFilename(entity.name);
-        const pagePath = path.join(entitiesDir, filename);
-
-        let body = `**Type:** ${entity.entityType}\n`;
-        if (entity.traits && entity.traits.length > 0) {
-          body += `**Traits:** ${entity.traits.join(", ")}\n`;
-        }
-        body += `\n## Description\n${entity.description}\n`;
-        if (entity.relationships && entity.relationships.length > 0) {
-          body += `\n## Relationships\n${entity.relationships.map((r) => `- ${r}`).join("\n")}\n`;
-        }
-        body += `\n*Extracted from messages (batch ${Math.floor(i / batchSize) + 1}).*`;
-
-        const frontmatter: WikiFrontmatter = {
-          title: entity.name,
-          type: "entity",
-          status: "draft",
-          universe: universeId as string,
-          tags: ["extracted", `type:${entity.entityType}`],
-          created: new Date().toISOString(),
-        };
-
+        const entityName = entity?.name;
+        if (!entityName) continue;
         try {
-          writeWikiPage(pagePath, body, frontmatter);
+          const slug = entityName.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-");
+          const pageKey = `entity:${slug}`;
+          if (existingPages.has(pageKey)) continue;
+
+          const filename = sanitizeWikiFilename(entityName);
+          const pagePath = path.join(entitiesDir, filename);
+
+          // Create or update wiki page
+          if (fs.existsSync(pagePath)) {
+            const existingPage = readWikiPage(pagePath);
+            if (existingPage.frontmatter.status === "draft") {
+              const dateStr = new Date().toISOString().split("T")[0];
+              const updatedContent =
+                existingPage.content.trimEnd() +
+                `\n\n## Session Update (${dateStr})\n\n${entity.description || entityName}`;
+              const updatedFrontmatter: WikiFrontmatter = {
+                ...existingPage.frontmatter,
+                subtype: existingPage.frontmatter.subtype ?? ENTITY_TYPE_TO_SUBTYPE[entity.entityType],
+                updated: new Date().toISOString(),
+              };
+              writeWikiPage(pagePath, updatedContent, updatedFrontmatter);
+            } else {
+              continue; // Non-draft pages (reviewed/locked) are skipped
+            }
+          } else {
+            let body = `**Type:** ${entity.entityType || "unknown"}\n`;
+            if (entity.traits && entity.traits.length > 0) {
+              body += `**Traits:** ${entity.traits.join(", ")}\n`;
+            }
+            body += `\n## Description\n${entity.description || ""}\n`;
+            if (entity.relationships && entity.relationships.length > 0) {
+              body += `\n## Relationships\n${entity.relationships.map((r) => `- ${r}`).join("\n")}\n`;
+            }
+            body += `\n*Extracted from messages (batch ${Math.floor(i / batchSize) + 1}).*`;
+
+            const frontmatter: WikiFrontmatter = {
+              title: entityName,
+              type: "entity",
+              subtype: ENTITY_TYPE_TO_SUBTYPE[entity.entityType] as WikiFrontmatter["subtype"] | undefined,
+              status: "draft",
+              universe: universeId as string,
+              tags: ["extracted", `type:${entity.entityType || "unknown"}`],
+              created: new Date().toISOString(),
+            };
+
+            writeWikiPage(pagePath, body, frontmatter);
+          }
           existingPages.add(pageKey);
           pagesCreated++;
+
+          // Auto-create NPC record for character-type entities
+          if (entity.entityType === "character") {
+            try {
+              const existing = getDb().prepare(
+                "SELECT id FROM npcs WHERE user_id = ? AND universe_id = ? AND LOWER(name) = LOWER(?)"
+              ).get(userId, universeId, entityName) as { id: string } | undefined;
+              if (!existing) {
+                getDb().prepare(
+                  `INSERT INTO npcs (id, user_id, universe_id, name, description, personality_traits, is_canon)
+                   VALUES (?, ?, ?, ?, ?, ?, 0)`
+                ).run(
+                  crypto.randomUUID(),
+                  userId,
+                  universeId,
+                  entityName,
+                  entity.description || null,
+                  entity.traits?.length ? JSON.stringify(entity.traits) : null,
+                );
+              }
+            } catch {
+              // Non-fatal — NPC creation is a best-effort bonus
+            }
+          }
         } catch {
-          // Skip failed writes (conflicts, etc.)
+          // Skip malformed entity — continue with next
         }
       }
 
-      // Create event pages
+      // Create event pages — skip malformed events individually
       for (const event of extraction.events) {
-        const slug = event.title.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-");
-        const pageKey = `event:${slug}`;
-        if (existingPages.has(pageKey)) continue;
-
-        const filename = `event_${slug}.md`;
-        const pagePath = path.join(conceptsDir, filename);
-
-        let body = `**Importance:** ${event.importance}\n`;
-        if (event.participants && event.participants.length > 0) {
-          body += `**Participants:** ${event.participants.map((p) => `[[${p}]]`).join(", ")}\n`;
-        }
-        if (event.outcome) {
-          body += `**Outcome:** ${event.outcome}\n`;
-        }
-        body += `\n## Description\n${event.description}\n`;
-        body += `\n*Extracted from messages (batch ${Math.floor(i / batchSize) + 1}).*`;
-
-        const frontmatter: WikiFrontmatter = {
-          title: `Event: ${event.title}`,
-          type: "concept",
-          status: "draft",
-          universe: universeId as string,
-          tags: ["event", "extracted", `importance:${event.importance}`],
-          created: new Date().toISOString(),
-        };
-
+        const eventTitle = event?.title;
+        if (!eventTitle) continue;
         try {
-          writeWikiPage(pagePath, body, frontmatter);
+          const slug = eventTitle.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-");
+          const pageKey = `event:${slug}`;
+          if (existingPages.has(pageKey)) continue;
+
+          const filename = `event_${slug}.md`;
+          const pagePath = path.join(conceptsDir, filename);
+
+          let body = `**Importance:** ${event.importance || "medium"}\n`;
+          if (event.participants && event.participants.length > 0) {
+            body += `**Participants:** ${event.participants.map((p) => `[[${p}]]`).join(", ")}\n`;
+          }
+          if (event.outcome) {
+            body += `**Outcome:** ${event.outcome}\n`;
+          }
+          body += `\n## Description\n${event.description || ""}\n`;
+          body += `\n*Extracted from messages (batch ${Math.floor(i / batchSize) + 1}).*`;
+
+          const frontmatter: WikiFrontmatter = {
+            title: `Event: ${eventTitle}`,
+            type: "concept",
+            subtype: "event",
+            status: "draft",
+            universe: universeId as string,
+            tags: ["event", "extracted", `importance:${event.importance || "medium"}`],
+            created: new Date().toISOString(),
+          };
+
+          // Create or update event page
+          if (fs.existsSync(pagePath)) {
+            const existingPage = readWikiPage(pagePath);
+            if (existingPage.frontmatter.status === "draft") {
+              const dateStr = new Date().toISOString().split("T")[0];
+              const updatedContent =
+                existingPage.content.trimEnd() +
+                `\n\n## Session Update (${dateStr})\n\n${event.description || ""}`;
+              const updatedFrontmatter: WikiFrontmatter = {
+                ...existingPage.frontmatter,
+                updated: new Date().toISOString(),
+              };
+              writeWikiPage(pagePath, updatedContent, updatedFrontmatter);
+            } else {
+              continue; // Non-draft pages (reviewed/locked) are skipped
+            }
+          } else {
+            writeWikiPage(pagePath, body, frontmatter);
+          }
           existingPages.add(pageKey);
           pagesCreated++;
         } catch {
-          // Skip failed writes
+          // Skip malformed event — continue with next
         }
       }
 
-      // Create relationship pages
+      // Create relationship pages — skip malformed relationships individually
       for (const rel of extraction.relationships) {
-        const slug = `${rel.source}-${rel.target}`.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-");
-        const pageKey = `relationship:${slug}`;
-        if (existingPages.has(pageKey)) continue;
-
-        const filename = `relationship_${slug}.md`;
-        const pagePath = path.join(conceptsDir, filename);
-
-        const body = `**Nature:** ${rel.nature}\n**Entities:** [[${rel.source}]] ↔ [[${rel.target}]]\n\n## Description\n${rel.description}\n\n*Extracted from messages (batch ${Math.floor(i / batchSize) + 1}).*`;
-
-        const frontmatter: WikiFrontmatter = {
-          title: `${rel.source} ↔ ${rel.target}`,
-          type: "concept",
-          status: "draft",
-          universe: universeId as string,
-          tags: ["relationship", "extracted", `nature:${rel.nature}`],
-          created: new Date().toISOString(),
-        };
-
+        if (!rel?.source || !rel?.target) continue;
         try {
-          writeWikiPage(pagePath, body, frontmatter);
+          const slug = `${rel.source}-${rel.target}`.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-");
+          const pageKey = `relationship:${slug}`;
+          if (existingPages.has(pageKey)) continue;
+
+          const filename = `relationship_${slug}.md`;
+          const pagePath = path.join(conceptsDir, filename);
+
+          // Create or update wiki page
+          if (fs.existsSync(pagePath)) {
+            const existingPage = readWikiPage(pagePath);
+            if (existingPage.frontmatter.status === "draft") {
+              const dateStr = new Date().toISOString().split("T")[0];
+              const updatedContent =
+                existingPage.content.trimEnd() +
+                `\n\n## Session Update (${dateStr})\n\n${rel.description || ""}`;
+              const updatedFrontmatter: WikiFrontmatter = {
+                ...existingPage.frontmatter,
+                updated: new Date().toISOString(),
+              };
+              writeWikiPage(pagePath, updatedContent, updatedFrontmatter);
+            } else {
+              continue; // Non-draft pages (reviewed/locked) are skipped
+            }
+          } else {
+            const body = `**Nature:** ${rel.nature || "unknown"}\n**Entities:** [[${rel.source}]] ↔ [[${rel.target}]]\n\n## Description\n${rel.description || ""}\n\n*Extracted from messages (batch ${Math.floor(i / batchSize) + 1}).*`;
+            const frontmatter: WikiFrontmatter = {
+              title: `${rel.source} ↔ ${rel.target}`,
+              type: "concept",
+              status: "draft",
+              universe: universeId as string,
+              tags: ["relationship", "extracted", `nature:${rel.nature || "unknown"}`],
+              created: new Date().toISOString(),
+            };
+            writeWikiPage(pagePath, body, frontmatter);
+          }
           existingPages.add(pageKey);
           pagesCreated++;
+
+          // Auto-create relationship record in DB
+          try {
+            const existing = getDb().prepare(
+              "SELECT id FROM relationships WHERE user_id = ? AND universe_id = ? AND LOWER(source_entity) = LOWER(?) AND LOWER(target_entity) = LOWER(?)"
+            ).get(userId, universeId, rel.source, rel.target) as { id: string } | undefined;
+            if (!existing) {
+              getDb().prepare(
+                `INSERT INTO relationships (id, user_id, universe_id, source_entity, target_entity, emotional_state, shared_history)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`
+              ).run(
+                crypto.randomUUID(),
+                userId,
+                universeId,
+                rel.source,
+                rel.target,
+                rel.nature || "unknown",
+                rel.description || null,
+              );
+            }
+          } catch {
+            // Non-fatal — relationship creation is a best-effort bonus
+          }
         } catch {
-          // Skip failed writes
+          // Skip malformed relationship — continue with next
         }
       }
     }
