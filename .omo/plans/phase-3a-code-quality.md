@@ -499,9 +499,9 @@ Revert individual routes. Low risk.
 ## Success Criteria
 
 - [x] `npx next build` passes
-- [x] `job-processor.ts` split into `src/lib/jobs/` (3 handlers extracted: response, summarization, wiki)
+- [x] `job-processor.ts` split into `src/lib/jobs/` (12 handler files, 8 new + 4 existing)
 - [x] `idle-processing.ts` split into `src/lib/idle/` (2 task files extracted: relationship, wiki)
-- [x] `settings/page.tsx` reduced from 927 → 576 lines (2 sub-components extracted)
+- [x] `settings/page.tsx` reduced from 927 → 427 lines (4 sub-components extracted)
 - [x] Zero `console.log`/`console.warn` in production code (except logger.ts, startup-check.ts, shutdown.ts)
 - [x] All magic numbers replaced with CONFIG constants
 - [x] 500 responses in production contain no internal details
