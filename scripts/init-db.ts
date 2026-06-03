@@ -495,6 +495,30 @@ function main() {
     CREATE INDEX IF NOT EXISTS idx_timelines_universe ON timelines(universe_id);
     CREATE INDEX IF NOT EXISTS idx_session_config_lookup ON session_config(session_id, key);
 
+    -- Server-wide configuration (overrides env var defaults)
+    CREATE TABLE IF NOT EXISTS server_config (
+      id TEXT PRIMARY KEY DEFAULT 'singleton',
+      ollama_host TEXT,
+      ollama_port INTEGER,
+      ollama_model TEXT,
+      ollama_embedding_model TEXT,
+      ollama_thinking_mode INTEGER DEFAULT 0,
+      ollama_num_ctx INTEGER,
+      tts_host TEXT,
+      tts_port INTEGER,
+      tts_default_voice TEXT,
+      tts_default_speed REAL,
+      tts_default_volume REAL,
+      tts_default_format TEXT,
+      tts_auto_play INTEGER,
+      tts_skip_long INTEGER,
+      tts_long_threshold INTEGER,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Insert default singleton row (values are NULL = use config.ts env-var fallbacks)
+    INSERT OR IGNORE INTO server_config (id) VALUES ('singleton');
+
     -- Decision points
     CREATE TABLE IF NOT EXISTS decision_points (
       id TEXT PRIMARY KEY,
@@ -507,6 +531,23 @@ function main() {
     );
     CREATE INDEX IF NOT EXISTS idx_decision_points_session ON decision_points(session_id);
     CREATE INDEX IF NOT EXISTS idx_decision_points_user ON decision_points(user_id);
+
+    -- Context window benchmark results (per model, latest at the top)
+    CREATE TABLE IF NOT EXISTS benchmark_results (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      model TEXT NOT NULL,
+      max_ctx_load INTEGER,
+      max_ctx_stress INTEGER,
+      stress_passed INTEGER DEFAULT 0,
+      prompt_tokens INTEGER,
+      host TEXT,
+      rounds_json TEXT,
+      tested_at TEXT DEFAULT (datetime('now')),
+      recommended_num_predict INTEGER,
+      nih_results TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_benchmark_model ON benchmark_results(model);
+    CREATE INDEX IF NOT EXISTS idx_benchmark_tested ON benchmark_results(tested_at);
 
     -- Composite indexes for query optimization
     CREATE INDEX IF NOT EXISTS idx_messages_session_deleted_ts ON messages(session_id, is_deleted, timestamp);

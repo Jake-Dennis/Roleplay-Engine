@@ -27,14 +27,11 @@ interface BenchmarkRow {
   max_ctx_load: number | null;
   max_ctx_stress: number | null;
   stress_passed: number;
-  gen_speed: number | null;
   prompt_tokens: number | null;
   host: string | null;
   rounds_json: string | null;
   tested_at: string;
   recommended_num_predict: number | null;
-  speed_at_25: number | null;
-  speed_at_100: number | null;
   nih_results: string | null;
 }
 
@@ -44,31 +41,26 @@ interface BenchmarkRow {
 function ensureBenchmarkTable() {
   const db = getDb();
   db.exec(`
-    CREATE TABLE IF NOT EXISTS benchmark_results (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      model TEXT NOT NULL,
-      max_ctx_load INTEGER,
-      max_ctx_stress INTEGER,
-      stress_passed INTEGER DEFAULT 0,
-      gen_speed REAL,
-      prompt_tokens INTEGER,
-      host TEXT,
-      rounds_json TEXT,
-      tested_at TEXT DEFAULT (datetime('now')),
-      recommended_num_predict INTEGER,
-      speed_at_25 INTEGER,
-      speed_at_100 INTEGER,
-      nih_results TEXT
-    );
-    CREATE INDEX IF NOT EXISTS idx_benchmark_model ON benchmark_results(model);
-    CREATE INDEX IF NOT EXISTS idx_benchmark_tested ON benchmark_results(tested_at);
-  `);
-  // Migrations for existing DBs that pre-date these columns
-  try { db.prepare("ALTER TABLE benchmark_results ADD COLUMN rounds_json TEXT").run(); } catch {}
-  try { db.prepare("ALTER TABLE benchmark_results ADD COLUMN recommended_num_predict INTEGER").run(); } catch {}
-  try { db.prepare("ALTER TABLE benchmark_results ADD COLUMN speed_at_25 INTEGER").run(); } catch {}
-  try { db.prepare("ALTER TABLE benchmark_results ADD COLUMN speed_at_100 INTEGER").run(); } catch {}
-  try { db.prepare("ALTER TABLE benchmark_results ADD COLUMN nih_results TEXT").run(); } catch {}
+      CREATE TABLE IF NOT EXISTS benchmark_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        model TEXT NOT NULL,
+        max_ctx_load INTEGER,
+        max_ctx_stress INTEGER,
+        stress_passed INTEGER DEFAULT 0,
+        prompt_tokens INTEGER,
+        host TEXT,
+        rounds_json TEXT,
+        tested_at TEXT DEFAULT (datetime('now')),
+        recommended_num_predict INTEGER,
+        nih_results TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_benchmark_model ON benchmark_results(model);
+      CREATE INDEX IF NOT EXISTS idx_benchmark_tested ON benchmark_results(tested_at);
+    `);
+    // Migrations for existing DBs that pre-date these columns
+    try { db.prepare("ALTER TABLE benchmark_results ADD COLUMN rounds_json TEXT").run(); } catch {}
+    try { db.prepare("ALTER TABLE benchmark_results ADD COLUMN recommended_num_predict INTEGER").run(); } catch {}
+    try { db.prepare("ALTER TABLE benchmark_results ADD COLUMN nih_results TEXT").run(); } catch {}
 }
 
 // In-flight rows older than this are considered stale (e.g. server restart
@@ -141,7 +133,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 
   // History (last 10 completed runs)
   const history = db.prepare(
-    "SELECT id, model, max_ctx_load, max_ctx_stress, stress_passed, gen_speed, tested_at FROM benchmark_results WHERE model = ? AND stress_passed != -1 ORDER BY tested_at DESC LIMIT 10"
+    "SELECT id, model, max_ctx_load, max_ctx_stress, stress_passed, tested_at FROM benchmark_results WHERE model = ? AND stress_passed != -1 ORDER BY tested_at DESC LIMIT 10"
   ).all(model) as BenchmarkRow[];
 
   // If running, the in-flight row IS the live result — surface its round data
@@ -156,8 +148,6 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       ...display,
       rounds: parseRounds(display.rounds_json),
       recommended_num_predict: display.recommended_num_predict,
-      speed_at_25: display.speed_at_25,
-      speed_at_100: display.speed_at_100,
       nih_results: parseRounds(display.nih_results),
     } : null,
     history,

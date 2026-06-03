@@ -9,14 +9,11 @@ interface BenchmarkResult {
   max_ctx_load: number | null;
   max_ctx_stress: number | null;
   stress_passed: number;
-  gen_speed: number | null;
   prompt_tokens: number | null;
   host: string | null;
   tested_at: string;
   rounds?: BenchmarkRound[];
   recommended_num_predict?: number | null;
-  speed_at_25?: number | null;
-  speed_at_100?: number | null;
   nih_results?: NihResult[];
 }
 
@@ -26,14 +23,12 @@ interface NihResult {
   response?: string;
   error?: string;
   generatedTokens?: number;
-  tokensPerSec?: string | number;
 }
 
 interface BenchmarkRound {
   ctx: number;
-  p: string;     // phase: "exponential" | "binary" | "stress"
+  p: string;     // phase: "exponential" | "binary" | "stress" | "output"
   ok: number;    // 1 = pass, 0 = fail
-  tps: number | null;
   pt: number | null;
   gt: number | null;
   e: string | null;
@@ -45,7 +40,6 @@ interface HistoryEntry {
   max_ctx_load: number | null;
   max_ctx_stress: number | null;
   stress_passed: number;
-  gen_speed: number | null;
   tested_at: string;
 }
 
@@ -345,12 +339,6 @@ export function ContextBenchmarkSection({ defaultModel, localModels }: ContextBe
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-text-muted" title="Generation speed from the last passing round (stress test or binary search).">Gen speed</span>
-              <span className="text-text-primary font-medium">
-                {latest.gen_speed != null ? `${(typeof latest.gen_speed === 'string' ? parseFloat(latest.gen_speed) : latest.gen_speed).toFixed(1)} t/s` : "—"}
-              </span>
-            </div>
-            <div className="flex justify-between">
               <span className="text-text-muted" title="Prompt token count from the last passing round.">Prompt tokens</span>
               <span className="text-text-primary font-medium">
                 {latest.prompt_tokens != null ? latest.prompt_tokens.toLocaleString() : "—"}
@@ -362,18 +350,6 @@ export function ContextBenchmarkSection({ defaultModel, localModels }: ContextBe
                 <span className="text-text-primary font-medium">{latest.recommended_num_predict.toLocaleString()} tokens</span>
               </div>
             )}
-            {latest.speed_at_25 != null && latest.speed_at_100 != null && (
-              <div className="col-span-2 flex justify-between pt-1 border-t border-border-default mt-1">
-                <span className="text-text-muted" title="Gen speed at 25% and 100% of max context. The drop shows how much speed you lose as context fills up.">Speed drop</span>
-                <span className="text-text-primary font-medium">
-                  {latest.speed_at_25} → {latest.speed_at_100} t/s
-                  <span className="text-text-muted ml-1">
-                    ({Math.round((1 - (latest.speed_at_100 || 0) / Math.max(1, latest.speed_at_25)) * 100)}% drop)
-                  </span>
-                </span>
-              </div>
-            )}
-
             {/* NIH attention test — does the model actually attend to mid-context content? */}
             {latest.nih_results && latest.nih_results.length > 0 && (
               <div className="col-span-2 pt-1 border-t border-border-default mt-1">
@@ -471,7 +447,6 @@ export function ContextBenchmarkSection({ defaultModel, localModels }: ContextBe
                         <th className="px-2 py-1.5 font-medium" title="Context size tested">Context</th>
                         <th className="px-2 py-1.5 font-medium" title="Search phase">Phase</th>
                         <th className="px-2 py-1.5 font-medium" title="Pass or fail">Result</th>
-                        <th className="px-2 py-1.5 font-medium" title="Tokens per second">Speed</th>
                         <th className="px-2 py-1.5 font-medium" title="Tokens generated">Gen</th>
                       </tr>
                     </thead>
@@ -482,9 +457,6 @@ export function ContextBenchmarkSection({ defaultModel, localModels }: ContextBe
                           <td className="px-2 py-1.5 text-text-secondary text-[10px]">{r.p}</td>
                           <td className={`px-2 py-1.5 ${r.ok ? "text-success" : "text-error"}`}>
                             {r.ok ? "✅" : "❌"}
-                          </td>
-                          <td className="px-2 py-1.5 text-text-primary">
-                            {r.tps != null ? `${r.tps} t/s` : r.e ? <span className="text-text-muted text-[10px]" title={r.e}>{r.e.slice(0, 30)}</span> : "—"}
                           </td>
                           <td className="px-2 py-1.5 text-text-secondary">
                             {r.gt != null ? r.gt.toLocaleString() : r.pt != null ? `${r.pt}pt` : "—"}
@@ -522,7 +494,6 @@ export function ContextBenchmarkSection({ defaultModel, localModels }: ContextBe
                   <th className="px-2 py-1.5 font-medium" title="When the benchmark was run">When</th>
                   <th className="px-2 py-1.5 font-medium" title="Highest context size that loaded and generated successfully">Load</th>
                   <th className="px-2 py-1.5 font-medium" title="Stress test result and context size">Stress</th>
-                  <th className="px-2 py-1.5 font-medium" title="Generation speed during stress test">Speed</th>
                 </tr>
               </thead>
               <tbody>
@@ -534,9 +505,6 @@ export function ContextBenchmarkSection({ defaultModel, localModels }: ContextBe
                     <td className="px-2 py-1.5 text-text-primary">{formatCtx(h.max_ctx_load)}</td>
                     <td className={`px-2 py-1.5 ${h.stress_passed ? "text-success" : "text-warning"}`}>
                       {h.stress_passed ? "✅" : "⚠️"} {formatCtx(h.max_ctx_stress)}
-                    </td>
-                    <td className="px-2 py-1.5 text-text-primary">
-                      {h.gen_speed != null ? `${h.gen_speed.toFixed(1)} t/s` : "—"}
                     </td>
                   </tr>
                 ))}

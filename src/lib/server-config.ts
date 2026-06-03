@@ -141,31 +141,26 @@ export function getServerConfig(): ResolvedServerConfig {
     // (added after init-db.ts was already shipped; CREATE TABLE IF NOT EXISTS is a no-op on re-run)
     try {
       db.exec(`
-        CREATE TABLE IF NOT EXISTS benchmark_results (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          model TEXT NOT NULL,
-          max_ctx_load INTEGER,
-          max_ctx_stress INTEGER,
-          stress_passed INTEGER DEFAULT 0,
-          gen_speed REAL,
-          prompt_tokens INTEGER,
-          host TEXT,
-          rounds_json TEXT,
-          tested_at TEXT DEFAULT (datetime('now')),
-          recommended_num_predict INTEGER,
-          speed_at_25 INTEGER,
-          speed_at_100 INTEGER,
-          nih_results TEXT
-        );
-        CREATE INDEX IF NOT EXISTS idx_benchmark_model ON benchmark_results(model);
-        CREATE INDEX IF NOT EXISTS idx_benchmark_tested ON benchmark_results(tested_at);
-      `);
-      // Migrations for existing tables — add columns that post-date the original schema
-      try { db.prepare("ALTER TABLE benchmark_results ADD COLUMN rounds_json TEXT").run(); } catch {}
-      try { db.prepare("ALTER TABLE benchmark_results ADD COLUMN recommended_num_predict INTEGER").run(); } catch {}
-      try { db.prepare("ALTER TABLE benchmark_results ADD COLUMN speed_at_25 INTEGER").run(); } catch {}
-      try { db.prepare("ALTER TABLE benchmark_results ADD COLUMN speed_at_100 INTEGER").run(); } catch {}
-      try { db.prepare("ALTER TABLE benchmark_results ADD COLUMN nih_results TEXT").run(); } catch {}
+      CREATE TABLE IF NOT EXISTS benchmark_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        model TEXT NOT NULL,
+        max_ctx_load INTEGER,
+        max_ctx_stress INTEGER,
+        stress_passed INTEGER DEFAULT 0,
+        prompt_tokens INTEGER,
+        host TEXT,
+        rounds_json TEXT,
+        tested_at TEXT DEFAULT (datetime('now')),
+        recommended_num_predict INTEGER,
+        nih_results TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_benchmark_model ON benchmark_results(model);
+      CREATE INDEX IF NOT EXISTS idx_benchmark_tested ON benchmark_results(tested_at);
+    `);
+    // Migrations for existing tables — add columns that post-date the original schema
+    try { db.prepare("ALTER TABLE benchmark_results ADD COLUMN rounds_json TEXT").run(); } catch {}
+    try { db.prepare("ALTER TABLE benchmark_results ADD COLUMN recommended_num_predict INTEGER").run(); } catch {}
+    try { db.prepare("ALTER TABLE benchmark_results ADD COLUMN nih_results TEXT").run(); } catch {}
     } catch { /* non-critical */ }
     row = db.prepare("SELECT * FROM server_config WHERE id = 'singleton'").get() as ServerConfigRow | undefined;
   } catch {

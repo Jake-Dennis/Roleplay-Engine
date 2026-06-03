@@ -266,7 +266,7 @@ function db() {
   }
   return _db;
 }
-function snapshotProgress({ results, degradation, nihResults, low, practicalMax, lastGoodSpeed, lastGoodPromptTokens, stressPassed, stress, recommendedPredict, finalState = false }) {
+function snapshotProgress({ results, nihResults, low, practicalMax, lastGoodPromptTokens, stressPassed, stress, recommendedPredict, finalState = false }) {
   if (!INFLIGHT_ID) return;
   const conn = db();
   if (!conn) return;
@@ -274,41 +274,31 @@ function snapshotProgress({ results, degradation, nihResults, low, practicalMax,
     const roundData = results.map(r => ({
       ctx: r.ctx, p: r.phase, predict: r.predict ?? null,
       ok: r.status === "pass" ? 1 : 0,
-      tps: r.tokensPerSec ?? null,
       pt: r.promptTokens ?? null,
       gt: r.generatedTokens ?? null,
       e: r.status !== "pass" ? (r.error || "").slice(0, 60) : null,
     }));
-    const extraRounds = degradation.map(d => ({
-      ctx: d.ctx, p: "degradation", predict: null, ok: 1, tps: String(d.tps), pt: null, gt: null, e: null,
-    }));
-    const allRounds = roundData.concat(extraRounds);
+    const allRounds = roundData;
     if (finalState) {
       conn.prepare(`
         UPDATE benchmark_results SET
           max_ctx_load = ?,
           max_ctx_stress = ?,
           stress_passed = ?,
-          gen_speed = ?,
           prompt_tokens = ?,
           host = ?,
           rounds_json = ?,
           recommended_num_predict = ?,
-          speed_at_25 = ?,
-          speed_at_100 = ?,
           nih_results = ?
         WHERE id = ?
       `).run(
         low,
         practicalMax,
         stressPassed ? 1 : 0,
-        stressPassed ? (stress.tokensPerSec ?? null) : (lastGoodSpeed ?? null),
         stressPassed ? (stress.promptTokens ?? null) : (lastGoodPromptTokens ?? null),
         `${HOST}:${PORT}`,
         JSON.stringify(allRounds),
         recommendedPredict,
-        degradation[0] ? Math.round(degradation[0].tps) : null,
-        degradation[degradation.length - 1] ? Math.round(degradation[degradation.length - 1].tps) : null,
         nihResults && nihResults.length > 0 ? JSON.stringify(nihResults) : null,
         INFLIGHT_ID,
       );
@@ -343,20 +333,18 @@ async function main() {
     console.log(`   ❌ Model failed to load at minimum context: ${warmup.error}`);
     process.exit(1);
   }
-  console.log(`   ✅ Loaded. gen=${warmup.generatedTokens}t ${warmup.tokensPerSec}t/s\n`);
+  console.log(`   ✅ Loaded.\n`);
 
   // ── Phase 3: Exponential search ──
   console.log("▶  Phase 3: Exponential search (doubling)...");
   let low = MIN_CTX;
   let high = MIN_CTX;
   const results = [];
-  const degradation = [];  // populated in Phase 7
   const nihResults = [];   // populated in Phase 8
-  let lastGoodSpeed = null;
   let lastGoodPromptTokens = null;
   let practicalMax = MAX_CTX;
   let stressPassed = false;
-  let stress = { status: "fail", tokensPerSec: null, promptTokens: null };
+  let stress = { status: "fail", promptTokens: null };
   let recommendedPredict = 4096;
   let firstOverMax = true;  // track first time we hit/exceed MAX_CTX
 
@@ -364,11 +352,10 @@ async function main() {
     process.stdout.write(`   Testing ${high.toLocaleString()}... `);
     const r = await testContext(MODEL, high, false);
     results.push({ ctx: high, phase: "exponential", ...r });
-    snapshotProgress({ results, degradation, low, practicalMax: high, lastGoodSpeed, lastGoodPromptTokens, stressPassed: false });
+    snapshotProgress({ results, low, practicalMax: high, lastGoodPromptTokens, stressPassed: false });
 
     if (r.status === "pass") {
-      console.log(`✅ gen=${r.generatedTokens}t ${r.tokensPerSec}t/s`);
-      lastGoodSpeed = r.tokensPerSec;
+      console.log(`✅ ${r.generatedTokens}t generated`);
       lastGoodPromptTokens = r.promptTokens;
       low = high;
       if (high >= MAX_CTX) {
@@ -401,15 +388,14 @@ async function main() {
       results.push({ ctx: mid, phase: "binary", ...r });
 
       if (r.status === "pass") {
-        console.log(`✅ gen=${r.generatedTokens}t ${r.tokensPerSec}t/s`);
-        lastGoodSpeed = r.tokensPerSec;
+        console.log(`✅ ${r.generatedTokens}t generated`);
         lastGoodPromptTokens = r.promptTokens;
         low = mid;
       } else {
         console.log(`❌ ${(r.error || '').slice(0, 60)}`);
         high = mid;
       }
-      snapshotProgress({ results, degradation, low, practicalMax: high, lastGoodSpeed, lastGoodPromptTokens, stressPassed: false });
+    snapshotProgress({ results, low, practicalMax: high, lastGoodPromptTokens, stressPassed: false });
     }
   }
 
@@ -418,8 +404,7 @@ async function main() {
   stress = await testContext(MODEL, low, true);
   results.push({ ctx: low, phase: "stress", ...stress });
   if (stress.status === "pass") {
-    console.log(`   ✅ Passed! ${stress.promptTokens} prompt tokens, ${stress.generatedTokens} gen, ${stress.tokensPerSec}t/s`);
-    lastGoodSpeed = stress.tokensPerSec;
+    console.log(`   ✅ Passed! ${stress.promptTokens} prompt tokens, ${stress.generatedTokens} gen`);
     lastGoodPromptTokens = stress.promptTokens;
   } else {
     console.log(`   ⚠️  Loads but fails under actual context pressure: ${stress.error.slice(0, 100)}`);
@@ -428,7 +413,7 @@ async function main() {
   // Estimate practical max
   practicalMax = stress.status === "pass" ? low : low - PRECISION;
   stressPassed = stress.status === "pass";
-  snapshotProgress({ results, degradation, low, practicalMax, lastGoodSpeed, lastGoodPromptTokens, stressPassed, stress, recommendedPredict });
+  snapshotProgress({ results, low, practicalMax, lastGoodPromptTokens, stressPassed, stress, recommendedPredict });
 
   // ── Phase 6: Max output length (num_predict) ──
   // Test how many tokens the model can produce cleanly in one go.
@@ -451,51 +436,33 @@ async function main() {
     results.push({ ctx: testCtx, phase: "output", predict, ...r, status: r.ok ? "pass" : "fail" });
     if (r.ok) {
       const capNote = r.hitCap ? "" : " (stopped early)";
-      console.log(`✅ ${r.generatedTokens}t @ ${r.tokensPerSec}t/s${capNote}`);
+      console.log(`✅ ${r.generatedTokens}t${capNote}`);
       // Only recommend a level that produced its full token count
       if (r.hitCap) recommendedPredict = predict;
     } else {
       console.log(`❌ ${r.error.slice(0, 60)}`);
     }
-    snapshotProgress({ results, degradation, low, practicalMax, lastGoodSpeed, lastGoodPromptTokens, stressPassed, stress, recommendedPredict });
+    snapshotProgress({ results, low, practicalMax, lastGoodPromptTokens, stressPassed, stress, recommendedPredict });
   }
 
-  // ── Phase 7: Speed at different context fill levels ──
-  // Measures how generation speed degrades as the context window fills up.
-  // Uses 200 tokens of input but tells Ollama to reserve different num_ctx.
-  console.log(`\n▶  Phase 7: Speed at ${Math.min(4, practicalMax / 32768 | 0 || 1)} context fill levels...`);
-  const fillLevels = [0.25, 0.5, 0.75, 1.0].map(f => Math.max(4096, Math.floor(practicalMax * f / 4096) * 4096));
-  for (const ctx of fillLevels) {
-    if (ctx > practicalMax) continue;
-    process.stdout.write(`   ${formatK(ctx)} context... `);
-    const r = await testContext(MODEL, ctx, false);
-    if (r.status === "pass") {
-      degradation.push({ ctx, tps: parseFloat(r.tokensPerSec) });
-      console.log(`✅ ${r.tokensPerSec}t/s`);
-    } else {
-      console.log(`❌ ${r.error.slice(0, 40)}`);
-    }
-    snapshotProgress({ results, degradation, low, practicalMax, lastGoodSpeed, lastGoodPromptTokens, stressPassed, stress, recommendedPredict, nihResults });
-  }
-
-  // ── Phase 8: Needle-in-a-haystack (attention test) ──
+  // ── Phase 7: Needle-in-a-haystack (attention test) ──
   // Tests whether the model actually ATTENDS to content at different positions
   // in a long context, not just whether the context loads. A model can "process"
   // 256K tokens and still completely ignore the middle 50%.
   if (stressPassed) {
     const positions = [0.0, 0.25, 0.5, 0.75, 0.9];
-    console.log(`\n▶  Phase 8: Needle-in-haystack at ${practicalMax.toLocaleString()} context...`);
+    console.log(`\n▶  Phase 7: Needle-in-haystack at ${practicalMax.toLocaleString()} context...`);
     for (const pos of positions) {
       process.stdout.write(`   Needle at ${(pos * 100).toFixed(0).padStart(2)}%... `);
       const r = await testNih(MODEL, practicalMax, pos, 180);
       if (r.ok) {
-        nihResults.push({ position: pos, passed: r.passed, response: r.response, generatedTokens: r.generatedTokens, tokensPerSec: r.tokensPerSec });
-        console.log(r.passed ? `✅ Recalled! (${r.tokensPerSec}t/s)` : `❌ Missed: "${r.response.slice(0, 60).replace(/\n/g, " ")}"`);
+        nihResults.push({ position: pos, passed: r.passed, response: r.response, generatedTokens: r.generatedTokens });
+        console.log(r.passed ? `✅ Recalled` : `❌ Missed: "${r.response.slice(0, 60).replace(/\n/g, " ")}"`);
       } else {
         nihResults.push({ position: pos, passed: false, error: r.error });
         console.log(`❌ ${r.error.slice(0, 60)}`);
       }
-      snapshotProgress({ results, degradation, low, practicalMax, lastGoodSpeed, lastGoodPromptTokens, stressPassed, stress, recommendedPredict, nihResults });
+      snapshotProgress({ results, low, practicalMax, lastGoodPromptTokens, stressPassed, stress, recommendedPredict, nihResults });
     }
     const passed = nihResults.filter(r => r.passed).length;
     console.log(`   Summary: ${passed}/${nihResults.length} positions recalled the needle`);
@@ -509,13 +476,6 @@ async function main() {
   console.log(`  Loads OK up to:      ${low.toLocaleString()} context`);
   console.log(`  Stress test:         ${stressPassed ? "✅ Passed" : "⚠️  Failed"} @ ${practicalMax.toLocaleString()}`);
   console.log(`  Max num_predict:     ${recommendedPredict.toLocaleString()} tokens`);
-  if (degradation.length >= 2) {
-    const first = degradation[0].tps;
-    const last = degradation[degradation.length - 1].tps;
-    const dropPct = ((1 - last / first) * 100).toFixed(0);
-    console.log(`  Speed at 25% ctx:    ${first.toFixed(1)} t/s`);
-    console.log(`  Speed at 100% ctx:   ${last.toFixed(1)} t/s (${dropPct}% drop)`);
-  }
   if (nihResults.length > 0) {
     const passed = nihResults.filter(r => r.passed).length;
     const heatmap = nihResults.map(r => `${(r.position * 100).toFixed(0)}%:${r.passed ? "✅" : "❌"}`).join("  ");
@@ -528,8 +488,8 @@ async function main() {
   for (const r of results) {
     const icon = r.status === "pass" ? "✅" : "❌";
     const detail = r.phase === "output"
-      ? `num_predict=${r.predict} → ${r.generatedTokens}t ${r.tokensPerSec || ""}t/s`
-      : r.status === "pass" ? `${r.generatedTokens}t ${r.tokensPerSec}t/s` : r.error?.slice(0, 40) || "fail";
+      ? `num_predict=${r.predict} → ${r.generatedTokens}t`
+      : r.status === "pass" ? `${r.generatedTokens}t generated` : r.error?.slice(0, 40) || "fail";
     const label = r.phase === "output" ? `predict ${r.predict}` : r.ctx.toLocaleString();
     console.log(`    ${icon} ${label.padStart(20)}  ${detail}`);
   }
@@ -544,7 +504,7 @@ async function main() {
   if (SAVE) {
     if (INFLIGHT_ID) {
       // Update the in-flight row with final state — same row becomes the result
-      snapshotProgress({ results, degradation, low, practicalMax, lastGoodSpeed, lastGoodPromptTokens, stressPassed, stress, recommendedPredict, finalState: true });
+      snapshotProgress({ results, low, practicalMax, lastGoodPromptTokens, stressPassed, stress, recommendedPredict, finalState: true });
       console.log(`   💾 Updated in-flight row (id=${INFLIGHT_ID}) to final state`);
     } else {
       // Manual CLI run (no in-flight row) — insert a new row
@@ -552,38 +512,29 @@ async function main() {
         const conn = new Database(DB_PATH);
         // Ensure new columns exist
         try { conn.prepare("ALTER TABLE benchmark_results ADD COLUMN recommended_num_predict INTEGER").run(); } catch {}
-        try { conn.prepare("ALTER TABLE benchmark_results ADD COLUMN speed_at_25 INTEGER").run(); } catch {}
-        try { conn.prepare("ALTER TABLE benchmark_results ADD COLUMN speed_at_100 INTEGER").run(); } catch {}
         const roundData = results.map(r => ({
           ctx: r.ctx,
           p: r.phase,
           predict: r.predict ?? null,
           ok: r.status === "pass" ? 1 : 0,
-          tps: r.tokensPerSec ?? null,
           pt: r.promptTokens ?? null,
           gt: r.generatedTokens ?? null,
           e: r.status !== "pass" ? (r.error || "").slice(0, 60) : null,
         }));
-        const extraRounds = degradation.map(d => ({
-          ctx: d.ctx, p: "degradation", predict: null, ok: 1, tps: String(d.tps), pt: null, gt: null, e: null,
-        }));
-        const allRounds = roundData.concat(extraRounds);
+        const allRounds = roundData;
         const result = conn.prepare(`
           INSERT INTO benchmark_results
-            (model, max_ctx_load, max_ctx_stress, stress_passed, gen_speed, prompt_tokens, host, rounds_json, recommended_num_predict, speed_at_25, speed_at_100, nih_results)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (model, max_ctx_load, max_ctx_stress, stress_passed, prompt_tokens, host, rounds_json, recommended_num_predict, nih_results)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
           MODEL,
           low,
           practicalMax,
           stressPassed ? 1 : 0,
-          stressPassed ? (stress.tokensPerSec ?? null) : (lastGoodSpeed ?? null),
           stressPassed ? (stress.promptTokens ?? null) : (lastGoodPromptTokens ?? null),
           `${HOST}:${PORT}`,
           JSON.stringify(allRounds),
           recommendedPredict,
-          degradation[0] ? Math.round(degradation[0].tps) : null,
-          degradation[degradation.length - 1] ? Math.round(degradation[degradation.length - 1].tps) : null,
           nihResults && nihResults.length > 0 ? JSON.stringify(nihResults) : null,
         );
         conn.close();
@@ -594,11 +545,6 @@ async function main() {
     }
   }
   if (_db) { try { _db.close(); } catch {} }
-}
-
-function formatK(n) {
-  if (n >= 1024) return `${(n / 1024).toFixed(0)}k`;
-  return String(n);
 }
 
 main().catch(console.error);
