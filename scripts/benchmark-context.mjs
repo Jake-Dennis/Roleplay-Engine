@@ -416,28 +416,25 @@ async function main() {
   snapshotProgress({ results, low, practicalMax, lastGoodPromptTokens, stressPassed, stress, recommendedPredict });
 
   // ── Phase 6: Max output length (num_predict) ──
-  // Test how many tokens the model can produce cleanly in one go.
-  // Uses 8k context to keep this fast — num_predict is independent of num_ctx.
-  // Each test can take 2-10 min depending on hardware, so be generous with timeouts.
-  const testCtx = Math.max(MIN_CTX, 8192);
-  const predictLevels = [4096, 8192, 16384];
-  const phaseStart = Date.now();
-  const PHASE_BUDGET_MS = 1500_000; // 25 min cap for the whole phase
-  console.log(`\n▶  Phase 6: Max output (num_predict) at ${testCtx.toLocaleString()} context...`);
+  // Tests at the model's actual max context so output isn't capped
+  // by a small window. No timeouts — user prefers accuracy over speed.
+  // Each level tests whether the model produces its full token count.
+  const testCtx = Math.max(practicalMax, MIN_CTX);
+  const predictLevels = [4096, 8192, 16384, 32768];
+  const maxTimeout = Math.max(TIMEOUT_SEC * 10, 3600); // no timeout — 1h generous cap per test
+  console.log(`\n▶  Phase 6: Max output (num_predict) at ${testCtx.toLocaleString()} context (no timeouts)...`);
   for (const predict of predictLevels) {
-    if (Date.now() - phaseStart > PHASE_BUDGET_MS) {
-      console.log(`   ⏱️  Phase budget exceeded, stopping at ${recommendedPredict.toLocaleString()}`);
+    // Skip predict levels that exceed the context window
+    if (predict >= testCtx) {
+      console.log(`   ⏭️  Skipping num_predict=${predict.toLocaleString()} (exceeds ${testCtx.toLocaleString()} context)`);
       break;
     }
     process.stdout.write(`   Testing num_predict=${predict.toLocaleString()}... `);
-    // Per-test timeout: 600s (10 min) — enough for 16k tokens at 30 t/s, or 8k at 13 t/s
-    const perTestTimeout = 600;
-    const r = await testOutputLength(MODEL, testCtx, predict, perTestTimeout);
+    const r = await testOutputLength(MODEL, testCtx, predict, maxTimeout);
     results.push({ ctx: testCtx, phase: "output", predict, ...r, status: r.ok ? "pass" : "fail" });
     if (r.ok) {
       const capNote = r.hitCap ? "" : " (stopped early)";
       console.log(`✅ ${r.generatedTokens}t${capNote}`);
-      // Only recommend a level that produced its full token count
       if (r.hitCap) recommendedPredict = predict;
     } else {
       console.log(`❌ ${r.error.slice(0, 60)}`);
