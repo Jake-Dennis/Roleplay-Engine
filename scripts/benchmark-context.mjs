@@ -174,7 +174,7 @@ function makeContinuePrompt() {
 async function testOutputLength(model, ctxSize, predict, timeoutSec = TIMEOUT_SEC) {
   const prompt = makeContinuePrompt();
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutSec * 1000);
+  const timer = timeoutSec > 0 ? setTimeout(() => controller.abort(), timeoutSec * 1000) : null;
   try {
     const resp = await fetch(`${URL}/api/generate`, {
       method: "POST",
@@ -187,7 +187,7 @@ async function testOutputLength(model, ctxSize, predict, timeoutSec = TIMEOUT_SE
       }),
       signal: controller.signal,
     });
-    clearTimeout(timer);
+    if (timer) clearTimeout(timer);
     if (!resp.ok) return { ok: false, error: `HTTP ${resp.status}: ${(await resp.text()).slice(0, 200)}` };
     const data = await resp.json();
     if (data.eval_count === undefined) return { ok: false, error: "no eval_count" };
@@ -200,7 +200,7 @@ async function testOutputLength(model, ctxSize, predict, timeoutSec = TIMEOUT_SE
       response: data.response || "",
     };
   } catch (err) {
-    clearTimeout(timer);
+    if (timer) clearTimeout(timer);
     return { ok: false, error: err.message };
   }
 }
@@ -420,8 +420,8 @@ async function main() {
   // by a small window. No timeouts — user prefers accuracy over speed.
   // Each level tests whether the model produces its full token count.
   const testCtx = Math.max(practicalMax, MIN_CTX);
-  const predictLevels = [4096, 8192, 16384, 32768];
-  const maxTimeout = Math.max(TIMEOUT_SEC * 10, 3600); // no timeout — 1h generous cap per test
+  const predictLevels = [4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576];
+  const maxTimeout = 0; // no timeout — let each test run as long as it needs
   console.log(`\n▶  Phase 6: Max output (num_predict) at ${testCtx.toLocaleString()} context (no timeouts)...`);
   for (const predict of predictLevels) {
     // Skip predict levels that exceed the context window
