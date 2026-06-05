@@ -117,10 +117,10 @@ The app binds to `http://0.0.0.0:3000` by default.
 ## Docs Index
 
 - [AGENTS.md](AGENTS.md) - Project knowledge base with architecture, conventions, and anti-patterns
-- [Schema Reference](.omo/refs/schema.md) - Database schema, tables, indexes, and relationships
-- [API Catalog](.omo/refs/api-catalog.md) - Complete API route reference
+- [Schema Reference](docs/historical-evidence/omo/refs/schema.md) - Database schema, tables, indexes, and relationships
+- [API Catalog](docs/historical-evidence/omo/refs/api-catalog.md) - Complete API route reference
 - [Wiki Schema Reference](docs/wiki-schema-reference.md) - Frontmatter fields, page types, wikilink conventions
-- [Wiki Migration Guide](docs/wiki-migration.md) - Architecture, step-by-step migration, troubleshooting
+- [Wiki Migration Guide](docs/wiki-migration.md) - Architecture, step-by-page migration, troubleshooting
 
 ## License and Acknowledgments
 

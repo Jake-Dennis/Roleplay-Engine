@@ -46,6 +46,9 @@ next-env.d.ts
 # graphify
 /graphify-out/
 
+# OMO (Oh My OpenCode) working dir - historical archive at docs/historical-evidence/omo/
+/.omo/
+
 # playwright MCP
 /.playwright-mcp/
 

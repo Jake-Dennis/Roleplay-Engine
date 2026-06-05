@@ -39,7 +39,7 @@ Roleplay-Engine/
 ├── data/                       # Runtime data (gitignored): SQLite DBs + per-user wiki markdown
 ├── scripts/                    # One-off migration/utility scripts
 ├── docs/                       # Wiki system documentation
-└── .omo/                       # OMO working directory (plans, evidence, drafts)
+└── docs/historical-evidence/   # Archived OMO output (historical, not part of the app)
 ```
 
 ## WHERE TO LOOK
@@ -150,4 +150,4 @@ npm run analyze    # Bundle analysis (ANALYZE=true + next build)
 - **JWT secret** in `.env.local` — base64-encoded, 24h expiry.
 - **sqlite-vec extension** optional — graceful fallback to keyword-only search if unavailable.
 - **`data/` directory** is gitignored — runtime storage, never import from it in source code.
-- **`.omo/` directory** is OMO working directory — not part of the application.
+- **`.omo/` directory** is gitignored (former OMO working dir, retired 2026-06-05; historical contents archived under `docs/historical-evidence/omo/`).

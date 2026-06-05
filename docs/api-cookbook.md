@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-05-27
 
-Curl-based usage examples for the Roleplay-Engine API. All 94 routes are documented in [.omo/refs/api-catalog.md](../.omo/refs/api-catalog.md).
+Curl-based usage examples for the Roleplay-Engine API. All 94 routes are documented in [docs/historical-evidence/omo/refs/api-catalog.md](../historical-evidence/omo/refs/api-catalog.md).
 
 ## Setup: Getting an Auth Cookie
 
@@ -705,7 +705,7 @@ curl -b /tmp/rpe-cookies.txt "http://localhost:3000/api/wiki/graph?universe_id=U
 
 ## Flow 5: Job Queue Management
 
-Background jobs handle wiki enrichment, memory compression, relationship decay, and more. You can queue, list, cancel, and monitor jobs via the API. See [.omo/refs/job-processing.md](../.omo/refs/job-processing.md) for the full job system reference.
+Background jobs handle wiki enrichment, memory compression, relationship decay, and more. You can queue, list, cancel, and monitor jobs via the API. See [src/lib/jobs/AGENTS.md](../lib/jobs/AGENTS.md) for the full job system reference.
 
 Prerequisite: You have a cookie file.
 
@@ -905,7 +905,7 @@ curl -X POST http://localhost:3000/api/jobs \
 
 ### Step 7: Trigger Idle Processing
 
-Idle processing runs background maintenance jobs based on time tiers (5min, 10min, 15min, 30min). See [.omo/refs/job-processing.md](../.omo/refs/job-processing.md#7-idle-processing-tiers) for tier details.
+Idle processing runs background maintenance jobs based on time tiers (5min, 10min, 15min, 30min). See [src/lib/jobs/AGENTS.md](../lib/jobs/AGENTS.md) for tier details.
 
 ```bash
 # Queue idle jobs for processing
