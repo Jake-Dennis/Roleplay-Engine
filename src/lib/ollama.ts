@@ -63,6 +63,13 @@ export interface OllamaGenerateRequest {
   model: string;
   prompt: string;
   stream?: boolean;
+  /**
+   * Enable/disable thinking mode for thinking-capable models (Qwen3.x, etc).
+   * - `true` = force enable
+   * - `false` = force disable (skips reasoning tokens, direct answer)
+   * - `undefined` = let the model decide
+   */
+  think?: boolean;
   options?: {
     temperature?: number;
     top_p?: number;
@@ -82,6 +89,7 @@ export interface OllamaEmbedResponse {
 export interface UserModels {
   llmModel: string;
   embeddingModel: string;
+  numCtx?: number;
 }
 
 export interface PersonaContext {
@@ -160,7 +168,7 @@ export function buildPersonaPrompt(persona: PersonaContext | null, baseSystemPro
 
   const parts: string[] = [];
 
-  // 1. Character description (SillyTavern style)
+  // 1. Player character description — this is the USER's character, NOT an NPC
   const descParts: string[] = [];
   descParts.push(`Name: ${persona.name}`);
   if (persona.description) descParts.push(`Description: ${persona.description}`);
@@ -169,7 +177,7 @@ export function buildPersonaPrompt(persona: PersonaContext | null, baseSystemPro
   if (persona.tags && persona.tags.length > 0) descParts.push(`Tags: ${persona.tags.join(", ")}`);
 
   if (descParts.length > 1) {
-    parts.push(`[Character("${persona.name}")\n${descParts.join("\n")}]`);
+    parts.push(`[PLAYER CHARACTER("${persona.name}")\n${descParts.join("\n")}]\nThis is the player's character. You write as the Narrator and control NPCs only. NEVER write actions, dialogue, or internal thoughts for ${persona.name}. Only the player controls ${persona.name}.`);
   }
 
   // 2. Scenario
@@ -210,9 +218,10 @@ let localModels: string[] = [];
  * Fetch available models from the local Ollama instance.
  * Only returns models that are actually pulled/available locally.
  */
-export async function fetchLocalModels(): Promise<string[]> {
+export async function fetchLocalModels(ollamaUrl?: string): Promise<string[]> {
+  const baseUrl = ollamaUrl || OLLAMA_CONFIG.baseUrl;
   try {
-    const response = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/tags`, {
+    const response = await fetch(`${baseUrl}/api/tags`, {
       signal: AbortSignal.timeout(TIMEOUTS.LLM_FETCH),
     });
     if (!response.ok) {
@@ -248,16 +257,61 @@ export function isModelAvailable(model: string): boolean {
  * Get the user's selected models from their settings.
  * Falls back to the first available local model, then OLLAMA_CONFIG defaults.
  */
+/**
+ * Get the user's custom Ollama URL from settings.
+ * Falls back to the server config baseUrl.
+ */
+export function getUserOllamaUrl(userId: string): string {
+  try {
+    const db = getDb();
+    const row = db.prepare("SELECT settings FROM users WHERE id = ?").get(userId) as { settings: string | null } | undefined;
+    if (row?.settings) {
+      const settings = safeParseWarn<Record<string, unknown>>(row.settings, "user settings");
+      if (settings?.ollamaUrl && typeof settings.ollamaUrl === "string") {
+        const url = settings.ollamaUrl.trim();
+        if (url) return url.startsWith("http") ? url : `http://${url}`;
+      }
+    }
+  } catch {
+    // Fall through to default
+  }
+  return OLLAMA_CONFIG.baseUrl;
+}
+
+/**
+ * Get the user's custom TTS URL from settings.
+ * Falls back to the server config baseUrl.
+ */
+export function getUserTtsUrl(userId: string): string {
+  try {
+    const db = getDb();
+    const row = db.prepare("SELECT settings FROM users WHERE id = ?").get(userId) as { settings: string | null } | undefined;
+    if (row?.settings) {
+      const settings = safeParseWarn<Record<string, unknown>>(row.settings, "user settings");
+      if (settings?.ttsUrl && typeof settings.ttsUrl === "string") {
+        const url = settings.ttsUrl.trim();
+        if (url) return url.startsWith("http") ? url : `http://${url}`;
+      }
+    }
+  } catch {
+    // Fall through to default
+  }
+  // Import TTS_CONFIG lazily to avoid circular deps
+  const { TTS_CONFIG } = require("./config");
+  return TTS_CONFIG.baseUrl;
+}
+
 export function getUserModels(userId: string): UserModels {
   try {
     const db = getDb();
     const row = db.prepare("SELECT settings FROM users WHERE id = ?").get(userId) as { settings: string | null } | undefined;
     if (row?.settings) {
-      const settings = safeParseWarn<Record<string, string>>(row.settings, "user settings");
+      const settings = safeParseWarn<Record<string, unknown>>(row.settings, "user settings");
       if (!settings) throw new Error("Invalid user settings");
       return {
-        llmModel: settings.llmModel || OLLAMA_CONFIG.model,
-        embeddingModel: settings.embeddingModel || OLLAMA_CONFIG.embeddingModel,
+        llmModel: String(settings.llmModel || OLLAMA_CONFIG.model),
+        embeddingModel: String(settings.embeddingModel || OLLAMA_CONFIG.embeddingModel),
+        numCtx: settings.numCtx ? Number(settings.numCtx) : undefined,
       };
     }
   } catch {
@@ -269,9 +323,10 @@ export function getUserModels(userId: string): UserModels {
   };
 }
 
-export async function checkOllamaConnection(): Promise<boolean> {
+export async function checkOllamaConnection(ollamaUrl?: string): Promise<boolean> {
+  const baseUrl = ollamaUrl || OLLAMA_CONFIG.baseUrl;
   try {
-    const response = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/tags`, {
+    const response = await fetch(`${baseUrl}/api/tags`, {
       signal: AbortSignal.timeout(TIMEOUTS.LLM_FETCH),
     });
     ollamaAvailable = response.ok;
@@ -288,33 +343,45 @@ export function isOllamaAvailable(): boolean {
 
 export async function generateText(
   prompt: string,
-  options?: Partial<OllamaGenerateRequest["options"]> & { model?: string; userId?: string }
+  options?: Partial<OllamaGenerateRequest["options"]> & { model?: string; userId?: string; think?: boolean; ollamaHost?: string },
+  timeoutMs?: number
 ): Promise<string> {
   const model = options?.model || (options?.userId ? getUserModels(options.userId).llmModel : OLLAMA_CONFIG.model);
+  const baseUrl = options?.ollamaHost || (options?.userId ? getUserOllamaUrl(options.userId) : OLLAMA_CONFIG.baseUrl);
+
+  // Priority: explicit num_ctx > user setting > no override (Ollama model default)
+  let numCtx: number | undefined;
+  if (options?.num_ctx !== undefined) {
+    numCtx = options.num_ctx;
+  } else if (options?.userId) {
+    numCtx = getUserModels(options.userId).numCtx;
+  }
 
   const requestBody: OllamaGenerateRequest = {
     model,
     prompt,
     stream: false,
+    ...(options?.think !== undefined ? { think: options.think } : {}),
     options: {
       ...OLLAMA_CONFIG.options,
       temperature: options?.temperature ?? OLLAMA_CONFIG.options.temperature,
       top_p: options?.top_p ?? OLLAMA_CONFIG.options.top_p,
-      ...(options?.num_ctx !== undefined ? { num_ctx: options.num_ctx } : {}),
+      ...(numCtx !== undefined ? { num_ctx: numCtx } : {}),
     },
   };
 
+  const requestTimeout = timeoutMs || OLLAMA_CONFIG.timeout;
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= OLLAMA_CONFIG.retryAttempts; attempt++) {
     try {
       const response = await fetch(
-        `${OLLAMA_CONFIG.baseUrl}/api/generate`,
+        `${baseUrl}/api/generate`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(requestBody),
-          signal: AbortSignal.timeout(OLLAMA_CONFIG.timeout),
+          signal: AbortSignal.timeout(requestTimeout),
         }
       );
 
@@ -324,7 +391,20 @@ export async function generateText(
 
       const data = await response.json();
       ollamaAvailable = true;
-      return validateLlmOutput(data.response || data.thinking || "");
+
+      // Qwen3.x thinking models may produce a thinking field but empty response
+      // when the context window fills with reasoning. Log and return empty so
+      // callers can retry (context window fix: increase num_ctx).
+      if (!data.response && data.thinking) {
+        logger.warn("[ollama] Model produced thinking but no response — context window may be too small", {
+          model,
+          thinkingLength: String(data.thinking?.length || 0).substring(0, 6),
+          promptEvalCount: data.prompt_eval_count,
+          evalCount: data.eval_count,
+        });
+      }
+
+      return validateLlmOutput(data.response || "");
     } catch (err: unknown) {
       lastError = err as Error;
       ollamaAvailable = false;
@@ -343,23 +423,33 @@ export async function generateText(
 export async function generateTextStream(
   prompt: string,
   onChunk: (chunk: string) => void,
-  options?: Partial<OllamaGenerateRequest["options"]> & { model?: string; userId?: string }
+  options?: Partial<OllamaGenerateRequest["options"]> & { model?: string; userId?: string; think?: boolean; ollamaHost?: string }
 ): Promise<void> {
   const model = options?.model || (options?.userId ? getUserModels(options.userId).llmModel : OLLAMA_CONFIG.model);
+  const baseUrl = options?.ollamaHost || (options?.userId ? getUserOllamaUrl(options.userId) : OLLAMA_CONFIG.baseUrl);
+
+  // Priority: explicit num_ctx > user setting > no override (Ollama model default)
+  let numCtx: number | undefined;
+  if (options?.num_ctx !== undefined) {
+    numCtx = options.num_ctx;
+  } else if (options?.userId) {
+    numCtx = getUserModels(options.userId).numCtx;
+  }
 
   const requestBody: OllamaGenerateRequest = {
     model,
     prompt,
     stream: true,
+    ...(options?.think !== undefined ? { think: options.think } : {}),
     options: {
       ...OLLAMA_CONFIG.options,
       temperature: options?.temperature ?? OLLAMA_CONFIG.options.temperature,
       top_p: options?.top_p ?? OLLAMA_CONFIG.options.top_p,
-      ...(options?.num_ctx !== undefined ? { num_ctx: options.num_ctx } : {}),
+      ...(numCtx !== undefined ? { num_ctx: numCtx } : {}),
     },
   };
 
-  const response = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/generate`, {
+  const response = await fetch(`${baseUrl}/api/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(requestBody),
@@ -400,9 +490,10 @@ export async function generateTextStream(
 
 export async function generateEmbedding(
   text: string,
-  options?: { model?: string; userId?: string }
+  options?: { model?: string; userId?: string; ollamaHost?: string }
 ): Promise<number[]> {
   const model = options?.model || (options?.userId ? getUserModels(options.userId).embeddingModel : OLLAMA_CONFIG.embeddingModel);
+  const baseUrl = options?.ollamaHost || (options?.userId ? getUserOllamaUrl(options.userId) : OLLAMA_CONFIG.baseUrl);
 
   const requestBody: OllamaEmbedRequest = {
     model,
@@ -411,7 +502,7 @@ export async function generateEmbedding(
 
   for (let attempt = 1; ; attempt++) {
     try {
-      const response = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/embed`, {
+      const response = await fetch(`${baseUrl}/api/embed`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
