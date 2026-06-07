@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Gauge } from "lucide-react";
 import Link from "next/link";
 import { OllamaSettingsSection } from "../ollama-settings";
 import { TTSSettingsSection } from "../tts-settings";
 import { ConnectionStatusSection } from "@/components/settings/connection-status-section";
 import { NarratorVoiceSection } from "@/components/settings/narrator-voice-section";
-import { ContextBenchmarkSection } from "@/components/settings/context-benchmark";
 import { TIMEOUTS } from "@/lib/config";
 
 interface ServerSettings {
@@ -309,10 +308,22 @@ export default function ServerSettingsPage() {
         onSaveJobDefaults={handleSaveJobDefaults}
       />
 
-      <ContextBenchmarkSection
-        defaultModel={selectedLLM}
-        localModels={localModels}
-      />
+      {/* Link to the new benchmark page */}
+      <Link
+        href="/settings/benchmark"
+        className="flex items-center gap-2 rounded-xl border border-border-default bg-bg-elevated p-5 hover:border-accent transition-colors group"
+      >
+        <Gauge className="h-4 w-4 text-text-accent" />
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors">
+            LLM Benchmark
+          </h2>
+          <p className="text-xs text-text-muted mt-0.5">
+            Find optimal num_ctx × num_predict for any model, plus standalone roleplay lore fidelity testing
+          </p>
+        </div>
+        <span className="text-xs text-accent shrink-0">Open →</span>
+      </Link>
 
       <NarratorVoiceSection voices={voices} narratorVoice={narratorVoice} voiceSaving={voiceSaving} voiceSuccess={voiceSuccess} voiceError={voiceError} setNarratorVoice={setNarratorVoice} handleNarratorVoice={handleNarratorVoice} />
 

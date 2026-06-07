@@ -458,3 +458,28 @@ b1c4504 fix(build): resolve subtype type error in lore-extraction.ts  <-- prior 
 
 **Verification:** `npm run build` — compiled. `bun test src/lib/benchmark/` — 46/46 pass.
 
+---
+
+## 2026-06-07 — Cycle 11: Remove legacy benchmark system
+
+**Trigger:** Cleanup after new benchmark system replaced old one.
+
+**What was done:**
+- Replaced `ContextBenchmarkSection` on server settings page with a link to the new `/settings/benchmark` page (card with Gauge icon + description)
+- Deleted old component `src/components/settings/context-benchmark.tsx` (518 lines)
+- Deleted old API route `src/app/api/settings/benchmark/route.ts` (262 lines — had its own `benchmark_results` DB table, child process spawning, rate limiting)
+- Deleted old runner script `scripts/benchmark-context.mjs` (500+ lines — exponential + binary search with needle-in-haystack test)
+- Removed `benchmark_results` table creation/migration from `src/lib/server-config.ts` (replaced with a comment)
+- Removed empty `src/app/api/settings/benchmark/` directory
+
+**Files changed:**
+- `src/app/(app)/settings/server/page.tsx` — removed import, replaced component with `<Link>` to benchmark page
+- `src/components/settings/context-benchmark.tsx` — DELETED (518 lines)
+- `src/app/api/settings/benchmark/route.ts` — DELETED (262 lines)
+- `src/app/api/settings/benchmark/` — DELETED (empty dir)
+- `scripts/benchmark-context.mjs` — DELETED
+- `src/lib/server-config.ts` — removed `benchmark_results` table creation block
+- `.opencode/plans/completed/plan-011-remove-legacy-benchmark.md`
+
+**Verification:** `npm run build` — compiled. `bun test src/lib/benchmark/` — 14/14 pass. No `ContextBenchmarkSection` references remain. No `benchmark_results` schema code remains.
+

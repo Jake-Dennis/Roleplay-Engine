@@ -11,8 +11,8 @@ interface OllamaModel {
 }
 
 interface BenchmarkStatus {
-  score: number;
   recommendedNumCtx: number;
+  recommendedNumPredict: number;
   timestamp: string;
   jobId: string;
 }
@@ -160,8 +160,8 @@ export function OllamaSettingsSection({
           const latest = data.benchmarks[0];
           if (latest.status === "completed" && latest.report) {
             setBenchmarkStatus({
-              score: latest.report.overallScore,
               recommendedNumCtx: latest.report.recommendedNumCtx,
+              recommendedNumPredict: latest.report.recommendedNumPredict,
               timestamp: latest.completedAt || latest.updatedAt,
               jobId: latest.jobId,
             });
@@ -223,12 +223,6 @@ export function OllamaSettingsSection({
     if (!benchmarkStatus) return;
     setSelectedNumCtx(benchmarkStatus.recommendedNumCtx);
     await handleModelSave();
-  }
-
-  function getScoreColor(score: number): string {
-    if (score >= 70) return "text-success bg-success/10 border-success/20";
-    if (score >= 40) return "text-warning bg-warning/10 border-warning/20";
-    return "text-error bg-error/10 border-error/20";
   }
 
   function formatTimestamp(ts: string): string {
@@ -345,11 +339,11 @@ export function OllamaSettingsSection({
                 {benchmarkStatus && !benchmarkLoading && (
                   <div className="flex items-center gap-1.5">
                     <span
-                      className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xxs font-medium border ${getScoreColor(benchmarkStatus.score)}`}
-                      title={`Last benchmark: ${benchmarkStatus.score}/100, recommended numCtx: ${formatContextWindow(benchmarkStatus.recommendedNumCtx)} (${formatTimestamp(benchmarkStatus.timestamp)})`}
+                      className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xxs font-medium border border-accent/30 text-accent"
+                      title={`Last benchmark: ctx=${formatContextWindow(benchmarkStatus.recommendedNumCtx)}, predict=${formatContextWindow(benchmarkStatus.recommendedNumPredict)} (${formatTimestamp(benchmarkStatus.timestamp)})`}
                     >
                       <TrendingUp className="h-2.5 w-2.5" />
-                      <span>{benchmarkStatus.score}/100</span>
+                      <span>{formatContextWindow(benchmarkStatus.recommendedNumCtx)} ctx</span>
                     </span>
                     <button
                       onClick={() => router.push(`/settings/benchmark?job=${benchmarkStatus.jobId}`)}
@@ -560,7 +554,14 @@ export function OllamaSettingsSection({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xxs text-text-muted">Max Predict Tokens</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xxs text-text-muted">Max Predict Tokens</label>
+              {benchmarkStatus && benchmarkStatus.recommendedNumPredict > 0 && benchmarkStatus.recommendedNumPredict !== numPredict && (
+                <span className="text-xxs text-accent/80" title={`Benchmark recommends ${benchmarkStatus.recommendedNumPredict.toLocaleString()} predict tokens`}>
+                  Benchmark recommends: {benchmarkStatus.recommendedNumPredict.toLocaleString()}
+                </span>
+              )}
+            </div>
             <input
               type="number"
               value={numPredict}
@@ -607,9 +608,16 @@ export function OllamaSettingsSection({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1 block text-xxs text-text-muted">
-              Context Window: {formatContextWindow(jobNumCtx)}
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xxs text-text-muted">
+                Context Window: {formatContextWindow(jobNumCtx)}
+              </label>
+              {benchmarkStatus && benchmarkStatus.recommendedNumCtx !== jobNumCtx && (
+                <span className="text-xxs text-accent/80" title={`Benchmark recommends ${formatContextWindow(benchmarkStatus.recommendedNumCtx)} context window`}>
+                  Benchmark recommends: {formatContextWindow(benchmarkStatus.recommendedNumCtx)}
+                </span>
+              )}
+            </div>
             <input
               type="range"
               min="4096"
@@ -621,7 +629,14 @@ export function OllamaSettingsSection({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xxs text-text-muted">Max Predict Tokens</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xxs text-text-muted">Max Predict Tokens</label>
+              {benchmarkStatus && benchmarkStatus.recommendedNumPredict > 0 && benchmarkStatus.recommendedNumPredict !== jobNumPredict && (
+                <span className="text-xxs text-accent/80" title={`Benchmark recommends ${benchmarkStatus.recommendedNumPredict.toLocaleString()} predict tokens`}>
+                  Benchmark recommends: {benchmarkStatus.recommendedNumPredict.toLocaleString()}
+                </span>
+              )}
+            </div>
             <input
               type="number"
               value={jobNumPredict}
