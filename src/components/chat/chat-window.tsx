@@ -32,9 +32,11 @@ import {
   Edit3,
   History,
   RotateCcw,
+  Lightbulb,
   Trash2,
   GitBranch,
   User,
+  Compass,
 } from "lucide-react";
 import { StreamingText } from "@/components/chat/streaming-text";
 import { EditHistory } from "@/components/chat/edit-history";
@@ -70,6 +72,8 @@ interface MessageItemProps {
   onTtsPlay: (messageId: string, content: string) => void;
   onEditContentChange: (content: string) => void;
   onShowEditHistory: (messageId: string) => void;
+  onRegenerateChoices?: () => void;
+  isRegeneratingChoices?: boolean;
 }
 
 const MessageItem = memo(function MessageItem({
@@ -90,6 +94,8 @@ const MessageItem = memo(function MessageItem({
   onTtsPlay,
   onEditContentChange,
   onShowEditHistory,
+  onRegenerateChoices,
+  isRegeneratingChoices = false,
 }: MessageItemProps) {
   const intent = isAI ? null : classifyIntent(message.content);
 
@@ -168,6 +174,11 @@ const MessageItem = memo(function MessageItem({
                   <RotateCcw className="h-3 w-3" />
                 </button>
               )}
+              {isLastAI && onRegenerateChoices && (
+                <button onClick={onRegenerateChoices} disabled={isRegeneratingChoices} className="rounded p-1 text-text-muted transition-colors hover:bg-bg-raised hover:text-text-secondary disabled:opacity-50" title="Regenerate choices">
+                  {isRegeneratingChoices ? <Loader2 className="h-3 w-3 animate-spin" /> : <Lightbulb className="h-3 w-3" />}
+                </button>
+              )}
               <button onClick={() => onDelete(message.id)} className="rounded p-1 text-text-muted transition-colors hover:bg-bg-raised hover:text-error" title="Delete">
                 <Trash2 className="h-3 w-3" />
               </button>
@@ -207,6 +218,10 @@ interface ChatWindowProps {
   editHistoryMessageId: string | null;
   onEditHistoryClose: () => void;
   disabled?: boolean;
+  choices?: string[] | null;
+  onChoiceSelect?: (option: string) => void;
+  onRegenerateChoices?: () => void;
+  isRegeneratingChoices?: boolean;
 }
 
 export function ChatWindow({
@@ -237,6 +252,10 @@ export function ChatWindow({
   editHistoryMessageId,
   onEditHistoryClose,
   disabled = false,
+  choices,
+  onChoiceSelect,
+  onRegenerateChoices,
+  isRegeneratingChoices = false,
 }: ChatWindowProps) {
   // Track which message IDs existed on mount (for entrance animations).
   // New message IDs (added later) are NOT in this initial set, so they animate.
@@ -244,7 +263,7 @@ export function ChatWindow({
   const [initialMessageIds] = useState(() => new Set(messages.map((m) => m.id)));
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto py-4">
         {messages.length === 0 && !isStreaming ? (
@@ -289,6 +308,8 @@ export function ChatWindow({
                   onTtsPlay={onTtsPlay}
                   onEditContentChange={onEditContentChange}
                   onShowEditHistory={onShowEditHistory}
+                  onRegenerateChoices={isLastAI ? onRegenerateChoices : undefined}
+                  isRegeneratingChoices={isRegeneratingChoices}
                 />
                 </div>
               );
@@ -310,13 +331,39 @@ export function ChatWindow({
               </div>
             )}
 
+            {/* Narrative choices — shown after generation completes */}
+            {choices && choices.length > 0 && !isStreaming && (
+              <div className="animate-message-slide">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Compass className="h-3.5 w-3.5 text-accent" />
+                  <p className="text-xxs font-medium text-text-muted">
+                    Where does the story go next?
+                  </p>
+                </div>
+                <div className="grid gap-2">
+                  {choices.map((option, i) => (
+                    <button
+                      key={i}
+                      onClick={() => onChoiceSelect?.(option)}
+                      className="group flex items-start gap-3 rounded-lg border border-border-default bg-bg-elevated px-4 py-3 text-left text-sm text-text-primary transition-all hover:border-accent/50 hover:bg-accent/5 hover:text-accent"
+                    >
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border-default text-xxs text-text-muted group-hover:border-accent/50 group-hover:text-accent">
+                        {i + 1}
+                      </span>
+                      <span className="leading-relaxed">{option}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div ref={scrollRef} />
           </div>
         )}
       </div>
 
       {/* Input area */}
-      <div className="border-t border-border-default pt-3">
+      <div className="shrink-0 border-t border-border-default pt-3">
         {disabled ? (
           <div className="flex items-center justify-center rounded-lg border border-border-default bg-bg-raised px-4 py-3">
             <p className="text-xs text-text-muted">

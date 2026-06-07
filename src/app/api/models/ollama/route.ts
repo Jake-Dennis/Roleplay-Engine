@@ -18,11 +18,13 @@ export interface OllamaModelInfo {
 
 /**
  * GET /api/models/ollama
- * Fetch available Ollama models, categorized into LLM and embedding models.
- * Returns connection status, model details, and configured defaults.
+ * Fetch available Ollama models from the user's Ollama URL (or server default).
+ * Returns connection status, all model details, and the server-configured defaults.
+ * Embedding models are not filtered — the user picks what works for embeddings.
  *
  * @param request - The incoming Next.js request object
- * @returns NextResponse with { connected, host, models, llmModels, embeddingModels, defaultLLM, defaultEmbedding }
+ * @query url - Optional custom Ollama URL to query (e.g. http://192.168.4.2:11434)
+ * @returns NextResponse with { connected, host, models, defaultLLM, defaultEmbedding }
  * @throws 401 - If authentication fails
  * @throws 502 - If Ollama is unreachable or responds with an error
  * @throws 429 - If rate limit exceeded
@@ -36,8 +38,18 @@ export async function GET(request: NextRequest) {
   const rateLimit = checkRateLimit(`api:${ip}`, "api");
   if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
+  // Use provided URL or fetch from user settings, then fall back to server config
+  const customUrl = request.nextUrl.searchParams.get("url")?.trim();
+  let ollamaUrl: string;
+  if (customUrl) {
+    ollamaUrl = customUrl.startsWith("http") ? customUrl : `http://${customUrl}`;
+  } else {
+    const { getUserOllamaUrl } = await import("@/lib/ollama");
+    ollamaUrl = getUserOllamaUrl(userId);
+  }
+
   try {
-    const response = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/tags`, {
+    const response = await fetch(`${ollamaUrl}/api/tags`, {
       signal: AbortSignal.timeout(TIMEOUTS.MODEL_FETCH),
     });
 
@@ -51,31 +63,11 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     const models: OllamaModelInfo[] = data.models || [];
 
-    // Categorize models by type
-    const llmModels = models.filter((m: OllamaModelInfo) => {
-      const name = m.name.toLowerCase();
-      // Exclude known embedding-only models
-      const embeddingModels = ["bge-m3", "bge-large", "nomic-embed", "all-minilm", "snowflake-arctic-embed"];
-      return !embeddingModels.some((em) => name.includes(em));
-    });
-
-    const embeddingModels = models.filter((m: OllamaModelInfo) => {
-      const name = m.name.toLowerCase();
-      const embeddingKeywords = ["bge", "nomic-embed", "all-minilm", "snowflake-arctic-embed", "embed"];
-      return embeddingKeywords.some((kw) => name.includes(kw));
-    });
-
-    // If no embedding models found, include known embedding models that might be available
-    const allEmbeddingModels = embeddingModels.length > 0
-      ? embeddingModels
-      : models.filter((m: OllamaModelInfo) => {
-          const name = m.name.toLowerCase();
-          return name.includes("bge") || name.includes("embed");
-        });
-
+    // Return ALL models — no categorization filter.
+    // The user picks which model to use for LLM and which for embeddings.
     return NextResponse.json({
       connected: true,
-      host: `${OLLAMA_CONFIG.host}:${OLLAMA_CONFIG.port}`,
+      host: ollamaUrl,
       models: models.map((m: OllamaModelInfo) => ({
         name: m.name,
         size: m.size,
@@ -83,15 +75,6 @@ export async function GET(request: NextRequest) {
         family: m.details?.family || "unknown",
         quantization: m.details?.quantization_level || "unknown",
         modifiedAt: m.modified_at,
-      })),
-      llmModels: llmModels.map((m: OllamaModelInfo) => ({
-        name: m.name,
-        parameterSize: m.details?.parameter_size || "unknown",
-        family: m.details?.family || "unknown",
-      })),
-      embeddingModels: allEmbeddingModels.map((m: OllamaModelInfo) => ({
-        name: m.name,
-        parameterSize: m.details?.parameter_size || "unknown",
       })),
       defaultLLM: OLLAMA_CONFIG.model,
       defaultEmbedding: OLLAMA_CONFIG.embeddingModel,
@@ -101,10 +84,8 @@ export async function GET(request: NextRequest) {
       {
         error: "Failed to connect to Ollama",
         connected: false,
-        host: `${OLLAMA_CONFIG.host}:${OLLAMA_CONFIG.port}`,
+        host: ollamaUrl,
         models: [],
-        llmModels: [],
-        embeddingModels: [],
         defaultLLM: OLLAMA_CONFIG.model,
         defaultEmbedding: OLLAMA_CONFIG.embeddingModel,
       },

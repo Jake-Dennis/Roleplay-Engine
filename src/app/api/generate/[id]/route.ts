@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
-import { generateTextStream, getUserModels, getActivePersonaContext, buildPersonaPrompt, type PersonaContext } from "@/lib/ollama";
+import { generateText, generateTextStream, getUserModels, getActivePersonaContext, buildPersonaPrompt, type PersonaContext } from "@/lib/ollama";
 import { getRetrievedContext, assemblePromptWithBudget, type RetrievedContext } from "@/lib/retrieval";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
-import { queueJob } from "@/lib/job-processor";
+import { queueJob, processJobsByType, processUserJobs } from "@/lib/job-processor";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 import { withAuth } from '@/lib/with-auth';
 import { logger } from '@/lib/logger';
+import { PROMPTS } from '@/lib/prompts';
 import { validateLength } from '@/lib/validation';
+import { markOllamaBusy, markOllamaIdle } from '@/lib/ollama-busy';
 
 /**
  * POST /api/generate/[id]
@@ -120,7 +122,7 @@ export async function POST(
   if (!persona) {
     persona = getActivePersonaContext(userId);
   }
-  const baseSystemPrompt = `You are a narrative roleplay engine. You narrate immersive, character-driven stories in response to user actions. Write in a literary style with vivid description. Stay in character and maintain story consistency. Keep responses to 2-4 paragraphs unless the situation demands more.`;
+  const baseSystemPrompt = `You are the Narrator and world engine for a roleplay session. You control the setting, NPCs, and narrative events. The player controls their own character — you must NEVER write actions, dialogue, or internal thoughts for the player's character. Narrate the world's response to the player's actions, describe scenes, and roleplay NPCs. Write in a literary style with vivid description. Stay consistent with established lore. Keep responses to 2-4 paragraphs unless the situation demands more.`;
   const systemPrompt = buildPersonaPrompt(persona, baseSystemPrompt);
 
   // Build context using retrieval pipeline
@@ -165,6 +167,8 @@ export async function POST(
   const stream = new ReadableStream({
     async start(controller) {
       eventBus.registerController(controller);
+      // Mark Ollama busy so background jobs yield during generation
+      markOllamaBusy();
       try {
         // Resolve model: persona > user > default
         const userModels = getUserModels(userId);
@@ -309,8 +313,53 @@ export async function POST(
             }) + "\n"
           )
         );
+
+        // Generate branching narrative choices while keeping the stream alive
+        try {
+          const choicesPrompt = PROMPTS.generateChoices(userMessage, fullResponse);
+          const choicesRaw = await generateText(choicesPrompt, {
+            userId,
+            temperature: 0.8,
+            top_p: 0.9,
+          });
+          const choicesParsed = JSON.parse(choicesRaw) as { options: string[] };
+          if (
+            choicesParsed?.options &&
+            Array.isArray(choicesParsed.options) &&
+            choicesParsed.options.length > 0
+          ) {
+            controller.enqueue(
+              encoder.encode(
+                JSON.stringify({ choices: choicesParsed.options }) + "\n"
+              )
+            );
+          }
+        } catch {
+          // Non-fatal: choice generation failure should not break generation
+        }
+
         controller.close();
         eventBus.unregisterController(controller);
+
+        // Fire-and-forget: process relationship and thread analysis immediately
+        // instead of waiting for idle processing (which delays 5-30 minutes).
+        // Both handlers call Ollama (generateText) to analyze messages, so they
+        // run async to avoid blocking the SSE stream from closing.
+        (async () => {
+          try {
+            // Analyze relationships (medium priority) — updates relationship
+            // emotional states, stages, and shared history from recent messages
+            await processJobsByType(userId, "analyze_relationships", 1);
+          } catch { /* non-fatal — falls back to idle processing */ }
+        })();
+
+        (async () => {
+          try {
+            // Analyze narrative threads (low priority) — detects story threads,
+            // updates status, and creates timeline entries for resolved threads
+            await processJobsByType(userId, "thread_analysis", 1);
+          } catch { /* non-fatal — falls back to idle processing */ }
+        })();
       } catch (err: unknown) {
         logger.error("Generation stream failed", err as Error);
         // Remove empty AI placeholder message created before stream
@@ -324,6 +373,13 @@ export async function POST(
         );
         controller.close();
         eventBus.unregisterController(controller);
+      } finally {
+        // Mark Ollama idle so background jobs can resume
+        markOllamaIdle();
+        // Cascade: process queued jobs while Ollama is free.
+        // Each job checks isOllamaBusy() before starting — if a user
+        // generation starts mid-cascade, the rest stay queued.
+        processUserJobs(userId, Infinity).catch(() => {});
       }
     },
   });

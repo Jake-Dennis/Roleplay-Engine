@@ -171,7 +171,7 @@ export async function extractAndCreateWikiEntities(
             title: entity.name,
             type: "entity",
             status: "draft",
-            tags: ["auto-generated", `source:session-${sessionId}`],
+            tags: ["auto-generated", `type:${entity.type}`, `source:session-${sessionId}`],
             created: new Date().toISOString(),
             updated: new Date().toISOString(),
           };

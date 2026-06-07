@@ -1,6 +1,7 @@
 import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { getAvailableVoices, checkTTSConnection } from "@/lib/tts";
+import { getUserTtsUrl } from "@/lib/ollama";
 import { withAuth } from '@/lib/with-auth';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
@@ -23,7 +24,8 @@ if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 // Try to refresh voices if not yet loaded
 const voices = getAvailableVoices();
 if (voices.length === 0) {
-  await checkTTSConnection();
+  const ttsUrl = getUserTtsUrl(userId);
+  await checkTTSConnection(ttsUrl);
 }
 
 const updatedVoices = getAvailableVoices();
@@ -49,7 +51,8 @@ const ip = getClientIp(request);
 const rateLimit = checkRateLimit(`api:${ip}`, "api");
 if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
-await checkTTSConnection();
+const ttsUrl = getUserTtsUrl(userId);
+await checkTTSConnection(ttsUrl);
 const voices = getAvailableVoices();
 
 return NextResponse.json({

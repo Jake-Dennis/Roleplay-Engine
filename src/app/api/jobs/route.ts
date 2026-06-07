@@ -51,8 +51,16 @@ export async function GET(request: NextRequest) {
   }
 
   // Get user's jobs
-  const jobs = getUserJobs(userId, status as JobStatus | undefined, universeId);
+  const rawJobs = getUserJobs(userId, status as JobStatus | undefined, universeId);
   const stats = getJobStats(userId);
+
+  // Convert SQLite UTC timestamps (YYYY-MM-DD HH:MM:SS) to ISO 8601 (YYYY-MM-DDTHH:MM:SSZ)
+  // so the client parses them correctly regardless of timezone.
+  const jobs = rawJobs.map((j) => ({
+    ...j,
+    created_at: j.created_at?.replace(" ", "T") + "Z" || j.created_at,
+    processed_at: j.processed_at?.replace(" ", "T") + "Z" || j.processed_at,
+  }));
 
   return NextResponse.json({ jobs, stats });
 }

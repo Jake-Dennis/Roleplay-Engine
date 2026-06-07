@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings2, HardDrive, Sparkles, Trash2, Gauge, Save, Check } from "lucide-react";
+import { Settings2, HardDrive, Sparkles, Trash2, Gauge, Save, Check, Link } from "lucide-react";
 
 interface TTSCacheStats {
   totalEntries: number;
@@ -14,6 +14,9 @@ interface TTSCacheStats {
 }
 
 interface TTSSettingsProps {
+  // TTS URL
+  ttsUrl: string;
+  setTtsUrl: (v: string) => void;
   // TTS Settings state
   ttsSpeed: number;
   setTtsSpeed: (v: number) => void;
@@ -38,6 +41,7 @@ interface TTSSettingsProps {
 }
 
 export function TTSSettingsSection({
+  ttsUrl, setTtsUrl,
   ttsSpeed, setTtsSpeed,
   ttsVolume, setTtsVolume,
   ttsFormat, setTtsFormat,
@@ -59,6 +63,26 @@ export function TTSSettingsSection({
           Configure text-to-speech playback preferences
         </p>
         <div className="space-y-4">
+          {/* TTS URL */}
+          <div>
+            <label className="mb-1.5 block text-xs text-text-secondary">
+              TTS Server URL
+              <span className="text-text-muted ml-1">(host:port)</span>
+            </label>
+            <div className="relative">
+              <Link className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted" />
+              <input
+                type="text"
+                value={ttsUrl}
+                onChange={(e) => setTtsUrl(e.target.value)}
+                placeholder="e.g. 192.168.4.2:8880"
+                className="w-full rounded-lg border border-border-default bg-bg-raised pl-8 pr-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-accent"
+              />
+            </div>
+            <p className="mt-1 text-xxs text-text-muted">
+              Address of your Kokoro TTS server
+            </p>
+          </div>
           <div>
             <label className="mb-1 block text-xs text-text-secondary">
               Speed: {ttsSpeed.toFixed(1)}x

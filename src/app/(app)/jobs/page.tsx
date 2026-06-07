@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import {
+  Database,
   Play,
   Trash2,
   RotateCcw,
@@ -122,12 +123,15 @@ export default function JobsPage() {
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
   const [cancelAllConfirm, setCancelAllConfirm] = useState(false);
   const [retryAllConfirm, setRetryAllConfirm] = useState(false);
+  const [reindexing, setReindexing] = useState<string | null>(null);
+  const [reindexResult, setReindexResult] = useState<string | null>(null);
 
   const loadJobs = useCallback(async (status?: string) => {
     try {
       const params = new URLSearchParams();
       if (status && status !== "all") params.set("status", status);
       if (activeUniverse) params.set("universe_id", activeUniverse.id);
+      setLoading(true);
       const res = await fetch(`/api/jobs?${params}`);
       const json = await res.json();
       setJobs(json.jobs || []);
@@ -140,6 +144,14 @@ export default function JobsPage() {
   }, [activeUniverse]);
 
   useEffect(() => { queueMicrotask(() => loadJobs()); }, [loadJobs]);
+
+  // Auto-refresh every 10s as fallback for missed SSE events
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadJobs(statusFilter);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [loadJobs, statusFilter]);
 
   // SSE for real-time job progress updates
   useEffect(() => {
@@ -158,10 +170,10 @@ export default function JobsPage() {
       }
     });
 
-    // Also listen for job completion to refresh stats
-    evtSource.addEventListener("job:completed", () => {
-      loadJobs(statusFilter);
-    });
+    // Refresh full job list when any job completes or fails
+    const handleRefresh = () => loadJobs(statusFilter);
+    evtSource.addEventListener("job:completed", handleRefresh);
+    evtSource.addEventListener("job:failed", handleRefresh);
 
     return () => {
       evtSource.close();
@@ -244,8 +256,35 @@ export default function JobsPage() {
     await loadJobs(statusFilter);
   }
 
+  async function handleReindex(type: string) {
+    setReindexing(type);
+    setReindexResult(null);
+    try {
+      const res = await fetch("/api/reindex", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type }),
+      });
+      const data = await res.json();
+      setReindexResult(data.success ? data.message : `Error: ${data.error || "Unknown error"}`);
+      await loadJobs(statusFilter);
+    } catch {
+      setReindexResult("Error: Failed to trigger reindex");
+    } finally {
+      setReindexing(null);
+    }
+  }
+
   function formatTime(ts: string): string {
     return formatRelativeTime(ts);
+  }
+
+  function formatAbsoluteTime(ts: string): string {
+    try {
+      return new Date(ts).toLocaleString();
+    } catch {
+      return ts;
+    }
   }
 
   function parsePayload(payload: string): Record<string, unknown> {
@@ -342,6 +381,55 @@ export default function JobsPage() {
             </div>
           );
         })}
+      </div>
+
+      {/* Reindex Section */}
+      <div className="mb-6 rounded-xl border border-border-default bg-bg-elevated px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Database className="h-4 w-4 text-text-accent" />
+          <span className="text-xs font-medium text-text-primary">Reindex</span>
+        </div>
+        <div className="mt-2 flex items-center gap-3">
+          <button
+            onClick={() => handleReindex("wiki")}
+            disabled={reindexing !== null}
+            className="flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-raised px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-highlight disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {reindexing === "wiki" ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3.5 w-3.5" />
+            )}
+            Rebuild Wiki Index
+          </button>
+          <button
+            onClick={() => handleReindex("embeddings")}
+            disabled={reindexing !== null}
+            className="flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-raised px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-highlight disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {reindexing === "embeddings" ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Database className="h-3.5 w-3.5" />
+            )}
+            Reindex All Embeddings
+          </button>
+          <button
+            onClick={() => handleReindex("all")}
+            disabled={reindexing !== null}
+            className="flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-raised px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-highlight disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {reindexing === "all" ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Loader2 className="h-3.5 w-3.5" />
+            )}
+            Reindex All
+          </button>
+          {reindexResult && (
+            <span className="text-xxs text-text-muted">{reindexResult}</span>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
@@ -441,7 +529,10 @@ export default function JobsPage() {
                     </span>
                   ) : null}
 
-                  <span className="text-xxs text-text-muted w-20 text-right">
+                  <span
+                    className="text-xxs text-text-muted w-20 text-right"
+                    title={formatAbsoluteTime(job.created_at)}
+                  >
                     {formatTime(job.created_at)}
                   </span>
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from '@/lib/with-auth';
 import { discoverVoices } from "@/lib/voice-discovery";
+import { getUserTtsUrl } from "@/lib/ollama";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 /**
@@ -22,7 +23,8 @@ export async function POST(request: NextRequest) {
   if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   try {
-    const voices = await discoverVoices();
+    const ttsUrl = getUserTtsUrl(userId);
+    const voices = await discoverVoices(ttsUrl);
     return NextResponse.json({
       success: true,
       voices,

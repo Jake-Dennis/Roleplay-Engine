@@ -56,9 +56,10 @@ export function parseVoiceInfo(voiceId: string): VoiceInfo {
 /**
  * Discover available voices from Kokoro server
  */
-export async function discoverVoices(): Promise<VoiceInfo[]> {
+export async function discoverVoices(ttsUrl?: string): Promise<VoiceInfo[]> {
+  const baseUrl = ttsUrl ? (ttsUrl.startsWith("http") ? ttsUrl : `http://${ttsUrl}`) : TTS_CONFIG.baseUrl;
   try {
-    const response = await fetch(`${TTS_CONFIG.baseUrl}/v1/audio/voices`, {
+    const response = await fetch(`${baseUrl}/v1/audio/voices`, {
       signal: AbortSignal.timeout(TIMEOUTS.VOICE_DISCOVERY),
     });
 

@@ -20,6 +20,7 @@ export const OLLAMA_CONFIG = {
   options: {
     temperature: 0.8,
     top_p: 0.9,
+    // num_ctx is per-user via settings page — no hardcoded default here
   },
 };
 

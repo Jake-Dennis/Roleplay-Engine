@@ -98,7 +98,10 @@ export default function SessionChatPage() {
   const [editContent, setEditContent] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [ttsPlayingId, setTtsPlayingId] = useState<string | null>(null);
+  const [defaultVoice, setDefaultVoice] = useState("af_heart");
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [choices, setChoices] = useState<string[] | null>(null);
+  const [isRegeneratingChoices, setIsRegeneratingChoices] = useState(false);
   const [showScenePanel, setShowScenePanel] = useState(false);
   const [showParticipantPanel, setShowParticipantPanel] = useState(false);
   const [showPrivatePanel, setShowPrivatePanel] = useState(() => {
@@ -143,6 +146,18 @@ export default function SessionChatPage() {
       }
     });
   }, [session]);
+
+  // Load narrator voice assignment for TTS default
+  useEffect(() => {
+    fetch("/api/voice-assignments?entityType=narrator&entityId=default")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.assignment?.voice_name) {
+          setDefaultVoice(data.assignment.voice_name);
+        }
+      })
+      .catch(() => { /* use fallback default */ });
+  }, []);
 
   // Persist persona change to session
   const handlePersonaChange = async (personaId: string | null) => {
@@ -351,6 +366,7 @@ export default function SessionChatPage() {
     setStreaming(true);
     setStreamContent("");
     setGenerationError(null);
+    setChoices(null);
 
     let doneReceived = false;
 
@@ -403,6 +419,9 @@ export default function SessionChatPage() {
             setGenerationError(parsed.error as string);
             setStreaming(false);
           }
+          if (parsed?.choices) {
+            setChoices(parsed.choices as string[]);
+          }
         }
       }
 
@@ -439,6 +458,36 @@ export default function SessionChatPage() {
     if (!msgRes.ok) return;
 
     await triggerGeneration(content);
+  }
+
+  // Select a narrative choice — fills input and focuses
+  function handleChoiceSelect(option: string) {
+    setInput(option);
+    setChoices(null);
+    // Focus the input after state update
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+  }
+
+  // Regenerate branching narrative choices via the API
+  async function handleRegenerateChoices() {
+    setIsRegeneratingChoices(true);
+    try {
+      const res = await fetch(`/api/generate/${sessionId}/regenerate-choices`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.choices && Array.isArray(data.choices) && data.choices.length > 0) {
+          setChoices(data.choices);
+        }
+      }
+    } catch {
+      // Silent — keep existing choices
+    } finally {
+      setIsRegeneratingChoices(false);
+    }
   }
 
   // Handle key press
@@ -531,7 +580,7 @@ export default function SessionChatPage() {
       const streamRes = await fetch(`/api/tts/stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: content, voice: "af_bella" }),
+        body: JSON.stringify({ text: content, voice: defaultVoice }),
       });
 
       if (streamRes.ok && streamRes.body) {
@@ -579,7 +628,7 @@ export default function SessionChatPage() {
       const res = await fetch(`/api/tts/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: content, voice: "af_bella" }),
+        body: JSON.stringify({ text: content, voice: defaultVoice }),
       });
 
       if (!res.ok) return;
@@ -670,7 +719,7 @@ export default function SessionChatPage() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border-default pb-3">
+      <div className="shrink-0 flex items-center justify-between border-b border-border-default pb-3">
         <div className="flex items-center gap-3">
           <Link
             href="/session"
@@ -799,16 +848,19 @@ export default function SessionChatPage() {
         <ChatSearch sessionId={sessionId} />
       </div>
       {showScenePanel && (
-        <SceneStatePanel
-          scene={sceneState}
-          onSave={(data) => handleSceneSave(data)}
-          onClose={() => setShowScenePanel(false)}
-        />
+        <div className="shrink-0">
+          <SceneStatePanel
+            scene={sceneState}
+            onSave={(data) => handleSceneSave(data)}
+            onClose={() => setShowScenePanel(false)}
+          />
+        </div>
       )}
 
       {/* Participant Panel (group sessions) */}
       {showParticipantPanel && isGroup && (
-        <ParticipantList
+        <div className="shrink-0">
+          <ParticipantList
           participants={participants}
           isOwner={isOwner}
           turnConfig={turnConfig}
@@ -820,37 +872,44 @@ export default function SessionChatPage() {
           onClaimTurn={handleClaimTurn}
           onRoleChange={handleRoleChange}
           onClose={() => setShowParticipantPanel(false)}
-        />
+          />
+        </div>
       )}
 
       {/* Private State Panel */}
       {showPrivatePanel && (
-        <PrivateStatePanel
-          sessionId={sessionId}
-          onClose={() => setShowPrivatePanel(false)}
-        />
+        <div className="shrink-0">
+          <PrivateStatePanel
+            sessionId={sessionId}
+            onClose={() => setShowPrivatePanel(false)}
+          />
+        </div>
       )}
 
       {/* Relationship Timeline Panel */}
       {showRelationshipTimeline && (
-        <RelationshipTimeline
-          sessionId={sessionId}
-          sessionUniverseId={session?.universe_id}
-          onClose={() => setShowRelationshipTimeline(false)}
-        />
+        <div className="shrink-0">
+          <RelationshipTimeline
+            sessionId={sessionId}
+            sessionUniverseId={session?.universe_id}
+            onClose={() => setShowRelationshipTimeline(false)}
+          />
+        </div>
       )}
 
       {/* Session Recap Panel */}
       {showRecapPanel && (
-        <SessionRecapPanel
-          sessionId={sessionId}
-          onClose={() => setShowRecapPanel(false)}
-        />
+        <div className="shrink-0">
+          <SessionRecapPanel
+            sessionId={sessionId}
+            onClose={() => setShowRecapPanel(false)}
+          />
+        </div>
       )}
 
       {/* Generation Error Banner */}
       {generationError && (
-        <div className="mb-2 flex items-center gap-2 rounded-lg border border-error/30 bg-error/10 px-3 py-2">
+        <div className="shrink-0 mb-2 flex items-center gap-2 rounded-lg border border-error/30 bg-error/10 px-3 py-2">
           <span className="flex-1 text-xs text-error">{generationError}</span>
           <button
             onClick={() => setGenerationError(null)}
@@ -862,7 +921,7 @@ export default function SessionChatPage() {
       )}
 
       {/* Typing Indicator */}
-      {streaming && !streamContent && <TypingIndicator />}
+      {streaming && !streamContent && <div className="shrink-0"><TypingIndicator /></div>}
 
       {/* Chat Window */}
       <ChatWindow
@@ -893,6 +952,10 @@ export default function SessionChatPage() {
         editHistoryMessageId={editHistoryMessageId}
         onEditHistoryClose={() => setEditHistoryMessageId(null)}
         disabled={isObserver}
+        choices={choices}
+        onChoiceSelect={handleChoiceSelect}
+        onRegenerateChoices={handleRegenerateChoices}
+        isRegeneratingChoices={isRegeneratingChoices}
       />
 
       {/* Confirmation Dialogs */}

@@ -108,7 +108,7 @@ Write a 2-3 sentence narrative summary of their current relationship dynamic.`,
 
   /** Analyze narrative and identify key story threads */
   analyzeThreads: (messageText: string) =>
-    `Analyze this narrative and identify the key story threads/themes. Return JSON:
+    `Analyze this narrative and identify the key story threads/themes. Do NOT reason step by step. Output ONLY valid JSON with no other text. Return JSON:
 {
   "threads": [
     {
@@ -131,7 +131,7 @@ ${messageText}
 
   /** Extract narrative events from session messages */
   extractEvents: (messageText: string) =>
-    `Analyze these recent messages and extract any significant narrative events. Return JSON:
+    `Analyze these recent messages and extract any significant narrative events. Do NOT reason step by step. Output ONLY valid JSON with no other text. Return JSON:
 {
   "events": [
     {
@@ -154,7 +154,7 @@ ${messageText}
 
   /** Extract entities, events, and relationships from message batches for wiki page creation */
   extractLoreComprehensive: (messageText: string) =>
-    `Analyze these roleplay messages and extract all significant lore: characters, locations, organizations, objects, concepts, events, and relationships.
+    `Analyze these roleplay messages and extract all significant lore: characters, locations, organizations, objects, concepts, events, and relationships. Do NOT reason step by step. Do NOT include any analysis text. Output ONLY valid JSON with no other text.
 
 Return JSON in this exact format:
 {
@@ -199,12 +199,35 @@ ${messageText}
 </user_content>`,
 
   // -----------------------------------------------------------------------
+  // Narrative: Branching Choices
+  // -----------------------------------------------------------------------
+
+  /** Generate branching narrative direction choices from the current exchange */
+  generateChoices: (userMessage: string, aiResponse: string) =>
+    `Based on this roleplay exchange, suggest 4 different narrative choices for what the player could do next.
+
+User's action:
+<user_content>
+${userMessage}
+</user_content>
+
+Narrator's response:
+<user_content>
+${aiResponse}
+</user_content>
+
+Generate 4 distinct narrative possibilities for what happens next. Each should be a brief narrative hook (1-2 sentences) describing a possible next scene, event, or discovery. Each must take a different direction — vary the focus, tone, or event.
+
+Output ONLY valid JSON with no other text:
+{"options": ["option 1", "option 2", "option 3", "option 4"]}`,
+
+  // -----------------------------------------------------------------------
   // Auto-Extract
   // -----------------------------------------------------------------------
 
   /** Extract relationships from a single AI response for wiki auto-creation */
   extractRelationshipsFromResponse: (aiResponse: string, existingTitles: string) =>
-    `Analyze this AI narrative response and extract relationships between named entities that are central to the story world.
+    `Analyze this AI narrative response and extract relationships between named entities that are central to the story world. Do NOT reason step by step. Output ONLY valid JSON with no other text.
 
 Return JSON array:
 [
@@ -232,7 +255,7 @@ ${aiResponse}
 
   /** Extract named entities from a single generation response for wiki auto-creation */
   extractEntitiesFromResponse: (aiResponse: string, universeContext: string, existingTitles: string) =>
-    `Analyze this AI narrative response and extract named entities important to the story world.
+    `Analyze this AI narrative response and extract named entities important to the story world. Do NOT reason step by step. Output ONLY valid JSON with no other text.
 
 Return JSON array:
 [

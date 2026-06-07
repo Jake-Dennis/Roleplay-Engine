@@ -83,6 +83,7 @@ const GroupSelector = memo(function GroupSelector() {
 
   return (
     <div className="relative border-b border-border-default px-3 py-3">
+      <div className="mb-1.5 text-xxs font-medium tracking-wider text-text-muted uppercase">Active Group</div>
       <button
         onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between rounded-lg bg-bg-raised px-3 py-2 text-xs text-text-primary transition-colors hover:bg-bg-elevated"
@@ -90,11 +91,14 @@ const GroupSelector = memo(function GroupSelector() {
         <div className="flex items-center gap-2 min-w-0">
           {activeGroup ? (
             <>
-              <FolderOpen className="h-3.5 w-3.5 flex-shrink-0 text-accent" />
+              <UsersIcon className="h-3.5 w-3.5 flex-shrink-0 text-accent" />
               <span className="truncate">{activeGroup.name}</span>
             </>
           ) : (
-            <span className="truncate text-text-muted">Personal</span>
+            <>
+              <User className="h-3.5 w-3.5 flex-shrink-0 text-accent" />
+              <span className="truncate text-text-primary">Personal</span>
+            </>
           )}
         </div>
         <ChevronDown className={`h-3.5 w-3.5 flex-shrink-0 text-text-muted transition-transform ${open ? "rotate-180" : ""}`} />
@@ -156,6 +160,7 @@ const SessionSelector = memo(function SessionSelector() {
 
   return (
     <div className="relative border-b border-border-default px-3 py-3">
+      <div className="mb-1.5 text-xxs font-medium tracking-wider text-text-muted uppercase">Active Session</div>
       <button
         onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between rounded-lg bg-bg-raised px-3 py-2 text-xs text-text-primary transition-colors hover:bg-bg-elevated"
@@ -163,11 +168,7 @@ const SessionSelector = memo(function SessionSelector() {
         <div className="flex items-center gap-2 min-w-0">
           {activeSession ? (
             <>
-              {activeSession.type === "group" ? (
-                <UsersIcon className="h-3.5 w-3.5 flex-shrink-0 text-accent" />
-              ) : (
-                <User className="h-3.5 w-3.5 flex-shrink-0 text-text-muted" />
-              )}
+              <MessageSquare className="h-3.5 w-3.5 flex-shrink-0 text-accent" />
               <span className="truncate">{activeSession.name}</span>
             </>
           ) : (
@@ -192,11 +193,7 @@ const SessionSelector = memo(function SessionSelector() {
                     : "text-text-secondary hover:bg-bg-raised hover:text-text-primary"
                 }`}
               >
-                {s.type === "group" ? (
-                  <UsersIcon className="h-3 w-3 flex-shrink-0 text-accent" />
-                ) : (
-                  <User className="h-3 w-3 flex-shrink-0 text-text-muted" />
-                )}
+                <MessageSquare className="h-3 w-3 flex-shrink-0 text-accent" />
                 <span className="truncate">{s.name}</span>
               </button>
             ))
@@ -230,6 +227,7 @@ const UniverseSelector = memo(function UniverseSelector() {
 
   return (
     <div className="relative border-b border-border-default px-3 py-3">
+      <div className="mb-1.5 text-xxs font-medium tracking-wider text-text-muted uppercase">Active Universe</div>
       <button
         onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between rounded-lg bg-bg-raised px-3 py-2 text-xs text-text-primary transition-colors hover:bg-bg-elevated"
@@ -325,7 +323,7 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-bg-base">
+    <div className="flex h-screen bg-bg-base">
       {/* Sidebar */}
       <aside className="fixed left-0 top-0 z-30 flex h-full w-56 flex-col border-r border-border-default bg-bg-elevated">
         {/* Logo */}
@@ -341,11 +339,11 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
         {/* Group Selector */}
         <GroupSelector />
 
-        {/* Session Selector */}
-        <SessionSelector />
-
         {/* Universe Selector */}
         <UniverseSelector />
+
+        {/* Session Selector */}
+        <SessionSelector />
 
         {/* Navigation */}
         <nav className="flex-1 space-y-0.5 px-2 py-3">
@@ -381,8 +379,8 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
         <ConnectionIndicator />
 
         {/* Page content */}
-        <main className="relative flex-1 overflow-hidden">
-          <div className="mx-auto h-full max-w-5xl px-6 py-3">{children}</div>
+        <main className="relative flex-1 overflow-y-auto">
+          <div className="mx-auto min-h-full max-w-5xl px-6 py-6">{children}</div>
 
           {/* Idle status indicator */}
           {isIdle && (

@@ -1,21 +1,25 @@
+/**
+ * GET /api/settings — Returns server-wide configuration.
+ * PUT /api/settings — Updates server-wide configuration.
+ *
+ * Settings are stored in the `server_config` DB table (singleton row)
+ * and fall back to environment variables → hardcoded defaults defined
+ * in src/lib/config.ts.  Changes take effect immediately for subsequent
+ * reads (the DB is queried fresh on every call).
+ */
+
 import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { withAuth } from '@/lib/with-auth';
-import { getDb } from "@/lib/db";
-import { OLLAMA_CONFIG, TTS_CONFIG } from "@/lib/config";
-import { fetchLocalModels } from "@/lib/ollama";
-import { safeParseWarn } from "@/lib/safe-json";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
+import { getServerConfig, updateServerConfig } from '@/lib/server-config';
+import { fetchLocalModels } from "@/lib/ollama";
 
 /**
  * GET /api/settings
- * Get server configuration (Ollama/Kokoro hosts, local models) merged with user-specific settings.
- *
- * @param request - The incoming Next.js request object
- * @returns NextResponse with { ollama, tts, user }
- * @throws 401 - If authentication fails
- * @throws 429 - If rate limit exceeded
+ * Returns the resolved server configuration (DB overrides atop env-var defaults)
+ * plus locally available Ollama models.
  */
 export const GET = withErrorHandler(async (request: NextRequest) => {
   const authResult = await withAuth(request);
@@ -26,119 +30,118 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   const rateLimit = checkRateLimit(`settings_read:${ip}`, "api");
   if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
-  // Fetch local models in parallel
+  const config = getServerConfig();
   const localModels = await fetchLocalModels();
 
-  // Base server config (always available)
-  const serverConfig = {
+  return NextResponse.json({
     ollama: {
-      host: `${OLLAMA_CONFIG.host}:${OLLAMA_CONFIG.port}`,
-      model: OLLAMA_CONFIG.model,
-      embeddingModel: OLLAMA_CONFIG.embeddingModel,
+      host: config.ollama.host,
+      port: config.ollama.port,
+      model: config.ollama.model,
+      embeddingModel: config.ollama.embeddingModel,
       localModels,
     },
     tts: {
-      host: `${TTS_CONFIG.host}:${TTS_CONFIG.port}`,
-      defaultVoice: TTS_CONFIG.defaultVoice,
+      host: config.tts.host,
+      port: config.tts.port,
+      defaultVoice: config.tts.defaultVoice,
     },
-  };
-
-  // Merge user settings
-  const db = getDb();
-  const row = db.prepare("SELECT settings FROM users WHERE id = ?").get(userId) as { settings: string | null } | undefined;
-  if (row?.settings) {
-    const userSettings = safeParseWarn<Record<string, string>>(row.settings, "user settings");
-    if (userSettings) {
-      return NextResponse.json({
-        ...serverConfig,
-        user: {
-          llmModel: userSettings.llmModel || OLLAMA_CONFIG.model,
-          embeddingModel: userSettings.embeddingModel || OLLAMA_CONFIG.embeddingModel,
-          ttsSpeed: userSettings.ttsSpeed ?? 1.0,
-          ttsVolume: userSettings.ttsVolume ?? 0.8,
-          ttsFormat: userSettings.ttsFormat || "mp3",
-          ttsAutoPlay: userSettings.ttsAutoPlay ?? true,
-          ttsSkipLong: userSettings.ttsSkipLong ?? true,
-          ttsLongThreshold: userSettings.ttsLongThreshold ?? 500,
-        },
-      });
-    }
-  }
-  return NextResponse.json({
-    ...serverConfig,
-    user: {
-      llmModel: OLLAMA_CONFIG.model,
-      embeddingModel: OLLAMA_CONFIG.embeddingModel,
-      ttsSpeed: 1.0,
-      ttsVolume: 0.8,
-      ttsFormat: "mp3",
-      ttsAutoPlay: true,
-      ttsSkipLong: true,
-      ttsLongThreshold: 500,
+    defaults: {
+      ttsSpeed: config.tts.defaultSpeed,
+      ttsVolume: config.tts.defaultVolume,
+      ttsFormat: config.tts.defaultFormat,
+      ttsAutoPlay: config.tts.autoPlay,
+      ttsSkipLong: config.tts.skipLong,
+      ttsLongThreshold: config.tts.longThreshold,
     },
-  }); });
+  });
+});
 
 /**
  * PUT /api/settings
- * Update user-specific settings (LLM model, embedding model, TTS preferences).
- *
- * @param request - The incoming Next.js request object
- * @returns NextResponse with { success: true, settings }
- * @throws 400 - If no settings were provided
- * @throws 401 - If authentication fails
- * @throws 429 - If rate limit exceeded
+ * Updates server-wide configuration.  Only provided fields are changed
+ * (partial merge).  Accepts snake_case column names matching the DB schema.
  */
-export const PUT = withErrorHandler(async (request: NextRequest) => { const authResult = await withAuth(request);
-if ('error' in authResult) return authResult.error;
-const { userId } = authResult.auth;
+export const PUT = withErrorHandler(async (request: NextRequest) => {
+  const authResult = await withAuth(request);
+  if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
-const ip = getClientIp(request);
-const rateLimit = checkRateLimit(`settings_write:${ip}`, "api");
-if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`settings_write:${ip}`, "api");
+  if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   requireJson(request);
   const body = await request.json();
-const { llmModel, embeddingModel, ttsSpeed, ttsVolume, ttsFormat, ttsAutoPlay, ttsSkipLong, ttsLongThreshold } = body;
 
-if (!llmModel && !embeddingModel && ttsSpeed === undefined && ttsVolume === undefined && !ttsFormat && ttsAutoPlay === undefined && ttsSkipLong === undefined && ttsLongThreshold === undefined) {
-  return NextResponse.json({ error: "At least one setting is required" }, { status: 400 });
-}
+  // Build update payload — only pick known keys from the request body
+  const allowedKeys = [
+    "ollama_host", "ollama_port", "ollama_model", "ollama_embedding_model",
+    "tts_host", "tts_port", "tts_default_voice",
+    "tts_default_speed", "tts_default_volume", "tts_default_format",
+    "tts_auto_play", "tts_skip_long", "tts_long_threshold",
+  ] as const;
 
-const db = getDb();
+  const update: Record<string, unknown> = {};
+  for (const key of allowedKeys) {
+    if (body[key] !== undefined) {
+      update[key] = body[key];
+    }
+  }
 
-// Get existing settings
-const row = db.prepare("SELECT settings FROM users WHERE id = ?").get(userId) as { settings: string | null } | undefined;
-let userSettings: Record<string, unknown> = {};
-if (row?.settings) {
-  const parsed = safeParseWarn<Record<string, unknown>>(row.settings, "user settings");
-  if (parsed) userSettings = parsed;
-}
+  // Also accept camelCase variants for API convenience
+  const camelToSnake: Record<string, string> = {
+    ollamaHost: "ollama_host",
+    ollamaPort: "ollama_port",
+    ollamaModel: "ollama_model",
+    ollamaEmbeddingModel: "ollama_embedding_model",
+    ttsHost: "tts_host",
+    ttsPort: "tts_port",
+    ttsDefaultVoice: "tts_default_voice",
+    ttsDefaultSpeed: "tts_default_speed",
+    ttsDefaultVolume: "tts_default_volume",
+    ttsDefaultFormat: "tts_default_format",
+    ttsAutoPlay: "tts_auto_play",
+    ttsSkipLong: "tts_skip_long",
+    ttsLongThreshold: "tts_long_threshold",
+  };
+  for (const [camel, snake] of Object.entries(camelToSnake)) {
+    if (body[camel] !== undefined && update[snake] === undefined) {
+      update[snake] = body[camel];
+    }
+  }
 
-// Update settings
-if (llmModel) userSettings.llmModel = llmModel;
-if (embeddingModel) userSettings.embeddingModel = embeddingModel;
-if (ttsSpeed !== undefined) userSettings.ttsSpeed = ttsSpeed;
-if (ttsVolume !== undefined) userSettings.ttsVolume = ttsVolume;
-if (ttsFormat) userSettings.ttsFormat = ttsFormat;
-if (ttsAutoPlay !== undefined) userSettings.ttsAutoPlay = ttsAutoPlay;
-if (ttsSkipLong !== undefined) userSettings.ttsSkipLong = ttsSkipLong;
-if (ttsLongThreshold !== undefined) userSettings.ttsLongThreshold = ttsLongThreshold;
+  if (Object.keys(update).length === 0) {
+    return NextResponse.json({ error: "At least one setting is required" }, { status: 400 });
+  }
 
-db.prepare("UPDATE users SET settings = ? WHERE id = ?").run(
-  JSON.stringify(userSettings),
-  userId
-);
+  updateServerConfig(update);
 
-return NextResponse.json({
-  success: true,
-  settings: {
-    llmModel: userSettings.llmModel || OLLAMA_CONFIG.model,
-    embeddingModel: userSettings.embeddingModel || OLLAMA_CONFIG.embeddingModel,
-    ttsSpeed: userSettings.ttsSpeed ?? 1.0,
-    ttsVolume: userSettings.ttsVolume ?? 0.8,
-    ttsFormat: userSettings.ttsFormat || "mp3",
-    ttsAutoPlay: userSettings.ttsAutoPlay ?? true,
-    ttsSkipLong: userSettings.ttsSkipLong ?? true,
-    ttsLongThreshold: userSettings.ttsLongThreshold ?? 500,
-  },
-}); });
+  // Return the full resolved config after the update
+  const config = getServerConfig();
+
+  return NextResponse.json({
+    success: true,
+    settings: {
+      ollama: {
+        host: config.ollama.host,
+        port: config.ollama.port,
+        model: config.ollama.model,
+        embeddingModel: config.ollama.embeddingModel,
+      },
+      tts: {
+        host: config.tts.host,
+        port: config.tts.port,
+        defaultVoice: config.tts.defaultVoice,
+      },
+      defaults: {
+        ttsSpeed: config.tts.defaultSpeed,
+        ttsVolume: config.tts.defaultVolume,
+        ttsFormat: config.tts.defaultFormat,
+        ttsAutoPlay: config.tts.autoPlay,
+        ttsSkipLong: config.tts.skipLong,
+        ttsLongThreshold: config.tts.longThreshold,
+      },
+    },
+  });
+});

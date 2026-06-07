@@ -133,6 +133,19 @@ async function isAuthorized(request: NextRequest): Promise<boolean> {
     return true;
   }
 
+  // Dev mode: x-real-ip may not be set (no proxy), check Next.js built-in request.ip
+  // and the Host header as fallback for localhost detection
+  if (ip === "unknown") {
+    const ri = (request as { ip?: string }).ip;
+    if (ri === "127.0.0.1" || ri === "::1" || ri === "::ffff:127.0.0.1") {
+      return true;
+    }
+    const host = request.headers.get("host") || "";
+    if (host.startsWith("localhost") || host.startsWith("127.0.0.1") || host.startsWith("[::1]")) {
+      return true;
+    }
+  }
+
   // Allow authenticated requests
   const token = getAuthToken(request);
   if (token) {

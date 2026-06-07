@@ -148,12 +148,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // 3. Restore universe from DB (independent of session)
+      // 3. Restore universe from DB (cross-group lookup if needed)
       if (dbState.universeId) {
         const found = universeList.find((u: Universe) => u.id === dbState.universeId);
         if (found && found.group_id === dbState.groupId) {
           setActiveUniverseState(found);
           restoredUniverse = found;
+        } else if (found && found.group_id !== dbState.groupId) {
+          // Universe exists in a different group — restore via full list
+          logger.debug('Universe found in different group, restoring:', { universeId: dbState.universeId, groupId: found.group_id });
+          const groupMatch = groupList.find((g: Group) => g.id === found.group_id);
+          if (groupMatch) {
+            setActiveGroupState(groupMatch);
+            restoredGroup = groupMatch;
+            setActiveUniverseState(found);
+            restoredUniverse = found;
+          } else {
+            logger.debug('Universe not found in full list or group gone:', dbState.universeId);
+          }
         } else {
           logger.debug('Universe not found or group mismatch:', dbState.universeId);
         }

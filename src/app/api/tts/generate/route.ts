@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateSpeech, getCachedAudio, cacheAudio } from "@/lib/tts";
 import { TTS_CONFIG } from "@/lib/config";
+import { getUserTtsUrl } from "@/lib/ollama";
 import { withAuth } from '@/lib/with-auth';
 import { unauthorizedError, badRequestError, serverError, requireJson } from '@/lib/error-response';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
@@ -44,9 +45,10 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  // Generate new audio
+  // Generate new audio using user's TTS URL (fallback to server config)
   try {
-    const audio = await generateSpeech(text, voice, format, speed);
+    const ttsUrl = getUserTtsUrl(userId);
+    const audio = await generateSpeech(text, voice, format, speed, ttsUrl);
     cacheAudio(userId, text, voice, speed, format, audio);
 
     return new NextResponse(new Blob([new Uint8Array(audio)]), {

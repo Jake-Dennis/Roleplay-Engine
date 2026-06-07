@@ -437,7 +437,11 @@ async function handleWikiExtractEvent(jobId: string, payload: JobPayload): Promi
   if (!sessionId || !userId) throw new Error("Missing sessionId or userId");
 
   const db = getDb();
-  const wikiRoot = getWikiRoot(userId as string);
+
+  // Get session's universeId so event pages go to the right universe subfolder
+  const session = db.prepare("SELECT universe_id FROM sessions WHERE id = ?").get(sessionId) as { universe_id: string | null } | undefined;
+  const universeId = session?.universe_id || null;
+  const wikiRoot = getWikiRoot(userId as string, universeId || undefined);
 
   // Get recent messages from the session
   const messages = db.prepare(`
@@ -476,6 +480,7 @@ async function handleWikiExtractEvent(jobId: string, payload: JobPayload): Promi
             title: `Event: ${event.title || "Unknown Event"}`,
             type: "concept",
             status: "draft",
+            universe: universeId || undefined,
             tags: ["event", `type:${event.eventType || "other"}`, `importance:${event.importance || "medium"}`, `session:${sessionId}`],
             created: new Date().toISOString(),
           };

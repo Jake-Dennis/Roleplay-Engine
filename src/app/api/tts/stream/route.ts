@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { withAuth } from '@/lib/with-auth';
 import { generateSpeechStream } from "@/lib/tts";
+import { getUserTtsUrl } from "@/lib/ollama";
 import { logger } from '@/lib/logger';
 import { TTS_CONFIG } from '@/lib/config';
 import { checkRateLimit, createRateLimitResponse } from '@/lib/rate-limiter';
@@ -56,7 +57,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const audioStream = await generateSpeechStream(text, voice, format, speed);
+    const ttsUrl = getUserTtsUrl(userId);
+    const audioStream = await generateSpeechStream(text, voice, format, speed, ttsUrl);
 
     return new Response(audioStream, {
       headers: {

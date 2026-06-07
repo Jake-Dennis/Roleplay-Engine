@@ -135,8 +135,10 @@ export async function processRelationshipIdleTier(
 
 /**
  * Process remaining queued jobs (Tier 4 catch-all).
+ * No limit — drains the entire queue one at a time in priority order.
+ * Each job handler makes its own Ollama call as needed.
  */
 export async function processRemainingQueuedJobs(userId: string): Promise<number> {
-  const remainingResults = await processUserJobs(userId, 10);
+  const remainingResults = await processUserJobs(userId, Infinity);
   return remainingResults.filter((r) => r.success).length;
 }

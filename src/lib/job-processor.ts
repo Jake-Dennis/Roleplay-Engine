@@ -59,6 +59,7 @@ export {
 
 import type { JobType, JobPayload, QueuedJob, JobResult } from "./jobs/types";
 import { getNextJob, markJobProcessing, markJobFailed } from "./jobs/queue";
+import { isOllamaBusy } from "@/lib/ollama-busy";
 
 // Existing job handlers
 import { handleSummarizationJob } from "./jobs/summarization-handler";
@@ -137,12 +138,20 @@ export async function processJob(job: QueuedJob): Promise<JobResult> {
 }
 
 /**
- * Process all queued jobs for a user (up to maxJobs)
+ * Process all queued jobs for a user (up to maxJobs).
+ *
+ * Checks isOllamaBusy() before each job — if a user-facing generation starts,
+ * processing stops immediately and remaining jobs stay queued for the next
+ * idle window. This allows generation to preempt background work without
+ * competing for Ollama.
  */
 export async function processUserJobs(userId: string, maxJobs: number = 10): Promise<JobResult[]> {
   const results: JobResult[] = [];
 
   for (let i = 0; i < maxJobs; i++) {
+    // Yield to user-facing generation
+    if (isOllamaBusy()) break;
+
     const job = getNextJob(userId);
     if (!job) break;
     const result = await processJob(job);
@@ -153,7 +162,11 @@ export async function processUserJobs(userId: string, maxJobs: number = 10): Pro
 }
 
 /**
- * Process jobs of a specific type for a user
+ * Process jobs of a specific type for a user (up to maxJobs).
+ *
+ * Also checks isOllamaBusy() before each job so that generation preempts
+ * type-specific processing (e.g. the post-generation relationship/thread
+ * analysis cascade).
  */
 export async function processJobsByType(
   userId: string,
@@ -163,6 +176,9 @@ export async function processJobsByType(
   const results: JobResult[] = [];
 
   for (let i = 0; i < maxJobs; i++) {
+    // Yield to user-facing generation
+    if (isOllamaBusy()) break;
+
     const job = getNextJob(userId, type);
     if (!job) break;
     const result = await processJob(job);

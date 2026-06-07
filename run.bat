@@ -29,11 +29,23 @@ for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4" ^| findstr /v 
 :ip_found
 set "LOCAL_IP=%LOCAL_IP: =%"
 
-:: Check Ollama connectivity
-echo Checking Ollama connection at 192.168.4.2:11434...
-curl -sf http://192.168.4.2:11434/api/tags >nul 2>&1
+:: Read service addresses from .env.local (or use defaults)
+if exist ".env.local" (
+    for /f "tokens=2 delims==" %%a in ('findstr /b "OLLAMA_HOST=" .env.local') do set "OLLAMA_HOST=%%a"
+    for /f "tokens=2 delims==" %%a in ('findstr /b "OLLAMA_PORT=" .env.local') do set "OLLAMA_PORT=%%a"
+    for /f "tokens=2 delims==" %%a in ('findstr /b "TTS_HOST=" .env.local') do set "TTS_HOST=%%a"
+    for /f "tokens=2 delims==" %%a in ('findstr /b "TTS_PORT=" .env.local') do set "TTS_PORT=%%a"
+)
+if not defined OLLAMA_HOST set "OLLAMA_HOST=192.168.4.2"
+if not defined OLLAMA_PORT set "OLLAMA_PORT=11434"
+if not defined TTS_HOST set "TTS_HOST=192.168.4.2"
+if not defined TTS_PORT set "TTS_PORT=8880"
+
+:: Check Ollama connectivity at %OLLAMA_HOST%:%OLLAMA_PORT%
+echo Checking Ollama connection at %OLLAMA_HOST%:%OLLAMA_PORT%...
+curl -sf http://%OLLAMA_HOST%:%OLLAMA_PORT%/api/tags >nul 2>&1
 if errorlevel 1 (
-    echo WARNING: Cannot reach Ollama at 192.168.4.2:11434
+    echo WARNING: Cannot reach Ollama at %OLLAMA_HOST%:%OLLAMA_PORT%
     echo The engine will start but generation will fail until Ollama is reachable.
     echo.
 ) else (
@@ -42,10 +54,10 @@ if errorlevel 1 (
 )
 
 :: Check Kokoro TTS connectivity
-echo Checking Kokoro TTS connection at 192.168.4.2:8880...
-curl -sf http://192.168.4.2:8880/v1/audio/voices >nul 2>&1
+echo Checking Kokoro TTS connection at %TTS_HOST%:%TTS_PORT%...
+curl -sf http://%TTS_HOST%:%TTS_PORT%/v1/audio/voices >nul 2>&1
 if errorlevel 1 (
-    echo WARNING: Cannot reach Kokoro TTS at 192.168.4.2:8880
+    echo WARNING: Cannot reach Kokoro TTS at %TTS_HOST%:%TTS_PORT%
     echo The engine will start but TTS will be unavailable.
     echo.
 ) else (
@@ -80,7 +92,7 @@ if errorlevel 1 (
 
 :: Kill any existing server on port 3000
 echo Checking for existing server...
-powershell -Command "Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force" >nul 2>&1
+powershell -Command "Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | ForEach-Object { Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue | Stop-Process -Force }" >nul 2>&1
 timeout /t 2 /nobreak >nul
 echo No existing server found.
 echo.
@@ -115,19 +127,19 @@ if not exist "data\global.db" (
 for /f "delims=" %%a in ('curl -sf https://api.ipify.org 2^>nul') do set "EXT_IP=%%a"
 
 :: Start the application
-echo Starting Roleplay Engine...
+echo Starting Roleplay Engine (development mode)...
 echo Local:    http://localhost:3000
 echo Network:  http://%LOCAL_IP%:3000
 echo External: http://ragecage.ddns.net:3000
-echo Ollama:   http://192.168.4.2:11434
-echo TTS:      http://192.168.4.2:8880
+echo Ollama:   http://%OLLAMA_HOST%:%OLLAMA_PORT%
+echo TTS:      http://%TTS_HOST%:%TTS_PORT%
 echo.
 echo Press Ctrl+C to stop.
 echo.
 
-:: Start Next.js production server
+:: Start Next.js dev server (sets x-real-ip for localhost auth bypass)
 cd /d "%SCRIPT_DIR%"
-call npm start
+call npm run dev
 
 echo.
 echo ========================================

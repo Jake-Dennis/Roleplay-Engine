@@ -27,8 +27,8 @@ export interface TTSGenerateRequest {
   speed?: number;
 }
 
-export async function checkTTSConnection(): Promise<boolean> {
-  const voices = await discoverVoices();
+export async function checkTTSConnection(ttsUrl?: string): Promise<boolean> {
+  const voices = await discoverVoices(ttsUrl);
   return voices.length > 0;
 }
 
@@ -36,8 +36,10 @@ export async function generateSpeech(
   text: string,
   voice: string,
   format: string = TTS_CONFIG.defaultFormat,
-  speed: number = TTS_CONFIG.defaultSpeed
+  speed: number = TTS_CONFIG.defaultSpeed,
+  ttsUrl?: string
 ): Promise<Buffer> {
+  const baseUrl = ttsUrl ? (ttsUrl.startsWith("http") ? ttsUrl : `http://${ttsUrl}`) : TTS_CONFIG.baseUrl;
   const requestBody: TTSGenerateRequest = {
     model: TTS_CONFIG.model,
     input: text,
@@ -50,7 +52,7 @@ export async function generateSpeech(
 
   for (let attempt = 1; attempt <= TTS_CONFIG.retryAttempts; attempt++) {
     try {
-      const response = await fetch(`${TTS_CONFIG.baseUrl}/v1/audio/speech`, {
+      const response = await fetch(`${baseUrl}/v1/audio/speech`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
@@ -85,8 +87,10 @@ export async function generateSpeechStream(
   text: string,
   voice: string,
   format: string = TTS_CONFIG.defaultFormat,
-  speed: number = TTS_CONFIG.defaultSpeed
+  speed: number = TTS_CONFIG.defaultSpeed,
+  ttsUrl?: string
 ): Promise<ReadableStream<Uint8Array>> {
+  const baseUrl = ttsUrl ? (ttsUrl.startsWith("http") ? ttsUrl : `http://${ttsUrl}`) : TTS_CONFIG.baseUrl;
   const requestBody: TTSGenerateRequest = {
     model: TTS_CONFIG.model,
     input: text,
@@ -95,7 +99,7 @@ export async function generateSpeechStream(
     speed,
   };
 
-  const response = await fetch(`${TTS_CONFIG.baseUrl}/v1/audio/speech`, {
+  const response = await fetch(`${baseUrl}/v1/audio/speech`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...requestBody, stream: true }),
@@ -125,10 +129,12 @@ export async function generateSpeechStream(
 }
 
 export async function combineVoices(
-  voiceSpec: string
+  voiceSpec: string,
+  ttsUrl?: string
 ): Promise<Buffer> {
+  const baseUrl = ttsUrl ? (ttsUrl.startsWith("http") ? ttsUrl : `http://${ttsUrl}`) : TTS_CONFIG.baseUrl;
   const response = await fetch(
-    `${TTS_CONFIG.baseUrl}/v1/audio/voices/combine`,
+    `${baseUrl}/v1/audio/voices/combine`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

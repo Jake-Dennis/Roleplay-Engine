@@ -7,6 +7,7 @@ import fs from "fs";
 import path from "path";
 import { APP_CONFIG } from "@/lib/config";
 import { generateSpeech } from "@/lib/tts";
+import { getUserTtsUrl } from "@/lib/ollama";
 import crypto from "crypto";
 import { isPathWithinRoot } from '@/lib/wiki/path-guard';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
@@ -257,10 +258,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate new TTS
+    const ttsUrl = getUserTtsUrl(userId);
     const audioBuffer = await generateSpeech(
       entry.text_content,
       entry.voice_name,
-      entry.audio_format
+      entry.audio_format,
+      undefined,
+      ttsUrl
     );
 
     // Save new audio file

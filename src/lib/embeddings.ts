@@ -26,17 +26,20 @@ export interface EmbeddingResult {
 export async function processEmbeddings(
   userId: string,
   entityType: string,
-  entityId: string
+  entityId: string,
+  textContent?: string
 ): Promise<EmbeddingResult> {
   const db = getDb();
-  const textContent = getEntityText(entityType, entityId);
+  // Use provided content if available (avoids DB race where the entity write
+  // hasn't propagated to this connection yet), otherwise fall back to lookup.
+  const content = textContent ?? getEntityText(entityType, entityId);
 
-  if (!textContent) {
+  if (!content) {
     throw new Error(`No text content found for ${entityType}:${entityId}`);
   }
 
   // Generate embedding via Ollama
-  const vector = await generateEmbedding(textContent);
+  const vector = await generateEmbedding(content);
 
   // Look up universe_id for this entity (separate queries avoid parameter-count bugs in CASE WHEN subquery)
   let universeId: string | null = null;
@@ -83,7 +86,7 @@ export async function processEmbeddings(
   db.prepare(`
     INSERT OR REPLACE INTO embedding_index (id, user_id, universe_id, entity_type, entity_id, text_content, created_at)
     VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-  `).run(embeddingId, userId, universeId, entityType, entityId, textContent);
+  `).run(embeddingId, userId, universeId, entityType, entityId, content);
 
   // Store vector in a separate table (embedding vectors are too large for TEXT column)
   ensureVectorTable(db);

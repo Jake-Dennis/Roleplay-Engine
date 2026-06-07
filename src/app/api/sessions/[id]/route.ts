@@ -35,6 +35,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
   const authResult = await withAuth(request);
   if ('error' in authResult) return authResult.error;
@@ -44,7 +45,6 @@ export async function GET(
   const rateLimit = checkRateLimit(`session_read:${ip}`, "session_read");
   if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
-  const { id } = await params;
   if (!isValidUUID(id)) {
     return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
   }
@@ -140,14 +140,17 @@ export async function GET(
   return NextResponse.json({
     session: camelizeKeys(session),
     messages: camelizeKeys(messages),
-    sceneState: sceneState ? camelizeKeys(sceneState) : null,
+    sceneState: sceneState || null,
     participants: camelizeKeys(participants),
     turnConfig,
     isOwner: (session as Record<string, unknown>).owner_id === userId,
   });
   } catch (err: unknown) {
-    logger.error("[sessions/[id]] GET failed:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    logger.error(`[sessions/${id}] GET failed: ${errorMessage}`, err);
+    return NextResponse.json({
+      error: process.env.NODE_ENV === 'development' ? errorMessage : "Internal server error"
+    }, { status: 500 });
   }
 }
 
@@ -298,8 +301,12 @@ export async function DELETE(
 
   // Cascade: delete orphaned session-dependent data
   db.prepare("DELETE FROM session_config WHERE session_id = ?").run(id);
+  db.prepare("DELETE FROM session_settings WHERE session_id = ?").run(id);
   db.prepare("DELETE FROM narrative_memories WHERE session_id = ?").run(id);
   db.prepare("DELETE FROM decision_points WHERE session_id = ?").run(id);
+  db.prepare("DELETE FROM timeline_entries WHERE session_id = ?").run(id);
+  db.prepare("DELETE FROM invitations WHERE session_id = ?").run(id);
+  db.prepare("DELETE FROM narrative_threads WHERE session_id = ?").run(id);
 
   // Delete messages, participants, scene state, session
   db.prepare("DELETE FROM messages WHERE session_id = ?").run(id);
@@ -329,15 +336,24 @@ export async function DELETE(
 
   // Queue universe-level re-extraction if this session was in a universe
   if (universeId) {
-    queueJob(userId, "scene_state_extract", {
-      sessionId: id,
-      userId,
-      universeId,
-    }, "low", universeId);
-    queueJob(userId, "analyze_relationships", {
-      sessionId: id,
-      userId,
-    }, "low", universeId);
+    // Verify the universe exists before queuing FK-referencing jobs
+    const universeExists = db.prepare("SELECT 1 FROM universes WHERE id = ?").get(universeId);
+    if (universeExists) {
+      try {
+        queueJob(userId, "scene_state_extract", {
+          sessionId: id,
+          userId,
+          universeId,
+        }, "low", universeId);
+      } catch { /* non-fatal — re-extraction is best-effort */ }
+
+      try {
+        queueJob(userId, "analyze_relationships", {
+          sessionId: id,
+          userId,
+        }, "low", universeId);
+      } catch { /* non-fatal — relationship analysis is best-effort */ }
+    }
   }
 
   return NextResponse.json({ success: true });

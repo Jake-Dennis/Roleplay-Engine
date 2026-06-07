@@ -104,7 +104,7 @@ requireJson(request);
 const body = await request.json();
 const { entityType, entityId, voiceName, voiceSpeed = 1.0, volume = 0.8 } = body;
 
-if (!entityType || !entityId || !voiceName) {
+if (!entityType || !entityId || voiceName === undefined || voiceName === null) {
   return NextResponse.json(
     { error: "entityType, entityId, and voiceName are required" },
     { status: 400 }

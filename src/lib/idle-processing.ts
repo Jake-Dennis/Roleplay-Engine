@@ -17,7 +17,6 @@
 
 import { getDb } from "@/lib/db";
 import {
-  processUserJobs,
   processJobsByType,
   queueJob,
   reapOldJobs,
@@ -452,15 +451,10 @@ export async function processIdleTier(
     // Log but don't throw — heartbeat should always succeed
   }
 
-  // Process all queued jobs (including ones queued during generation, like
-  // scene_state_extract, wiki_auto_extract, summarize_messages, etc.)
-  // This is the only automatic path where queued jobs actually get processed.
-  try {
-    const results = await processUserJobs(userId, 10);
-    queued += results.filter((r) => r.success).length;
-  } catch {
-    // Job processing errors are handled per-job; this catch is a safety net
-  }
+  // Jobs are NOT processed here — they accumulate in the queue and are
+  // processed by the post-generation cascade (processUserJobs in the generate
+  // route's finally block). This decouples idle-time queueing from Ollama
+  // usage: generation preempts jobs, and jobs only run when Ollama is free.
 
   return { jobsQueued: queued, tier };
 }

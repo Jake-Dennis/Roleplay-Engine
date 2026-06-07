@@ -495,6 +495,28 @@ function main() {
     CREATE INDEX IF NOT EXISTS idx_timelines_universe ON timelines(universe_id);
     CREATE INDEX IF NOT EXISTS idx_session_config_lookup ON session_config(session_id, key);
 
+    -- Server-wide configuration (overrides env var defaults)
+    CREATE TABLE IF NOT EXISTS server_config (
+      id TEXT PRIMARY KEY DEFAULT 'singleton',
+      ollama_host TEXT,
+      ollama_port INTEGER,
+      ollama_model TEXT,
+      ollama_embedding_model TEXT,
+      tts_host TEXT,
+      tts_port INTEGER,
+      tts_default_voice TEXT,
+      tts_default_speed REAL,
+      tts_default_volume REAL,
+      tts_default_format TEXT,
+      tts_auto_play INTEGER,
+      tts_skip_long INTEGER,
+      tts_long_threshold INTEGER,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Insert default singleton row (values are NULL = use config.ts env-var fallbacks)
+    INSERT OR IGNORE INTO server_config (id) VALUES ('singleton');
+
     -- Decision points
     CREATE TABLE IF NOT EXISTS decision_points (
       id TEXT PRIMARY KEY,
