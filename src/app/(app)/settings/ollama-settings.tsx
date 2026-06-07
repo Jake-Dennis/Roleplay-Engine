@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Cpu, Sparkles, Check, AlertCircle, RefreshCw, Save, Link, Gauge, Zap, TrendingUp, ExternalLink } from "lucide-react";
+import { Cpu, Sparkles, Check, AlertCircle, RefreshCw, Save, Link, Gauge, Zap, TrendingUp, ExternalLink, Brain, Sliders, Briefcase } from "lucide-react";
 
 interface OllamaModel {
   name: string;
@@ -55,11 +55,37 @@ interface OllamaSettingsProps {
   setSelectedNumCtx: (v: number) => void;
   ollamaUrl: string;
   setOllamaUrl: (v: string) => void;
+  thinkingMode: boolean;
+  onThinkingModeChange: (v: boolean) => void;
   modelLoading: boolean;
   modelSaving: boolean;
   modelSaved: boolean;
   modelError: string;
   settings: ServerSettings | null;
+  // Generation defaults
+  useCustomSampling: boolean;
+  onUseCustomSamplingChange: (v: boolean) => void;
+  temperature: number;
+  setTemperature: (v: number) => void;
+  topP: number;
+  setTopP: (v: number) => void;
+  topK: number;
+  setTopK: (v: number) => void;
+  numPredict: number;
+  setNumPredict: (v: number) => void;
+  defaultsSaving: boolean;
+  defaultsSaved: boolean;
+  defaultsError: string;
+  onSaveDefaults: () => Promise<void>;
+  // Job defaults
+  jobNumCtx: number;
+  setJobNumCtx: (v: number) => void;
+  jobNumPredict: number;
+  setJobNumPredict: (v: number) => void;
+  jobDefaultsSaving: boolean;
+  jobDefaultsSaved: boolean;
+  jobDefaultsError: string;
+  onSaveJobDefaults: () => Promise<void>;
   // Handlers
   handleRefreshModels: () => Promise<void>;
   handleModelSave: () => Promise<void>;
@@ -77,11 +103,35 @@ export function OllamaSettingsSection({
   setSelectedNumCtx,
   ollamaUrl,
   setOllamaUrl,
+  thinkingMode,
+  onThinkingModeChange,
   modelLoading,
   modelSaving,
   modelSaved,
   modelError,
   settings,
+  useCustomSampling,
+  onUseCustomSamplingChange,
+  temperature,
+  setTemperature,
+  topP,
+  setTopP,
+  topK,
+  setTopK,
+  numPredict,
+  setNumPredict,
+  defaultsSaving,
+  defaultsSaved,
+  defaultsError,
+  onSaveDefaults,
+  jobNumCtx,
+  setJobNumCtx,
+  jobNumPredict,
+  setJobNumPredict,
+  jobDefaultsSaving,
+  jobDefaultsSaved,
+  jobDefaultsError,
+  onSaveJobDefaults,
   handleRefreshModels,
   handleModelSave,
 }: OllamaSettingsProps) {
@@ -365,6 +415,24 @@ export function OllamaSettingsSection({
                 </p>
               )}
             </div>
+
+            {/* Thinking Mode */}
+            <div>
+              <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={thinkingMode}
+                  onChange={(e) => onThinkingModeChange(e.target.checked)}
+                  className="rounded border-border-default"
+                />
+                <Brain className="h-3.5 w-3.5 text-text-muted" />
+                <span>Thinking mode</span>
+              </label>
+              <p className="mt-1 text-xxs text-text-muted">
+                When enabled, models with reasoning capabilities (e.g. Qwen3) will
+                use reasoning tokens in their responses.
+              </p>
+            </div>
           </>
         ) : null}
 
@@ -432,6 +500,161 @@ export function OllamaSettingsSection({
           <div className="flex items-center gap-1.5 rounded-lg border border-success/20 bg-success/10 px-3 py-2 text-xs text-success">
             <Check className="h-3.5 w-3.5" />
             Model settings saved
+          </div>
+        )}
+      </div>
+
+      {/* Generation Defaults */}
+      <div className="mt-6 space-y-4 border-t border-border-default pt-4">
+        <div className="flex items-center gap-2">
+          <Sliders className="h-4 w-4 text-text-secondary" />
+          <h3 className="text-sm font-medium text-text-primary">Generation Defaults</h3>
+        </div>
+
+        <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer">
+          <input
+            type="checkbox"
+            checked={useCustomSampling}
+            onChange={(e) => onUseCustomSamplingChange(e.target.checked)}
+            className="rounded border-border-default"
+          />
+          <span>Use custom sampling parameters</span>
+        </label>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1 block text-xxs text-text-muted">
+              Temperature: {temperature.toFixed(1)}
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="2"
+              step="0.1"
+              value={temperature}
+              onChange={(e) => setTemperature(parseFloat(e.target.value))}
+              className="w-full accent-accent"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xxs text-text-muted">
+              Top P: {topP.toFixed(2)}
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={topP}
+              onChange={(e) => setTopP(parseFloat(e.target.value))}
+              className="w-full accent-accent"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xxs text-text-muted">Top K</label>
+            <input
+              type="number"
+              value={topK}
+              onChange={(e) => setTopK(parseInt(e.target.value, 10) || 0)}
+              className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-xs text-text-primary focus:border-accent"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xxs text-text-muted">Max Predict Tokens</label>
+            <input
+              type="number"
+              value={numPredict}
+              onChange={(e) => setNumPredict(parseInt(e.target.value, 10) || 0)}
+              className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-xs text-text-primary focus:border-accent"
+            />
+          </div>
+        </div>
+
+        {defaultsError && (
+          <div className="flex items-center gap-2 text-xs text-error">
+            <AlertCircle className="h-3 w-3" />
+            {defaultsError}
+          </div>
+        )}
+
+        <button
+          onClick={onSaveDefaults}
+          disabled={defaultsSaving}
+          className="flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-2 text-xs font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+        >
+          {defaultsSaving ? (
+            <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+          ) : (
+            <Save className="h-3.5 w-3.5" />
+          )}
+          Save Generation Defaults
+        </button>
+
+        {defaultsSaved && (
+          <div className="flex items-center gap-1.5 rounded-lg border border-success/20 bg-success/10 px-3 py-2 text-xs text-success">
+            <Check className="h-3.5 w-3.5" />
+            Defaults saved
+          </div>
+        )}
+      </div>
+
+      {/* Job Defaults */}
+      <div className="mt-6 space-y-4 border-t border-border-default pt-4">
+        <div className="flex items-center gap-2">
+          <Briefcase className="h-4 w-4 text-text-secondary" />
+          <h3 className="text-sm font-medium text-text-primary">Background Job Defaults</h3>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1 block text-xxs text-text-muted">
+              Context Window: {formatContextWindow(jobNumCtx)}
+            </label>
+            <input
+              type="range"
+              min="4096"
+              max="1000000"
+              step="4096"
+              value={jobNumCtx}
+              onChange={(e) => setJobNumCtx(Number(e.target.value))}
+              className="w-full accent-accent"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xxs text-text-muted">Max Predict Tokens</label>
+            <input
+              type="number"
+              value={jobNumPredict}
+              onChange={(e) => setJobNumPredict(parseInt(e.target.value, 10) || 0)}
+              className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-xs text-text-primary focus:border-accent"
+            />
+          </div>
+        </div>
+
+        {jobDefaultsError && (
+          <div className="flex items-center gap-2 text-xs text-error">
+            <AlertCircle className="h-3 w-3" />
+            {jobDefaultsError}
+          </div>
+        )}
+
+        <button
+          onClick={onSaveJobDefaults}
+          disabled={jobDefaultsSaving}
+          className="flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-2 text-xs font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+        >
+          {jobDefaultsSaving ? (
+            <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+          ) : (
+            <Save className="h-3.5 w-3.5" />
+          )}
+          Save Job Defaults
+        </button>
+
+        {jobDefaultsSaved && (
+          <div className="flex items-center gap-1.5 rounded-lg border border-success/20 bg-success/10 px-3 py-2 text-xs text-success">
+            <Check className="h-3.5 w-3.5" />
+            Job defaults saved
           </div>
         )}
       </div>
