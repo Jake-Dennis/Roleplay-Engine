@@ -285,6 +285,10 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, loading, activeSession, setActiveSession, sessions } = useApp();
 
+  // Wiki uses its own 3-column full-bleed layout (file tree | content | right panel).
+  // Opt out of the shell's max-w-5xl centering for /wiki and /wiki/* routes.
+  const isFullBleed = pathname?.startsWith("/wiki") ?? false;
+
   // Sync session from URL — use context data instead of independent fetch
   useEffect(() => {
     const match = pathname?.match(/^\/session\/([a-f0-9-]+)$/i);
@@ -380,7 +384,11 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
 
         {/* Page content */}
         <main className="relative flex-1 overflow-y-auto">
-          <div className="mx-auto min-h-full max-w-5xl px-6 py-6">{children}</div>
+          {isFullBleed ? (
+            <div className="min-h-full">{children}</div>
+          ) : (
+            <div className="mx-auto min-h-full max-w-5xl px-6 py-6">{children}</div>
+          )}
 
           {/* Idle status indicator */}
           {isIdle && (
