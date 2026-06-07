@@ -19,7 +19,7 @@
 
 import { TIME, MEMORY_CONFIG } from "@/lib/config";
 import { getDb } from "@/lib/db";
-import { generateText } from "@/lib/ollama";
+import { generateText, getActiveJobModel } from "@/lib/ollama";
 
 export interface CompressionResult {
   compressedCount: number;
@@ -45,7 +45,7 @@ export async function processMemoryCompression(
 
   // Compress old messages if sessionId provided
   if (sessionId) {
-    const messageResult = await compressMessages(sessionId);
+    const messageResult = await compressMessages(sessionId, userId);
     compressedCount += messageResult.compressed;
     archivedCount += messageResult.archived;
   }
@@ -108,7 +108,7 @@ async function compressNarrativeMemories(
 
     if (age >= MEMORY_CONFIG.LONG_TERM_DAYS) {
       // Archive: create minimal summary and mark as archived
-      const summary = await summarizeContent(memory.content, "minimal");
+      const summary = await summarizeContent(memory.content, "minimal", userId);
       if (summary) {
         db.prepare(`
           UPDATE narrative_memories
@@ -119,7 +119,7 @@ async function compressNarrativeMemories(
       }
     } else if (age >= MEMORY_CONFIG.SHORT_TERM_DAYS) {
       // Long-term: heavy summarization
-      const summary = await summarizeContent(memory.content, "heavy");
+      const summary = await summarizeContent(memory.content, "heavy", userId);
       if (summary) {
         db.prepare(`
           UPDATE narrative_memories
@@ -130,7 +130,7 @@ async function compressNarrativeMemories(
       }
     } else if (age >= MEMORY_CONFIG.RECENT_DAYS) {
       // Short-term: light summarization
-      const summary = await summarizeContent(memory.content, "light");
+      const summary = await summarizeContent(memory.content, "light", userId);
       if (summary) {
         db.prepare(`
           UPDATE narrative_memories
@@ -148,7 +148,7 @@ async function compressNarrativeMemories(
 /**
  * Compress old messages in a session
  */
-async function compressMessages(sessionId: string): Promise<{ compressed: number; archived: number }> {
+async function compressMessages(sessionId: string, userId: string): Promise<{ compressed: number; archived: number }> {
   const db = getDb();
 
   // Check if compression is needed
@@ -188,7 +188,7 @@ async function compressMessages(sessionId: string): Promise<{ compressed: number
 
   for (let i = 0; i < messages.length; i += batchSize) {
     const batch = messages.slice(i, i + batchSize);
-    const summary = await summarizeBatch(batch);
+    const summary = await summarizeBatch(batch, userId);
 
     if (summary) {
       // Store summary
@@ -215,7 +215,7 @@ async function compressMessages(sessionId: string): Promise<{ compressed: number
 /**
  * Summarize content using AI
  */
-async function summarizeContent(content: string, level: "light" | "heavy" | "minimal"): Promise<string | null> {
+async function summarizeContent(content: string, level: "light" | "heavy" | "minimal", userId: string): Promise<string | null> {
   const lengthInstructions = {
     light: "Summarize in 2-3 sentences, preserving key details.",
     heavy: "Summarize in 1 sentence, capturing only the most important point.",
@@ -228,7 +228,7 @@ Content:
 ${content}`;
 
   try {
-    const response = await generateText(prompt, { temperature: 0.2 });
+    const response = await generateText(prompt, { temperature: 0.2, userId, model: getActiveJobModel(userId) });
     return response.trim() || null;
   } catch {
     return null;
@@ -239,7 +239,8 @@ ${content}`;
  * Summarize a batch of messages
  */
 async function summarizeBatch(
-  messages: { content: string; sender_id: string | null }[]
+  messages: { content: string; sender_id: string | null }[],
+  userId: string
 ): Promise<string | null> {
   const messageText = messages
     .map((m) => `${m.sender_id === null ? "Narrator" : "Player"}: ${m.content}`)
@@ -250,7 +251,7 @@ async function summarizeBatch(
 ${messageText}`;
 
   try {
-    const response = await generateText(prompt, { temperature: 0.2 });
+    const response = await generateText(prompt, { temperature: 0.2, userId, model: getActiveJobModel(userId) });
     return response.trim() || null;
   } catch {
     return null;

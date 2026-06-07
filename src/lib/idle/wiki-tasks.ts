@@ -13,7 +13,7 @@ import { listWikiPages, writeWikiPage, WikiFrontmatter } from "@/lib/wiki/file-i
 import { generateIndex } from "@/lib/wiki/index-generator";
 // @deprecated: logger.ts is deprecated — use history.ts (SQLite wiki_versions) instead
 import { appendLog } from "@/lib/wiki/logger";
-import { generateText } from "@/lib/ollama";
+import { generateText, getActiveJobModel } from "@/lib/ollama";
 import { PROMPTS } from "@/lib/prompts";
 import { TIME, CONTENT_LIMITS } from "@/lib/config";
 import { safeParseWarn } from "@/lib/safe-json";
@@ -47,7 +47,7 @@ export async function wikiCompressSummaries(userId: string, universeId?: string)
       try {
         // Summarize the page content and update frontmatter
         const prompt = PROMPTS.wikiSummarizePage(page.content.slice(0, 500));
-        const summary = await generateText(prompt, { temperature: 0.2, userId });
+        const summary = await generateText(prompt, { temperature: 0.2, userId, model: getActiveJobModel(userId) });
 
         const updatedFrontmatter: WikiFrontmatter = {
           title: page.frontmatter.title as string || path.basename(page.path, ".md"),
@@ -126,7 +126,7 @@ export async function wikiRefineRelationships(userId: string, universeId?: strin
     );
 
     try {
-      const summary = await generateText(prompt, { userId });
+      const summary = await generateText(prompt, { userId, model: getActiveJobModel(userId) });
 
       if (relPage) {
         // Update existing relationship page
@@ -191,7 +191,7 @@ export async function wikiDeepenPages(userId: string, universeId?: string): Prom
     const prompt = PROMPTS.wikiDeepenPage(title, String(page.frontmatter.type), page.content.slice(0, 800));
 
     try {
-      const deepening = await generateText(prompt, { userId });
+      const deepening = await generateText(prompt, { userId, model: getActiveJobModel(userId) });
       const newContent = page.content.trimEnd() + `\n\n## Deeper Connections\n${deepening}`;
 
       const updatedFrontmatter: WikiFrontmatter = {
@@ -241,7 +241,7 @@ export async function wikiEnrichEntities(userId: string, universeId?: string): P
     const prompt = PROMPTS.wikiEnrichEntity(title, page.content.slice(0, CONTENT_LIMITS.SUMMARY_CHUNK));
 
     try {
-      const enrichment = await generateText(prompt, { userId });
+      const enrichment = await generateText(prompt, { userId, model: getActiveJobModel(userId) });
       const newContent = page.content.trimEnd() + `\n\n## Additional Details\n${enrichment}`;
 
       const updatedFrontmatter: WikiFrontmatter = {
@@ -309,7 +309,7 @@ export async function wikiGenerateRumors(userId: string, universeId?: string): P
     const prompt = PROMPTS.wikiGenerateRumors(event.title, event.event_type, event.outcome || "unknown");
 
     try {
-      const rumors = await generateText(prompt, { userId });
+      const rumors = await generateText(prompt, { userId, model: getActiveJobModel(userId) });
       const filename = `rumor_${event.title.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-")}.md`;
       const pagePath = path.join(wikiRoot, "concepts", filename);
 
@@ -361,7 +361,7 @@ export async function wikiArchive(userId: string, universeId?: string): Promise<
     try {
       // Summarize before archiving
       const prompt = PROMPTS.wikiSummarizePageOneSentence(page.content.slice(0, CONTENT_LIMITS.PREVIEW));
-      const summary = await generateText(prompt, { temperature: 0.2, userId });
+      const summary = await generateText(prompt, { temperature: 0.2, userId, model: getActiveJobModel(userId) });
 
       const updatedFrontmatter: WikiFrontmatter = {
         title: page.frontmatter.title as string,

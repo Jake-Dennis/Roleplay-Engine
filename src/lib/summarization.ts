@@ -12,7 +12,7 @@
  */
 
 import { getDb } from "@/lib/db";
-import { generateText } from "@/lib/ollama";
+import { generateText, getActiveJobModel } from "@/lib/ollama";
 import { safeParseWarn } from "@/lib/safe-json";
 
 export interface SummarizationResult {
@@ -26,6 +26,16 @@ export interface SummarizationResult {
  */
 export async function processSummarization(sessionId: string): Promise<SummarizationResult> {
   const db = getDb();
+
+  // Resolve the userId for this session so we can route the LLM call to
+  // the user's jobs model (which may differ from their chat model).
+  const session = db.prepare(
+    "SELECT owner_id FROM sessions WHERE id = ?"
+  ).get(sessionId) as { owner_id: string } | undefined;
+  if (!session) {
+    return { summarizedCount: 0, summaryIds: [] };
+  }
+  const userId = session.owner_id;
 
   // Get messages that haven't been summarized yet, excluding the most recent 15
   const unsummarized = db.prepare(`
@@ -54,7 +64,7 @@ export async function processSummarization(sessionId: string): Promise<Summariza
     const batch = candidates.slice(i, i + batchSize);
     if (batch.length === 0) continue;
 
-    const summary = await summarizeBatch(batch);
+    const summary = await summarizeBatch(batch, userId);
     if (!summary) continue;
 
     // Store summary for the last message in the batch
@@ -82,7 +92,8 @@ export async function processSummarization(sessionId: string): Promise<Summariza
  * Summarize a batch of messages using Ollama
  */
 async function summarizeBatch(
-  messages: { id: string; content: string; sender_id: string | null; timestamp: string }[]
+  messages: { id: string; content: string; sender_id: string | null; timestamp: string }[],
+  userId: string
 ): Promise<{
   text: string;
   emotionalTone: string;
@@ -107,7 +118,12 @@ Messages:
 ${messageText}`;
 
   try {
-    const response = await generateText(prompt, { temperature: 0.3, num_predict: 1024 });
+    const response = await generateText(prompt, {
+      temperature: 0.3,
+      num_predict: 1024,
+      userId,
+      model: getActiveJobModel(userId),
+    });
 
     // Extract JSON from response
     const jsonMatch = response.match(/\{[\s\S]*\}/);

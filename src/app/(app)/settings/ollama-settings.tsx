@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Cpu, Sparkles, Check, AlertCircle, RefreshCw, Save, Link, Gauge, Zap, TrendingUp, ExternalLink, Brain, Sliders } from "lucide-react";
+import { Cpu, Sparkles, Check, AlertCircle, RefreshCw, Save, Link, Gauge, Zap, TrendingUp, ExternalLink, Brain, Sliders, Briefcase } from "lucide-react";
 
 interface OllamaModel {
   name: string;
@@ -86,6 +86,15 @@ interface OllamaSettingsProps {
    * the active model's per-model override slot in a single PUT.
    */
   onApplyAutoTune: () => Promise<void>;
+  // Jobs model (separate model for background jobs like summarization, wiki enrichment, NPC evolution)
+  useJobsModel: boolean;
+  onUseJobsModelChange: (v: boolean) => void;
+  jobModel: string;
+  setJobModel: (v: string) => void;
+  jobsModelSaving: boolean;
+  jobsModelSaved: boolean;
+  jobsModelError: string;
+  onSaveJobsModel: () => Promise<void>;
   // Per-model overrides
   hasModelOverrides: boolean;
   onResetModelOverrides: () => void;
@@ -129,6 +138,14 @@ export function OllamaSettingsSection({
   hasModelOverrides,
   onResetModelOverrides,
   onApplyAutoTune,
+  useJobsModel,
+  onUseJobsModelChange,
+  jobModel,
+  setJobModel,
+  jobsModelSaving,
+  jobsModelSaved,
+  jobsModelError,
+  onSaveJobsModel,
 }: OllamaSettingsProps) {
   const router = useRouter();
   const [benchmarkStatus, setBenchmarkStatus] = useState<BenchmarkStatus | null>(null);
@@ -516,6 +533,80 @@ export function OllamaSettingsSection({
           <div className="flex items-center gap-1.5 rounded-lg border border-success/20 bg-success/10 px-3 py-2 text-xs text-success">
             <Check className="h-3.5 w-3.5" />
             Model settings saved
+          </div>
+        )}
+      </div>
+
+      {/* Jobs Model */}
+      <div className="mt-6 space-y-4 border-t border-border-default pt-4">
+        <div className="flex items-center gap-2">
+          <Briefcase className="h-4 w-4 text-text-secondary" />
+          <h3 className="text-sm font-medium text-text-primary">Jobs Model</h3>
+        </div>
+        <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer">
+          <input
+            type="checkbox"
+            checked={useJobsModel}
+            onChange={(e) => onUseJobsModelChange(e.target.checked)}
+            className="rounded border-border-default"
+          />
+          <span>Use a different model for background jobs</span>
+        </label>
+        <p className="-mt-2 text-xxs text-text-muted">
+          When enabled, background processing (summarization, wiki enrichment, NPC evolution, etc.) uses the chosen model instead of the chat LLM. Per-model settings from Generation Defaults apply automatically to the jobs model.
+        </p>
+        {useJobsModel && (
+          <div>
+            <label className="mb-1.5 block text-xs text-text-secondary">
+              Jobs model
+              <span className="text-text-muted ml-1">(background processing)</span>
+            </label>
+            <select
+              value={jobModel}
+              onChange={(e) => setJobModel(e.target.value)}
+              className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary focus:border-accent"
+            >
+              {models.length === 0 && (
+                <option value="">No models detected</option>
+              )}
+              {models.map((m) => {
+                const isLocal = isModelLocallyAvailable(m.name);
+                return (
+                  <option key={m.name} value={m.name}>
+                    {m.name} ({m.parameterSize}, {m.family}) {isLocal ? "\u2713" : "\u26A0 not local"}
+                  </option>
+                );
+              })}
+            </select>
+            {jobModel && !isModelLocallyAvailable(jobModel) && (
+              <p className="mt-1 text-xxs text-warning">
+                This model may not be available locally. Pull it with: ollama pull {jobModel}
+              </p>
+            )}
+          </div>
+        )}
+        {jobsModelError && (
+          <div className="flex items-center gap-2 text-xs text-error">
+            <AlertCircle className="h-3 w-3" />
+            {jobsModelError}
+          </div>
+        )}
+        <button
+          onClick={onSaveJobsModel}
+          disabled={jobsModelSaving || (useJobsModel && !jobModel)}
+          className="flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-2 text-xs font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+        >
+          {jobsModelSaving ? (
+            <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+          ) : (
+            <Save className="h-3.5 w-3.5" />
+          )}
+          Save Jobs Model
+        </button>
+        {jobsModelSaved && (
+          <div className="flex items-center gap-1.5 rounded-lg border border-success/20 bg-success/10 px-3 py-2 text-xs text-success">
+            <Check className="h-3.5 w-3.5" />
+            Jobs model saved
           </div>
         )}
       </div>

@@ -69,6 +69,15 @@ export default function ServerSettingsPage() {
   const [defaultsSaved, setDefaultsSaved] = useState(false);
   const [defaultsError, setDefaultsError] = useState("");
 
+  // Jobs model (separate LLM for background jobs). When `useJobsModel`
+  // is true, jobs use `jobModel` instead of the chat LLM. Per-model
+  // settings cascade automatically because the resolver is model-keyed.
+  const [useJobsModel, setUseJobsModel] = useState(false);
+  const [jobModel, setJobModel] = useState("");
+  const [jobsModelSaving, setJobsModelSaving] = useState(false);
+  const [jobsModelSaved, setJobsModelSaved] = useState(false);
+  const [jobsModelError, setJobsModelError] = useState("");
+
   // Per-model overrides — keyed by model name. When the user picks a
   // model in the LLM dropdown, the form fields below are populated from
   // this map (or fall back to the global defaults). Saving the form
@@ -164,6 +173,11 @@ export default function ServerSettingsPage() {
       };
       setGlobalDefaults(globals);
       setUseCustomSampling(data.ollama?.useCustomSampling ?? false);
+      setUseJobsModel(data.ollama?.useJobsModel ?? false);
+      // Default the jobs-model picker to the chat model; the server
+      // returns the saved value (could be null) so we fall back
+      // gracefully on first load.
+      setJobModel(data.ollama?.jobModel || data.ollama?.model || "");
 
       // Load the per-model overrides map and apply the currently selected
       // model's overrides (if any) on top of the globals. The model-change
@@ -403,6 +417,34 @@ export default function ServerSettingsPage() {
     }
   }
 
+  async function handleSaveJobsModel() {
+    setJobsModelSaving(true); setJobsModelError("");
+    try {
+      // Send both fields together so the API persists them atomically.
+      // If the toggle is off, persist an explicit null for jobModel
+      // so a previously-saved value is cleared (the API uses the
+      // current state, not partial-merge, for these columns).
+      const payload: { ollamaUseJobsModel: boolean; ollamaJobModel: string | null } = {
+        ollamaUseJobsModel: useJobsModel,
+        ollamaJobModel: useJobsModel && jobModel ? jobModel : null,
+      };
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(`Save failed (${res.status})`);
+      const upd = await res.json();
+      setSettings(upd);
+      setJobsModelSaved(true);
+      setTimeout(() => setJobsModelSaved(false), TIMEOUTS.HEALTH_CHECK);
+    } catch (err) {
+      setJobsModelError((err as Error).message || "Connection failed");
+    } finally {
+      setJobsModelSaving(false);
+    }
+  }
+
   async function handleSaveDefaults() {
     setDefaultsSaving(true); setDefaultsError("");
     try {
@@ -479,6 +521,11 @@ export default function ServerSettingsPage() {
         handleRefreshModels={handleRefreshModels} handleModelSave={handleModelSave}
         // Generation defaults
         useCustomSampling={useCustomSampling} onUseCustomSamplingChange={handleUseCustomSamplingChange}
+        // Jobs model (separate LLM for background jobs)
+        useJobsModel={useJobsModel} onUseJobsModelChange={setUseJobsModel}
+        jobModel={jobModel} setJobModel={setJobModel}
+        jobsModelSaving={jobsModelSaving} jobsModelSaved={jobsModelSaved} jobsModelError={jobsModelError}
+        onSaveJobsModel={handleSaveJobsModel}
         temperature={temperature} setTemperature={setTemperature}
         topP={topP} setTopP={setTopP}
         topK={topK} setTopK={setTopK}

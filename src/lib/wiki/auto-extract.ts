@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { getDb } from "@/lib/db";
-import { generateText } from "@/lib/ollama";
+import { generateText, getActiveJobModel } from "@/lib/ollama";
 import { PROMPTS } from "@/lib/prompts";
 import { logger } from "@/lib/logger";
 import { writeWikiPage, readWikiPage, listWikiPages, sanitizeWikiFilename } from "./file-io";
@@ -100,7 +100,7 @@ export async function extractAndCreateWikiEntities(
     let response: string;
     try {
       const prompt = PROMPTS.extractEntitiesFromResponse(aiResponse, "", existingTitles);
-      response = await generateText(prompt, { temperature: 0.3 });
+      response = await generateText(prompt, { temperature: 0.3, userId, model: getActiveJobModel(userId) });
     } catch (err) {
       logger.error("[auto-extract] LLM call failed:", err);
       return { created: [], updated: [], skipped: [], errors: ["llm_call_failed"] };
@@ -216,7 +216,7 @@ export async function extractAndCreateWikiEntities(
     let relationshipResponse: string;
     try {
       const relPrompt = PROMPTS.extractRelationshipsFromResponse(aiResponse, existingTitles);
-      relationshipResponse = await generateText(relPrompt, { temperature: 0.3 });
+      relationshipResponse = await generateText(relPrompt, { temperature: 0.3, userId, model: getActiveJobModel(userId) });
     } catch (err) {
       logger.error("[auto-extract] Relationship LLM call failed:", err);
       errors.push("rel_llm_failed");

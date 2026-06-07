@@ -11,7 +11,7 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import { getDb } from "@/lib/db";
-import { generateText } from "@/lib/ollama";
+import { generateText, getActiveJobModel } from "@/lib/ollama";
 import { logger } from "@/lib/logger";
 import { PROMPTS } from "@/lib/prompts";
 import { getWikiRoot } from "@/lib/wiki/wiki-root";
@@ -125,6 +125,7 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
         temperature: 0.1,
         num_predict: 1024,
         userId: userId as string,
+        model: getActiveJobModel(userId as string),
       });
 
       logger.warn(`[DEBUG lore-extraction] Response length: ${response?.length || 0}, first 200: ${(response || "''").substring(0, 200)}`);

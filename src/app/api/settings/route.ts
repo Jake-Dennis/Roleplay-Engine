@@ -39,6 +39,8 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       port: config.ollama.port,
       model: config.ollama.model,
       embeddingModel: config.ollama.embeddingModel,
+      useJobsModel: config.ollama.useJobsModel,
+      jobModel: config.ollama.jobModel,
       localModels,
     },
     tts: {
@@ -83,6 +85,7 @@ export const PUT = withErrorHandler(async (request: NextRequest) => {
   // Build update payload — only pick known keys from the request body
   const allowedKeys = [
     "ollama_host", "ollama_port", "ollama_model", "ollama_embedding_model",
+    "ollama_use_jobs_model", "ollama_job_model",
     "tts_host", "tts_port", "tts_default_voice",
     "tts_default_speed", "tts_default_volume", "tts_default_format",
     "tts_auto_play", "tts_skip_long", "tts_long_threshold",
@@ -101,6 +104,8 @@ export const PUT = withErrorHandler(async (request: NextRequest) => {
     ollamaPort: "ollama_port",
     ollamaModel: "ollama_model",
     ollamaEmbeddingModel: "ollama_embedding_model",
+    ollamaUseJobsModel: "ollama_use_jobs_model",
+    ollamaJobModel: "ollama_job_model",
     ttsHost: "tts_host",
     ttsPort: "tts_port",
     ttsDefaultVoice: "tts_default_voice",
@@ -154,6 +159,8 @@ export const PUT = withErrorHandler(async (request: NextRequest) => {
         port: config.ollama.port,
         model: config.ollama.model,
         embeddingModel: config.ollama.embeddingModel,
+        useJobsModel: config.ollama.useJobsModel,
+        jobModel: config.ollama.jobModel,
       },
       tts: {
         host: config.tts.host,

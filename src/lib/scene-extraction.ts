@@ -1,4 +1,4 @@
-import { generateText } from "@/lib/ollama";
+import { generateText, getActiveJobModel } from "@/lib/ollama";
 import { getDb } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { CONTENT_LIMITS } from "@/lib/config";
@@ -295,6 +295,7 @@ Return ONLY valid JSON, no markdown, no explanation.`;
 
     const response = await generateText(prompt, {
       userId,
+      model: getActiveJobModel(userId),
       temperature: 0.3,
     });
 

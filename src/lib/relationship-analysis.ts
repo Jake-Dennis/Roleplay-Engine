@@ -12,7 +12,7 @@
  */
 
 import { getDb } from "@/lib/db";
-import { generateText } from "@/lib/ollama";
+import { generateText, getActiveJobModel } from "@/lib/ollama";
 import { syncRelationshipToFilesystem } from "@/lib/relationship-markdown";
 import { safeParseWarn } from "@/lib/safe-json";
 import type { RelationshipRow } from "@/lib/relationship-types";
@@ -70,7 +70,7 @@ export async function processRelationshipAnalysis(
   }
 
   // Analyze relationships using AI
-  const analysis = await analyzeRelationshipsAI(messages, entityNames, existingRels);
+  const analysis = await analyzeRelationshipsAI(messages, entityNames, existingRels, userId);
 
   // Update relationships in database
   const updatedRelationships: RelationshipAnalysisResult["updatedRelationships"] = [];
@@ -142,7 +142,8 @@ function extractEntityNames(
 async function analyzeRelationshipsAI(
   messages: { content: string; sender_id: string | null; emotional_tone: string | null }[],
   entityNames: string[],
-  existingRels: { source_entity: string; target_entity: string; emotional_state: string | null; relationship_stage: string | null }[]
+  existingRels: { source_entity: string; target_entity: string; emotional_state: string | null; relationship_stage: string | null }[],
+  userId: string
 ): Promise<{
   relationships: {
     source: string;
@@ -190,7 +191,7 @@ Format as JSON array:
 Only include relationships that have changed or are newly formed.`;
 
   try {
-    const response = await generateText(prompt, { temperature: 0.3 });
+    const response = await generateText(prompt, { temperature: 0.3, userId, model: getActiveJobModel(userId) });
 
     const jsonMatch = response.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return { relationships: [] };

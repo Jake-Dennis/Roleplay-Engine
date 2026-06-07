@@ -37,6 +37,13 @@ export interface ResolvedServerConfig {
      * are sent.
      */
     useCustomSampling: boolean;
+    /**
+     * Optional separate model for background jobs (summarization, wiki
+     * enrichment, NPC evolution, etc.). When `useJobsModel` is false OR
+     * `jobModel` is null, jobs fall back to the user's chat model.
+     */
+    useJobsModel: boolean;
+    jobModel: string | null;
   };
   tts: {
     host: string;
@@ -84,6 +91,8 @@ export type ServerConfigUpdate = Partial<{
   ollama_embedding_model: string;
   ollama_thinking_mode: boolean;
   ollama_use_custom_sampling: boolean;
+  ollama_use_jobs_model: boolean;
+  ollama_job_model: string | null;
   tts_host: string;
   tts_port: number;
   tts_default_voice: string;
@@ -109,6 +118,8 @@ interface ServerConfigRow {
   ollama_embedding_model: string | null;
   ollama_thinking_mode: number | null;
   ollama_use_custom_sampling: number | null;
+  ollama_use_jobs_model: number | null;
+  ollama_job_model: string | null;
   tts_host: string | null;
   tts_port: number | null;
   tts_default_voice: string | null;
@@ -147,6 +158,8 @@ export function getServerConfig(): ResolvedServerConfig {
     for (const col of [
       "ADD COLUMN ollama_thinking_mode INTEGER DEFAULT 0",
       "ADD COLUMN ollama_use_custom_sampling INTEGER DEFAULT 0",
+      "ADD COLUMN ollama_use_jobs_model INTEGER DEFAULT 0",
+      "ADD COLUMN ollama_job_model TEXT",
       "ADD COLUMN model_defaults TEXT",
     ]) {
       try { db.prepare(`ALTER TABLE server_config ${col}`).run(); } catch { /* already exists */ }
@@ -183,6 +196,8 @@ export function getServerConfig(): ResolvedServerConfig {
       embeddingModel: row?.ollama_embedding_model ?? FALLBACK_OLLAMA_EMBEDDING,
       thinkingMode: row?.ollama_thinking_mode === null ? false : Boolean(row?.ollama_thinking_mode),
       useCustomSampling: row?.ollama_use_custom_sampling === null ? false : Boolean(row?.ollama_use_custom_sampling),
+      useJobsModel: row?.ollama_use_jobs_model === null ? false : Boolean(row?.ollama_use_jobs_model),
+      jobModel: row?.ollama_job_model ?? null,
     },
     tts: {
       host: ttsHost,
@@ -211,6 +226,8 @@ export function updateServerConfig(changes: ServerConfigUpdate): void {
   for (const col of [
     "ADD COLUMN ollama_thinking_mode INTEGER DEFAULT 0",
     "ADD COLUMN ollama_use_custom_sampling INTEGER DEFAULT 0",
+    "ADD COLUMN ollama_use_jobs_model INTEGER DEFAULT 0",
+    "ADD COLUMN ollama_job_model TEXT",
     "ADD COLUMN model_defaults TEXT",
   ]) {
     try { db.prepare(`ALTER TABLE server_config ${col}`).run(); } catch { /* already exists */ }
@@ -247,6 +264,8 @@ function emptyRow(): Record<string, null> {
     ollama_embedding_model: null,
     ollama_thinking_mode: null,
     ollama_use_custom_sampling: null,
+    ollama_use_jobs_model: null,
+    ollama_job_model: null,
     tts_host: null,
     tts_port: null,
     tts_default_voice: null,

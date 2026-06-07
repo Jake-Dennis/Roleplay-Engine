@@ -6,7 +6,7 @@
  */
 
 import { getDb } from "@/lib/db";
-import { generateText } from "@/lib/ollama";
+import { generateText, getActiveJobModel } from "@/lib/ollama";
 import { safeParseWarn } from "@/lib/safe-json";
 import type { JobPayload, JobResult } from "@/lib/job-processor";
 import { updateJobProgress, markJobCompleted, queueJob } from "@/lib/job-processor";
@@ -100,6 +100,7 @@ export async function handleNpcEvolutionJob(jobId: string, payload: JobPayload):
     temperature: 0.4,
     num_predict: 1024,
     userId: userId as string,
+    model: getActiveJobModel(userId as string),
   });
 
   updateJobProgress(jobId, 80, "Updating NPC...");

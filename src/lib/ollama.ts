@@ -324,6 +324,21 @@ export function getUserModels(userId: string): UserModels {
   };
 }
 
+/**
+ * Resolve the model that background jobs should use for a given user.
+ * Falls back to the user's chat model when the `useJobsModel` toggle is
+ * off OR when no job model is configured. Per-model settings cascade
+ * automatically because `resolveModelOptions`/`resolveNumCtx` look up
+ * `model_defaults[model]` by name.
+ */
+export function getActiveJobModel(userId: string): string {
+  const cfg = getServerConfig();
+  if (cfg.ollama.useJobsModel && cfg.ollama.jobModel) {
+    return cfg.ollama.jobModel;
+  }
+  return getUserModels(userId).llmModel;
+}
+
 export async function checkOllamaConnection(ollamaUrl?: string): Promise<boolean> {
   const baseUrl = ollamaUrl || OLLAMA_CONFIG.baseUrl;
   try {

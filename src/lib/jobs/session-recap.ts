@@ -8,7 +8,7 @@
  */
 
 import { getDb } from "@/lib/db";
-import { generateText } from "@/lib/ollama";
+import { generateText, getActiveJobModel } from "@/lib/ollama";
 import type { JobPayload, JobResult } from "@/lib/job-processor";
 import { updateJobProgress, markJobCompleted } from "@/lib/job-processor";
 
@@ -58,6 +58,7 @@ export async function handleSessionRecapJob(jobId: string, payload: JobPayload):
     temperature: 0.5,
     num_predict: 4096,
     userId: userId as string,
+    model: getActiveJobModel(userId as string),
   });
 
   updateJobProgress(jobId, 90, "Saving recap...");
