@@ -2,6 +2,7 @@ import { OLLAMA_CONFIG, TIMEOUTS } from "./config";
 import { getDb } from "./db";
 import { safeParseWarn } from "@/lib/safe-json";
 import { logger } from "@/lib/logger";
+import { getServerConfig } from "./server-config";
 
 // ---------------------------------------------------------------------------
 // Output Validation
@@ -73,7 +74,9 @@ export interface OllamaGenerateRequest {
   options?: {
     temperature?: number;
     top_p?: number;
+    top_k?: number;
     num_ctx?: number;
+    num_predict?: number;
   };
 }
 
@@ -89,7 +92,6 @@ export interface OllamaEmbedResponse {
 export interface UserModels {
   llmModel: string;
   embeddingModel: string;
-  numCtx?: number;
 }
 
 export interface PersonaContext {
@@ -311,7 +313,6 @@ export function getUserModels(userId: string): UserModels {
       return {
         llmModel: String(settings.llmModel || OLLAMA_CONFIG.model),
         embeddingModel: String(settings.embeddingModel || OLLAMA_CONFIG.embeddingModel),
-        numCtx: settings.numCtx ? Number(settings.numCtx) : undefined,
       };
     }
   } catch {
@@ -341,6 +342,81 @@ export function isOllamaAvailable(): boolean {
   return ollamaAvailable;
 }
 
+/**
+ * Resolve the effective generation options for a model. The fallback
+ * chain is layered:
+ *
+ *   1. Explicit caller options (e.g. job handlers passing temperature: 0.2)
+ *      — these ALWAYS win, regardless of the useCustomSampling toggle.
+ *      This lets jobs (extraction, summarization) enforce their own
+ *      reliability-critical settings even when the user has custom
+ *      sampling turned off for chat.
+ *
+ *   2. Per-model overrides from `model_defaults[model]` — only consulted
+ *      when `useCustomSampling` is ON. This is the user's per-model tuning.
+ *
+ *   3. Hardcoded OLLAMA_CONFIG fallback — only consulted when
+ *      `useCustomSampling` is ON.
+ *
+ *   4. undefined (Ollama uses the model's own baked-in defaults) — when
+ *      useCustomSampling is OFF AND the caller didn't pass an explicit
+ *      option for this field.
+ *
+ * num_ctx is handled separately by `resolveNumCtx` (different fallback
+ * chain because context window is a VRAM concern, not a sampling one).
+ */
+function resolveModelOptions(
+  model: string,
+  explicit: Partial<OllamaGenerateRequest["options"]> | undefined
+): OllamaGenerateRequest["options"] {
+  const cfg = getServerConfig();
+  // When useCustomSampling is OFF, the per-model/user layer is skipped —
+  // we just compose: explicit (if any) over Ollama model defaults.
+  // When ON, we layer explicit > per-model > OLLAMA_CONFIG.
+  const perModel = cfg.ollama.useCustomSampling
+    ? (cfg.modelDefaults?.[model] ?? {})
+    : undefined;
+
+  return {
+    // Temperature: explicit > (per-model or OLLAMA_CONFIG) > undefined
+    temperature: explicit?.temperature
+      ?? perModel?.temperature
+      ?? OLLAMA_CONFIG.options.temperature,
+    // Top P: explicit > (per-model or OLLAMA_CONFIG) > undefined
+    top_p: explicit?.top_p
+      ?? perModel?.topP
+      ?? OLLAMA_CONFIG.options.top_p,
+    // Top K: explicit > (per-model or OLLAMA_CONFIG) > undefined
+    top_k: explicit?.top_k
+      ?? perModel?.topK
+      ?? OLLAMA_CONFIG.options.top_k,
+    // num_predict: explicit > (per-model or OLLAMA_CONFIG) > undefined
+    num_predict: explicit?.num_predict
+      ?? perModel?.numPredict
+      ?? OLLAMA_CONFIG.options.num_predict,
+  };
+}
+
+/**
+ * Resolve the effective num_ctx for a model. Priority:
+ *   1. Explicit option from caller
+ *   2. Per-model override (server_config.model_defaults[model].numCtx)
+ *   3. undefined (let Ollama use the model's native context window)
+ *
+ * num_ctx is INDEPENDENT of the `useCustomSampling` toggle — context
+ * window is a VRAM concern, sampling parameters are a behavior concern.
+ * Users can pin a specific num_ctx while still leaving sampling to the
+ * model defaults, or vice versa.
+ */
+function resolveNumCtx(
+  model: string,
+  explicit: number | undefined
+): number | undefined {
+  if (explicit !== undefined) return explicit;
+  const cfg = getServerConfig();
+  return cfg.modelDefaults?.[model]?.numCtx;
+}
+
 export async function generateText(
   prompt: string,
   options?: Partial<OllamaGenerateRequest["options"]> & { model?: string; userId?: string; think?: boolean; ollamaHost?: string },
@@ -349,13 +425,11 @@ export async function generateText(
   const model = options?.model || (options?.userId ? getUserModels(options.userId).llmModel : OLLAMA_CONFIG.model);
   const baseUrl = options?.ollamaHost || (options?.userId ? getUserOllamaUrl(options.userId) : OLLAMA_CONFIG.baseUrl);
 
-  // Priority: explicit num_ctx > user setting > no override (Ollama model default)
-  let numCtx: number | undefined;
-  if (options?.num_ctx !== undefined) {
-    numCtx = options.num_ctx;
-  } else if (options?.userId) {
-    numCtx = getUserModels(options.userId).numCtx;
-  }
+  // Resolve num_ctx through the per-model chain (independent of useCustomSampling).
+  const numCtx = resolveNumCtx(model, options?.num_ctx);
+  // Resolve sampling options through the explicit > per-model > OLLAMA_CONFIG
+  // chain — returns {} when useCustomSampling is OFF.
+  const resolvedOptions = resolveModelOptions(model, options);
 
   const requestBody: OllamaGenerateRequest = {
     model,
@@ -363,9 +437,7 @@ export async function generateText(
     stream: false,
     ...(options?.think !== undefined ? { think: options.think } : {}),
     options: {
-      ...OLLAMA_CONFIG.options,
-      temperature: options?.temperature ?? OLLAMA_CONFIG.options.temperature,
-      top_p: options?.top_p ?? OLLAMA_CONFIG.options.top_p,
+      ...resolvedOptions,
       ...(numCtx !== undefined ? { num_ctx: numCtx } : {}),
     },
   };
@@ -428,13 +500,11 @@ export async function generateTextStream(
   const model = options?.model || (options?.userId ? getUserModels(options.userId).llmModel : OLLAMA_CONFIG.model);
   const baseUrl = options?.ollamaHost || (options?.userId ? getUserOllamaUrl(options.userId) : OLLAMA_CONFIG.baseUrl);
 
-  // Priority: explicit num_ctx > user setting > no override (Ollama model default)
-  let numCtx: number | undefined;
-  if (options?.num_ctx !== undefined) {
-    numCtx = options.num_ctx;
-  } else if (options?.userId) {
-    numCtx = getUserModels(options.userId).numCtx;
-  }
+  // Resolve num_ctx through the per-model chain (independent of useCustomSampling).
+  const numCtx = resolveNumCtx(model, options?.num_ctx);
+  // Resolve sampling options through the explicit > per-model > OLLAMA_CONFIG
+  // chain — returns {} when useCustomSampling is OFF.
+  const resolvedOptions = resolveModelOptions(model, options);
 
   const requestBody: OllamaGenerateRequest = {
     model,
@@ -442,9 +512,7 @@ export async function generateTextStream(
     stream: true,
     ...(options?.think !== undefined ? { think: options.think } : {}),
     options: {
-      ...OLLAMA_CONFIG.options,
-      temperature: options?.temperature ?? OLLAMA_CONFIG.options.temperature,
-      top_p: options?.top_p ?? OLLAMA_CONFIG.options.top_p,
+      ...resolvedOptions,
       ...(numCtx !== undefined ? { num_ctx: numCtx } : {}),
     },
   };

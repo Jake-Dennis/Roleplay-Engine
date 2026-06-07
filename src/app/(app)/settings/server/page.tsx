@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Gauge } from "lucide-react";
 import Link from "next/link";
 import { OllamaSettingsSection } from "../ollama-settings";
@@ -10,12 +10,18 @@ import { NarratorVoiceSection } from "@/components/settings/narrator-voice-secti
 import { TIMEOUTS } from "@/lib/config";
 
 interface ServerSettings {
-  ollama: { host: string; port?: number; model: string; embeddingModel: string; thinkingMode: boolean; numCtx?: number | null; localModels?: string[] };
+  ollama: { host: string; port?: number; model: string; embeddingModel: string; thinkingMode: boolean; localModels?: string[] };
   tts: { host: string; port?: number; defaultVoice: string };
   defaults?: {
     ttsSpeed: number; ttsVolume: number; ttsFormat: string;
     ttsAutoPlay: boolean; ttsSkipLong: boolean; ttsLongThreshold: number;
   };
+  /**
+   * Per-model overrides for generation params. Keyed by model name.
+   * When a model has overrides, those values are used at generation
+   * time. Empty when no model has been customized.
+   */
+  modelDefaults?: Record<string, ModelSettings>;
 }
 
 interface OllamaModel { name: string; parameterSize: string; family: string }
@@ -23,6 +29,14 @@ interface TTSCacheStats {
   totalEntries: number; totalDurationMs: number; totalUses: number;
   oldestEntry: string | null; lastUsed: string | null;
   diskSize: number; diskSizeFormatted: string; fileCount: number;
+}
+
+interface ModelSettings {
+  temperature?: number;
+  topP?: number;
+  topK?: number;
+  numPredict?: number;
+  numCtx?: number;
 }
 
 export default function ServerSettingsPage() {
@@ -46,7 +60,7 @@ export default function ServerSettingsPage() {
   const [thinkingMode, setThinkingMode] = useState(false);
 
   // Generation defaults
-  const [useCustomSampling, setUseCustomSampling] = useState(true);
+  const [useCustomSampling, setUseCustomSampling] = useState(false);
   const [temperature, setTemperature] = useState(1.0);
   const [topP, setTopP] = useState(0.95);
   const [topK, setTopK] = useState(64);
@@ -55,12 +69,36 @@ export default function ServerSettingsPage() {
   const [defaultsSaved, setDefaultsSaved] = useState(false);
   const [defaultsError, setDefaultsError] = useState("");
 
-  // Job defaults
-  const [jobNumCtx, setJobNumCtx] = useState(32768);
-  const [jobNumPredict, setJobNumPredict] = useState(2048);
-  const [jobDefaultsSaving, setJobDefaultsSaving] = useState(false);
-  const [jobDefaultsSaved, setJobDefaultsSaved] = useState(false);
-  const [jobDefaultsError, setJobDefaultsError] = useState("");
+  // Per-model overrides — keyed by model name. When the user picks a
+  // model in the LLM dropdown, the form fields below are populated from
+  // this map (or fall back to the global defaults). Saving the form
+  // writes back to this map for the currently selected model.
+  const [modelDefaults, setModelDefaults] = useState<Record<string, ModelSettings>>({});
+  /**
+   * Snapshot of the global server-side defaults, used to fill the form
+   * when the currently selected model has no overrides. Refreshed on
+   * initial load and after every save so the "Reset to global" button
+   * always resets to the latest server values.
+   */
+  const [globalDefaults, setGlobalDefaults] = useState<{
+    temperature: number; topP: number; topK: number; numPredict: number;
+    numCtx: number;
+  }>({ temperature: 1.0, topP: 0.95, topK: 64, numPredict: 4096, numCtx: 16384 });
+  /**
+   * Refs the "load on model change" effect can read without retriggering
+   * the effect itself. We need the current global defaults and the
+   * current modelDefaults map at the moment the user changes the model.
+   */
+  const globalDefaultsRef = useRef(globalDefaults);
+  const modelDefaultsRef = useRef(modelDefaults);
+  useEffect(() => { globalDefaultsRef.current = globalDefaults; }, [globalDefaults]);
+  useEffect(() => { modelDefaultsRef.current = modelDefaults; }, [modelDefaults]);
+  /**
+   * Tracks the model name that the form was last populated for, so the
+   * model-change effect only re-applies when the model *actually* changes
+   * (not on every render or save). Set to "" initially.
+   */
+  const lastAppliedModelRef = useRef<string>("");
 
   // Narrator voice
   const [voices, setVoices] = useState<{ id: string; name: string; gender: string; language: string }[]>([]);
@@ -110,14 +148,43 @@ export default function ServerSettingsPage() {
       setSelectedLLM(data.ollama?.model ?? "");
       setSelectedEmbedding(data.ollama?.embeddingModel ?? "");
       setThinkingMode(data.ollama?.thinkingMode ?? false);
-      setSelectedNumCtx(data.ollama?.numCtx ?? 16384);
-      setUseCustomSampling(data.ollama?.useCustomSampling ?? true);
-      setTemperature(data.ollama?.temperature ?? 1.0);
-      setTopP(data.ollama?.topP ?? 0.95);
-      setTopK(data.ollama?.topK ?? 64);
-      setNumPredict(data.ollama?.numPredict ?? 4096);
-      setJobNumCtx(data.ollama?.jobNumCtx ?? 32768);
-      setJobNumPredict(data.ollama?.jobNumPredict ?? 2048);
+
+      // Capture the global defaults BEFORE applying per-model overrides,
+      // so the "Reset to global" button always restores the true global
+      // values (not the per-model values of the previously-selected model).
+      // The fallback values here are the OLLAMA_CONFIG hardcoded defaults
+      // (mirrored for the UI) — server config no longer stores global
+      // sampling parameters.
+      const globals = {
+        temperature: 1.0,
+        topP: 0.95,
+        topK: 64,
+        numPredict: 4096,
+        numCtx: 16384,
+      };
+      setGlobalDefaults(globals);
+      setUseCustomSampling(data.ollama?.useCustomSampling ?? false);
+
+      // Load the per-model overrides map and apply the currently selected
+      // model's overrides (if any) on top of the globals. The model-change
+      // effect below will then keep the form in sync as the user switches
+      // models. If the saved `selectedNumCtx` differs from the model's
+      // override, prefer the model's override (the saved value is the
+      // legacy global numCtx, which the model may have since overridden).
+      const modelMap: Record<string, ModelSettings> = data.modelDefaults ?? {};
+      setModelDefaults(modelMap);
+      const initialModel = data.ollama?.model ?? "";
+      const modelOverride = initialModel ? modelMap[initialModel] : undefined;
+      setSelectedNumCtx(modelOverride?.numCtx ?? globals.numCtx);
+      setTemperature(modelOverride?.temperature ?? globals.temperature);
+      setTopP(modelOverride?.topP ?? globals.topP);
+      setTopK(modelOverride?.topK ?? globals.topK);
+      setNumPredict(modelOverride?.numPredict ?? globals.numPredict);
+      // Mark the initial model as "already applied" so the effect below
+      // doesn't re-apply on the very first render and clobber any values
+      // the user has already started editing in their head. (We also
+      // gate the effect on this ref to avoid an infinite loop.)
+      lastAppliedModelRef.current = initialModel;
       const oh = data.ollama?.host ?? ""; const op = data.ollama?.port ?? "";
       setOllamaUrl(op ? `${oh}:${op}` : oh);
       const th = data.tts?.host ?? ""; const tp = data.tts?.port ?? "";
@@ -137,6 +204,26 @@ export default function ServerSettingsPage() {
     fetch(`/api/models/ollama${ollamaUrl ? `?url=${encodeURIComponent(ollamaUrl)}` : ""}`).then(r => { if (!r.ok && r.status === 401) setAuthError(true); return r.json(); }).then(d => { setOllamaConnected(d.connected); setModels(d.models || []); setModelLoading(false); }).catch(() => setModelLoading(false));
     fetch("/api/ollama/models").then(r => { if (!r.ok && r.status === 401) setAuthError(true); return r.json(); }).then(d => setLocalModels(d.models || [])).catch(() => {});
   }, []);
+
+  /**
+   * Apply per-model overrides when the user changes the LLM dropdown.
+   * Reads the latest modelDefaults + globalDefaults from refs to avoid
+   * retriggering on every state change. The lastAppliedModelRef guard
+   * ensures we only re-populate the form when the model actually
+   * changes (not on initial mount, not on saves).
+   */
+  useEffect(() => {
+    if (!selectedLLM) return;
+    if (lastAppliedModelRef.current === selectedLLM) return;
+    lastAppliedModelRef.current = selectedLLM;
+    const override = modelDefaultsRef.current[selectedLLM];
+    const g = globalDefaultsRef.current;
+    setSelectedNumCtx(override?.numCtx ?? g.numCtx);
+    setTemperature(override?.temperature ?? g.temperature);
+    setTopP(override?.topP ?? g.topP);
+    setTopK(override?.topK ?? g.topK);
+    setNumPredict(override?.numPredict ?? g.numPredict);
+  }, [selectedLLM]);
 
   async function handleNarratorVoice() {
     setVoiceSaving(true); setVoiceError("");
@@ -191,20 +278,99 @@ export default function ServerSettingsPage() {
     finally { setConnLoading(false); }
   }
 
+  /**
+   * Unified save for the per-model override slot. ALL tunable generation
+   * parameters (temperature / top_p / top_k / num_predict / num_ctx) live
+   * in `model_defaults[selectedLLM]` — there is no global sampling config
+   * anywhere in the schema. Pass a partial ModelSettings to update only
+   * the fields you care about; the rest of the model's overrides are
+   * preserved.
+   *
+   * Used by:
+   *   - "Save Model" button (numCtx only)
+   *   - "Save Generation Defaults" button (temperature/top_p/top_k/num_predict)
+   *   - "Apply" / "Apply both" button next to Context Window (numCtx+num_predict)
+   */
+  async function handleSaveModelSettings(partial: Partial<ModelSettings>) {
+    if (!selectedLLM) {
+      setModelError("No model selected");
+      return;
+    }
+    setModelSaving(true); setModelError("");
+    try {
+      const updatedMap: Record<string, ModelSettings> = {
+        ...modelDefaults,
+        [selectedLLM]: { ...(modelDefaults[selectedLLM] ?? {}), ...partial },
+      };
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ modelDefaults: updatedMap }),
+      });
+      if (res.ok) {
+        setModelSaved(true); setTimeout(() => setModelSaved(false), TIMEOUTS.HEALTH_CHECK);
+        const upd = await fetch("/api/settings").then(r => r.json());
+        setSettings(upd);
+        if (upd.modelDefaults) setModelDefaults(upd.modelDefaults);
+      } else {
+        const eb = await res.json();
+        setModelError(eb.error || "Failed");
+      }
+    } catch {
+      setModelError("Connection failed");
+    } finally {
+      setModelSaving(false);
+    }
+  }
+
+  /**
+   * "Save Model" button handler. Saves the model-selection and host
+   * fields (which are global, not per-model) and writes numCtx into
+   * the per-model override slot.
+   */
   async function handleModelSave() {
     setModelSaving(true); setModelError("");
     try {
       const changes: Record<string, unknown> = {
         ollamaModel: selectedLLM,
         ollamaEmbeddingModel: selectedEmbedding,
-        ollamaNumCtx: selectedNumCtx,
       };
       if (ollamaUrl) { const [h = "", p = ""] = ollamaUrl.split(":"); changes.ollamaHost = h; if (p) changes.ollamaPort = parseInt(p, 10); }
+
+      // Persist numCtx as a per-model override for the currently selected
+      // model. We merge into the existing map so we don't clobber other
+      // models' overrides.
+      if (selectedLLM) {
+        const updatedMap: Record<string, ModelSettings> = {
+          ...modelDefaults,
+          [selectedLLM]: { ...(modelDefaults[selectedLLM] ?? {}), numCtx: selectedNumCtx },
+        };
+        changes.modelDefaults = updatedMap;
+      }
+
       const res = await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(changes) });
-      if (res.ok) { setModelSaved(true); setTimeout(() => setModelSaved(false), TIMEOUTS.HEALTH_CHECK); const upd = await fetch("/api/settings").then(r => r.json()); setSettings(upd); }
+      if (res.ok) {
+        setModelSaved(true); setTimeout(() => setModelSaved(false), TIMEOUTS.HEALTH_CHECK);
+        const upd = await fetch("/api/settings").then(r => r.json());
+        setSettings(upd);
+        // Sync the per-model map with the canonical server state.
+        if (upd.modelDefaults) setModelDefaults(upd.modelDefaults);
+      }
       else { const eb = await res.json(); setModelError(eb.error || "Failed"); }
     } catch { setModelError("Connection failed"); }
     finally { setModelSaving(false); }
+  }
+
+  /**
+   * Combined save for the "Apply" button next to Context Window. Pushes
+   * BOTH the recommended numCtx AND the recommended num_predict into
+   * the active model's per-model override slot in a single PUT.
+   *
+   * Called after the component has already set the form state for both
+   * values, so we read them straight from React state here.
+   */
+  async function handleApplyAutoTune() {
+    await handleSaveModelSettings({ numCtx: selectedNumCtx, numPredict });
   }
 
   async function handleThinkingModeChange(v: boolean) {
@@ -240,31 +406,49 @@ export default function ServerSettingsPage() {
   async function handleSaveDefaults() {
     setDefaultsSaving(true); setDefaultsError("");
     try {
-      const changes: Record<string, unknown> = {
-        ollamaTemperature: temperature,
-        ollamaTopP: topP,
-        ollamaTopK: topK,
-        ollamaNumPredict: numPredict,
-      };
-      const res = await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(changes) });
-      if (res.ok) { setDefaultsSaved(true); setTimeout(() => setDefaultsSaved(false), TIMEOUTS.HEALTH_CHECK); const upd = await fetch("/api/settings").then(r => r.json()); setSettings(upd); }
-      else { const eb = await res.json(); setDefaultsError(eb.error || "Failed"); }
-    } catch { setDefaultsError("Connection failed"); }
-    finally { setDefaultsSaving(false); }
+      // Generation defaults (temperature/top_p/top_k/num_predict) are
+      // per-model — write them to the selected model's override slot
+      // via the unified save handler.
+      await handleSaveModelSettings({ temperature, topP, topK, numPredict });
+      setDefaultsSaved(true); setTimeout(() => setDefaultsSaved(false), TIMEOUTS.HEALTH_CHECK);
+    } catch {
+      setDefaultsError("Connection failed");
+    } finally {
+      setDefaultsSaving(false);
+    }
   }
 
-  async function handleSaveJobDefaults() {
-    setJobDefaultsSaving(true); setJobDefaultsError("");
+  /**
+   * Reset the currently selected model's overrides back to the global
+   * defaults. Removes the entry from the per-model map entirely so
+   * future generations use the hardcoded OLLAMA_CONFIG fallbacks for
+   * this model. Only available when the model actually has overrides.
+   */
+  async function handleResetModelOverrides() {
+    if (!selectedLLM) return;
+    if (!modelDefaults[selectedLLM]) return;
+    setModelError(""); setDefaultsError("");
     try {
-      const changes: Record<string, unknown> = {
-        ollamaJobNumCtx: jobNumCtx,
-        ollamaJobNumPredict: jobNumPredict,
-      };
-      const res = await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(changes) });
-      if (res.ok) { setJobDefaultsSaved(true); setTimeout(() => setJobDefaultsSaved(false), TIMEOUTS.HEALTH_CHECK); const upd = await fetch("/api/settings").then(r => r.json()); setSettings(upd); }
-      else { const eb = await res.json(); setJobDefaultsError(eb.error || "Failed"); }
-    } catch { setJobDefaultsError("Connection failed"); }
-    finally { setJobDefaultsSaving(false); }
+      const updatedMap: Record<string, ModelSettings> = { ...modelDefaults };
+      delete updatedMap[selectedLLM];
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ modelDefaults: updatedMap }),
+      });
+      if (res.ok) {
+        const upd = await fetch("/api/settings").then(r => r.json());
+        setSettings(upd);
+        if (upd.modelDefaults) setModelDefaults(upd.modelDefaults);
+        // Populate the form with the current global defaults.
+        const g = globalDefaultsRef.current;
+        setSelectedNumCtx(g.numCtx);
+        setTemperature(g.temperature);
+        setTopP(g.topP);
+        setTopK(g.topK);
+        setNumPredict(g.numPredict);
+      }
+    } catch { setModelError("Connection failed"); }
   }
 
   if (loading) return <div />;
@@ -301,11 +485,10 @@ export default function ServerSettingsPage() {
         numPredict={numPredict} setNumPredict={setNumPredict}
         defaultsSaving={defaultsSaving} defaultsSaved={defaultsSaved} defaultsError={defaultsError}
         onSaveDefaults={handleSaveDefaults}
-        // Job defaults
-        jobNumCtx={jobNumCtx} setJobNumCtx={setJobNumCtx}
-        jobNumPredict={jobNumPredict} setJobNumPredict={setJobNumPredict}
-        jobDefaultsSaving={jobDefaultsSaving} jobDefaultsSaved={jobDefaultsSaved} jobDefaultsError={jobDefaultsError}
-        onSaveJobDefaults={handleSaveJobDefaults}
+        // Per-model overrides
+        hasModelOverrides={Boolean(selectedLLM && modelDefaults[selectedLLM])}
+        onResetModelOverrides={handleResetModelOverrides}
+        onApplyAutoTune={handleApplyAutoTune}
       />
 
       {/* Link to the new benchmark page */}

@@ -20,7 +20,13 @@ export const OLLAMA_CONFIG = {
   options: {
     temperature: 0.8,
     top_p: 0.9,
-    // num_ctx is per-user via settings page — no hardcoded default here
+    top_k: 64,
+    // -1 = no limit. Per-model overrides via model_defaults[model].num_predict
+    // take precedence when set; this is just the last-resort fallback.
+    num_predict: -1,
+    // num_ctx is per-model via model_defaults[model].numCtx — no global
+    // hardcoded default here (let Ollama use the model's native window
+    // when no per-model override is set).
   },
 };
 

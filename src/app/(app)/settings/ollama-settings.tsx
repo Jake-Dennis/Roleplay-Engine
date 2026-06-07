@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Cpu, Sparkles, Check, AlertCircle, RefreshCw, Save, Link, Gauge, Zap, TrendingUp, ExternalLink, Brain, Sliders, Briefcase } from "lucide-react";
+import { Cpu, Sparkles, Check, AlertCircle, RefreshCw, Save, Link, Gauge, Zap, TrendingUp, ExternalLink, Brain, Sliders } from "lucide-react";
 
 interface OllamaModel {
   name: string;
@@ -77,18 +77,18 @@ interface OllamaSettingsProps {
   defaultsSaved: boolean;
   defaultsError: string;
   onSaveDefaults: () => Promise<void>;
-  // Job defaults
-  jobNumCtx: number;
-  setJobNumCtx: (v: number) => void;
-  jobNumPredict: number;
-  setJobNumPredict: (v: number) => void;
-  jobDefaultsSaving: boolean;
-  jobDefaultsSaved: boolean;
-  jobDefaultsError: string;
-  onSaveJobDefaults: () => Promise<void>;
   // Handlers
   handleRefreshModels: () => Promise<void>;
   handleModelSave: () => Promise<void>;
+  /**
+   * Combined save for the "Apply" button next to Context Window. Pushes
+   * BOTH the recommended numCtx AND the recommended num_predict into
+   * the active model's per-model override slot in a single PUT.
+   */
+  onApplyAutoTune: () => Promise<void>;
+  // Per-model overrides
+  hasModelOverrides: boolean;
+  onResetModelOverrides: () => void;
 }
 
 export function OllamaSettingsSection({
@@ -124,16 +124,11 @@ export function OllamaSettingsSection({
   defaultsSaved,
   defaultsError,
   onSaveDefaults,
-  jobNumCtx,
-  setJobNumCtx,
-  jobNumPredict,
-  setJobNumPredict,
-  jobDefaultsSaving,
-  jobDefaultsSaved,
-  jobDefaultsError,
-  onSaveJobDefaults,
   handleRefreshModels,
   handleModelSave,
+  hasModelOverrides,
+  onResetModelOverrides,
+  onApplyAutoTune,
 }: OllamaSettingsProps) {
   const router = useRouter();
   const [benchmarkStatus, setBenchmarkStatus] = useState<BenchmarkStatus | null>(null);
@@ -196,8 +191,15 @@ export function OllamaSettingsSection({
     }
   }, [selectedLLM]);
 
-  // Auto-tune check
-  const showAutoTune = benchmarkStatus && benchmarkStatus.recommendedNumCtx !== selectedNumCtx;
+  // Auto-tune check: show the "Apply" hint whenever the current Context
+  // Window OR Max Predict Tokens differs from the benchmark recommendation.
+  // Clicking Apply will push BOTH recommended values to the active model's
+  // per-model override slot in a single save.
+  const numPredictDiffers =
+    benchmarkStatus && benchmarkStatus.recommendedNumPredict !== numPredict;
+  const numCtxDiffers =
+    benchmarkStatus && benchmarkStatus.recommendedNumCtx !== selectedNumCtx;
+  const showAutoTune = benchmarkStatus && (numCtxDiffers || numPredictDiffers);
 
   async function handleRunBenchmark() {
     if (benchmarkRunning) return;
@@ -221,8 +223,13 @@ export function OllamaSettingsSection({
 
   async function handleApplyAutoTune() {
     if (!benchmarkStatus) return;
+    // Push BOTH recommended values into the active model's per-model
+    // override slot in a single save. The parent passes a combined
+    // handler that writes numCtx + numPredict to modelDefaults[selectedLLM]
+    // in one PUT request.
     setSelectedNumCtx(benchmarkStatus.recommendedNumCtx);
-    await handleModelSave();
+    setNumPredict(benchmarkStatus.recommendedNumPredict);
+    await onApplyAutoTune();
   }
 
   function formatTimestamp(ts: string): string {
@@ -355,6 +362,15 @@ export function OllamaSettingsSection({
                     </button>
                   </div>
                 )}
+                {hasModelOverrides && (
+                  <span
+                    className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xxs font-medium border border-accent/30 text-accent"
+                    title="This model has per-model overrides for generation params. Click 'Reset to global' below to clear them."
+                  >
+                    <Sliders className="h-2.5 w-2.5" />
+                    <span>Customized</span>
+                  </span>
+                )}
               </div>
               <select
                 value={selectedLLM}
@@ -441,39 +457,45 @@ export function OllamaSettingsSection({
               <div className="flex items-center gap-2">
                 <span className="flex items-center gap-1 rounded-lg bg-accent/10 border border-accent/20 px-2 py-1 text-xxs text-accent">
                   <Zap className="h-3 w-3" />
-                  Auto-tune: {formatContextWindow(selectedNumCtx)} → {formatContextWindow(benchmarkStatus!.recommendedNumCtx)}
+                  Benchmark recommends
+                  {numCtxDiffers && (
+                    <>
+                      {" "}ctx {formatContextWindow(selectedNumCtx)} → {formatContextWindow(benchmarkStatus!.recommendedNumCtx)}
+                    </>
+                  )}
+                  {numCtxDiffers && numPredictDiffers && " · "}
+                  {numPredictDiffers && (
+                    <>
+                      predict {numPredict} → {benchmarkStatus!.recommendedNumPredict}
+                    </>
+                  )}
                 </span>
                 <button
                   onClick={handleApplyAutoTune}
                   className="flex items-center gap-1 rounded-lg bg-accent px-2.5 py-1 text-xxs font-medium text-white hover:bg-accent-hover"
+                  title={
+                    numCtxDiffers && numPredictDiffers
+                      ? "Apply both recommended num_ctx and num_predict to this model"
+                      : numCtxDiffers
+                        ? "Apply recommended num_ctx to this model"
+                        : "Apply recommended num_predict to this model"
+                  }
                 >
                   <Check className="h-3 w-3" />
-                  Apply
+                  {numCtxDiffers && numPredictDiffers ? "Apply both" : "Apply"}
                 </button>
               </div>
             )}
           </div>
-          <div className="flex items-center gap-3">
-            <input
-              type="range"
-              min="4096"
-              max="1000000"
-              step="4096"
-              value={selectedNumCtx}
-              onChange={(e) => setSelectedNumCtx(Number(e.target.value))}
-              className="flex-1 accent-accent"
-            />
-            <span className="min-w-[6rem] text-right text-xs font-medium text-text-primary tabular-nums">
-              {formatContextWindow(selectedNumCtx)}
-            </span>
-          </div>
-          <div className="flex justify-between text-xxs text-text-muted mt-1">
-            <span>4K</span>
-            <span>128K</span>
-            <span>256K</span>
-            <span>512K</span>
-            <span>1M</span>
-          </div>
+          <input
+            type="number"
+            min="4096"
+            max="1000000"
+            step="4096"
+            value={selectedNumCtx}
+            onChange={(e) => setSelectedNumCtx(parseInt(e.target.value, 10) || 4096)}
+            className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-xs text-text-primary focus:border-accent"
+          />
         </div>
 
         {/* Save button */}
@@ -500,9 +522,23 @@ export function OllamaSettingsSection({
 
       {/* Generation Defaults */}
       <div className="mt-6 space-y-4 border-t border-border-default pt-4">
-        <div className="flex items-center gap-2">
-          <Sliders className="h-4 w-4 text-text-secondary" />
-          <h3 className="text-sm font-medium text-text-primary">Generation Defaults</h3>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sliders className="h-4 w-4 text-text-secondary" />
+            <h3 className="text-sm font-medium text-text-primary">Generation Defaults</h3>
+            {selectedLLM && (
+              <span className="text-xxs text-text-muted">for <span className="text-text-secondary font-mono">{selectedLLM}</span></span>
+            )}
+          </div>
+          {hasModelOverrides && (
+            <button
+              onClick={onResetModelOverrides}
+              className="flex items-center gap-1 rounded-lg border border-border-default bg-bg-raised px-2 py-1 text-xxs text-text-secondary hover:text-error hover:border-error transition-colors"
+              title="Remove all per-model overrides for the selected model — generation will use the global defaults"
+            >
+              Reset to global
+            </button>
+          )}
         </div>
 
         <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer">
@@ -517,31 +553,27 @@ export function OllamaSettingsSection({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1 block text-xxs text-text-muted">
-              Temperature: {temperature.toFixed(1)}
-            </label>
+            <label className="mb-1 block text-xxs text-text-muted">Temperature</label>
             <input
-              type="range"
+              type="number"
               min="0"
               max="2"
               step="0.1"
               value={temperature}
-              onChange={(e) => setTemperature(parseFloat(e.target.value))}
-              className="w-full accent-accent"
+              onChange={(e) => setTemperature(parseFloat(e.target.value) || 0)}
+              className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-xs text-text-primary focus:border-accent"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xxs text-text-muted">
-              Top P: {topP.toFixed(2)}
-            </label>
+            <label className="mb-1 block text-xxs text-text-muted">Top P</label>
             <input
-              type="range"
+              type="number"
               min="0"
               max="1"
               step="0.05"
               value={topP}
-              onChange={(e) => setTopP(parseFloat(e.target.value))}
-              className="w-full accent-accent"
+              onChange={(e) => setTopP(parseFloat(e.target.value) || 0)}
+              className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-xs text-text-primary focus:border-accent"
             />
           </div>
           <div>
@@ -595,81 +627,6 @@ export function OllamaSettingsSection({
           <div className="flex items-center gap-1.5 rounded-lg border border-success/20 bg-success/10 px-3 py-2 text-xs text-success">
             <Check className="h-3.5 w-3.5" />
             Defaults saved
-          </div>
-        )}
-      </div>
-
-      {/* Job Defaults */}
-      <div className="mt-6 space-y-4 border-t border-border-default pt-4">
-        <div className="flex items-center gap-2">
-          <Briefcase className="h-4 w-4 text-text-secondary" />
-          <h3 className="text-sm font-medium text-text-primary">Background Job Defaults</h3>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xxs text-text-muted">
-                Context Window: {formatContextWindow(jobNumCtx)}
-              </label>
-              {benchmarkStatus && benchmarkStatus.recommendedNumCtx !== jobNumCtx && (
-                <span className="text-xxs text-accent/80" title={`Benchmark recommends ${formatContextWindow(benchmarkStatus.recommendedNumCtx)} context window`}>
-                  Benchmark recommends: {formatContextWindow(benchmarkStatus.recommendedNumCtx)}
-                </span>
-              )}
-            </div>
-            <input
-              type="range"
-              min="4096"
-              max="1000000"
-              step="4096"
-              value={jobNumCtx}
-              onChange={(e) => setJobNumCtx(Number(e.target.value))}
-              className="w-full accent-accent"
-            />
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xxs text-text-muted">Max Predict Tokens</label>
-              {benchmarkStatus && benchmarkStatus.recommendedNumPredict > 0 && benchmarkStatus.recommendedNumPredict !== jobNumPredict && (
-                <span className="text-xxs text-accent/80" title={`Benchmark recommends ${benchmarkStatus.recommendedNumPredict.toLocaleString()} predict tokens`}>
-                  Benchmark recommends: {benchmarkStatus.recommendedNumPredict.toLocaleString()}
-                </span>
-              )}
-            </div>
-            <input
-              type="number"
-              value={jobNumPredict}
-              onChange={(e) => setJobNumPredict(parseInt(e.target.value, 10) || 0)}
-              className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-xs text-text-primary focus:border-accent"
-            />
-          </div>
-        </div>
-
-        {jobDefaultsError && (
-          <div className="flex items-center gap-2 text-xs text-error">
-            <AlertCircle className="h-3 w-3" />
-            {jobDefaultsError}
-          </div>
-        )}
-
-        <button
-          onClick={onSaveJobDefaults}
-          disabled={jobDefaultsSaving}
-          className="flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-2 text-xs font-medium text-white hover:bg-accent-hover disabled:opacity-50"
-        >
-          {jobDefaultsSaving ? (
-            <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-          ) : (
-            <Save className="h-3.5 w-3.5" />
-          )}
-          Save Job Defaults
-        </button>
-
-        {jobDefaultsSaved && (
-          <div className="flex items-center gap-1.5 rounded-lg border border-success/20 bg-success/10 px-3 py-2 text-xs text-success">
-            <Check className="h-3.5 w-3.5" />
-            Job defaults saved
           </div>
         )}
       </div>

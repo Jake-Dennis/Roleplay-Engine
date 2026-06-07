@@ -54,6 +54,12 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       ttsSkipLong: config.tts.skipLong,
       ttsLongThreshold: config.tts.longThreshold,
     },
+    /**
+     * Per-model overrides for generation params. Keyed by model name.
+     * When a model has overrides here, those values take precedence
+     * over the global `ollama.*` defaults during generation.
+     */
+    modelDefaults: config.modelDefaults,
   });
 });
 
@@ -104,11 +110,31 @@ export const PUT = withErrorHandler(async (request: NextRequest) => {
     ttsAutoPlay: "tts_auto_play",
     ttsSkipLong: "tts_skip_long",
     ttsLongThreshold: "tts_long_threshold",
+    modelDefaults: "model_defaults",
   };
   for (const [camel, snake] of Object.entries(camelToSnake)) {
     if (body[camel] !== undefined && update[snake] === undefined) {
       update[snake] = body[camel];
     }
+  }
+
+  // Validate model_defaults shape: must be an object keyed by model name.
+  // Each value is a partial ModelSettings — only the fields set in the
+  // request are merged into the stored map; this lets callers update
+  // a single model without sending the whole map.
+  if (update.model_defaults !== undefined) {
+    const map = update.model_defaults;
+    if (!map || typeof map !== "object" || Array.isArray(map)) {
+      return NextResponse.json({ error: "modelDefaults must be an object keyed by model name" }, { status: 400 });
+    }
+    for (const [model, settings] of Object.entries(map as Record<string, unknown>)) {
+      if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+        return NextResponse.json({ error: `modelDefaults[${model}] must be an object` }, { status: 400 });
+      }
+    }
+    // Merge with existing map so callers can update one model at a time.
+    const existing = getServerConfig().modelDefaults;
+    update.model_defaults = { ...existing, ...map };
   }
 
   if (Object.keys(update).length === 0) {
@@ -142,6 +168,7 @@ export const PUT = withErrorHandler(async (request: NextRequest) => {
         ttsSkipLong: config.tts.skipLong,
         ttsLongThreshold: config.tts.longThreshold,
       },
+      modelDefaults: config.modelDefaults,
     },
   });
 });

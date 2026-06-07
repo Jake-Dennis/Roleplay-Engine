@@ -3,7 +3,7 @@ import { withAuth } from "@/lib/with-auth";
 import { withErrorHandler } from "@/lib/with-error-handler";
 import { badRequestError, notFoundError } from "@/lib/error-response";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limiter";
-import { getServerConfig } from "@/lib/server-config";
+import { getServerConfig, updateServerConfig } from "@/lib/server-config";
 import { getDb } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import {
@@ -28,6 +28,7 @@ interface StartBenchmarkRequest {
   testContextSizes?: number[];
   thinkingMode?: boolean;
   maxContextSize?: number;
+  maxPredictTokens?: number;
 }
 
 interface BenchmarkJobResponse {
@@ -55,25 +56,14 @@ function buildBenchmarkConfig(
   userId: string,
   serverConfig: ReturnType<typeof getServerConfig>
 ): BenchmarkConfig {
-  const userSettings = getDb().prepare("SELECT settings FROM users WHERE id = ?").get(userId) as { settings: string | null } | undefined;
-  let userNumCtx: number | undefined;
-  if (userSettings?.settings) {
-    try {
-      const settings = JSON.parse(userSettings.settings);
-      userNumCtx = settings.numCtx ? Number(settings.numCtx) : undefined;
-    } catch { /* ignore */ }
-  }
-
   return {
     model: request.model || serverConfig.ollama.model,
     ollamaHost: serverConfig.ollama.baseUrl,
-    embeddingModel: serverConfig.ollama.embeddingModel,
     testContextSizes: request.testContextSizes || (request.quickMode ? QUICK_TEST_CONTEXT_SIZES : DEFAULT_TEST_CONTEXT_SIZES),
     quickMode: request.quickMode ?? false,
-    retentionTestTurns: request.quickMode ? 3 : 5,
-    needleDepthPercent: 50,
     thinkingMode: request.thinkingMode,
     maxContextSize: request.maxContextSize,
+    maxPredictTokens: request.maxPredictTokens,
   };
 }
 
@@ -102,17 +92,51 @@ async function startBenchmarkBackground(jobId: string, userId: string): Promise<
 
     // Mark completed
     const completedAt = new Date().toISOString();
-    updateJob(jobId, { 
-      status: "completed", 
-      progress: 100, 
-      message: "Completed", 
-      report, 
+    updateJob(jobId, {
+      status: "completed",
+      progress: 100,
+      message: "Completed",
+      report,
       completedAt,
       updatedAt: completedAt,
     });
     await persistJob(getJob(jobId)!);
 
-    logger.info("[benchmark] Benchmark completed", { jobId, userId, overallScore: report.overallScore });
+    logger.info("[benchmark] Benchmark completed", { jobId, userId, model: report.config.model });
+
+    // Auto-apply recommendations to the per-model settings for the
+    // model that was just benchmarked. We only do this when the user
+    // has NOT already set a per-model override for this model — we
+    // never want to silently clobber a hand-tuned value. If a manual
+    // override exists, the "Apply" button on the settings page is
+    // still available for the user to push the new recommendation.
+    try {
+      const model = report.config.model;
+      const { recommendedNumCtx, recommendedNumPredict } = report;
+      if (model && recommendedNumCtx && recommendedNumPredict) {
+        const cfg = getServerConfig();
+        const existing = cfg.modelDefaults?.[model];
+        if (!existing) {
+          updateServerConfig({
+            model_defaults: {
+              ...(cfg.modelDefaults ?? {}),
+              [model]: { numCtx: recommendedNumCtx, numPredict: recommendedNumPredict },
+            },
+          });
+          logger.info("[benchmark] Auto-applied recommendations to per-model settings", {
+            jobId, model, recommendedNumCtx, recommendedNumPredict,
+          });
+        } else {
+          logger.info("[benchmark] Skipped auto-apply — model already has per-model overrides", {
+            jobId, model,
+          });
+        }
+      }
+    } catch (autoApplyError) {
+      logger.error("[benchmark] Auto-apply failed (non-fatal)", {
+        jobId, error: (autoApplyError as Error).message,
+      });
+    }
   } catch (error: unknown) {
     const err = error as Error;
     // job might be undefined if getJob fails, so use the original jobId

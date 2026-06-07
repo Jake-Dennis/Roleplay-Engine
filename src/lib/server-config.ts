@@ -6,6 +6,12 @@
  * settings API take effect without a server restart because every read
  * queries the DB fresh.
  *
+ * Sampling parameters (temperature, top_p, top_k, num_predict, num_ctx)
+ * are NOT stored as global server config anymore. They live in
+ * `model_defaults` (per-model map) and are resolved at generation time
+ * by `ollama.ts`. The only thing this module stores for sampling is
+ * `useCustomSampling` (the master toggle) and `thinking_mode`.
+ *
  * Usage:
  *   import { getServerConfig, updateServerConfig } from '@/lib/server-config';
  *   const config = getServerConfig();
@@ -24,14 +30,13 @@ export interface ResolvedServerConfig {
     model: string;
     embeddingModel: string;
     thinkingMode: boolean;
-    numCtx?: number;
+    /**
+     * Master toggle: when false, ollama.ts omits the sampling parameters
+     * from the request and lets the model use its own defaults. When
+     * true, the per-model overrides (or hardcoded OLLAMA_CONFIG fallbacks)
+     * are sent.
+     */
     useCustomSampling: boolean;
-    temperature?: number;
-    top_p?: number;
-    top_k?: number;
-    numPredict?: number;
-    jobNumCtx?: number;
-    jobNumPredict?: number;
   };
   tts: {
     host: string;
@@ -45,7 +50,32 @@ export interface ResolvedServerConfig {
     skipLong: boolean;
     longThreshold: number;
   };
+  /**
+   * Per-model generation overrides. Keyed by model name (e.g. "qwen3.5:9b").
+   * When a model has an entry here, those values are used at generation
+   * time (subject to `useCustomSampling` and any explicit caller options).
+   * Missing fields fall back to OLLAMA_CONFIG hardcoded defaults.
+   *
+   * All fields are optional. To "remove" an override, set the value back
+   * to the hardcoded default OR delete the model's entry from the map.
+   */
+  modelDefaults: ModelDefaultsMap;
 }
+
+/**
+ * Per-model overrides for the five tunable generation parameters.
+ * These are the ONLY fields written to the per-model slot — global
+ * sampling columns no longer exist in the schema.
+ */
+export interface ModelSettings {
+  temperature?: number;
+  topP?: number;
+  topK?: number;
+  numPredict?: number;
+  numCtx?: number;
+}
+
+export type ModelDefaultsMap = Record<string, ModelSettings>;
 
 export type ServerConfigUpdate = Partial<{
   ollama_host: string;
@@ -53,14 +83,7 @@ export type ServerConfigUpdate = Partial<{
   ollama_model: string;
   ollama_embedding_model: string;
   ollama_thinking_mode: boolean;
-  ollama_num_ctx: number;
   ollama_use_custom_sampling: boolean;
-  ollama_temperature: number;
-  ollama_top_p: number;
-  ollama_top_k: number;
-  ollama_num_predict: number;
-  ollama_job_num_ctx: number;
-  ollama_job_num_predict: number;
   tts_host: string;
   tts_port: number;
   tts_default_voice: string;
@@ -70,6 +93,12 @@ export type ServerConfigUpdate = Partial<{
   tts_auto_play: boolean;
   tts_skip_long: boolean;
   tts_long_threshold: number;
+  /**
+   * Replaces the entire per-model defaults map. Pass an empty object to
+   * clear all overrides. To update a single model, fetch the current map
+   * via getServerConfig() and merge the change in the caller.
+   */
+  model_defaults: ModelDefaultsMap;
 }>;
 
 interface ServerConfigRow {
@@ -79,14 +108,7 @@ interface ServerConfigRow {
   ollama_model: string | null;
   ollama_embedding_model: string | null;
   ollama_thinking_mode: number | null;
-  ollama_num_ctx: number | null;
   ollama_use_custom_sampling: number | null;
-  ollama_temperature: number | null;
-  ollama_top_p: number | null;
-  ollama_top_k: number | null;
-  ollama_num_predict: number | null;
-  ollama_job_num_ctx: number | null;
-  ollama_job_num_predict: number | null;
   tts_host: string | null;
   tts_port: number | null;
   tts_default_voice: string | null;
@@ -96,6 +118,7 @@ interface ServerConfigRow {
   tts_auto_play: number | null;
   tts_skip_long: number | null;
   tts_long_threshold: number | null;
+  model_defaults: string | null;
   updated_at: string;
 }
 
@@ -105,12 +128,6 @@ const FALLBACK_OLLAMA_HOST = process.env.OLLAMA_HOST || "192.168.4.2";
 const FALLBACK_OLLAMA_PORT = parseInt(process.env.OLLAMA_PORT || "11434", 10);
 const FALLBACK_OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen3.5:9b";
 const FALLBACK_OLLAMA_EMBEDDING = process.env.OLLAMA_EMBEDDING_MODEL || "bge-m3";
-const FALLBACK_OLLAMA_TEMPERATURE = 1.0;
-const FALLBACK_OLLAMA_TOP_P = 0.95;
-const FALLBACK_OLLAMA_TOP_K = 64;
-const FALLBACK_OLLAMA_NUM_PREDICT = -1;    // -1 = no limit
-const FALLBACK_OLLAMA_JOB_NUM_CTX = 131072;
-const FALLBACK_OLLAMA_JOB_NUM_PREDICT = -1;
 const FALLBACK_TTS_HOST = process.env.TTS_HOST || "192.168.4.2";
 const FALLBACK_TTS_PORT = parseInt(process.env.TTS_PORT || "8880", 10);
 
@@ -123,22 +140,17 @@ export function getServerConfig(): ResolvedServerConfig {
   let row: ServerConfigRow | undefined;
   try {
     const db = getDb();
-    // Graceful migration: add columns if they don't exist
+    // Graceful migration: add columns if they don't exist. The legacy
+    // global sampling columns (ollama_num_ctx, ollama_temperature, etc.)
+    // are intentionally NOT migrated — the per-model model_defaults map
+    // is the only source of truth for sampling now.
     for (const col of [
       "ADD COLUMN ollama_thinking_mode INTEGER DEFAULT 0",
-      "ADD COLUMN ollama_num_ctx INTEGER",
-      "ADD COLUMN ollama_use_custom_sampling INTEGER DEFAULT 1",
-      "ADD COLUMN ollama_temperature REAL",
-      "ADD COLUMN ollama_top_p REAL",
-      "ADD COLUMN ollama_top_k INTEGER",
-      "ADD COLUMN ollama_num_predict INTEGER",
-      "ADD COLUMN ollama_job_num_ctx INTEGER",
-      "ADD COLUMN ollama_job_num_predict INTEGER",
+      "ADD COLUMN ollama_use_custom_sampling INTEGER DEFAULT 0",
+      "ADD COLUMN model_defaults TEXT",
     ]) {
       try { db.prepare(`ALTER TABLE server_config ${col}`).run(); } catch { /* already exists */ }
     }
-    // Note: benchmark_results table was removed in 2026-06 — the old context
-    // benchmark has been superseded by the new benchmark on /settings/benchmark.
     row = db.prepare("SELECT * FROM server_config WHERE id = 'singleton'").get() as ServerConfigRow | undefined;
   } catch {
     // DB not available yet (startup) — use fallbacks
@@ -149,6 +161,19 @@ export function getServerConfig(): ResolvedServerConfig {
   const ttsHost = row?.tts_host ?? FALLBACK_TTS_HOST;
   const ttsPort = row?.tts_port ?? FALLBACK_TTS_PORT;
 
+  // Parse the model_defaults JSON blob. Malformed JSON or wrong shape
+  // (e.g. an array) falls back to an empty map — better to ignore bad
+  // data than to crash every config read.
+  let modelDefaults: ModelDefaultsMap = {};
+  if (row?.model_defaults) {
+    try {
+      const parsed = JSON.parse(row.model_defaults);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        modelDefaults = parsed as ModelDefaultsMap;
+      }
+    } catch { /* corrupt JSON — treat as no overrides */ }
+  }
+
   return {
     ollama: {
       host: ollamaHost,
@@ -157,14 +182,7 @@ export function getServerConfig(): ResolvedServerConfig {
       model: row?.ollama_model ?? FALLBACK_OLLAMA_MODEL,
       embeddingModel: row?.ollama_embedding_model ?? FALLBACK_OLLAMA_EMBEDDING,
       thinkingMode: row?.ollama_thinking_mode === null ? false : Boolean(row?.ollama_thinking_mode),
-      numCtx: row?.ollama_num_ctx ?? undefined,
-      useCustomSampling: row?.ollama_use_custom_sampling === null ? true : Boolean(row?.ollama_use_custom_sampling),
-      temperature: row?.ollama_temperature ?? FALLBACK_OLLAMA_TEMPERATURE,
-      top_p: row?.ollama_top_p ?? FALLBACK_OLLAMA_TOP_P,
-      top_k: row?.ollama_top_k ?? FALLBACK_OLLAMA_TOP_K,
-      numPredict: row?.ollama_num_predict ?? FALLBACK_OLLAMA_NUM_PREDICT,
-      jobNumCtx: row?.ollama_job_num_ctx ?? FALLBACK_OLLAMA_JOB_NUM_CTX,
-      jobNumPredict: row?.ollama_job_num_predict ?? FALLBACK_OLLAMA_JOB_NUM_PREDICT,
+      useCustomSampling: row?.ollama_use_custom_sampling === null ? false : Boolean(row?.ollama_use_custom_sampling),
     },
     tts: {
       host: ttsHost,
@@ -178,6 +196,7 @@ export function getServerConfig(): ResolvedServerConfig {
       skipLong: row?.tts_skip_long === null ? true : Boolean(row?.tts_skip_long),
       longThreshold: row?.tts_long_threshold ?? 500,
     },
+    modelDefaults,
   };
 }
 
@@ -191,14 +210,8 @@ export function updateServerConfig(changes: ServerConfigUpdate): void {
   // Ensure any pending column migrations are applied (same as getServerConfig does)
   for (const col of [
     "ADD COLUMN ollama_thinking_mode INTEGER DEFAULT 0",
-    "ADD COLUMN ollama_num_ctx INTEGER",
-    "ADD COLUMN ollama_use_custom_sampling INTEGER DEFAULT 1",
-    "ADD COLUMN ollama_temperature REAL",
-    "ADD COLUMN ollama_top_p REAL",
-    "ADD COLUMN ollama_top_k INTEGER",
-    "ADD COLUMN ollama_num_predict INTEGER",
-    "ADD COLUMN ollama_job_num_ctx INTEGER",
-    "ADD COLUMN ollama_job_num_predict INTEGER",
+    "ADD COLUMN ollama_use_custom_sampling INTEGER DEFAULT 0",
+    "ADD COLUMN model_defaults TEXT",
   ]) {
     try { db.prepare(`ALTER TABLE server_config ${col}`).run(); } catch { /* already exists */ }
   }
@@ -207,11 +220,16 @@ export function updateServerConfig(changes: ServerConfigUpdate): void {
   const params: unknown[] = [];
 
   for (const [key, value] of Object.entries(changes)) {
-    if (value !== undefined && key in emptyRow()) {
+    if (value === undefined) continue;
+    if (key in emptyRow()) {
       // Use string concat for column names (they're whitelisted by the type)
       sets.push(`${key} = ?`);
       // SQLite doesn't accept booleans — convert to 0/1
-      params.push(typeof value === 'boolean' ? (value ? 1 : 0) : value);
+      // model_defaults is stored as a JSON string
+      const stored = key === "model_defaults"
+        ? JSON.stringify(value)
+        : typeof value === 'boolean' ? (value ? 1 : 0) : value;
+      params.push(stored);
     }
   }
 
@@ -228,14 +246,7 @@ function emptyRow(): Record<string, null> {
     ollama_model: null,
     ollama_embedding_model: null,
     ollama_thinking_mode: null,
-    ollama_num_ctx: null,
     ollama_use_custom_sampling: null,
-    ollama_temperature: null,
-    ollama_top_p: null,
-    ollama_top_k: null,
-    ollama_num_predict: null,
-    ollama_job_num_ctx: null,
-    ollama_job_num_predict: null,
     tts_host: null,
     tts_port: null,
     tts_default_voice: null,
@@ -245,5 +256,6 @@ function emptyRow(): Record<string, null> {
     tts_auto_play: null,
     tts_skip_long: null,
     tts_long_threshold: null,
+    model_defaults: null,
   };
 }

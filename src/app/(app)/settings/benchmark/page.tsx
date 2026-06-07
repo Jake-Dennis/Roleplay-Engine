@@ -10,18 +10,18 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  Cpu,
-  MemoryStick,
   Zap,
   Target,
-  TrendingUp,
   Clock,
-  ChevronDown,
-  ChevronUp,
   RefreshCw,
   Brain,
   Ruler,
   Sparkles,
+  TextSelect,
+  Combine,
+  BookOpen,
+  ScrollText,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -38,58 +38,58 @@ interface OllamaModelInfo {
   family: string;
 }
 
-interface HardwareInfo {
-  cpu: { model: string; cores: number; threads: number };
-  memory: { totalBytes: number; availableBytes: number };
-  gpu?: { name: string; vramBytes: number }[];
-  platform: string;
-  arch: string;
-}
-
-interface ThroughputResult {
-  contextSize: number;
-  generationTokensPerSec: number;
-  embeddingTokensPerSec: number;
-  firstTokenLatencyMs: number;
-  durationMs: number;
-}
-
-interface NeedleTestResult {
-  contextSize: number;
-  needleDepthPercent: number;
-  retrieved: boolean;
-  similarityScore: number;
-  durationMs: number;
-}
-
-interface MultiTurnTestResult {
-  contextSize: number;
-  turns: number;
-  entityConsistencyScore: number;
-  factualDriftScore: number;
-  durationMs: number;
-}
-
-interface SummarizationFidelityResult {
-  originalTokens: number;
-  summaryTokens: number;
-  compressionRatio: number;
-  fidelityScore: number;
-  durationMs: number;
-}
-
-interface MemoryRetentionResult {
-  needleTests: NeedleTestResult[];
-  multiTurnTests: MultiTurnTestResult[];
-  summarizationTests: SummarizationFidelityResult[];
-  overallScore: number;
-}
-
 interface ContextTestResult {
   success: boolean;
   maxContextFound: number;
+  testedSizes: { size: number; success: boolean; error?: string; isTimeout?: boolean }[];
+  oomSize?: number;
+  durationMs: number;
+}
+
+interface PredictTestResult {
+  success: boolean;
+  maxPredictFound: number;
   testedSizes: { size: number; success: boolean; error?: string }[];
   oomSize?: number;
+  durationMs: number;
+}
+
+interface CombinationResult {
+  contextSize: number;
+  maxNumPredict: number;
+  success: boolean;
+  resultPredictSizes: { size: number; success: boolean; error?: string }[];
+  durationMs: number;
+}
+
+interface RoleplayFactResult {
+  category: "character" | "location" | "rule";
+  fact: string;
+  recalled: boolean;
+  details: string;
+}
+
+interface TurnResult {
+  turn: number;
+  prompt: string;
+  recallRate: number;
+  formatScore: number;
+  contradictionCount: number;
+  factResults: RoleplayFactResult[];
+  error?: string;
+}
+
+interface RoleplayTestResult {
+  lorePackName: string;
+  setting: string;
+  overallScore: number;
+  turnsCompleted: number;
+  totalTurns: number;
+  averageRecallRate: number;
+  averageFormatScore: number;
+  totalContradictions: number;
+  contradictions: string[];
+  turnResults: TurnResult[];
   durationMs: number;
 }
 
@@ -100,12 +100,10 @@ interface BenchmarkReport {
     ollamaHost: string;
     testContextSizes: number[];
     quickMode: boolean;
-    retentionTestTurns?: number;
-    needleDepthPercent?: number;
     thinkingMode?: boolean;
     maxContextSize?: number;
+    maxPredictTokens?: number;
   };
-  hardware?: HardwareInfo;
   modelMeta: {
     name: string;
     contextLength: number;
@@ -114,10 +112,10 @@ interface BenchmarkReport {
     family: string;
   };
   contextTest: ContextTestResult;
-  throughputTests: ThroughputResult[];
-  memoryRetention: MemoryRetentionResult;
-  overallScore: number;
+  predictTest: PredictTestResult;
+  combinations: CombinationResult[];
   recommendedNumCtx: number;
+  recommendedNumPredict: number;
   warnings: string[];
 }
 
@@ -129,23 +127,15 @@ interface BenchmarkJob {
   message?: string;
   currentTest?: string;
   stageProgress?: { current: number; total: number };
+  config: { model: string; ollamaHost: string; testContextSizes: number[]; quickMode: boolean };
   report?: BenchmarkReport;
   error?: string;
-  timestamp: string;
-  model: string;
+  createdAt: string;
 }
 
 // ============================================================================
 // Utility
 // ============================================================================
-
-function formatBytes(bytes: number): string {
-  if (bytes >= 1e12) return `${(bytes / 1e12).toFixed(1)} TB`;
-  if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
-  if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(1)} MB`;
-  if (bytes >= 1e3) return `${(bytes / 1e3).toFixed(1)} KB`;
-  return `${bytes} B`;
-}
 
 function formatDuration(ms: number): string {
   if (ms >= 60000) return `${(ms / 60000).toFixed(1)}m`;
@@ -157,36 +147,36 @@ function formatNumber(n: number): string {
   return n.toLocaleString();
 }
 
-function scoreColor(score: number): "success" | "warning" | "error" | "info" {
-  if (score >= 0.8) return "success";
-  if (score >= 0.5) return "warning";
-  if (score > 0) return "error";
-  return "info";
-}
-
-function score100Color(score: number): "success" | "warning" | "error" | "info" {
-  if (score >= 80) return "success";
-  if (score >= 50) return "warning";
-  if (score > 0) return "error";
-  return "info";
-}
-
 // ============================================================================
 // Page Component
 // ============================================================================
 
 export default function BenchmarkPage() {
   // Run state
-  const [quickMode, setQuickMode] = useState(true);
+  const [quickMode, setQuickMode] = useState(false);
   const [thinkingMode, setThinkingMode] = useState<boolean>(false);
   const [maxContextSize, setMaxContextSize] = useState<number>(131072);
-  const [model, setModel] = useState("");
+  const STORAGE_KEY = "benchmark_last_model";
+  const [model, setModel] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(STORAGE_KEY) || "";
+    }
+    return "";
+  });
   const [availableModels, setAvailableModels] = useState<OllamaModelInfo[]>([]);
   const [modelsLoading, setModelsLoading] = useState(false);
   const [ollamaConnected, setOllamaConnected] = useState(false);
   const [running, setRunning] = useState(false);
   const [currentJob, setCurrentJob] = useState<BenchmarkJob | null>(null);
   const [ollamaUrl, setOllamaUrl] = useState("");
+
+  // Roleplay test state
+  const [roleplayTestId, setRoleplayTestId] = useState<string | null>(null);
+  const [roleplayRunning, setRoleplayRunning] = useState(false);
+  const [roleplayResult, setRoleplayResult] = useState<RoleplayTestResult | null>(null);
+  const [roleplayProgress, setRoleplayProgress] = useState(0);
+  const [roleplayError, setRoleplayError] = useState<string | null>(null);
+  const roleplayPollRef = useRef<NodeJS.Timeout | null>(null);
 
   // History
   const [history, setHistory] = useState<BenchmarkJob[]>([]);
@@ -197,6 +187,11 @@ export default function BenchmarkPage() {
 
   // Polling ref
   const pollRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Persist model selection across page visits
+  useEffect(() => {
+    if (model) localStorage.setItem(STORAGE_KEY, model);
+  }, [model]);
 
   // Fetch initial data
   useEffect(() => {
@@ -357,16 +352,35 @@ export default function BenchmarkPage() {
     }
   };
 
-  const applyAutoTune = async (numCtx: number) => {
+  const applyAutoTune = async (numCtx: number, numPredict: number) => {
+    // Apply the recommended numCtx + num_predict to the model that was
+    // just benchmarked. Writes to the per-model model_defaults slot
+    // (same path as the server settings page "Apply" button).
+    // The /api/settings PUT handler merges with the existing map, so
+    // this won't clobber other models' overrides.
+    if (!report) return;
+    const model = report.config.model;
+    if (!model) {
+      alert("No model in benchmark report");
+      return;
+    }
     try {
+      // Fetch the current map so we can merge (the API also merges, but
+      // sending the full map makes the success path more transparent).
+      const cur = await fetch("/api/settings").then(r => r.json()).catch(() => ({}));
+      const existing = (cur.modelDefaults ?? {}) as Record<string, { numCtx?: number; numPredict?: number }>;
+      const updatedMap = {
+        ...existing,
+        [model]: { ...(existing[model] ?? {}), numCtx, numPredict },
+      };
       const res = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ numCtx }),
+        body: JSON.stringify({ modelDefaults: updatedMap }),
       });
       if (res.ok) {
-        alert(`Applied: numCtx = ${numCtx.toLocaleString()}`);
+        alert(`Applied to ${model}: numCtx = ${numCtx.toLocaleString()}, num_predict = ${numPredict.toLocaleString()}`);
       } else {
         const err = await res.json().catch(() => ({}));
         alert(`Failed to apply: ${err.error || "Unknown error"}`);
@@ -375,6 +389,78 @@ export default function BenchmarkPage() {
       const err = e as Error;
       alert(`Failed to apply: ${err.message}`);
     }
+  };
+
+  // ============================================================================
+  // Roleplay Standalone Test
+  // ============================================================================
+
+  const startRoleplayTest = async () => {
+    if (!model) {
+      alert("Please select a model first");
+      return;
+    }
+    setRoleplayRunning(true);
+    setRoleplayResult(null);
+    setRoleplayError(null);
+    setRoleplayProgress(0);
+
+    try {
+      const res = await fetch("/api/benchmark/roleplay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ model, maxContextSize, thinkingMode }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      const { testId } = await res.json();
+      setRoleplayTestId(testId);
+
+      roleplayPollRef.current = setInterval(async () => {
+        try {
+          const pollRes = await fetch(`/api/benchmark/roleplay?testId=${testId}`, { credentials: "include" });
+          if (pollRes.ok) {
+            const data = await pollRes.json();
+            setRoleplayProgress(data.progress);
+            if (data.status === "completed") {
+              setRoleplayResult(data.result);
+              setRoleplayRunning(false);
+              setRoleplayProgress(100);
+              if (roleplayPollRef.current) clearInterval(roleplayPollRef.current);
+              roleplayPollRef.current = null;
+            } else if (data.status === "failed") {
+              setRoleplayError(data.error || "Test failed");
+              setRoleplayRunning(false);
+              if (roleplayPollRef.current) clearInterval(roleplayPollRef.current);
+              roleplayPollRef.current = null;
+            }
+          }
+        } catch {
+          // poll silently
+        }
+      }, 1500);
+    } catch (e: unknown) {
+      const err = e as Error;
+      setRoleplayError(err.message);
+      setRoleplayRunning(false);
+    }
+  };
+
+  // Cleanup roleplay polling on unmount
+  useEffect(() => {
+    return () => {
+      if (roleplayPollRef.current) clearInterval(roleplayPollRef.current);
+    };
+  }, []);
+
+  const cancelRoleplayTest = async () => {
+    if (roleplayPollRef.current) clearInterval(roleplayPollRef.current);
+    roleplayPollRef.current = null;
+    setRoleplayRunning(false);
+    setRoleplayTestId(null);
   };
 
   const report = selectedJob?.report;
@@ -402,7 +488,7 @@ export default function BenchmarkPage() {
           </Button>
         </div>
         <p className="mt-1 text-xs text-text-muted">
-          Test your hardware, find the maximum context window, measure throughput, and check memory retention.
+          Find the optimal <code className="text-accent text-xxs">num_ctx</code> × <code className="text-accent text-xxs">num_predict</code> combination for your hardware.
         </p>
       </div>
 
@@ -486,12 +572,12 @@ export default function BenchmarkPage() {
                 disabled={running}
                 className="rounded border-border-default"
               />
-              <span>Quick mode (fewer tests, ~60s)</span>
+              <span>Quick mode (~60s)</span>
             </label>
             <p className="mt-1 text-xxs text-text-muted">
               {quickMode
-                ? "Tests 2K, 4K, 8K, 16K, 32K contexts. Fewer memory tests. Good for a quick sanity check (~60s)."
-                : "Tests 1K through 128K in power-of-2 steps (8 sizes). Full memory retention suite. May take 5+ minutes."}
+                ? "Tests context sizes 2K through 32K, with 5 predict token sizes per context. Good for a quick sanity check."
+                : "Tests context sizes 1K through 128K, with a full predict token search at each working context size. May take 3+ minutes."}
             </p>
           </div>
 
@@ -587,6 +673,55 @@ export default function BenchmarkPage() {
       {/* Results Section */}
       {report && <BenchmarkResults report={report} onApply={applyAutoTune} />}
 
+      {/* ================================================================ */}
+      {/* Roleplay Lore Test — Standalone */}
+      {/* ================================================================ */}
+      <div className="rounded-xl border border-border-default bg-bg-elevated p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <BookOpen className="h-4 w-4 text-accent" />
+          <h2 className="text-sm font-medium text-text-primary">Roleplay Lore Fidelity Test</h2>
+        </div>
+        <p className="text-xxs text-text-muted mb-4">
+          Tests how well the model remembers established lore facts (characters, locations, rules)
+          across a multi-turn roleplay conversation. Runs 8 turns at your selected context size.
+        </p>
+
+        <div className="flex gap-2 mb-4">
+          {roleplayRunning ? (
+            <Button onClick={cancelRoleplayTest} variant="danger" size="sm" disabled={!roleplayTestId}>
+              <AlertCircle className="mr-1.5 h-3.5 w-3.5" />
+              Cancel
+            </Button>
+          ) : (
+            <Button onClick={startRoleplayTest} variant="primary" size="sm" disabled={!model}>
+              <Play className="mr-1.5 h-3.5 w-3.5" />
+              Run Lore Test
+            </Button>
+          )}
+        </div>
+
+        {roleplayRunning && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-text-secondary">Running roleplay scenarios...</span>
+              <span className="tabular-nums text-text-primary">{roleplayProgress}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-bg-elevated">
+              <div className="h-full bg-accent transition-all duration-300" style={{ width: `${roleplayProgress}%` }} />
+            </div>
+          </div>
+        )}
+
+        {roleplayError && (
+          <div className="mt-3 flex items-center gap-2 rounded-lg border border-status-error/30 bg-status-error/10 p-3 text-xs text-status-error">
+            <AlertCircle className="h-3.5 w-3.5" />
+            {roleplayError}
+          </div>
+        )}
+
+        {roleplayResult && <RoleplayResults result={roleplayResult} />}
+      </div>
+
       {/* History Section */}
       <div className="rounded-xl border border-border-default bg-bg-elevated p-5">
         <div className="flex items-center justify-between mb-4">
@@ -630,16 +765,16 @@ interface BenchmarkProgressDisplayProps {
 
 const STAGE_LABELS: Record<string, { label: string; icon: typeof Play }> = {
   init: { label: "Initializing", icon: Sparkles },
-  "model-meta": { label: "Fetching model info", icon: Cpu },
-  "context-test": { label: "Context window test", icon: Target },
-  "throughput-test": { label: "Throughput test", icon: Gauge },
-  "memory-retention": { label: "Memory retention", icon: Brain },
-  "auto-tune": { label: "Auto-tuning", icon: Zap },
+  "model-meta": { label: "Fetching model info", icon: Sparkles },
+  "context-test": { label: "Max context test", icon: Target },
+  "predict-test": { label: "Max predict test", icon: TextSelect },
+  "combination-test": { label: "Combination grid", icon: Combine },
+  recommendation: { label: "Recommendations", icon: Zap },
   complete: { label: "Complete", icon: CheckCircle2 },
   error: { label: "Error", icon: AlertCircle },
 };
 
-const STAGE_ORDER = ["init", "model-meta", "context-test", "throughput-test", "memory-retention", "auto-tune", "complete"];
+const STAGE_ORDER = ["init", "model-meta", "context-test", "predict-test", "combination-test", "recommendation", "complete"];
 
 // Generate a test history display based on stageProgress
 /** Generate a power-of-2 context size ladder matching the benchmark's pattern. */
@@ -660,61 +795,56 @@ function TestHistoryLog({
   stageProgress: { current: number; total: number };
 }) {
   const isContextTest = stage === "context-test";
-  const isThroughputTest = stage === "throughput-test";
-  const isMemoryTest = stage === "memory-retention";
+  const isPredictTest = stage === "predict-test";
+  const isCombinationTest = stage === "combination-test";
 
-  // Generate test items based on progress - show what we know
   const totalTests = stageProgress.total;
   const completedCount = Math.min(stageProgress.current, stageProgress.total);
   const isComplete = stageProgress.current >= stageProgress.total;
 
-  // Generate test items based on stage type
+  // Determine label prefix based on stage
+  const labelPrefix = isContextTest
+    ? "ctx"
+    : isPredictTest
+    ? "predict"
+    : isCombinationTest
+    ? "combo"
+    : "test";
+
+  const stageIcon = isContextTest
+    ? Target
+    : isPredictTest
+    ? TextSelect
+    : isCombinationTest
+    ? Combine
+    : Gauge;
+
+  // Generate test items
   const testItems: Array<{ label: string; status: "completed" | "running" | "pending" }> = [];
 
-  if (isContextTest || isThroughputTest) {
-    // Show context sizes - compute dynamically from total count
-    const sizes = generateContextSizes(totalTests);
-    sizes.forEach((size, idx) => {
-      if (idx < completedCount) {
-        testItems.push({ label: `${size.toLocaleString()} ctx`, status: "completed" });
-      } else if (idx === completedCount && !isComplete) {
-        testItems.push({ label: `${size.toLocaleString()} ctx`, status: "running" });
-      } else if (idx >= completedCount) {
-        testItems.push({ label: `${size.toLocaleString()} ctx`, status: "pending" });
-      }
-    });
-  } else if (isMemoryTest) {
-    // Memory test: show test types
-    const memoryTests = ["Needle", "Multi-turn", "Summarization"];
-    memoryTests.forEach((name, idx) => {
-      // Each test type runs for multiple context sizes, so we estimate
-      const testIndex = Math.floor(idx * totalTests / 3);
-      if (testIndex < completedCount) {
-        testItems.push({ label: name, status: "completed" });
-      } else if (testIndex === completedCount && !isComplete) {
-        testItems.push({ label: name, status: "running" });
-      } else {
-        testItems.push({ label: name, status: "pending" });
-      }
-    });
-  }
+  for (let idx = 0; idx < totalTests; idx++) {
+    let label = `${idx + 1}`;
+    if (isContextTest) {
+      const sizes = generateContextSizes(totalTests);
+      label = `${(sizes[idx] || 0).toLocaleString()} ${labelPrefix}`;
+    } else {
+      label = `${labelPrefix} ${idx + 1}`;
+    }
 
-  // Debug: always show what we're receiving
-  const debugInfo = {
-    stage,
-    totalTests,
-    completedCount,
-    isComplete,
-    hasData: totalTests > 0,
-  };
+    if (idx < completedCount) {
+      testItems.push({ label, status: "completed" });
+    } else if (idx === completedCount && !isComplete) {
+      testItems.push({ label, status: "running" });
+    } else {
+      testItems.push({ label, status: "pending" });
+    }
+  }
 
   return (
     <div className="mt-3 space-y-1.5 rounded-lg border border-border-default/50 bg-bg-elevated/50 p-3">
       <div className="flex items-center gap-2 text-xxs font-medium text-text-secondary">
         <span className="flex items-center gap-1">
-          {stage === "context-test" && <Target className="h-3 w-3" />}
-          {stage === "throughput-test" && <Gauge className="h-3 w-3" />}
-          {stage === "memory-retention" && <Brain className="h-3 w-3" />}
+          <Gauge className="h-3 w-3" />
           <span>Test Details</span>
         </span>
         <span className="ml-auto text-text-muted">
@@ -722,18 +852,10 @@ function TestHistoryLog({
         </span>
       </div>
 
-      {/* Debug panel - shows raw data */}
-      <details className="text-xxs text-text-muted">
-        <summary>Debug: stageProgress data</summary>
-        <pre className="mt-1 p-2 bg-bg-raised rounded text-[10px] overflow-auto">
-          {JSON.stringify(debugInfo, null, 2)}
-        </pre>
-      </details>
-
       <div className="space-y-1 max-h-56 overflow-y-auto">
         {testItems.map((item, idx) => (
           <div key={idx} className="flex items-center gap-2 text-xxs">
-            <span className={`font-mono text-text-primary w-28 ${item.status === "completed" ? "text-status-success" : item.status === "running" ? "text-accent" : "text-text-muted"}`}>
+            <span className={`font-mono text-text-primary w-32 ${item.status === "completed" ? "text-status-success" : item.status === "running" ? "text-accent" : "text-text-muted"}`}>
               {item.label}
             </span>
             <div className="h-1.5 w-16 overflow-hidden rounded-full bg-bg-raised">
@@ -830,13 +952,13 @@ function BenchmarkProgressDisplay({ job }: BenchmarkProgressDisplayProps) {
         <div className="space-y-1">
           <div className="flex items-center justify-between text-xxs text-text-muted">
             <span>
-              {job.stage === "context-test"
-                ? `Context sizes tested: ${job.stageProgress.current} / ${job.stageProgress.total}`
-                : job.stage === "throughput-test"
-                ? `Sizes measured: ${job.stageProgress.current} / ${job.stageProgress.total}`
-                : job.stage === "memory-retention"
-                ? `Tests run: ${job.stageProgress.current} / ${job.stageProgress.total}`
-                : `Progress: ${job.stageProgress.current} / ${job.stageProgress.total}`}
+                {job.stage === "context-test"
+                  ? `Context sizes tested: ${job.stageProgress.current} / ${job.stageProgress.total}`
+                  : job.stage === "predict-test"
+                  ? `Predict sizes tested: ${job.stageProgress.current} / ${job.stageProgress.total}`
+                  : job.stage === "combination-test"
+                  ? `Combinations tested: ${job.stageProgress.current} / ${job.stageProgress.total}`
+                  : `Progress: ${job.stageProgress.current} / ${job.stageProgress.total}`}
             </span>
             <span className="tabular-nums">
               {Math.round((job.stageProgress.current / job.stageProgress.total) * 100)}%
@@ -884,9 +1006,8 @@ function HistoryItem({
   onSelect: () => void;
   onDelete: () => void;
 }) {
-  const score = job.report?.overallScore ?? null;
-  const date = new Date(job.timestamp);
-  const scoreBadge = score !== null ? score100Color(score / 100) : "info";
+  const report = job.report;
+  const date = new Date(job.createdAt);
 
   return (
     <div
@@ -898,22 +1019,25 @@ function HistoryItem({
       onClick={onSelect}
     >
       <div className="flex items-center gap-3 min-w-0">
-        <div className="flex flex-col items-center">
-          {job.status === "completed" && score !== null && (
-            <span className={`text-sm font-semibold ${
-              score >= 80 ? "text-status-success" : score >= 50 ? "text-status-warning" : "text-status-error"
-            }`}>
-              {score.toFixed(0)}
-            </span>
+        <div className="flex flex-col items-center min-w-[2.5rem]">
+          {job.status === "completed" && report ? (
+            <>
+              <span className="text-xs font-semibold text-status-success">
+                {formatNumber(report.recommendedNumCtx)}
+              </span>
+              <span className="text-xxs text-text-muted">ctx</span>
+            </>
+          ) : job.status === "running" ? (
+            <Loader2 className="h-4 w-4 animate-spin text-accent" />
+          ) : job.status === "failed" ? (
+            <AlertCircle className="h-4 w-4 text-status-error" />
+          ) : (
+            <Clock className="h-4 w-4 text-text-muted" />
           )}
-          {job.status === "running" && <Loader2 className="h-4 w-4 animate-spin text-accent" />}
-          {job.status === "failed" && <AlertCircle className="h-4 w-4 text-status-error" />}
-          {job.status === "queued" && <Clock className="h-4 w-4 text-text-muted" />}
-          <span className="text-xxs text-text-muted">/100</span>
         </div>
         <div className="min-w-0">
           <p className="text-xs font-medium text-text-primary truncate">
-            {job.model || job.report?.config.model || "unknown"}
+            {report?.config?.model || job.config?.model || "unknown"}
           </p>
           <p className="text-xxs text-text-muted">
             {date.toLocaleString()}
@@ -921,8 +1045,11 @@ function HistoryItem({
         </div>
       </div>
       <div className="flex items-center gap-2">
-        {job.report?.recommendedNumCtx && (
-          <StatusBadge label={`ctx: ${formatNumber(job.report.recommendedNumCtx)}`} variant="info" size="sm" />
+        {report?.recommendedNumPredict && report.recommendedNumPredict > 0 && (
+          <StatusBadge label={`predict: ${formatNumber(report.recommendedNumPredict)}`} variant="info" size="sm" />
+        )}
+        {report?.recommendedNumCtx && (
+          <StatusBadge label={`ctx: ${formatNumber(report.recommendedNumCtx)}`} variant="info" size="sm" />
         )}
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
@@ -937,6 +1064,116 @@ function HistoryItem({
 }
 
 // ============================================================================
+// Roleplay Lore Test Results
+// ============================================================================
+
+function RoleplayResults({ result }: { result: RoleplayTestResult }) {
+  const [expandedTurn, setExpandedTurn] = useState<number | null>(null);
+
+  return (
+    <div className="mt-4 space-y-4">
+      {/* Score */}
+      <div className="rounded-lg border border-accent/20 bg-accent/5 p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xxs text-text-muted">Lore Fidelity Score</p>
+            <p className="text-xl font-bold text-text-primary">
+              {(result.overallScore * 100).toFixed(0)}
+              <span className="text-sm font-normal text-text-muted"> / 100</span>
+            </p>
+          </div>
+          <div className="text-right text-xxs text-text-muted">
+            <p>Recall: {(result.averageRecallRate * 100).toFixed(0)}%</p>
+            <p>Format: {(result.averageFormatScore * 100).toFixed(0)}%</p>
+            <p>Contradictions: {result.totalContradictions}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Per-turn breakdown */}
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-text-secondary flex items-center gap-1.5">
+          <ScrollText className="h-3.5 w-3.5" />
+          Turn Results ({result.turnsCompleted}/{result.totalTurns})
+        </p>
+        {result.turnResults.map((turn) => (
+          <div key={turn.turn} className="rounded-lg border border-border-default bg-bg-raised overflow-hidden">
+            <button
+              onClick={() => setExpandedTurn(expandedTurn === turn.turn ? null : turn.turn)}
+              className="flex w-full items-center justify-between p-3 text-xs hover:bg-bg-elevated/50"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <MessageSquare className="h-3 w-3 text-text-muted shrink-0" />
+                <span className="truncate text-text-primary">
+                  Turn {turn.turn}: {turn.prompt.slice(0, 60)}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 shrink-0 ml-3">
+                <StatusBadge
+                  label={`${(turn.recallRate * 100).toFixed(0)}%`}
+                  variant={turn.recallRate >= 0.5 ? "success" : turn.recallRate > 0 ? "warning" : "error"}
+                  size="sm"
+                />
+                {turn.contradictionCount > 0 && (
+                  <StatusBadge label={`${turn.contradictionCount} contradictions`} variant="error" size="sm" />
+                )}
+                {turn.error && <AlertCircle className="h-3 w-3 text-status-error" />}
+              </div>
+            </button>
+            {expandedTurn === turn.turn && (
+              <div className="border-t border-border-default p-3 space-y-2 text-xxs">
+                {turn.factResults.length > 0 ? (
+                  <div className="space-y-1">
+                    {turn.factResults.map((f, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <span className={`mt-0.5 ${f.recalled ? "text-status-success" : "text-status-error"}`}>
+                          {f.recalled ? "✓" : "✗"}
+                        </span>
+                        <div>
+                          <span className="text-text-primary">{f.fact}</span>
+                          {f.details && <span className="text-text-muted ml-1">— {f.details}</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-text-muted">No fact data available{turn.error ? `: ${turn.error}` : ""}</p>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Contradictions */}
+      {result.contradictions.length > 0 && (
+        <div className="rounded-lg border border-status-warning/30 bg-status-warning/5 p-3">
+          <p className="text-xs font-medium text-status-warning mb-1">Detected Contradictions</p>
+          <ul className="space-y-0.5 text-xxs text-text-secondary">
+            {result.contradictions.map((c, i) => (
+              <li key={i} className="flex items-start gap-1.5">
+                <span>⚠</span>
+                {c}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Summary info */}
+      <div className="grid grid-cols-2 gap-2 text-xxs text-text-muted">
+        <div>
+          <span className="font-medium text-text-secondary">World:</span> {result.lorePackName}
+        </div>
+        <div>
+          <span className="font-medium text-text-secondary">Duration:</span> {formatDuration(result.durationMs)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // Results Display
 // ============================================================================
 
@@ -945,33 +1182,42 @@ function BenchmarkResults({
   onApply,
 }: {
   report: BenchmarkReport;
-  onApply: (numCtx: number) => void;
+  onApply: (numCtx: number, numPredict: number) => void;
 }) {
   return (
     <div className="space-y-4">
-      {/* Score Card */}
-      <div className="rounded-xl border border-border-default bg-bg-elevated p-5">
-        <div className="flex items-center justify-between">
+      {/* Recommendation */}
+      <div className="rounded-xl border border-accent/30 bg-accent/5 p-5">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xxs text-text-muted">Overall Score</p>
-            <p className="text-3xl font-bold text-text-primary">
-              {report.overallScore.toFixed(1)}
-              <span className="text-base font-normal text-text-muted"> / 100</span>
+            <div className="flex items-center gap-2 mb-2">
+              <Zap className="h-4 w-4 text-accent" />
+              <h3 className="text-sm font-medium text-text-primary">Recommended Settings</h3>
+            </div>
+            <div className="flex items-center gap-4">
+              <div>
+                <p className="text-xxs text-text-muted">num_ctx</p>
+                <p className="text-xl font-bold text-text-primary">
+                  {formatNumber(report.recommendedNumCtx)}
+                </p>
+              </div>
+              <div className="text-text-muted text-xl">×</div>
+              <div>
+                <p className="text-xxs text-text-muted">num_predict</p>
+                <p className="text-xl font-bold text-text-primary">
+                  {formatNumber(report.recommendedNumPredict)}
+                </p>
+              </div>
+            </div>
+            <p className="mt-2 text-xxs text-text-muted">
+              Best balanced {report.config.quickMode ? "quick" : "full"} benchmark combination
+              with 10% safety margin.
             </p>
           </div>
-          <StatusBadge
-            label={
-              report.overallScore >= 80
-                ? "Excellent"
-                : report.overallScore >= 60
-                ? "Good"
-                : report.overallScore >= 40
-                ? "Fair"
-                : "Poor"
-            }
-            variant={score100Color(report.overallScore)}
-            size="md"
-          />
+          <Button onClick={() => onApply(report.recommendedNumCtx, report.recommendedNumPredict)} variant="primary" size="sm">
+            <Zap className="mr-1.5 h-3.5 w-3.5" />
+            Apply both
+          </Button>
         </div>
       </div>
 
@@ -1039,99 +1285,13 @@ function BenchmarkResults({
             />
           </div>
         </div>
-        {report.config.thinkingMode === true && (
-          <p className="mt-3 text-xxs text-warning">
-            ⚠ Run used thinking mode — generation time and token counts include reasoning tokens.
-          </p>
-        )}
-      </div>
-
-      {/* Auto-tune Recommendation */}
-      {report.recommendedNumCtx > 0 && (
-        <div className="rounded-xl border border-accent/30 bg-accent/5 p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Zap className="h-4 w-4 text-accent" />
-                <h3 className="text-sm font-medium text-text-primary">Auto-tune Recommendation</h3>
-              </div>
-              <p className="text-xs text-text-secondary">
-                Recommended <code className="text-accent">numCtx</code>:{" "}
-                <span className="font-semibold text-text-primary">
-                  {formatNumber(report.recommendedNumCtx)}
-                </span>{" "}
-                tokens
-              </p>
-              <p className="mt-1 text-xxs text-text-muted">
-                Optimized for your hardware, with safety margin for stability.
-              </p>
-            </div>
-            <Button onClick={() => onApply(report.recommendedNumCtx)} variant="primary" size="sm">
-              <Zap className="mr-1.5 h-3.5 w-3.5" />
-              Apply
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Hardware Info */}
-      <div className="rounded-xl border border-border-default bg-bg-elevated p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <Cpu className="h-4 w-4 text-text-secondary" />
-          <h3 className="text-sm font-medium text-text-primary">Hardware</h3>
-        </div>
-        {(() => {
-          const hw = report.hardware;
-          if (!hw) {
-            return (
-              <div className="text-center py-4 text-text-muted">
-                <p className="text-sm">Hardware detection skipped</p>
-                <p className="text-xxs mt-1">Run with hardware detection enabled to see details</p>
-              </div>
-            );
-          }
-          return (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <HardwareCard
-                icon={Cpu}
-                label="CPU"
-                value={hw.cpu.model}
-                sub={`${hw.cpu.cores} cores / ${hw.cpu.threads} threads`}
-              />
-              <HardwareCard
-                icon={MemoryStick}
-                label="RAM"
-                value={formatBytes(hw.memory.totalBytes)}
-                sub={`${formatBytes(hw.memory.availableBytes)} available`}
-              />
-              {hw.gpu && hw.gpu.length > 0 ? (
-                hw.gpu.map((g, i) => (
-                  <HardwareCard
-                    key={i}
-                    icon={Zap}
-                    label={`GPU${hw.gpu!.length > 1 ? ` ${i + 1}` : ""}`}
-                    value={g.name}
-                    sub={`${formatBytes(g.vramBytes)} VRAM`}
-                  />
-                ))
-              ) : (
-                <HardwareCard
-                  icon={Zap}
-                  label="GPU"
-                  value="Not detected"
-                  sub="No NVIDIA GPU or nvidia-smi missing"
-                />
-              )}
-            </div>
-          );
-        })()}
       </div>
 
       {/* Context Test */}
       <div className="rounded-xl border border-border-default bg-bg-elevated p-5">
         <div className="flex items-center gap-2 mb-3">
           <Target className="h-4 w-4 text-text-secondary" />
-          <h3 className="text-sm font-medium text-text-primary">Context Window Test</h3>
+          <h3 className="text-sm font-medium text-text-primary">Max Context (at 256 predict tokens)</h3>
         </div>
         <div className="mb-3 flex items-center gap-3 text-xs">
           <span className="text-text-muted">Max working:</span>
@@ -1152,7 +1312,6 @@ function BenchmarkResults({
               <tr className="border-b border-border-default text-text-muted">
                 <th className="py-1.5 text-left font-medium">Context</th>
                 <th className="py-1.5 text-left font-medium">Status</th>
-                <th className="py-1.5 text-left font-medium">Duration</th>
               </tr>
             </thead>
             <tbody>
@@ -1174,7 +1333,6 @@ function BenchmarkResults({
                       </span>
                     )}
                   </td>
-                  <td className="py-1.5 text-text-muted">—</td>
                 </tr>
               ))}
             </tbody>
@@ -1182,48 +1340,104 @@ function BenchmarkResults({
         </div>
       </div>
 
-      {/* Throughput */}
-      {report.throughputTests.length > 0 && (
+      {/* Predict Test */}
+      <div className="rounded-xl border border-border-default bg-bg-elevated p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <TextSelect className="h-4 w-4 text-text-secondary" />
+          <h3 className="text-sm font-medium text-text-primary">Max Predict Tokens (at 2K context)</h3>
+        </div>
+        <div className="mb-3 flex items-center gap-3 text-xs">
+          <span className="text-text-muted">Max working:</span>
+          <span className="font-semibold text-text-primary">
+            {formatNumber(report.predictTest.maxPredictFound)} tokens
+          </span>
+          {report.predictTest.oomSize && (
+            <StatusBadge
+              label={`OOM at ${formatNumber(report.predictTest.oomSize)}`}
+              variant="warning"
+              size="sm"
+            />
+          )}
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border-default text-text-muted">
+                <th className="py-1.5 text-left font-medium">Num Predict</th>
+                <th className="py-1.5 text-left font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.predictTest.testedSizes.map((s, i) => (
+                <tr key={i} className="border-b border-border-default/50">
+                  <td className="py-1.5 font-mono text-text-primary">
+                    {formatNumber(s.size)}
+                  </td>
+                  <td className="py-1.5">
+                    {s.success ? (
+                      <span className="inline-flex items-center gap-1 text-status-success">
+                        <CheckCircle2 className="h-3 w-3" />
+                        OK
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-status-error">
+                        <AlertCircle className="h-3 w-3" />
+                        {s.error?.substring(0, 40) || "Failed"}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Combination Grid */}
+      {report.combinations.length > 0 && (
         <div className="rounded-xl border border-border-default bg-bg-elevated p-5">
           <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="h-4 w-4 text-text-secondary" />
-            <h3 className="text-sm font-medium text-text-primary">Throughput</h3>
+            <Combine className="h-4 w-4 text-text-secondary" />
+            <h3 className="text-sm font-medium text-text-primary">Context × Predict Combinations</h3>
           </div>
+          <p className="text-xxs text-text-muted mb-3">
+            For each working context size, shows the maximum num_predict that works alongside it.
+          </p>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-border-default text-text-muted">
                   <th className="py-1.5 text-left font-medium">Context</th>
-                  <th className="py-1.5 text-right font-medium">Gen tok/s</th>
-                  <th className="py-1.5 text-right font-medium">Embed tok/s</th>
-                  <th className="py-1.5 text-right font-medium">First Token</th>
+                  <th className="py-1.5 text-right font-medium">Max Predict</th>
+                  <th className="py-1.5 text-right font-medium">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {report.throughputTests.map((t, i) => (
-                  <tr key={i} className="border-b border-border-default/50">
+                {report.combinations.map((c, i) => (
+                  <tr key={i} className={`border-b border-border-default/50 ${c.contextSize === report.recommendedNumCtx ? 'bg-accent/5' : ''}`}>
                     <td className="py-1.5 font-mono text-text-primary">
-                      {formatNumber(t.contextSize)}
+                      {formatNumber(c.contextSize)}
                     </td>
                     <td className="py-1.5 text-right font-mono text-text-primary">
-                      {t.generationTokensPerSec.toFixed(2)}
+                      {c.success ? formatNumber(c.maxNumPredict) : "—"}
                     </td>
-                    <td className="py-1.5 text-right font-mono text-text-muted">
-                      {t.embeddingTokensPerSec.toFixed(2)}
-                    </td>
-                    <td className="py-1.5 text-right font-mono text-text-muted">
-                      {t.firstTokenLatencyMs.toFixed(0)}ms
+                    <td className="py-1.5 text-right">
+                      {c.success ? (
+                        <span className="text-status-success">OK</span>
+                      ) : (
+                        <span className="text-status-error">Failed</span>
+                      )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          <p className="mt-2 text-xxs text-text-muted">
+            Highlighted row = recommended combination.
+          </p>
         </div>
       )}
-
-      {/* Memory Retention */}
-      <MemoryRetentionSection retention={report.memoryRetention} />
 
       {/* Warnings */}
       {report.warnings.length > 0 && (
@@ -1240,152 +1454,6 @@ function BenchmarkResults({
               </li>
             ))}
           </ul>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ============================================================================
-// Hardware Card
-// ============================================================================
-
-function HardwareCard({
-  icon: Icon,
-  label,
-  value,
-  sub,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string;
-  sub?: string;
-}) {
-  return (
-    <div className="rounded-lg border border-border-default bg-bg-raised p-3">
-      <div className="flex items-center gap-2 mb-1">
-        <Icon className="h-3.5 w-3.5 text-text-muted" />
-        <p className="text-xxs text-text-muted">{label}</p>
-      </div>
-      <p className="text-sm font-medium text-text-primary truncate" title={value}>
-        {value}
-      </p>
-      {sub && <p className="text-xxs text-text-muted mt-0.5">{sub}</p>}
-    </div>
-  );
-}
-
-// ============================================================================
-// Memory Retention Section
-// ============================================================================
-
-function MemoryRetentionSection({ retention }: { retention: MemoryRetentionResult }) {
-  const [expanded, setExpanded] = useState(false);
-  const score = retention.overallScore;
-
-  return (
-    <div className="rounded-xl border border-border-default bg-bg-elevated p-5">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between"
-      >
-        <div className="flex items-center gap-2">
-          <MemoryStick className="h-4 w-4 text-text-secondary" />
-          <h3 className="text-sm font-medium text-text-primary">Memory Retention</h3>
-          <StatusBadge
-            label={`${(score * 100).toFixed(0)}%`}
-            variant={scoreColor(score)}
-            size="sm"
-          />
-        </div>
-        {expanded ? (
-          <ChevronUp className="h-4 w-4 text-text-muted" />
-        ) : (
-          <ChevronDown className="h-4 w-4 text-text-muted" />
-        )}
-      </button>
-
-      {expanded && (
-        <div className="mt-4 space-y-4">
-          {retention.needleTests.length > 0 && (
-            <div>
-              <h4 className="text-xs font-medium text-text-secondary mb-2">
-                Needle in Haystack
-              </h4>
-              <div className="space-y-1.5">
-                {retention.needleTests.map((n, i) => (
-                  <div key={i} className="flex items-center justify-between text-xs">
-                    <span className="text-text-muted">
-                      {formatNumber(n.contextSize)} ctx @ {(n.needleDepthPercent * 100).toFixed(0)}% depth
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <div className="h-1.5 w-24 overflow-hidden rounded-full bg-bg-raised">
-                        <div
-                          className={`h-full ${
-                            n.similarityScore >= 0.8
-                              ? "bg-status-success"
-                              : n.similarityScore >= 0.5
-                              ? "bg-status-warning"
-                              : "bg-status-error"
-                          }`}
-                          style={{ width: `${n.similarityScore * 100}%` }}
-                        />
-                      </div>
-                      <span className="font-mono text-text-primary w-12 text-right">
-                        {(n.similarityScore * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {retention.multiTurnTests.length > 0 && (
-            <div>
-              <h4 className="text-xs font-medium text-text-secondary mb-2">
-                Multi-turn Consistency
-              </h4>
-              <div className="space-y-1.5">
-                {retention.multiTurnTests.map((m, i) => (
-                  <div key={i} className="flex items-center justify-between text-xs">
-                    <span className="text-text-muted">
-                      {formatNumber(m.contextSize)} ctx, {m.turns} turns
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-status-success">
-                        {(m.entityConsistencyScore * 100).toFixed(0)}% consistent
-                      </span>
-                      <span className="font-mono text-text-muted">
-                        {(m.factualDriftScore * 100).toFixed(0)}% drift
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {retention.summarizationTests.length > 0 && (
-            <div>
-              <h4 className="text-xs font-medium text-text-secondary mb-2">
-                Summarization Fidelity
-              </h4>
-              <div className="space-y-1.5">
-                {retention.summarizationTests.map((s, i) => (
-                  <div key={i} className="flex items-center justify-between text-xs">
-                    <span className="text-text-muted">
-                      {formatNumber(s.originalTokens)} → {formatNumber(s.summaryTokens)} tokens
-                      ({(1 / s.compressionRatio).toFixed(1)}:1)
-                    </span>
-                    <span className="font-mono text-text-primary">
-                      {(s.fidelityScore * 100).toFixed(0)}% fidelity
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
