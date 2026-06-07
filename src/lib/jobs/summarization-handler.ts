@@ -86,7 +86,7 @@ async function handleCompressMemories(jobId: string, payload: JobPayload): Promi
     if (age >= 90) {
       const prompt = PROMPTS.memorySummarizeArchived(memory.content.slice(0, CONTENT_LIMITS.SHORT));
       try {
-        const summary = await generateText(prompt, { temperature: 0.2, userId: userId as string });
+        const summary = await generateText(prompt, { temperature: 0.2, num_predict: 512, userId: userId as string });
         if (summary?.trim()) {
           db.prepare(`
             UPDATE narrative_memories
@@ -99,7 +99,7 @@ async function handleCompressMemories(jobId: string, payload: JobPayload): Promi
     } else if (age >= 30) {
       const prompt = PROMPTS.memorySummarizeOneSentence(memory.content.slice(0, CONTENT_LIMITS.SHORT));
       try {
-        const summary = await generateText(prompt, { temperature: 0.2, userId: userId as string });
+        const summary = await generateText(prompt, { temperature: 0.2, num_predict: 256, userId: userId as string });
         if (summary?.trim()) {
           db.prepare(`
             UPDATE narrative_memories
@@ -112,7 +112,7 @@ async function handleCompressMemories(jobId: string, payload: JobPayload): Promi
     } else if (age >= 7) {
       const prompt = PROMPTS.memorySummarizeShort(memory.content.slice(0, CONTENT_LIMITS.SHORT));
       try {
-        const summary = await generateText(prompt, { temperature: 0.2, userId: userId as string });
+        const summary = await generateText(prompt, { temperature: 0.2, num_predict: 512, userId: userId as string });
         if (summary?.trim()) {
           db.prepare(`
             UPDATE narrative_memories

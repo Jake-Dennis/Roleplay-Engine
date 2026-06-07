@@ -114,7 +114,7 @@ async function handleWikiEnrichEntity(jobId: string, payload: JobPayload): Promi
     const prompt = PROMPTS.wikiEnrichEntity(title, page.content.slice(0, CONTENT_LIMITS.SUMMARY_CHUNK));
 
     try {
-      const enrichment = await generateText(prompt, { userId: userId as string });
+      const enrichment = await generateText(prompt, { temperature: 0.3, num_predict: 1024, userId: userId as string });
       const newContent = page.content.trimEnd() + `\n\n## Additional Details\n${enrichment}`;
 
       const updatedFrontmatter: WikiFrontmatter = {
@@ -218,7 +218,7 @@ async function handleWikiGenerateRumors(jobId: string, payload: JobPayload): Pro
     const prompt = PROMPTS.wikiGenerateRumors(event.title, event.event_type, event.outcome || "unknown");
 
     try {
-      const rumors = await generateText(prompt, { userId: userId as string });
+      const rumors = await generateText(prompt, { temperature: 0.5, num_predict: 512, userId: userId as string });
 
       const filename = `rumor_${event.title.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-")}.md`;
       const pagePath = `${wikiRoot}/concepts/${filename}`;
@@ -307,7 +307,7 @@ async function handleWikiDeepenPage(jobId: string, payload: JobPayload): Promise
     const prompt = PROMPTS.wikiDeepenPage(title, String(page.frontmatter.type), page.content.slice(0, 800));
 
     try {
-      const deepening = await generateText(prompt, { userId: userId as string });
+      const deepening = await generateText(prompt, { temperature: 0.4, num_predict: 2048, userId: userId as string });
       const newContent = page.content.trimEnd() + `\n\n## Deeper Connections\n${deepening}`;
 
       const updatedFrontmatter: WikiFrontmatter = {
@@ -389,7 +389,7 @@ async function handleWikiDeepenLocation(jobId: string, payload: JobPayload): Pro
     const prompt = PROMPTS.wikiExpandLocation(title, existingContent.slice(0, 500));
 
     try {
-      const expansion = await generateText(prompt, { userId: userId as string });
+      const expansion = await generateText(prompt, { temperature: 0.5, num_predict: 2048, userId: userId as string });
       const newContent = existingContent.trimEnd() + `\n\n## Additional Lore\n${expansion}`;
 
       const updatedFrontmatter: WikiFrontmatter = {
@@ -465,7 +465,7 @@ async function handleWikiExtractEvent(jobId: string, payload: JobPayload): Promi
 
   let extracted = 0;
   try {
-    const response = await generateText(prompt, { temperature: 0.3, userId: userId as string });
+    const response = await generateText(prompt, { temperature: 0.3, num_predict: 1024, userId: userId as string });
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = safeParseWarn<Record<string, unknown>>(jsonMatch[0], "LLM event extraction");

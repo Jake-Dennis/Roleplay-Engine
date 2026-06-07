@@ -123,6 +123,7 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
     try {
       const response = await generateText(prompt, {
         temperature: 0.1,
+        num_predict: 1024,
         userId: userId as string,
       });
 

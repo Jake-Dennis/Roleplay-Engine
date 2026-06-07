@@ -98,6 +98,7 @@ export async function handleNpcEvolutionJob(jobId: string, payload: JobPayload):
 
   const response = await generateText(prompt, {
     temperature: 0.4,
+    num_predict: 1024,
     userId: userId as string,
   });
 
