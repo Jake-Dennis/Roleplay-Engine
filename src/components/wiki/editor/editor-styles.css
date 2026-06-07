@@ -1,0 +1,185 @@
+/* ===== Editor layout ===== */
+.wiki-editor {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  background: var(--color-bg-base);
+  border: 1px solid var(--color-border-default);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 14px;
+  line-height: 20px;
+  position: relative;
+}
+
+.wiki-editor:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-muted);
+}
+
+/* ===== Gutter (line numbers) ===== */
+.wiki-editor-gutter {
+  padding: 16px 12px;
+  text-align: right;
+  color: var(--color-text-muted);
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+  background: var(--color-bg-elevated);
+  border-right: 1px solid var(--color-border-default);
+  white-space: pre;
+  overflow: hidden;
+}
+
+/* ===== Content area (overlay + textarea stacked) ===== */
+.wiki-editor-content {
+  position: relative;
+  overflow: hidden;
+}
+
+.wiki-editor-overlay,
+.wiki-editor-input {
+  margin: 0;
+  padding: 16px;
+  font: inherit;
+  white-space: pre-wrap;
+  word-break: break-word;
+  tab-size: 2;
+  border: 0;
+  outline: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.wiki-editor-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: var(--color-text-primary);
+  background: transparent;
+  z-index: 0;
+  overflow: auto;
+}
+
+.wiki-editor-input {
+  position: relative;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--color-text-primary);
+  resize: none;
+  z-index: 1;
+  overflow: auto;
+  min-height: 400px;
+}
+
+.wiki-editor-input::selection {
+  background: var(--color-accent-muted);
+  color: transparent;
+}
+
+/* ===== Token colors (consumed by syntax-highlighter.ts spans) ===== */
+.tok-h1 { color: var(--color-accent); font-weight: 700; font-size: 1.4em; }
+.tok-h2 { color: var(--color-accent); font-weight: 700; font-size: 1.25em; }
+.tok-h3 { color: var(--color-text-accent); font-weight: 600; font-size: 1.1em; }
+.tok-h4 { color: var(--color-text-accent); font-weight: 600; }
+.tok-h5 { color: var(--color-text-primary); font-weight: 600; }
+.tok-h6 { color: var(--color-text-secondary); font-weight: 600; }
+
+.tok-bold { font-weight: 700; color: var(--color-text-primary); }
+.tok-italic { font-style: italic; color: var(--color-text-primary); }
+.tok-strike { text-decoration: line-through; color: var(--color-text-muted); }
+
+.tok-code {
+  font-family: inherit;
+  background: var(--color-bg-highlight);
+  color: var(--color-text-accent);
+  padding: 0.1em 0.3em;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+}
+
+.tok-code-block { color: var(--color-text-muted); }
+.tok-code-content {
+  display: block;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  padding: 0.5em 0.75em;
+  border-radius: 0.25rem;
+  margin: 0.25em 0;
+  font-size: 0.9em;
+}
+
+.tok-wikilink {
+  color: var(--color-accent);
+  background: var(--color-accent-muted);
+  padding: 0.05em 0.25em;
+  border-radius: 0.2rem;
+  cursor: pointer;
+}
+.tok-wikilink:hover { background: var(--color-accent); color: var(--color-bg-base); }
+
+.tok-embed { color: var(--color-info); background: rgba(59, 130, 246, 0.1); padding: 0.05em 0.25em; border-radius: 0.2rem; }
+
+.tok-link-text { color: var(--color-accent); text-decoration: underline; }
+.tok-link-url { color: var(--color-text-muted); font-size: 0.9em; }
+
+.tok-image-alt { color: var(--color-text-accent); }
+.tok-image-url { color: var(--color-text-muted); }
+
+.tok-list-marker { color: var(--color-accent); font-weight: 600; }
+.tok-checkbox { color: var(--color-text-secondary); }
+
+.tok-quote { color: var(--color-text-secondary); font-style: italic; border-left: 3px solid var(--color-border-default); padding-left: 0.75em; display: block; }
+.tok-callout-type { color: var(--color-info); font-weight: 600; text-transform: uppercase; font-size: 0.85em; letter-spacing: 0.05em; }
+.tok-callout-title { color: var(--color-text-accent); font-weight: 600; }
+
+.tok-hr { color: var(--color-text-muted); }
+.tok-hr::before { content: '─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─'; }
+
+.tok-tag { color: var(--color-success); }
+
+.tok-escape { color: var(--color-warning); }
+
+.tok-fm-delim { color: var(--color-text-muted); }
+.tok-fm-content { color: var(--color-text-secondary); font-style: italic; }
+
+/* ===== Autocomplete popup ===== */
+.wiki-autocomplete {
+  position: fixed;
+  z-index: 50;
+  min-width: 200px;
+  max-width: 400px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.wiki-autocomplete-empty {
+  padding: 0.75rem 1rem;
+  color: var(--color-text-muted);
+}
+
+.wiki-autocomplete-item {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wiki-autocomplete-item:hover,
+.wiki-autocomplete-item[data-active="true"] {
+  background: var(--color-bg-highlight);
+  color: var(--color-text-accent);
+}
+
+.wiki-autocomplete-match {
+  color: var(--color-text-accent);
+  font-weight: 600;
+}

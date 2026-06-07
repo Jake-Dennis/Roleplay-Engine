@@ -2,49 +2,73 @@
 
 Persistent cross-session task checklist. Updated by the conductor before, during, and after each work cycle.
 
-**Last updated:** 2026-06-05 (cycle 7 committed: 241e085, 127 files, 119/120 renames preserved)
-**Status:** Plan 003 committed (`241e085`). 4 local commits ahead of `origin/master` (3 from cycle 4 + 1 from cycle 7). `origin/master` is 4 commits ahead (needs pull --rebase before push).
+**Last updated:** 2026-06-07 (Plan 006 VERIFIED 8/8 — rich wiki editor from-scratch, archived)
+**Status:** Plan 006 archived. Awaiting commit + push decision.
 
 ---
 
 ## Active Work
 
-_No active work. Use this section to track ongoing multi-step tasks. Format:_
+## [2026-06-07] Plan 006: Rich Wiki Editor (built from scratch) — COMPLETE, awaiting commit
 
-```
-## [YYYY-MM-DD] <task title>
-- [ ] step 1 (assigned: @agent)
-- [ ] step 2 (assigned: @agent)
-  - depends on: step 1
-```
+### What was built (12 new + 3 modified files)
+- `src/lib/wiki/frontmatter.ts` — gray-matter wrapper
+- `src/components/wiki/editor/syntax-highlighter.ts` — 18-token pure markdown→HTML
+- `src/components/wiki/editor/editor-styles.css` — overlay + gutter + popup
+- `src/components/wiki/editor/wikilink-autocomplete.ts` + `use-wikilink-autocomplete.ts` — popup logic
+- `src/components/wiki/frontmatter-properties-panel.tsx` — Obsidian-style form
+- `src/components/wiki/markdown-editor.tsx` — textarea + overlay centerpiece
+- `src/components/wiki/wiki-quick-switcher.tsx` — Cmd-K modal
+- `src/lib/__tests__/frontmatter.test.ts` (12 tests)
+- `src/lib/__tests__/syntax-highlighter.test.ts` (23 tests)
+- `src/app/(app)/wiki/[...slug]/page.tsx` — integrated new components
+- `src/lib/wiki/types.ts` — widened `created`/`updated` to `string | Date`
+
+### Verification
+- 8/8 verify-plan commands passed
+- 77/77 tests pass (35 new)
+- `npm run build` — 58 routes, 33s
+- No new third-party editor deps
+- Plan archived: `.opencode/plans/completed/plan-006-rich-wiki-editor.md`
+
+### Bugs caught + fixed
+- Italic regex "stole" the leading `*` of `*italic*` after `**bold**` (added lookbehind/lookahead)
+- A lone `---` was classified as frontmatter opener (added peek-ahead for closing `---`)
+- Pre-existing universe_id missing from PUT URL (fixed in handleSave)
+- Type duplication FrontmatterData vs WikiFrontmatter (collapsed)
+- Name collision with markdown-utils.parseFrontmatter (renamed to parseWikiFrontmatter)
 
 ---
 
 ## Backlog
+_Items discovered but not yet scheduled._
 
-_Items discovered but not yet scheduled. Move into "Active Work" with a date when picked up._
-
-- `git pull --rebase` + `git push` the 4 local commits (`2c3569c` setup, `d48dbcc` middleware, `a66aa64` auth route, `241e085` cycle 7 cleanup). `origin/master` is 4 commits ahead of local; rebase will likely auto-merge.
-- **Decide on `scripts/_graphify_*.py` and `scripts/_archive/`** — currently untracked. Should they be moved to `scripts/_graphify/` and committed as a tool subdir, or deleted?
+- **Plan 007: AI wiki editing** — selection toolbar (Rewrite/Expand/Summarize/Improve on text select), page header buttons (Enrich/Deepen/Generate Rumors), create-page-from-prompt modal. Reuse existing job system + the new frontmatter utility. From-scratch UI.
+- **Plan 008: Wiki organization** — clickable category cards, clickable tag chips, /api/wiki filter params (type, tag), /wiki/type/[type] and /wiki/tag/[tag] pages.
+- `git pull --rebase` + `git push` the 4 local commits (`2c3569c` setup, `d48dbcc` middleware, `a66aa64` auth route, `241e085` cycle 7 cleanup).
+- **Decide on `scripts/_graphify_*.py` and `scripts/_archive/`** — currently untracked.
 - Fix stale "via middleware" comment in `src/lib/idle-processing.ts:6` → "via proxy". 9 other matches in `ARCHITECTURE.md` and `src/app/api/AGENTS.md`.
-- Add `OLLAMA_HOST=http://localhost:11434/v1` to `.env.local` (root cause of dev-server Ollama warning). Proved reachable from graphify label pass.
-- Batch-label remaining 457 placeholder communities — Ollama `qwen3.5:4b` got stuck in thinking mode (output tokens consumed by thinking block). Need `thinking: False` option or larger `num_predict` to actually get labels.
-- **Security review of `src/app/(app)/app-layout-shell.tsx`** — chunk 14 subagent detected and ignored embedded system-reminder mimicking text (suspected prompt injection). Independent of cleanup cycle.
-- **Clean up `scripts/_check_chunks.py:26-27`** — has hardcoded paths to `.omo/evidence/ultrawork-oracle-verification*.txt` that no longer exist. Low priority, script will print "MISS".
-- **Delete empty `.omo/` directory** — currently has 140 untracked files (gitignored). User can `rm -rf .omo/` once they're confident the archive commit is safe.
+- Add `OLLAMA_HOST=http://localhost:11434/v1` to `.env.local` (root cause of dev-server Ollama warning).
+- Batch-label remaining 457 placeholder communities — Ollama `qwen3.5:4b` got stuck in thinking mode.
+- **Security review of `src/app/(app)/app-layout-shell.tsx`** — chunk 14 subagent detected prompt-injection-like embedded system-reminder.
+- **Clean up `scripts/_check_chunks.py:26-27`** — hardcoded paths to `.omo/evidence/...` that no longer exist.
+- **Delete empty `.omo/` directory** — 140 untracked files (gitignored).
 
 ---
 
 ## Recently Completed
 
-- 2026-06-05 — **Commit `241e085`**: cycle 7 cleanup committed (127 files, 119/120 renames preserved, 1 file fell to delete+add pair). Pre-commit hook verified plan-003.
-- 2026-06-05 — Plan 003: Stop-using cleanup. Deleted `opendyslexic-0.92/`, deleted 2 untracked credential files in `.omo/` (auth-cookie.txt, auth-session.xml), `git mv` 120 tracked files to `docs/historical-evidence/omo/`, added `/.omo/` to `.gitignore`, wrote archive README (4,168 chars), updated `AGENTS.md` + 5 broken doc links. Plan: `plan-003-stop-using-cleanup.md` (archived).
-- 2026-06-05 — Cleanup Tiers 1-4 + re-run `/graphify`. 688 → 677 files, 3,866 nodes, 7,757 edges, 488 communities. 31 communities labeled by ollama. Outputs: `graphify-out/graph.json` (4.2 MB), `graphify-out/graph.html` (3.4 MB), `graphify-out/GRAPH_REPORT.md` (114 KB, 1,601 lines).
-- 2026-06-05 — Cycle 5: Full `/graphify` knowledge-graph rebuild (688 files → 3,646 nodes).
-- 2026-06-04 — Delete orphan `src/app/(auth)/` route group (Next.js 16 parallel-pages error). Plan: `plan-002-delete-orphan-auth-route-group.md` (archived).
-- 2026-06-04 — Delete orphan `src/middleware.ts` (Next.js 16 proxy migration). Plan: `plan-001-delete-orphan-middleware.md` (archived).
-- 2026-06-04 — Project setup workflow (detect type, verify git, build graphify, create `.opencode/`, `.gitignore`, `verify-plan.py`, README)
+### Plan 006: Rich Wiki Editor from-scratch (archived 2026-06-07)
+- 12 new files + 3 modified. Hand-rolled markdown editor with syntax highlighting, wikilink autocomplete, frontmatter properties panel, Cmd-K quick switcher. Zero new editor deps. 35 new tests, 77/77 pass, build clean, verify-plan 8/8. Plan archived.
 
-## Backlog (discovered, not yet scheduled)
+### Plan 005: Jobs Model (archived 2026-06-07)
+- Added `ollama_job_model` + `ollama_use_jobs_model` to `server_config`. `getActiveJobModel(userId)` resolver. 27 call sites in 11 files. UI: Briefcase icon + toggle + model dropdown. 5 test cases. 42/42 tests pass. Plan archived.
 
-- Ollama connectivity — `[startup] Ollama: not reachable (LLM features disabled)`. Root cause: `.env.local` has no `OLLAMA_HOST`, app defaults to `http://192.168.4.2:11434` which is unreachable from `10.127.16.79` subnet. Needs `OLLAMA_HOST` set in `.env.local` (full URL) or `startup-check.ts` should use `APP_CONFIG.ollama`. **Verified reachable on `http://localhost:11434/v1`** during graphify label pass (just need env var). Non-blocking but disables LLM features.
+### Prior plans
+- 2026-06-05 — **Commit `241e085`**: cycle 7 cleanup (127 files, 119/120 renames preserved). Plan 003 archived.
+- 2026-06-05 — Plan 003: Stop-using cleanup. Archived OMO evidence to `docs/historical-evidence/omo/`.
+- 2026-06-05 — Cleanup Tiers 1-4 + `/graphify` rebuild. 688 → 677 files, 3,866 nodes, 488 communities.
+- 2026-06-05 — Cycle 5: Full `/graphify` knowledge-graph rebuild.
+- 2026-06-04 — Delete orphan `src/app/(auth)/` route group. Plan 002 archived.
+- 2026-06-04 — Delete orphan `src/middleware.ts` (Next.js 16 proxy). Plan 001 archived.
+- 2026-06-04 — Project setup workflow.

@@ -22,8 +22,8 @@ export interface WikiFrontmatter {
   status: "draft" | "reviewed" | "locked" | "rejected";
   universe?: string;
   tags?: string[];
-  created?: string;
-  updated?: string;
+  created?: string | Date;
+  updated?: string | Date;
   /** Reason for rejection (set when status is "rejected"). */
   rejection_reason?: string;
   /** ISO timestamp when the page was rejected. */

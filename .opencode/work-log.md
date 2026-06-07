@@ -483,3 +483,59 @@ b1c4504 fix(build): resolve subtype type error in lore-extraction.ts  <-- prior 
 
 **Verification:** `npm run build` — compiled. `bun test src/lib/benchmark/` — 14/14 pass. No `ContextBenchmarkSection` references remain. No `benchmark_results` schema code remains.
 
+---
+
+## 2026-06-07 — Cycle 12: Plan 006 — Rich Wiki Editor (built from scratch)
+
+**Trigger:** User asked for a wiki editor that feels Obsidian-like, with both user and AI editing. User explicitly wanted no third-party editor libraries — only open source, and ultimately the editor built from scratch.
+
+**What was done:**
+
+Replaced the raw `<textarea>` wiki editor with a hand-rolled, from-scratch markdown editor. No new third-party editor libraries (no CodeMirror, no TipTap, no Lexical). Uses only what the project already depends on: `react`, `lucide-react`, `gray-matter`, browser-native APIs.
+
+**New files:**
+- `src/lib/wiki/frontmatter.ts` — gray-matter wrapper with `parseWikiFrontmatter`, `serializeWikiFrontmatter`, `validateWikiFrontmatter`, `EMPTY_FRONTMATTER`. Re-exports `WikiFrontmatter` from `types.ts` to avoid duplication.
+- `src/components/wiki/editor/syntax-highlighter.ts` — pure markdown→HTML tokenizer (zero deps). 18 token types: headings, bold/italic/strike, code, wikilinks, embeds, links, images, lists, checkboxes, blockquotes, callouts, hr, tags, escapes, frontmatter. XSS-safe.
+- `src/components/wiki/editor/editor-styles.css` — overlay + gutter + autocomplete popup styles. Uses existing design tokens.
+- `src/components/wiki/editor/wikilink-autocomplete.ts` — pure helpers (`findWikilinkContext`, `filterPages`, `getCursorCoordinates` via mirror-div technique).
+- `src/components/wiki/editor/use-wikilink-autocomplete.ts` — React hook that drives the popup state.
+- `src/components/wiki/frontmatter-properties-panel.tsx` — Obsidian-style form (title, type, status, tags chips, universe, created/updated).
+- `src/components/wiki/markdown-editor.tsx` — the centerpiece: `<textarea>` + syntax `<pre>` overlay + line-number gutter + wikilink popup. Cmd-S save, Tab → 2 spaces.
+- `src/components/wiki/wiki-quick-switcher.tsx` — Cmd-K modal with fuzzy search, arrow-key nav, type badges.
+- `src/lib/__tests__/frontmatter.test.ts` — 12 tests
+- `src/lib/__tests__/syntax-highlighter.test.ts` — 23 tests
+
+**Modified files:**
+- `src/app/(app)/wiki/[...slug]/page.tsx` — removed `toRawMarkdown`/`parseRawMarkdown` helpers, replaced edit-mode textarea with `<FrontmatterPropertiesPanel>` + `<MarkdownEditor>`, added Cmd-K listener, integrated `<WikiQuickSwitcher>`, added `validateWikiFrontmatter` to save path, fixed pre-existing universe_id PUT URL bug, removed `as any` casts.
+- `src/components/wiki/editor/editor-styles.css` — changed `.wiki-autocomplete` from `position: absolute` to `position: fixed` to match viewport coordinates from `getCursorCoordinates`.
+- `src/lib/wiki/types.ts` — widened `created`/`updated` from `string` to `string | Date` (gray-matter returns Date objects for unquoted ISO timestamps).
+
+**Bugs caught and fixed (during test):**
+1. Italic regex "stole" the leading `*` of `*italic*` after `**bold**`. Fixed by adding `(?<!\*)` / `(?!\*)` lookbehind/lookahead to italic regex.
+2. A lone `---` was classified as frontmatter opener. Fixed by requiring a closing `---` within the next 100 lines before entering frontmatter state.
+
+**Reviewer findings (all addressed):**
+- Pre-existing PUT URL bug: missing `?universe_id=` query string → fixed
+- Dead `serializeFrontmatter` export: kept (small, tested, useful in future)
+- Type duplication `FrontmatterData` vs `WikiFrontmatter`: collapsed to use `WikiFrontmatter`
+- Name collision with `markdown-utils.ts:parseFrontmatter`: renamed to `parseWikiFrontmatter`
+- `as any` casts in page.tsx: removed
+- `required` HTML attribute without `<form>`: removed
+- `created`/`updated` type lie: fixed
+
+**Verification:**
+- `python scripts/verify-plan.py .opencode/plans/plan-006-rich-wiki-editor.md` → 8/8 commands passed, plan archived
+- 77/77 tests pass (35 new: 12 frontmatter + 23 syntax-highlighter)
+- `npm run build` → 58 routes, compiled in 33s
+- No new third-party editor deps
+
+**Decisions:**
+- Architecture: `<textarea>` + syntax `<pre>` overlay (no contenteditable) — gives us 80% of Obsidian feel with full ownership
+- Frontmatter is form-only (not raw YAML in editor) — cleaner UX, no YAML hand-editing
+- Used `gray-matter` for parse/serialize (already a project dep)
+- `validateWikiFrontmatter` wired into `handleSave` — turns dead code into live validation
+- No new editor deps, period — user explicitly required this
+
+**Files changed:** 12 new + 3 modified. Plan archived: `.opencode/plans/completed/plan-006-rich-wiki-editor.md`.
+
+
