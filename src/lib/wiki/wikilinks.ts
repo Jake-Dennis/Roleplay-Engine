@@ -239,3 +239,50 @@ export function validateWikilinks(
 
   return broken;
 }
+
+/**
+ * Rewrite wikilinks in content when a page is moved between folders.
+ *
+ * Only path-based links (`[[oldFolder/PageName]]`) are rewritten; namespace
+ * links (`[[Universe::Page]]`) and bare-name links (`[[PageName]]`) are left
+ * unchanged because they don't reference the folder. The rewrite only fires
+ * when the page-name portion matches the moved page's title or filename
+ * (case-insensitive) to avoid rewriting links to other pages in the same
+ * folder.
+ *
+ * @returns Updated content, or the original content if no rewrites occurred.
+ */
+export function rewriteLinksForPageMove(
+  content: string,
+  oldFolder: string,
+  newFolder: string,
+  pageTitle: string,
+  pageFilenameNoExt: string,
+): string {
+  if (oldFolder === newFolder) return content;
+  if (!oldFolder || !newFolder) return content;
+
+  const oldLower = oldFolder.toLowerCase();
+  const titleLower = pageTitle.toLowerCase().trim();
+  const filenameLower = pageFilenameNoExt.toLowerCase().trim();
+  const pathPrefix = oldLower + "/";
+
+  return content.replace(
+    /(!?)\[\[([^\[\]]+?)(?:\|([^\[\]]+))?\]\]/g,
+    (match, bang, target, alias) => {
+      const targetLower = target.toLowerCase().trim();
+      if (!targetLower.startsWith(pathPrefix)) return match;
+
+      const rest = target.slice(oldFolder.length + 1);
+      const restLower = rest.toLowerCase().trim();
+
+      if (restLower !== titleLower && restLower !== filenameLower) {
+        return match;
+      }
+
+      const newTarget = `${newFolder}/${rest}`;
+      const aliasPart = alias !== undefined ? `|${alias}` : "";
+      return `${bang}[[${newTarget}${aliasPart}]]`;
+    },
+  );
+}

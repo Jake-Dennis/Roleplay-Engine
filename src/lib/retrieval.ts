@@ -400,7 +400,7 @@ function loadAllWikiEntries(wikiRoot: string, universeId: string): LoreContext {
       id: hashPathToId(page.path),
       name: page.frontmatter.title || path.basename(page.path, ".md"),
       description: page.content.substring(0, 500),
-      type: page.frontmatter.type || page.frontmatter.section || "entity",
+      type: (page.frontmatter.type || (page.frontmatter.section as string) || "entity") as string,
     }));
 
     return { entries };

@@ -1,7 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import FileTree from '@/components/wiki/file-tree';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import FileTree, { type FileTreePageItem, type ReorderChange } from '@/components/wiki/file-tree';
+import NewFolderModal from '@/components/wiki/new-folder-modal';
 import BacklinkPanel from '@/components/wiki/backlink-panel';
 import VersionHistory from '@/components/wiki/version-history';
 import OutlinePanel from '@/components/wiki/outline-panel';
@@ -10,6 +11,7 @@ import MarkdownRenderer from '@/components/wiki/markdown-renderer';
 import FrontmatterPropertiesPanel from '@/components/wiki/frontmatter-properties-panel';
 import MarkdownEditor from '@/components/wiki/markdown-editor';
 import WikiQuickSwitcher, { type WikiPage as SwitcherPage } from '@/components/wiki/wiki-quick-switcher';
+import TemplateSelector, { type WikiTemplate } from '@/components/wiki/template-selector';
 import {
   parseWikiFrontmatter,
   serializeWikiFrontmatter,
@@ -49,6 +51,14 @@ export default function WikiPageView() {
   const [saving, setSaving] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
 
+  // New page template selector
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const router = useRouter();
+
+  // New folder modal
+  const [newFolderOpen, setNewFolderOpen] = useState(false);
+  const [folderOrder, setFolderOrder] = useState<string[]>([]);
+
   // Right panel state
   const [rightPanel, setRightPanel] = useState<RightPanel>('backlinks');
 
@@ -63,17 +73,21 @@ export default function WikiPageView() {
       setSaveError(null);
     });
 
-    fetch(`/api/wiki/${pagePath}?universe_id=${activeUniverse?.id || ''}`)
-      .then(res => {
+    // Fetch page data and folder order in parallel
+    Promise.all([
+      fetch(`/api/wiki/${pagePath}?universe_id=${activeUniverse?.id || ''}`).then(res => {
         if (!res.ok) throw new Error('Page not found');
         return res.json();
-      })
-      .then(data => {
+      }),
+      fetch(`/api/wiki/config?universe_id=${activeUniverse?.id || ''}`).then(res => res.json()).catch(() => ({ folderOrder: [] })),
+    ])
+      .then(([data, config]) => {
         setPage(data.page);
         setAllPages(data.allPages || []);
         setOrphanPaths(data.orphanPaths || []);
         setBacklinks(data.backlinks || []);
         setEmbeds(data.embeds || {});
+        setFolderOrder(config.folderOrder || []);
         setLoading(false);
       })
       .catch(err => {
@@ -161,6 +175,124 @@ export default function WikiPageView() {
     }
   };
 
+  const handleTemplateSelect = async (template: WikiTemplate) => {
+    const title = prompt('Enter page title:');
+    if (!title || !title.trim()) return;
+
+    setTemplateOpen(false);
+
+    // Replace {{title}} placeholders in template content
+    const filledContent = template.content.replace(/\{\{title\}\}/g, title.trim());
+
+    // Determine folder based on template type
+    const folder = template.type === 'concept' ? 'concepts' : 'entities';
+    const pagePath = `${folder}/${title.trim().toLowerCase().replace(/\s+/g, '_')}.md`;
+
+    try {
+      const res = await fetch('/api/wiki', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          path: pagePath,
+          content: filledContent,
+          frontmatter: {
+            title: title.trim(),
+            type: template.type,
+            status: 'draft',
+            tags: [],
+          },
+          universeId: activeUniverse?.id,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorBody = await res.json();
+        alert(errorBody.error || 'Failed to create page');
+        return;
+      }
+
+      // Navigate to the new page
+      const slug = pagePath.replace('.md', '').replace(/_/g, '-');
+      router.push(`/wiki/${slug}`);
+    } catch {
+      alert('Network error while creating page');
+    }
+  };
+
+  // Memoize the pagesByFolder derivation so the file tree doesn't refilter on every render
+  const pagesByFolder = useMemo<Record<string, FileTreePageItem[]>>(() => {
+    const grouped: Record<string, FileTreePageItem[]> = {};
+    for (const p of allPages) {
+      const folder = p.path.includes('/') ? p.path.split('/')[0] : '';
+      if (!folder) continue;
+      if (!grouped[folder]) grouped[folder] = [];
+      grouped[folder].push({
+        path: p.path,
+        title: (p.frontmatter?.title as string) || p.path.split('/').pop()?.replace('.md', '') || p.path,
+        type: (p.frontmatter?.type as string) || '',
+        order: p.frontmatter?.order as number | undefined,
+      });
+    }
+    return grouped;
+  }, [allPages]);
+
+  const refreshWikiData = useCallback(async () => {
+    const pagePath = slug.join('/');
+    const [pageRes, configRes, allRes] = await Promise.all([
+      fetch(`/api/wiki/${pagePath}?universe_id=${activeUniverse?.id || ''}`).then(r => r.json()),
+      fetch(`/api/wiki/config?universe_id=${activeUniverse?.id || ''}`).then(r => r.json()).catch(() => ({ folderOrder: [] })),
+      fetch(`/api/wiki?universe_id=${activeUniverse?.id || ''}`).then(r => r.json()).catch(() => ({ pages: [] })),
+    ]);
+    if (pageRes.page) setPage(pageRes.page);
+    if (Array.isArray(pageRes.backlinks)) setBacklinks(pageRes.backlinks);
+    if (Array.isArray(pageRes.orphanPaths)) setOrphanPaths(pageRes.orphanPaths);
+    if (pageRes.embeds) setEmbeds(pageRes.embeds);
+    if (configRes.folderOrder) setFolderOrder(configRes.folderOrder);
+    if (Array.isArray(allRes.pages)) setAllPages(allRes.pages);
+  }, [slug, activeUniverse?.id]);
+
+  const handleCreateFolder = useCallback(async (folderName: string) => {
+    const res = await fetch('/api/wiki/types', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ folderName, universeId: activeUniverse?.id }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to create folder');
+    }
+    const data = await res.json();
+    if (Array.isArray(data.folderOrder)) {
+      setFolderOrder(data.folderOrder);
+    }
+  }, [activeUniverse?.id]);
+
+  const handleReorder = useCallback(async (change: ReorderChange) => {
+    const res = await fetch('/api/wiki/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        moves: change.moves,
+        folderOrder: change.folderOrder,
+        universeId: activeUniverse?.id,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to reorder');
+    }
+    // Refresh the page data so the file tree reflects the new state
+    await refreshWikiData();
+    // If the current page was moved, navigate to its new URL
+    const moveAffectingCurrent = change.moves.find(
+      (m) => m.oldPath === page?.path || m.newPath === page?.path,
+    );
+    if (moveAffectingCurrent && moveAffectingCurrent.newPath !== page?.path) {
+      const slugStr = moveAffectingCurrent.newPath.replace(/\.md$/, '').replace(/_/g, '-');
+      router.push(`/wiki/${slugStr}`);
+    }
+  }, [activeUniverse?.id, refreshWikiData, page?.path, router]);
+ 
   if (loading) return <div className="p-8 text-center text-text-muted">Loading...</div>;
   if (error) return <div className="p-8 text-center text-error">{error}</div>;
   if (!page) return <div className="p-8 text-center text-text-muted">Page not found</div>;
@@ -170,7 +302,15 @@ export default function WikiPageView() {
       <div className="flex h-[calc(100vh-4rem)]">
         {/* Left sidebar */}
         <div className="w-64 border-r border-border-default p-4 overflow-y-auto shrink-0">
-          <FileTree pages={allPages} currentPage={page.path} orphanPaths={orphanPaths} />
+          <FileTree
+            pagesByFolder={pagesByFolder}
+            folderOrder={folderOrder}
+            currentPage={page.path}
+            orphanPaths={orphanPaths}
+            onCreatePage={() => setTemplateOpen(true)}
+            onCreateFolder={() => setNewFolderOpen(true)}
+            onReorder={handleReorder}
+          />
         </div>
 
         {/* Main content */}
@@ -367,6 +507,16 @@ export default function WikiPageView() {
           title: p.frontmatter?.title || p.path,
           type: p.frontmatter?.type,
         }))}
+      />
+      <TemplateSelector
+        open={templateOpen}
+        onClose={() => setTemplateOpen(false)}
+        onSelect={handleTemplateSelect}
+      />
+      <NewFolderModal
+        open={newFolderOpen}
+        onClose={() => setNewFolderOpen(false)}
+        onCreate={handleCreateFolder}
       />
     </>
   );

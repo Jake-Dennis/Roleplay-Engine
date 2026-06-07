@@ -18,12 +18,20 @@
  */
 export interface WikiFrontmatter {
   title: string;
-  type: "entity" | "concept" | "source" | "synthesis";
+  /**
+   * Page type. The four standard types are entity, concept, source, synthesis.
+   * Custom types are also allowed (e.g., "location", "faction") and are typically
+   * created via the "New Folder" button. The page's folder on disk usually
+   * matches the plural form of its type.
+   */
+  type: string;
   status: "draft" | "reviewed" | "locked" | "rejected";
   universe?: string;
   tags?: string[];
   created?: string | Date;
   updated?: string | Date;
+  /** Display order within the page's folder (ascending). Pages without an order sort after ordered ones. */
+  order?: number;
   /** Reason for rejection (set when status is "rejected"). */
   rejection_reason?: string;
   /** ISO timestamp when the page was rejected. */

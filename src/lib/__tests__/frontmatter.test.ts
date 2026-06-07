@@ -128,10 +128,19 @@ describe("validateWikiFrontmatter", () => {
     expect(errors.some((e) => /title/i.test(e))).toBe(true);
   });
 
-  it("reports an error when type is not in the allowed set", () => {
+  it("accepts any non-empty string for type (custom types allowed)", () => {
     const errors = validateWikiFrontmatter({
       title: "X",
-      type: "invalid" as any,
+      type: "location",
+      status: "draft",
+    });
+    expect(errors.some((e) => /type/i.test(e))).toBe(false);
+  });
+
+  it("rejects empty string for type", () => {
+    const errors = validateWikiFrontmatter({
+      title: "X",
+      type: "",
       status: "draft",
     });
     expect(errors.length).toBeGreaterThan(0);

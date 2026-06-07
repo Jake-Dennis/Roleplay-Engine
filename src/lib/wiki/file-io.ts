@@ -7,11 +7,13 @@ import type { WikiFrontmatter, WikiPage, WriteWikiPageOptions } from "./types";
 export type { WikiFrontmatter, WikiPage, WriteWikiPageOptions } from "./types";
 export { ConflictError } from "./types";
 import { ConflictError } from "./types";
+import { getResolvedFolderOrder } from "./config";
 
 /**
- * The wiki folders scanned by listWikiPages.
+ * The wiki folders scanned by listWikiPages by default. Custom folders added
+ * at runtime are also discovered automatically from the filesystem.
  */
-const SCAN_FOLDERS = ["entities", "concepts", "sources", "synthesis", "_review"];
+const DEFAULT_SCAN_FOLDERS = ["entities", "concepts", "sources", "synthesis", "_review"];
 
 // ---------------------------------------------------------------------------
 // File Locking
@@ -176,7 +178,7 @@ function findWikiRoot(filePath: string): string {
   let current = path.dirname(filePath);
   const maxDepth = 10;
   for (let i = 0; i < maxDepth; i++) {
-    const hasWikiStructure = SCAN_FOLDERS.some((f) =>
+    const hasWikiStructure = DEFAULT_SCAN_FOLDERS.some((f) =>
       fs.existsSync(path.join(current, f))
     );
     if (hasWikiStructure) return current;
@@ -349,15 +351,21 @@ export function deleteWikiPage(filePath: string): void {
 /**
  * List all wiki pages across all wiki folders.
  *
- * Scans the standard wiki subdirectories under `wikiRoot`:
- *   entities, concepts, sources, synthesis, _review
+ * Scans the standard wiki subdirectories under `wikiRoot` plus any custom
+ * folders registered in the wiki config or discovered on disk. Pages within
+ * each folder are sorted by their `order` frontmatter field (ascending),
+ * then alphabetically by title for stable ordering.
  *
  * Skips files that fail to parse (e.g., non-frontmatter markdown).
  */
 export function listWikiPages(wikiRoot: string): WikiPage[] {
   const pages: WikiPage[] = [];
 
-  for (const folder of SCAN_FOLDERS) {
+  if (!fs.existsSync(wikiRoot)) return pages;
+
+  const folders = getResolvedFolderOrder(wikiRoot);
+
+  for (const folder of folders) {
     const dir = path.join(wikiRoot, folder);
     if (!fs.existsSync(dir)) continue;
 
@@ -371,6 +379,20 @@ export function listWikiPages(wikiRoot: string): WikiPage[] {
       }
     }
   }
+
+  // Sort by folder order, then by order field, then by title
+  const folderIndex = new Map(folders.map((f, i) => [f, i] as const));
+  pages.sort((a, b) => {
+    const aFolder = path.basename(path.dirname(a.path));
+    const bFolder = path.basename(path.dirname(b.path));
+    const aFolderIdx = folderIndex.get(aFolder) ?? 0;
+    const bFolderIdx = folderIndex.get(bFolder) ?? 0;
+    if (aFolderIdx !== bFolderIdx) return aFolderIdx - bFolderIdx;
+    const aOrder = a.frontmatter.order ?? Number.POSITIVE_INFINITY;
+    const bOrder = b.frontmatter.order ?? Number.POSITIVE_INFINITY;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return (a.frontmatter.title || "").localeCompare(b.frontmatter.title || "");
+  });
 
   return pages;
 }

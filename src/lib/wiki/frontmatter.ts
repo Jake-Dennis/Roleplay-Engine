@@ -19,13 +19,6 @@ export const EMPTY_FRONTMATTER: WikiFrontmatter = {
   status: "draft",
 };
 
-const VALID_TYPES: ReadonlyArray<WikiFrontmatter["type"]> = [
-  "entity",
-  "concept",
-  "source",
-  "synthesis",
-];
-
 const VALID_STATUSES: ReadonlyArray<WikiFrontmatter["status"]> = [
   "draft",
   "reviewed",
@@ -100,10 +93,8 @@ export function validateWikiFrontmatter(fm: WikiFrontmatter): string[] {
     errors.push("title is required and must be a non-empty string");
   }
 
-  if (!VALID_TYPES.includes(fm.type)) {
-    errors.push(
-      `type is required and must be one of: ${VALID_TYPES.join(", ")}`
-    );
+  if (typeof fm.type !== "string" || fm.type.trim() === "") {
+    errors.push("type is required and must be a non-empty string");
   }
 
   if (!VALID_STATUSES.includes(fm.status)) {
