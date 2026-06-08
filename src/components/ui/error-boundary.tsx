@@ -1,4 +1,13 @@
 'use client';
+/**
+ * @deprecated This file is not currently imported by any source module.
+ * Kept for reference. Will be removed in a future cleanup pass once
+ * all consumers are verified.
+ * @reason React error boundary component was never wrapped around any
+ * page or component tree. Error handling in the app is done through
+ * inline try/catch patterns and error states in individual components.
+ */
+
 import { Component, type ReactNode } from 'react';
 
 interface Props {

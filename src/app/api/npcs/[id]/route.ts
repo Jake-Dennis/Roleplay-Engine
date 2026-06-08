@@ -13,7 +13,6 @@ import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import { listWikiPages, deleteWikiPage } from '@/lib/wiki/file-io';
 import { queueJob } from '@/lib/job-processor';
 import fs from 'fs';
-import path from 'path';
 
 /**
  * Gets a single NPC by ID.

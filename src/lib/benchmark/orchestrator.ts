@@ -2,16 +2,12 @@ import {
   BenchmarkConfig,
   BenchmarkReport,
   OllamaModelMeta as BenchmarkOllamaModelMeta,
-  ContextTestResult,
-  PredictTestResult,
-  CombinationResult,
 } from "./types";
 import { getModelMeta, OllamaModelMeta as OllamaMetaOllamaModelMeta } from "@/lib/ollama-meta";
 import { runContextTest } from "./context-test";
 import { runPredictTest } from "./predict-test";
 import { runCombinationTests } from "./combination-test";
 import { generateRecommendation } from "./auto-tune";
-import { logger } from "@/lib/logger";
 
 function convertModelMeta(meta: OllamaMetaOllamaModelMeta): BenchmarkOllamaModelMeta {
   return {

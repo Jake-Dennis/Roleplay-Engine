@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from '@/lib/with-auth';
 import { getDb } from "@/lib/db";
 import type { DbDatabase } from "@/lib/types";
-import { unauthorizedError, notFoundError, badRequestError, requireJson } from '@/lib/error-response';
+import { notFoundError, badRequestError, requireJson } from '@/lib/error-response';
 import { parseBoundaries } from '@/lib/universe-utils';
 import { validateLength } from '@/lib/validation';
 import { isValidUUID } from '@/lib/validation/uuid-validator';

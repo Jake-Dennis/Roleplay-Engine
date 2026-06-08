@@ -1,4 +1,13 @@
 /**
+ * @deprecated This file is not currently imported by any source module.
+ * Kept for reference. Will be removed in a future cleanup pass once
+ * all consumers are verified.
+ * @reason TTS playback hook was never integrated into the TTS components.
+ * TTS functionality is handled via lower-level components (tts-controls,
+ * voice-picker) that use direct API calls rather than this hook.
+ */
+
+/**
  * useTTS Hook
  *
  * Manages TTS playback state, queue, and settings.

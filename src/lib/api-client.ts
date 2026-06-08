@@ -1,4 +1,13 @@
 /**
+ * @deprecated This file is not currently imported by any source module.
+ * Kept for reference. Will be removed in a future cleanup pass once
+ * all consumers are verified.
+ * @reason Typed API client with retry logic was intended as a replacement
+ * for raw fetch calls but was never adopted. The codebase uses direct
+ * fetch() calls in hooks and components instead.
+ */
+
+/**
  * API Client
  *
  * Typed API client with error handling and retry logic.

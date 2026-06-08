@@ -4,7 +4,6 @@ import { withAuth } from '@/lib/with-auth';
 import { generateSpeechStream } from "@/lib/tts";
 import { getUserTtsUrl } from "@/lib/ollama";
 import { logger } from '@/lib/logger';
-import { TTS_CONFIG } from '@/lib/config';
 import { checkRateLimit, createRateLimitResponse } from '@/lib/rate-limiter';
 
 const VALID_FORMATS = ["mp3", "wav", "ogg"] as const;

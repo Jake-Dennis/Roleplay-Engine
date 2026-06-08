@@ -16,7 +16,6 @@ import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import { readWikiPage, writeWikiPage, deleteWikiPage } from "./file-io";
 import { rewriteLinksForPageMove } from "./wikilinks";
 import { getTypeRegistry } from "./type-registry";
-import type { TypeRegistry } from "./type-registry";
 import { subtypeFromFolder } from "./subtype-folders";
 
 // ---------------------------------------------------------------------------
@@ -291,8 +290,8 @@ export function bulkMovePages(
       movedPages.push({ oldFolder, newFolder, pageTitle, filename });
 
       logger.info(`[wiki] Bulk-moved ${oldRelPath} → ${newRelPath}`);
-    } catch (err: any) {
-      result.failed.push({ path: move.oldPath, reason: err.message || String(err) });
+    } catch (err: unknown) {
+      result.failed.push({ path: move.oldPath, reason: err instanceof Error ? err.message : String(err) });
     }
   }
 
@@ -301,7 +300,7 @@ export function bulkMovePages(
     try {
       const allFiles = collectWikiFiles(wikiRoot);
       result.linksUpdated = batchRewriteLinks(allFiles, movedPages);
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error("[wiki] Error during batch link rewriting", err);
     }
   }

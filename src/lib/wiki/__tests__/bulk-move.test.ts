@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import { bulkMovePages, type BulkMoveItem } from "../bulk-move";
-import { readWikiPage, writeWikiPage, listWikiPages } from "../file-io";
+import { readWikiPage, writeWikiPage } from "../file-io";
 import { clearTypeRegistryCache } from "../type-registry";
 import { writeWikiConfigV2 } from "../config-migration";
 import { DEFAULT_TYPE_DEFS, DEFAULT_SUBTYPE_FOLDERS } from "../config-types";

@@ -15,7 +15,7 @@
  * See AGENTS.md for the full explanation of this tradeoff.
  */
 
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, mock } from "bun:test";
 
 // ===========================================================================
 // mock.module() ONLY for modules with native addons (better-sqlite3)

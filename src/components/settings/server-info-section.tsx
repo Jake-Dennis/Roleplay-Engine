@@ -36,17 +36,22 @@ export function ServerInfoSection({ loading, settings, onSave }: ServerInfoSecti
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (settings) {
-      const [oh = "", op = ""] = (settings.ollama?.host ?? "").split(":");
+    if (!settings) return;
+    // Parse host:port from the host string (host may embed port like "192.168.1.1:11434")
+    const [oh = "", op = ""] = (settings.ollama?.host ?? "").split(":");
+    const [th = "", tp = ""] = (settings.tts?.host ?? "").split(":");
+    // Defer setState via setTimeout to avoid a synchronous state cascade
+    // inside the effect body (react-hooks/set-state-in-effect).
+    const id = setTimeout(() => {
       setOllamaHost(oh);
       setOllamaPort(op || String(settings.ollama?.port ?? ""));
       setOllamaModel(settings.ollama?.model ?? "");
       setEmbeddingModel(settings.ollama?.embeddingModel ?? "");
-      const [th = "", tp = ""] = (settings.tts?.host ?? "").split(":");
       setTtsHost(th);
       setTtsPort(tp || String(settings.tts?.port ?? ""));
       setTtsVoice(settings.tts?.defaultVoice ?? "");
-    }
+    }, 0);
+    return () => clearTimeout(id);
   }, [settings]);
 
   async function handleSave() {

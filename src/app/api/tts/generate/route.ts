@@ -3,7 +3,7 @@ import { generateSpeech, getCachedAudio, cacheAudio } from "@/lib/tts";
 import { TTS_CONFIG } from "@/lib/config";
 import { getUserTtsUrl } from "@/lib/ollama";
 import { withAuth } from '@/lib/with-auth';
-import { unauthorizedError, badRequestError, serverError, requireJson } from '@/lib/error-response';
+import { badRequestError, serverError, requireJson } from '@/lib/error-response';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 /**

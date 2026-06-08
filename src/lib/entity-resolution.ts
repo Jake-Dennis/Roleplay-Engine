@@ -1,4 +1,14 @@
 /**
+ * @deprecated This file is not currently imported by any source module.
+ * Kept for reference. Will be removed in a future cleanup pass once
+ * all consumers are verified.
+ * @reason Entity-to-wiki-page resolution was intended for the entity
+ * mention resolution pipeline in the generation flow but was never
+ * called. The resolution of entity mentions to wiki pages is handled
+ * elsewhere (or was never fully integrated).
+ */
+
+/**
  * Entity-to-Wiki-Page Resolution
  *
  * Resolves an entity name (from entity_mentions extraction) to the best-matching

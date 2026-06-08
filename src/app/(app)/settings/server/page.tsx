@@ -141,7 +141,6 @@ export default function ServerSettingsPage() {
   const [connLoading, setConnLoading] = useState(true);
 
   useEffect(() => {
-    setAuthError(false);
     fetch("/api/tts/voices").then(r => { if (!r.ok && r.status === 401) setAuthError(true); return r.json(); }).then(d => setVoices(d.voiceDetails || [])).catch(() => {});
     fetch("/api/voice-assignments?entityType=narrator&entityId=default").then(r => { if (!r.ok && r.status === 401) setAuthError(true); return r.json(); }).then(d => { if (d.assignment) setNarratorVoice(d.assignment.voiceName); }).catch(() => {});
     fetch("/api/tts/cache").then(r => { if (!r.ok && r.status === 401) setAuthError(true); return r.json(); }).then(d => { setCacheStats(d.stats); setCacheLoading(false); }).catch(() => setCacheLoading(false));
@@ -217,7 +216,7 @@ export default function ServerSettingsPage() {
     queueMicrotask(() => setModelLoading(true));
     fetch(`/api/models/ollama${ollamaUrl ? `?url=${encodeURIComponent(ollamaUrl)}` : ""}`).then(r => { if (!r.ok && r.status === 401) setAuthError(true); return r.json(); }).then(d => { setOllamaConnected(d.connected); setModels(d.models || []); setModelLoading(false); }).catch(() => setModelLoading(false));
     fetch("/api/ollama/models").then(r => { if (!r.ok && r.status === 401) setAuthError(true); return r.json(); }).then(d => setLocalModels(d.models || [])).catch(() => {});
-  }, []);
+  }, [ollamaUrl]);
 
   /**
    * Apply per-model overrides when the user changes the LLM dropdown.

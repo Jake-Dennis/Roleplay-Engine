@@ -24,7 +24,6 @@ import { fetchLocalModels } from "@/lib/ollama";
 export const GET = withErrorHandler(async (request: NextRequest) => {
   const authResult = await withAuth(request);
   if ('error' in authResult) return authResult.error;
-  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`settings_read:${ip}`, "api");
@@ -73,7 +72,6 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 export const PUT = withErrorHandler(async (request: NextRequest) => {
   const authResult = await withAuth(request);
   if ('error' in authResult) return authResult.error;
-  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`settings_write:${ip}`, "api");

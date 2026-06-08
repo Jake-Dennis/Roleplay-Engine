@@ -18,6 +18,8 @@ const eslintConfig = defineConfig([
     "scripts/**",
     // Obsidian docs tooling (external, not application code):
     "obsidian-docs/**",
+    // Archived OMO output (historical artifacts, not active source code):
+    "docs/historical-evidence/**",
   ]),
 ]);
 

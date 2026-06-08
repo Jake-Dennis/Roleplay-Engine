@@ -18,7 +18,6 @@ import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate
 export const GET = withErrorHandler(async (request: NextRequest) => {
   const authResult = await withAuth(request);
   if ('error' in authResult) return authResult.error;
-  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`api:${ip}`, "api");

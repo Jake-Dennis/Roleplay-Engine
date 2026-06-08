@@ -6,7 +6,7 @@
  * a ready-to-use registry object.
  */
 
-import type { WikiConfigV2, WikiTypeDef } from "./config-types";
+import type { WikiTypeDef } from "./config-types";
 import { readAndMigrateConfig } from "./config-migration";
 
 /** Normalized type registry returned by getTypeRegistry. */

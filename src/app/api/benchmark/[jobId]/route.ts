@@ -6,10 +6,7 @@ import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate
 import { logger } from "@/lib/logger";
 import {
   getJob,
-  getUserJobs,
-  updateJob,
   deleteJob,
-  persistJob,
   loadUserJobs,
   deleteJobFile,
 } from "@/lib/benchmark/job-store";

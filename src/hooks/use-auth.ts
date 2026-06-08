@@ -1,4 +1,13 @@
 /**
+ * @deprecated This file is not currently imported by any source module.
+ * Kept for reference. Will be removed in a future cleanup pass once
+ * all consumers are verified.
+ * @reason Auth state management was superseded by the inline auth pattern
+ * in app-context.tsx (AppProvider) and per-route token verification.
+ * The app uses AppContext's built-in user state rather than this hook.
+ */
+
+/**
  * useAuth Hook
  *
  * Manages authentication state across the application.

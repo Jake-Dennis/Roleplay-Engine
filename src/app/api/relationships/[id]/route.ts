@@ -5,7 +5,7 @@ import { withAuth } from '@/lib/with-auth';
 import { getDb } from "@/lib/db";
 import { ensureGroupSupport, isGroupMember } from "@/lib/group-migrations";
 import type { DbDatabase, DbResult } from "@/lib/types";
-import { unauthorizedError, notFoundError, requireJson } from '@/lib/error-response';
+import { notFoundError, requireJson } from '@/lib/error-response';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 function hasEntityAccess(db: DbDatabase, entityType: string, entityId: string, userId: string): DbResult | null {

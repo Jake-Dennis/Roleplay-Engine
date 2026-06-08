@@ -1,7 +1,7 @@
 import { camelizeKeys } from '@/lib/response-utils';
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { unauthorizedError, notFoundError, badRequestError, serverError } from "@/lib/error-response";
+import { notFoundError, badRequestError, serverError } from "@/lib/error-response";
 import { withAuth } from '@/lib/with-auth';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 

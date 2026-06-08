@@ -1,4 +1,14 @@
 /**
+ * @deprecated This file is not currently imported by any source module.
+ * Kept for reference. Will be removed in a future cleanup pass once
+ * all consumers are verified.
+ * @reason Subtype prompt builder is only used by its own test file
+ * (prompt-subtypes.test.ts) but has no production consumers. The
+ * subtype/type-registry system exists but the prompt integration
+ * was never wired into the actual prompt-builder pipeline.
+ */
+
+/**
  * Prompt Subtype Helper
  *
  * Builds the subtype instruction section for LLM prompts based on the

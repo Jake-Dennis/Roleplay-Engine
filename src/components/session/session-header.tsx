@@ -1,5 +1,15 @@
 "use client";
 
+/**
+ * @deprecated This file is not currently imported by any source module.
+ * Kept for reference. Will be removed in a future cleanup pass once
+ * all consumers are verified.
+ * @reason This session header component was replaced by an inline header
+ * in the session page layout. The toggle panels (scene, participants,
+ * private state, relationships, recap) are now managed directly by the
+ * session page component rather than via this separate header.
+ */
+
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {

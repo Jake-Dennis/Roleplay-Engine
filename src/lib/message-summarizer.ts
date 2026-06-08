@@ -1,4 +1,14 @@
 /**
+ * @deprecated This file is not currently imported by any source module.
+ * Kept for reference. Will be removed in a future cleanup pass once
+ * all consumers are verified.
+ * @reason Per-message summarization was intended to complement the batch
+ * summarization system (summarization.ts) but was never integrated into
+ * the generation pipeline. The message_summaries table and related
+ * infrastructure exist but have no callers.
+ */
+
+/**
  * Per-Message Summarizer
  * 
  * Generates structured summaries immediately after each message is created.

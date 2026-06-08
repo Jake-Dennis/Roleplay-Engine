@@ -1,4 +1,13 @@
 /**
+ * @deprecated This file is not currently imported by any source module.
+ * Kept for reference. Will be removed in a future cleanup pass once
+ * all consumers are verified.
+ * @reason Generic localStorage hook has no consumers. Settings and
+ * preferences are managed through the server-side settings API or
+ * React state rather than localStorage.
+ */
+
+/**
  * useLocalStorage Hook
  *
  * Persistent client-side settings with automatic JSON serialization.

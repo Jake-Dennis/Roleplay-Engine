@@ -35,7 +35,6 @@ let applyContextBudget: (ctx: any, maxTokens: number) => any;
 let assemblePromptWithBudget: (ctx: any, systemPrompt: string, maxTokens?: number, characterInstructions?: string | null) => string;
 
 beforeAll(async () => {
-  const retrieval = await import(path.resolve(import.meta.dir, "../retrieval.ts") + "?v=" + Date.now());
   parseWikiIndex = (await import(path.resolve(import.meta.dir, "../wiki/index-utils.ts") + "?v=" + Date.now())).parseWikiIndex;
   scoreWikiEntry = (await import(path.resolve(import.meta.dir, "../wiki/index-utils.ts") + "?v=" + Date.now())).scoreWikiEntry;
   resolveWikiPagePath = (await import(path.resolve(import.meta.dir, "../wiki/index-utils.ts") + "?v=" + Date.now())).resolveWikiPagePath;
@@ -51,7 +50,6 @@ beforeAll(async () => {
 // ---------------------------------------------------------------------------
 
 let TEST_ROOT: string;
-const UNIVERSES: string[] = []; // track created universe dirs for cleanup
 
 function createTestRoot(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "wiki-prompt-test-"));
@@ -70,12 +68,8 @@ function writePage(relPath: string, frontmatter: Record<string, unknown>, body =
   fs.writeFileSync(fullPath, content, "utf-8");
 }
 
-function writeIndexEntry(title: string, summary: string, status: string, section: string): string {
+function writeIndexEntry(title: string, summary: string, status: string, _section: string): string {
   return `- [[${title}]] — ${summary} (status: ${status})`;
-}
-
-function createIndexMd(section: string, entries: string[]): string {
-  return `## ${section}\n${entries.join("\n")}\n`;
 }
 
 // ---------------------------------------------------------------------------
@@ -494,7 +488,6 @@ describe("Wiki-to-Prompt — assemblePromptWithBudget (Full Pipeline)", () => {
     };
 
     const prompt = assemblePromptWithBudget(ctx, "You are the Narrator.");
-    const lines = prompt.split("\n");
 
     // Verify all expected sections
     expect(prompt).toContain("[CURRENT SCENE]");

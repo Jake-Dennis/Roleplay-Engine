@@ -227,10 +227,14 @@ export default function BenchmarkPage() {
     if (model) localStorage.setItem(STORAGE_KEY, model);
   }, [model]);
 
-  // Fetch initial data
+  // Fetch initial data — defer via setTimeout to avoid synchronous
+  // setState cascade inside the effect body (react-hooks/set-state-in-effect).
   useEffect(() => {
-    fetchHistory();
-    fetchUserSettings();
+    const id = setTimeout(() => {
+      fetchHistory();
+      fetchUserSettings();
+    }, 0);
+    return () => clearTimeout(id);
   }, [fetchHistory, fetchUserSettings]);
 
   // Cleanup polling on unmount
@@ -265,11 +269,14 @@ export default function BenchmarkPage() {
     }
   }, []);
 
-  // Auto-detect models once Ollama URL is known
+  // Auto-detect models once Ollama URL is known — defer via setTimeout
+  // to avoid synchronous setState cascade inside the effect body.
   useEffect(() => {
-    if (ollamaUrl) {
+    if (!ollamaUrl) return;
+    const id = setTimeout(() => {
       fetchModels();
-    }
+    }, 0);
+    return () => clearTimeout(id);
   }, [ollamaUrl, fetchModels]);
 
   const pollJob = useCallback(async (jobId: string) => {

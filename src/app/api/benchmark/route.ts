@@ -11,7 +11,6 @@ import {
   BenchmarkReport,
 } from "@/lib/benchmark/types";
 import {
-  generateJobId,
   createJob,
   getJob,
   getUserJobs,

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { getTypeRegistry, clearTypeRegistryCache, refreshTypeRegistry } from "../type-registry";
-import { readAndMigrateConfig, writeWikiConfigV2 } from "../config-migration";
+import { writeWikiConfigV2 } from "../config-migration";
 import { DEFAULT_TYPE_DEFS, DEFAULT_SUBTYPE_FOLDERS, type WikiConfigV2 } from "../config-types";
 import fs from "fs";
 import path from "path";

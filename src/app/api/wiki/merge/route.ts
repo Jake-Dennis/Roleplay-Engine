@@ -94,7 +94,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       redirect: redirect === true,
     });
     return NextResponse.json(result);
-  } catch (err: any) {
-    return badRequestError(err.message || "Merge failed");
+  } catch (err: unknown) {
+    return badRequestError(err instanceof Error ? err.message : String(err));
   }
 });

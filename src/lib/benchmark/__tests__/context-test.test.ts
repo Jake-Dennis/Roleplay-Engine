@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "bun:test";
 import { runContextTest } from "../context-test";
-import { BenchmarkConfig, ContextTestResult } from "../types";
+import { BenchmarkConfig } from "../types";
 
 // Mock generateText
 const mockGenerateText = vi.fn();
@@ -8,8 +8,6 @@ const mockGenerateText = vi.fn();
 vi.mock("@/lib/ollama", () => ({
   generateText: mockGenerateText,
 }));
-
-import { generateText } from "@/lib/ollama";
 
 describe("runContextTest", () => {
   const mockConfig: BenchmarkConfig = {

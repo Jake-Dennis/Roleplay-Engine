@@ -17,7 +17,6 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
   type ChangeEvent,
   type KeyboardEvent,
 } from 'react';
@@ -77,22 +76,17 @@ function MarkdownEditor({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const overlayRef = useRef<HTMLPreElement>(null);
 
-  const [overlayHtml, setOverlayHtml] = useState<string>('');
-  const [lineCount, setLineCount] = useState<number>(1);
+  // Compute the highlight overlay and gutter line count from value
+  // directly during render (useMemo) rather than via effect + setState.
+  // This avoids a synchronous render cascade (react-hooks/set-state-in-effect).
+  const overlayHtml = useMemo(() => highlightMarkdown(value), [value]);
+  const lineCount = useMemo(() => value.split('\n').length || 1, [value]);
 
   const wa = useWikilinkAutocomplete({
     textareaRef,
     pages: existingPages,
     limit: 10,
   });
-
-  // Recompute the highlight overlay and the gutter's line count whenever
-  // the controlled value changes (whether typed by the user or pushed in
-  // by the parent).
-  useEffect(() => {
-    setOverlayHtml(highlightMarkdown(value));
-    setLineCount(value.split('\n').length || 1);
-  }, [value]);
 
   // When the parent swaps in a new value while the textarea is not focused
   // (e.g. user opened a different page in the editor), mirror the value
@@ -104,8 +98,6 @@ function MarkdownEditor({
     if (document.activeElement === ta) return;
     if (ta.value === value) return;
     ta.value = value;
-    setOverlayHtml(highlightMarkdown(value));
-    setLineCount(value.split('\n').length || 1);
   }, [value]);
 
   // Keep the overlay in lockstep with the textarea's scroll position.

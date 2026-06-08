@@ -1,4 +1,13 @@
 /**
+ * @deprecated This file is not currently imported by any source module.
+ * Kept for reference. Will be removed in a future cleanup pass once
+ * all consumers are verified.
+ * @reason Voice discovery/assignment hook was never wired into the TTS
+ * UI components. Voice management is handled via direct API calls in
+ * voice-picker and tts-controls components.
+ */
+
+/**
  * useVoices Hook
  *
  * Manages TTS voice list, discovery, and per-entity voice assignments.

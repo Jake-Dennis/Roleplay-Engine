@@ -87,7 +87,10 @@ export default function WikiQuickSwitcher({ open, onClose, pages }: WikiQuickSwi
 
   useEffect(() => {
     if (activeIndex >= results.length) {
-      setActiveIndex(results.length > 0 ? results.length - 1 : 0);
+      const id = setTimeout(() => {
+        setActiveIndex(results.length > 0 ? results.length - 1 : 0);
+      }, 0);
+      return () => clearTimeout(id);
     }
   }, [results.length, activeIndex]);
 

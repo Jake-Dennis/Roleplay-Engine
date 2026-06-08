@@ -315,9 +315,9 @@ export function bulkRecategorize(
       }
 
       result.changes.push(item);
-    } catch (err: any) {
-      item.error = err.message || String(err);
-      result.errors.push(`${relPath}: ${err.message}`);
+    } catch (err: unknown) {
+      item.error = err instanceof Error ? err.message : String(err);
+      result.errors.push(`${relPath}: ${err instanceof Error ? err.message : String(err)}`);
       result.changes.push(item);
     }
   }

@@ -30,7 +30,6 @@ function generateTestId(): string {
 export const POST = withErrorHandler(async (request: NextRequest) => {
   const authResult = await withAuth(request);
   if ("error" in authResult) return authResult.error;
-  const { userId } = authResult.auth;
 
   const body = await request.json().catch(() => ({}));
   const serverConfig = getServerConfig();
@@ -80,7 +79,7 @@ async function runRoleplayTestInBackground(
     entry.message = "Running roleplay scenarios...";
 
     // Determine context size: use explicit override, or fetch from user settings
-    let contextSize = maxContextSize || 32768;
+    const contextSize = maxContextSize || 32768;
 
     const config = {
       model,

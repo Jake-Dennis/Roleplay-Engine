@@ -1,4 +1,4 @@
-﻿import { OLLAMA_CONFIG, TIMEOUTS } from "./config";
+﻿import { OLLAMA_CONFIG, TIMEOUTS, TTS_CONFIG } from "./config";
 import { getDb } from "./db";
 import { safeParseWarn } from "@/lib/safe-json";
 import { logger } from "@/lib/logger";
@@ -376,8 +376,6 @@ export function getUserTtsUrl(userId: string): string {
   } catch {
     // Fall through to default
   }
-  // Import TTS_CONFIG lazily to avoid circular deps
-  const { TTS_CONFIG } = require("./config");
   return TTS_CONFIG.baseUrl;
 }
 
