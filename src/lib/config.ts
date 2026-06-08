@@ -11,7 +11,7 @@ export const OLLAMA_CONFIG = {
   get baseUrl() {
     return `http://${this.host}:${this.port}`;
   },
-  model: process.env.OLLAMA_MODEL || "qwen3.5:4b",
+  model: process.env.OLLAMA_MODEL || "qwen3.5:9B",
   embeddingModel: process.env.OLLAMA_EMBEDDING_MODEL || "bge-m3",
   timeout: 600000,
   embeddingTimeout: 120000,
