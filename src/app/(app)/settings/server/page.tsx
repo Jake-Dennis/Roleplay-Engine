@@ -147,6 +147,10 @@ export default function ServerSettingsPage() {
     fetch("/api/health").then(r => r.json()).then(d => { setConnOllama(d.ollama || { status: "error" }); setConnKokoro(d.kokoro || { status: "error" }); setConnLoading(false); }).catch(() => { setConnOllama({ status: "error" }); setConnKokoro({ status: "error" }); setConnLoading(false); });
   }, []);
 
+  // Separate the settings load (mount only) from model detection (ollamaUrl changes).
+  // The settings effect must NOT depend on ollamaUrl, otherwise every keystroke
+  // in the Ollama URL input re-fetches saved settings and overwrites the user's
+  // in-progress edit with the stored host:port value.
   useEffect(() => {
     fetch("/api/settings").then(async (res) => {
       if (res.status === 401) { setAuthError(true); setLoading(false); return; }
@@ -212,11 +216,24 @@ export default function ServerSettingsPage() {
       }
       setLoading(false);
     }).catch(() => setLoading(false));
+  }, []);
 
-    queueMicrotask(() => setModelLoading(true));
-    fetch(`/api/models/ollama${ollamaUrl ? `?url=${encodeURIComponent(ollamaUrl)}` : ""}`).then(r => { if (!r.ok && r.status === 401) setAuthError(true); return r.json(); }).then(d => { setOllamaConnected(d.connected); setModels(d.models || []); setModelLoading(false); }).catch(() => setModelLoading(false));
-    fetch("/api/ollama/models").then(r => { if (!r.ok && r.status === 401) setAuthError(true); return r.json(); }).then(d => setLocalModels(d.models || [])).catch(() => {});
+  // Model detection: re-fetch when ollamaUrl changes (user typed a new address).
+  useEffect(() => {
+    if (!ollamaUrl) return;
+    setModelLoading(true);
+    const controller = new AbortController();
+    fetch(`/api/models/ollama?url=${encodeURIComponent(ollamaUrl)}`, { signal: controller.signal })
+      .then(r => { if (!r.ok && r.status === 401) setAuthError(true); return r.json(); })
+      .then(d => { setOllamaConnected(d.connected); setModels(d.models || []); setModelLoading(false); })
+      .catch(() => { if (!controller.signal.aborted) setModelLoading(false); });
+    return () => controller.abort();
   }, [ollamaUrl]);
+
+  // Local models list: fetch once on mount.
+  useEffect(() => {
+    fetch("/api/ollama/models").then(r => { if (!r.ok && r.status === 401) setAuthError(true); return r.json(); }).then(d => setLocalModels(d.models || [])).catch(() => {});
+  }, []);
 
   /**
    * Apply per-model overrides when the user changes the LLM dropdown.
