@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { withAuth } from '@/lib/with-auth';
 import { TTS_CONFIG } from "@/lib/config";
+import { getUserTtsUrl } from "@/lib/ollama";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
 /**
@@ -17,6 +18,7 @@ import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate
 export async function POST(request: NextRequest) {
   const authResult = await withAuth(request);
   if ('error' in authResult) return authResult.error;
+  const { userId } = authResult.auth;
 
   const ip = getClientIp(request);
   const rateLimit = checkRateLimit(`api:${ip}`, "api");
@@ -34,7 +36,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const response = await fetch(`${TTS_CONFIG.baseUrl}/v1/audio/voices/combine`, {
+    const ttsUrl = getUserTtsUrl(userId);
+    const response = await fetch(`${ttsUrl}/v1/audio/voices/combine`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(voiceSpec),

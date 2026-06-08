@@ -27,9 +27,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Accept optional custom URLs from query params (e.g. from user settings).
+  // The health check by default uses the server config URLs, but if a user
+  // has configured custom Ollama/TTS URLs in their settings, the frontend
+  // can pass them here for more accurate health reporting.
+  const { searchParams } = new URL(request.url);
+  const customOllamaUrl = searchParams.get("ollamaUrl") || undefined;
+  const customTtsUrl = searchParams.get("ttsUrl") || undefined;
+
   const [ollamaResult, kokoroResult, dbResult] = await Promise.allSettled([
-    checkOllama(),
-    checkKokoro(),
+    checkOllama(customOllamaUrl),
+    checkKokoro(customTtsUrl),
     checkDb(),
   ]);
 
@@ -50,12 +58,13 @@ export async function GET(request: NextRequest) {
   }, { status: allHealthy ? 200 : 503 });
 }
 
-async function checkOllama() {
+async function checkOllama(customUrl?: string) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), TIMEOUTS.HEALTH_CHECK);
+    const url = customUrl || OLLAMA_CONFIG.baseUrl;
 
-    const response = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/tags`, {
+    const response = await fetch(`${url}/api/tags`, {
       signal: controller.signal,
     });
     clearTimeout(timeout);
@@ -81,12 +90,13 @@ async function checkOllama() {
   }
 }
 
-async function checkKokoro() {
+async function checkKokoro(customUrl?: string) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), TIMEOUTS.HEALTH_CHECK);
+    const url = customUrl || TTS_CONFIG.baseUrl;
 
-    const response = await fetch(`${TTS_CONFIG.baseUrl}/v1/audio/voices`, {
+    const response = await fetch(`${url}/v1/audio/voices`, {
       signal: controller.signal,
     });
     clearTimeout(timeout);
