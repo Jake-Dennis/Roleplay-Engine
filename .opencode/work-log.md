@@ -640,4 +640,46 @@ The file lives at `data/<userId>/wiki/<universe_id>/concepts/event_acknowledgmen
 - Bulk operations use 2-phase approach: file operations → batch wikilink rewrite (atomic within lock)
 - Recategorize automatically moves pages to correct type folder when subtype changes cause type mismatch
 
+---
+
+## 2026-06-08 — Cycle 12: Wiki-config fix + wiki-prompt pipeline test
+
+**Trigger:** User requested fixing missing `.wiki-config.json` files and testing AI wiki usage.
+
+**What was done:**
+
+1. **Created `.wiki-config.json` for 4 missing universes:**
+   - 3 sub-universes under `8aec6985-...` (1cda4728, 67e1cffb, a1b4ab76)
+   - 1 `test` universe under `8e00579a-...`
+   - Uses standard v2 schema matching all existing sub-universe configs
+
+2. **Verified the 11 "root-level" event pages in `concepts/`** — they have `type: concept` frontmatter with `tags: event`, not `subtype: event`. Correctly placed in the `concepts/` type folder. No move needed.
+
+3. **Wrote wiki-to-prompt integration test** (`src/lib/__tests__/wiki-prompt-integration.test.ts`):
+   - 18 tests, all pass (62 expect calls)
+   - Tests every layer: index parsing, relevance scoring, page resolution, page reading, prompt assembly (`[KNOWN WORLD]`), budget truncation, full end-to-end
+   - Confirms wiki pages on disk appear in the `[KNOWN WORLD]` section of the assembled prompt
+   - Verifies correct section ordering: Scene → Intent → Known World → Relationships → Recent History
+   - Verifies `<user_content>` injection protection wrapping
+   - Uses cache-busting dynamic imports to avoid mock.module leaks
+   - Does not require Ollama, real DB, or running server
+
+**Files changed:**
+- `data/8aec6985-.../wiki/1cda4728-.../.wiki-config.json` — new
+- `data/8aec6985-.../wiki/67e1cffb-.../.wiki-config.json` — new
+- `data/8aec6985-.../wiki/a1b4ab76-.../.wiki-config.json` — new
+- `data/8e00579a-.../wiki/test/.wiki-config.json` — new
+- `src/lib/__tests__/wiki-prompt-integration.test.ts` — new (18 tests)
+
+**Key decisions:**
+- 11 event pages in `concepts/` left in place (correctly typed as `concept` with event tags)
+- Test uses cache-busting dynamic imports (`import ... + "?v=" + Date.now()`) to work around the `npc-wiki-sync.test.ts` mock leak
+- Test validates the prompt assembly layer without requiring Ollama or DB — purely disk I/O + prompt construction
+
+**Suite status:**
+- `bun test src/lib/__tests__/wiki-prompt-integration.test.ts` — 18/18 pass
+- `bun test src/lib/wiki/__tests__/` — 149/149 pass
+- `bun test` full suite — 62 pre-existing failures (npc-wiki-sync mock leak)
+
+
 

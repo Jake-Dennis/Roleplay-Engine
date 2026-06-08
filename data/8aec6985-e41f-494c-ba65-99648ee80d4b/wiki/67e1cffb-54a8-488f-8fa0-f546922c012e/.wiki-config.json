@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "folderOrder": [],
+  "types": {
+    "entity": {
+      "icon": "user",
+      "folder": "entities",
+      "subtypes": [
+        "character",
+        "location",
+        "item",
+        "faction",
+        "organization",
+        "creature"
+      ]
+    },
+    "concept": {
+      "icon": "book-open",
+      "folder": "concepts",
+      "subtypes": [
+        "theme",
+        "rule",
+        "mechanic",
+        "lore",
+        "event",
+        "tradition"
+      ]
+    },
+    "source": {
+      "icon": "file-text",
+      "folder": "sources",
+      "subtypes": []
+    },
+    "synthesis": {
+      "icon": "sparkles",
+      "folder": "synthesis",
+      "subtypes": []
+    }
+  },
+  "subtypeFolders": {
+    "character": "entities/characters",
+    "location": "entities/locations",
+    "item": "entities/items",
+    "faction": "entities/factions",
+    "organization": "entities/organizations",
+    "creature": "entities/creatures",
+    "theme": "concepts/themes",
+    "rule": "concepts/rules",
+    "mechanic": "concepts/mechanics",
+    "lore": "concepts/lore",
+    "event": "concepts/events",
+    "tradition": "concepts/traditions"
+  }
+}
