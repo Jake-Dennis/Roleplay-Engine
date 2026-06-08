@@ -464,30 +464,21 @@ export function isValidServiceUrl(url: string): boolean {
 }
 
 /**
- * Get the user's custom Ollama URL from settings.
- * Falls back to the server config baseUrl.
+ * Get the configured Ollama service URL.
+ * Reads from the server-wide config (which merges DB overrides, env vars,
+ * and hardcoded defaults) instead of per-user settings.
+ *
+ * The userId parameter is accepted for backwards compatibility with existing
+ * callers, but per-user Ollama URLs are no longer supported — infrastructure
+ * URLs (Ollama, TTS) are server-wide settings only.
+ *
  * Validates the URL against a denylist to prevent SSRF attacks.
  */
-export function getUserOllamaUrl(userId: string): string {
+export function getUserOllamaUrl(_userId?: string): string {
   try {
-    const db = getDb();
-    const row = db.prepare("SELECT settings FROM users WHERE id = ?").get(userId) as { settings: string | null } | undefined;
-    if (row?.settings) {
-      const settings = safeParseWarn<Record<string, unknown>>(row.settings, "user settings");
-      if (settings?.ollamaUrl && typeof settings.ollamaUrl === "string") {
-        const url = settings.ollamaUrl.trim();
-        if (url) {
-          const fullUrl = url.startsWith("http") ? url : `http://${url}`;
-          if (isValidServiceUrl(fullUrl)) {
-            return fullUrl;
-          }
-          logger.warn("[security] Rejected user-supplied Ollama URL - hostname is in the SSRF denylist", {
-            userId,
-            url: fullUrl,
-          });
-        }
-      }
-    }
+    const cfg = getServerConfig();
+    const url = `http://${cfg.ollama.host}:${cfg.ollama.port}`;
+    if (isValidServiceUrl(url)) return url;
   } catch {
     // Fall through to default
   }
@@ -495,30 +486,21 @@ export function getUserOllamaUrl(userId: string): string {
 }
 
 /**
- * Get the user's custom TTS URL from settings.
- * Falls back to the server config baseUrl.
+ * Get the configured TTS service URL.
+ * Reads from the server-wide config (which merges DB overrides, env vars,
+ * and hardcoded defaults) instead of per-user settings.
+ *
+ * The userId parameter is accepted for backwards compatibility with existing
+ * callers, but per-user TTS URLs are no longer supported — infrastructure
+ * URLs (Ollama, TTS) are server-wide settings only.
+ *
  * Validates the URL against a denylist to prevent SSRF attacks.
  */
-export function getUserTtsUrl(userId: string): string {
+export function getUserTtsUrl(_userId?: string): string {
   try {
-    const db = getDb();
-    const row = db.prepare("SELECT settings FROM users WHERE id = ?").get(userId) as { settings: string | null } | undefined;
-    if (row?.settings) {
-      const settings = safeParseWarn<Record<string, unknown>>(row.settings, "user settings");
-      if (settings?.ttsUrl && typeof settings.ttsUrl === "string") {
-        const url = settings.ttsUrl.trim();
-        if (url) {
-          const fullUrl = url.startsWith("http") ? url : `http://${url}`;
-          if (isValidServiceUrl(fullUrl)) {
-            return fullUrl;
-          }
-          logger.warn("[security] Rejected user-supplied TTS URL - hostname is in the SSRF denylist", {
-            userId,
-            url: fullUrl,
-          });
-        }
-      }
-    }
+    const cfg = getServerConfig();
+    const url = `http://${cfg.tts.host}:${cfg.tts.port}`;
+    if (isValidServiceUrl(url)) return url;
   } catch {
     // Fall through to default
   }
