@@ -681,5 +681,38 @@ The file lives at `data/<userId>/wiki/<universe_id>/concepts/event_acknowledgmen
 - `bun test src/lib/wiki/__tests__/` — 149/149 pass
 - `bun test` full suite — 62 pre-existing failures (npc-wiki-sync mock leak)
 
+---
 
+## 2026-06-08 — Plan 015: Security Fixes
 
+**What was done:**
+
+1. **SSRF fix (`src/lib/ollama.ts`)** — Added `isValidServiceUrl()` function that validates user-supplied TTS/Ollama URLs against a denylist:
+   - Blocks IPv4 loopback (`127.0.0.0/8`), IPv6 loopback (`::1`), all-interfaces (`0.0.0.0`), cloud metadata endpoint (`169.254.169.254`)
+   - Blocks IPv6-mapped IPv4 equivalents (`::ffff:127.0.0.1`, `::ffff:169.254.169.254`)
+   - Allows legitimate LAN IPs (e.g., `192.168.x.x`), DNS names
+   - Both `getUserOllamaUrl()` and `getUserTtsUrl()` now validate user URLs via `isValidServiceUrl()`, log warning on rejection, fall back to default config URL
+
+2. **Cookie secure flag (`src/app/api/auth/login/route.ts`, `src/app/api/auth/logout/route.ts`)** — Changed `secure: process.env.NODE_ENV === "production"` to `secure: true` unconditionally in both routes. Safe because:
+   - Modern browsers treat `localhost` as a secure context even over HTTP
+   - Auth system has `Authorization` header fallback in `getAuthToken()`
+
+3. **Wiki POST directory sanitization (`src/app/api/wiki/route.ts`)** — Added 3-layer defense:
+   - Layer 1: Explicit `..` rejection in `dir` and `pagePath` before any path construction
+   - Layer 2: `path.normalize()` resolves embedded traversal tricks
+   - Layer 3: Existing `isPathWithinRoot()` post-join boundary check
+
+**Files changed:**
+- `src/lib/ollama.ts` — Added `isValidServiceUrl()`, updated `getUserOllamaUrl()`, `getUserTtsUrl()`
+- `src/app/api/auth/login/route.ts` — `secure: true` unconditional
+- `src/app/api/auth/logout/route.ts` — `secure: true` unconditional
+- `src/app/api/wiki/route.ts` — Path traversal rejection + path.normalize()
+
+**Key decisions:**
+- **Denylist over allowlist**: Block only the most dangerous SSRF targets (loopback, cloud metadata) rather than implementing a strict allowlist of permitted IPs. Rationale: self-hosted app where users control infrastructure and may need to point to LAN addresses (e.g., `192.168.x.x` for Ollama/TTS on a different machine).
+- **Tiered defense**: Rather than a single security check, used 3 layers for path traversal (string match → path.normalize → isPathWithinRoot) to catch edge cases.
+
+**Reviewer findings addressed:**
+- IPv6-mapped IPv4 bypass fixed: added `::ffff:x.x.x.x` detection alongside direct IPv4 check
+
+**Build:** Passes (65 routes, TypeScript clean)

@@ -188,25 +188,7 @@ export default function BenchmarkPage() {
   // Polling ref
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Persist model selection across page visits
-  useEffect(() => {
-    if (model) localStorage.setItem(STORAGE_KEY, model);
-  }, [model]);
-
-  // Fetch initial data
-  useEffect(() => {
-    fetchHistory();
-    fetchUserSettings();
-  }, []);
-
-  // Cleanup polling on unmount
-  useEffect(() => {
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, []);
-
-  const fetchUserSettings = async () => {
+  const fetchUserSettings = useCallback(async () => {
     try {
       const res = await fetch("/api/settings", { credentials: "include" });
       if (res.ok) {
@@ -220,7 +202,43 @@ export default function BenchmarkPage() {
     } catch {
       // Silently fail - use defaults
     }
-  };
+  }, []);
+
+  const fetchHistory = useCallback(async () => {
+    try {
+      setLoadingHistory(true);
+      const res = await fetch("/api/benchmark?limit=20", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setHistory(data.benchmarks || []);
+        // Auto-select most recent completed
+        const latest = (data.benchmarks || []).find((b: BenchmarkJob) => b.status === "completed");
+        if (latest && !selectedJob) setSelectedJob(latest);
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setLoadingHistory(false);
+    }
+  }, [selectedJob]);
+
+  // Persist model selection across page visits
+  useEffect(() => {
+    if (model) localStorage.setItem(STORAGE_KEY, model);
+  }, [model]);
+
+  // Fetch initial data
+  useEffect(() => {
+    fetchHistory();
+    fetchUserSettings();
+  }, [fetchHistory, fetchUserSettings]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
 
   const fetchModels = useCallback(async () => {
     setModelsLoading(true);
@@ -254,24 +272,6 @@ export default function BenchmarkPage() {
     }
   }, [ollamaUrl, fetchModels]);
 
-  const fetchHistory = async () => {
-    try {
-      setLoadingHistory(true);
-      const res = await fetch("/api/benchmark?limit=20", { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
-        setHistory(data.benchmarks || []);
-        // Auto-select most recent completed
-        const latest = (data.benchmarks || []).find((b: BenchmarkJob) => b.status === "completed");
-        if (latest && !selectedJob) setSelectedJob(latest);
-      }
-    } catch {
-      // Silently fail
-    } finally {
-      setLoadingHistory(false);
-    }
-  };
-
   const pollJob = useCallback(async (jobId: string) => {
     try {
       const res = await fetch(`/api/benchmark/${jobId}`, { credentials: "include" });
@@ -291,7 +291,7 @@ export default function BenchmarkPage() {
     } catch (e) {
       console.error("Poll failed", e);
     }
-  }, []);
+  }, [fetchHistory]);
 
   const startBenchmark = async () => {
     if (!model) {

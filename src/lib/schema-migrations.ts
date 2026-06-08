@@ -439,4 +439,40 @@ export function runSchemaMigrations(): void {
   } catch {
     // Column already exists — safe to ignore
   }
+
+  // Migration: Add scene_states session index for session-based queries
+  try {
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS idx_scene_states_session ON scene_states(session_id, updated_at)"
+    ).run();
+  } catch {
+    // Index already exists — safe to ignore
+  }
+
+  // Migration: Add narrative_memories composite lookup index
+  try {
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS idx_narrative_memories_lookup ON narrative_memories(user_id, session_id, universe_id)"
+    ).run();
+  } catch {
+    // Index already exists — safe to ignore
+  }
+
+  // Migration: Add narrative_anchors user+universe index
+  try {
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS idx_narrative_anchors_user_universe ON narrative_anchors(user_id, universe_id)"
+    ).run();
+  } catch {
+    // Index already exists — safe to ignore
+  }
+
+  // Migration: Add entity_mentions frequency index for trending analysis
+  try {
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS idx_entity_mentions_user_freq ON entity_mentions(user_id, frequency DESC)"
+    ).run();
+  } catch {
+    // Index already exists — safe to ignore
+  }
 }

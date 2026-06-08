@@ -1,4 +1,4 @@
-import { OLLAMA_CONFIG, TIMEOUTS } from "./config";
+﻿import { OLLAMA_CONFIG, TIMEOUTS } from "./config";
 import { getDb } from "./db";
 import { safeParseWarn } from "@/lib/safe-json";
 import { logger } from "@/lib/logger";
@@ -51,7 +51,7 @@ export function validateLlmOutput(output: string): string {
   }
 
   if (leaked) {
-    logger.debug("LLM output contained leaked prompt structure — sanitized", {
+    logger.debug("LLM output contained leaked prompt structure â€” sanitized", {
       originalLength: output.length,
       sanitizedLength: sanitized.length,
     });
@@ -163,14 +163,14 @@ export function getActivePersonaContext(userId: string): PersonaContext | null {
 /**
  * Build a SillyTavern-style system prompt from persona context.
  * Follows the standard ST prompt structure:
- *   [Character card] → [Scenario] → [Personality] → [Example dialogue] → [Post-history instructions]
+ *   [Character card] â†’ [Scenario] â†’ [Personality] â†’ [Example dialogue] â†’ [Post-history instructions]
  */
 export function buildPersonaPrompt(persona: PersonaContext | null, baseSystemPrompt: string): string {
   if (!persona) return baseSystemPrompt;
 
   const parts: string[] = [];
 
-  // 1. Player character description — this is the USER's character, NOT an NPC
+  // 1. Player character description â€” this is the USER's character, NOT an NPC
   const descParts: string[] = [];
   descParts.push(`Name: ${persona.name}`);
   if (persona.description) descParts.push(`Description: ${persona.description}`);
@@ -256,12 +256,71 @@ export function isModelAvailable(model: string): boolean {
 }
 
 /**
- * Get the user's selected models from their settings.
- * Falls back to the first available local model, then OLLAMA_CONFIG defaults.
+ * Validate that a service URL does not point to a dangerous internal address.
+ *
+ * Denylist (rejected):
+ *   - 127.0.0.0/8 (IPv4 loopback)
+ *   - ::1 (IPv6 loopback)
+ *   - 0.0.0.0 (all interfaces)
+ *   - 169.254.169.254 (cloud metadata endpoint)
+ *
+ * All other hostnames (DNS names, private IPs like 10.x.x.x, 172.16.x.x,
+ * 192.168.x.x) are allowed - this is a self-hosted app where users
+ * control their own infrastructure and may need to point to LAN addresses.
+ *
+ * @param url - The full URL to validate (e.g. "http://192.168.1.50:11434")
+ * @returns true if the URL is safe to use, false otherwise
  */
+export function isValidServiceUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname;
+
+    // IPv6 loopback
+    if (hostname === "::1" || hostname === "[::1]") {
+      return false;
+    }
+
+    // Check for IPv6-mapped IPv4 addresses (e.g. ::ffff:127.0.0.1)
+    const ipv4Mapped = hostname.replace(/^::ffff:/, "");
+    const isIpv4Mapped = ipv4Mapped !== hostname && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ipv4Mapped);
+
+    if (isIpv4Mapped) {
+      // Apply same denylist checks to the embedded IPv4 address
+      if (ipv4Mapped.startsWith("127.")) return false;
+      if (ipv4Mapped === "0.0.0.0") return false;
+      if (ipv4Mapped === "169.254.169.254") return false;
+    }
+
+    // Check if hostname is an IPv4 address
+    const ipv4Match = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname);
+    if (ipv4Match) {
+      // Loopback (127.0.0.0/8)
+      if (hostname.startsWith("127.")) {
+        return false;
+      }
+      // All interfaces
+      if (hostname === "0.0.0.0") {
+        return false;
+      }
+      // Cloud metadata endpoint
+      if (hostname === "169.254.169.254") {
+        return false;
+      }
+    }
+
+    // All other hostnames are allowed (DNS names, LAN IPs, etc.)
+    return true;
+  } catch {
+    // URL could not be parsed
+    return false;
+  }
+}
+
 /**
  * Get the user's custom Ollama URL from settings.
  * Falls back to the server config baseUrl.
+ * Validates the URL against a denylist to prevent SSRF attacks.
  */
 export function getUserOllamaUrl(userId: string): string {
   try {
@@ -271,7 +330,16 @@ export function getUserOllamaUrl(userId: string): string {
       const settings = safeParseWarn<Record<string, unknown>>(row.settings, "user settings");
       if (settings?.ollamaUrl && typeof settings.ollamaUrl === "string") {
         const url = settings.ollamaUrl.trim();
-        if (url) return url.startsWith("http") ? url : `http://${url}`;
+        if (url) {
+          const fullUrl = url.startsWith("http") ? url : `http://${url}`;
+          if (isValidServiceUrl(fullUrl)) {
+            return fullUrl;
+          }
+          logger.warn("[security] Rejected user-supplied Ollama URL - hostname is in the SSRF denylist", {
+            userId,
+            url: fullUrl,
+          });
+        }
       }
     }
   } catch {
@@ -283,6 +351,7 @@ export function getUserOllamaUrl(userId: string): string {
 /**
  * Get the user's custom TTS URL from settings.
  * Falls back to the server config baseUrl.
+ * Validates the URL against a denylist to prevent SSRF attacks.
  */
 export function getUserTtsUrl(userId: string): string {
   try {
@@ -292,7 +361,16 @@ export function getUserTtsUrl(userId: string): string {
       const settings = safeParseWarn<Record<string, unknown>>(row.settings, "user settings");
       if (settings?.ttsUrl && typeof settings.ttsUrl === "string") {
         const url = settings.ttsUrl.trim();
-        if (url) return url.startsWith("http") ? url : `http://${url}`;
+        if (url) {
+          const fullUrl = url.startsWith("http") ? url : `http://${url}`;
+          if (isValidServiceUrl(fullUrl)) {
+            return fullUrl;
+          }
+          logger.warn("[security] Rejected user-supplied TTS URL - hostname is in the SSRF denylist", {
+            userId,
+            url: fullUrl,
+          });
+        }
       }
     }
   } catch {
@@ -302,6 +380,7 @@ export function getUserTtsUrl(userId: string): string {
   const { TTS_CONFIG } = require("./config");
   return TTS_CONFIG.baseUrl;
 }
+
 
 export function getUserModels(userId: string): UserModels {
   try {
@@ -362,18 +441,18 @@ export function isOllamaAvailable(): boolean {
  * chain is layered:
  *
  *   1. Explicit caller options (e.g. job handlers passing temperature: 0.2)
- *      — these ALWAYS win, regardless of the useCustomSampling toggle.
+ *      â€” these ALWAYS win, regardless of the useCustomSampling toggle.
  *      This lets jobs (extraction, summarization) enforce their own
  *      reliability-critical settings even when the user has custom
  *      sampling turned off for chat.
  *
- *   2. Per-model overrides from `model_defaults[model]` — only consulted
+ *   2. Per-model overrides from `model_defaults[model]` â€” only consulted
  *      when `useCustomSampling` is ON. This is the user's per-model tuning.
  *
- *   3. Hardcoded OLLAMA_CONFIG fallback — only consulted when
+ *   3. Hardcoded OLLAMA_CONFIG fallback â€” only consulted when
  *      `useCustomSampling` is ON.
  *
- *   4. undefined (Ollama uses the model's own baked-in defaults) — when
+ *   4. undefined (Ollama uses the model's own baked-in defaults) â€” when
  *      useCustomSampling is OFF AND the caller didn't pass an explicit
  *      option for this field.
  *
@@ -385,7 +464,7 @@ function resolveModelOptions(
   explicit: Partial<OllamaGenerateRequest["options"]> | undefined
 ): OllamaGenerateRequest["options"] {
   const cfg = getServerConfig();
-  // When useCustomSampling is OFF, the per-model/user layer is skipped —
+  // When useCustomSampling is OFF, the per-model/user layer is skipped â€”
   // we just compose: explicit (if any) over Ollama model defaults.
   // When ON, we layer explicit > per-model > OLLAMA_CONFIG.
   const perModel = cfg.ollama.useCustomSampling
@@ -418,7 +497,7 @@ function resolveModelOptions(
  *   2. Per-model override (server_config.model_defaults[model].numCtx)
  *   3. undefined (let Ollama use the model's native context window)
  *
- * num_ctx is INDEPENDENT of the `useCustomSampling` toggle — context
+ * num_ctx is INDEPENDENT of the `useCustomSampling` toggle â€” context
  * window is a VRAM concern, sampling parameters are a behavior concern.
  * Users can pin a specific num_ctx while still leaving sampling to the
  * model defaults, or vice versa.
@@ -443,7 +522,7 @@ export async function generateText(
   // Resolve num_ctx through the per-model chain (independent of useCustomSampling).
   const numCtx = resolveNumCtx(model, options?.num_ctx);
   // Resolve sampling options through the explicit > per-model > OLLAMA_CONFIG
-  // chain — returns {} when useCustomSampling is OFF.
+  // chain â€” returns {} when useCustomSampling is OFF.
   const resolvedOptions = resolveModelOptions(model, options);
 
   const requestBody: OllamaGenerateRequest = {
@@ -483,7 +562,7 @@ export async function generateText(
       // when the context window fills with reasoning. Log and return empty so
       // callers can retry (context window fix: increase num_ctx).
       if (!data.response && data.thinking) {
-        logger.warn("[ollama] Model produced thinking but no response — context window may be too small", {
+        logger.warn("[ollama] Model produced thinking but no response â€” context window may be too small", {
           model,
           thinkingLength: String(data.thinking?.length || 0).substring(0, 6),
           promptEvalCount: data.prompt_eval_count,
@@ -518,7 +597,7 @@ export async function generateTextStream(
   // Resolve num_ctx through the per-model chain (independent of useCustomSampling).
   const numCtx = resolveNumCtx(model, options?.num_ctx);
   // Resolve sampling options through the explicit > per-model > OLLAMA_CONFIG
-  // chain — returns {} when useCustomSampling is OFF.
+  // chain â€” returns {} when useCustomSampling is OFF.
   const resolvedOptions = resolveModelOptions(model, options);
 
   const requestBody: OllamaGenerateRequest = {
@@ -602,7 +681,7 @@ export async function generateEmbedding(
     } catch (err: unknown) {
       ollamaAvailable = false;
 
-      // Exponential backoff: 2s, 4s, 8s, 16s... capped at 60s — gives GPU time to free memory
+      // Exponential backoff: 2s, 4s, 8s, 16s... capped at 60s â€” gives GPU time to free memory
       const delay = Math.min(OLLAMA_CONFIG.retryDelay * Math.pow(2, attempt - 1), 60000);
       logger.warn(`[embedding] Attempt ${attempt} failed: ${(err as Error).message}. Retrying in ${delay}ms...`);
       await new Promise((resolve) => setTimeout(resolve, delay));

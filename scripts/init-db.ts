@@ -495,6 +495,12 @@ function main() {
     CREATE INDEX IF NOT EXISTS idx_timelines_universe ON timelines(universe_id);
     CREATE INDEX IF NOT EXISTS idx_session_config_lookup ON session_config(session_id, key);
 
+    -- Additional query optimization indexes
+    CREATE INDEX IF NOT EXISTS idx_scene_states_session ON scene_states(session_id, updated_at);
+    CREATE INDEX IF NOT EXISTS idx_narrative_memories_lookup ON narrative_memories(user_id, session_id, universe_id);
+    CREATE INDEX IF NOT EXISTS idx_narrative_anchors_user_universe ON narrative_anchors(user_id, universe_id);
+    CREATE INDEX IF NOT EXISTS idx_entity_mentions_user_freq ON entity_mentions(user_id, frequency DESC);
+
     -- Server-wide configuration (overrides env var defaults)
     CREATE TABLE IF NOT EXISTS server_config (
       id TEXT PRIMARY KEY DEFAULT 'singleton',

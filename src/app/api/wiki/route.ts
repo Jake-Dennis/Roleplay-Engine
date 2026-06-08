@@ -1,4 +1,4 @@
-import { withErrorHandler } from '@/lib/with-error-handler';
+﻿import { withErrorHandler } from '@/lib/with-error-handler';
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/with-auth";
 import { getWikiRoot } from '@/lib/wiki/wiki-root';
@@ -22,7 +22,7 @@ import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate
  * Lists all wiki pages for a universe, including orphan detection and suggestions.
  *
  * @param request - The incoming Next.js request with query param: universe_id
- * @returns NextResponse with { pages, orphanPaths, orphanSuggestions } — each page has path, content, frontmatter
+ * @returns NextResponse with { pages, orphanPaths, orphanSuggestions } â€” each page has path, content, frontmatter
  * @throws 401 - If authentication fails
  * @throws 429 - If rate limit exceeded
  */
@@ -93,12 +93,17 @@ const wikiRoot = getWikiRoot(userId, universeId);
 
 // Sanitize filename from the last path segment
 const dir = path.dirname(pagePath);
+// Security: reject path traversal sequences
+if (dir.includes("..") || pagePath.includes("..")) {
+  return badRequestError("Invalid path: path traversal is not allowed");
+}
 const base = path.basename(pagePath);
 const sanitizedBase = sanitizeWikiFilename(base);
 
 // Relative path with sanitized filename (e.g., "entities/haleth.md")
 const relativePath = dir === "." ? sanitizedBase : `${dir}/${sanitizedBase}`;
-const fullPath = path.join(wikiRoot, relativePath);
+const normalizedPath = path.normalize(relativePath);
+const fullPath = path.join(wikiRoot, normalizedPath);
 
 // Security: prevent path traversal
 if (!isPathWithinRoot(fullPath, wikiRoot)) {
