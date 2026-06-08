@@ -8,7 +8,6 @@ import { EmotionGraph } from "@/components/relationships/emotion-graph";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { EmotionBar } from "@/components/relationship/emotion-bar";
 import { RelationshipHistory } from "@/components/relationship/relationship-history";
-import { useActiveUniverse } from "@/contexts/active-universe";
 import { useApp } from "@/contexts/app-context";
 import { safeParse } from "@/lib/safe-json";
 import type { EmotionalState } from "@/lib/relationship-types";
@@ -31,7 +30,7 @@ interface EvolutionEntry {
 }
 
 export default function RelationshipsPage() {
-  const { activeUniverse } = useActiveUniverse();
+  const { activeUniverse } = useApp();
   const { activeGroup } = useApp();
   const [relationships, setRelationships] = useState<Relationship[]>([]);
   const [loading, setLoading] = useState(true);

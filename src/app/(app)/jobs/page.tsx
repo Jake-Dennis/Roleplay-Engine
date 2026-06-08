@@ -21,7 +21,7 @@ import {
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { StatusBadge, statusToVariant } from "@/components/ui/status-badge";
 import { JobProgress } from "@/components/jobs/job-progress";
-import { useActiveUniverse } from "@/contexts/active-universe";
+import { useApp } from "@/contexts/app-context";
 import { formatRelativeTime } from "@/lib/date-formatter";
 import { safeParse } from "@/lib/safe-json";
 
@@ -112,7 +112,7 @@ interface Stats {
 }
 
 export default function JobsPage() {
-  const { activeUniverse } = useActiveUniverse();
+  const { activeUniverse } = useApp();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [stats, setStats] = useState<Stats>({ queued: 0, processing: 0, completed: 0, failed: 0, cancelled: 0, total: 0 });
   const [loading, setLoading] = useState(true);

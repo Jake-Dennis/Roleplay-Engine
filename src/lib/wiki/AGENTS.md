@@ -1,7 +1,7 @@
 # WIKI SUBSYSTEM — src/lib/wiki/
 
 ## OVERVIEW
-14-file wiki subsystem. Markdown-first content management: file I/O, wikilink parsing, LLM ingest/query/lint, validation workflow, concurrent edit protection.
+33-file wiki subsystem (43 including tests). Markdown-first content management: file I/O, wikilink parsing, LLM ingest/query/lint, validation workflow, concurrent edit protection, bulk operations, type system, configuration.
 
 ## MODULES
 | File | Purpose | Key Exports |
@@ -12,14 +12,33 @@
 | `ingest.ts` | LLM source extraction → wiki pages | `ingestSource` (reads file → LLM extracts → creates pages) |
 | `query.ts` (496L) | Natural language query with LLM synthesis | `queryWiki` (index scoring → FlexSearch → LLM synthesis) |
 | `lint.ts` (487L) | Wiki health checks, contradiction detection | `lintWiki` (contradictions, stale claims, orphans, missing pages) |
+| `frontmatter.ts` | YAML frontmatter parsing & serialization | `parseFrontmatter`, `serializeFrontmatter`, `EMPTY_FRONTMATTER` |
 | `index-generator.ts` | Auto-generates `index.md` from all pages | `generateIndex`, `updateIndexEntry`, `removeIndexEntry` |
+| `index-utils.ts` | Index helper utilities | `buildIndexTree`, `rebuildIndex` |
 | `orphans.ts` | Find pages with no inbound/outbound links | `findOrphans`, `getOrphanSuggestions` |
 | `filing.ts` | File LLM answers as synthesis pages | `fileAnswer` (creates synthesis page + cross-references) |
 | `revisions.ts` | Page revision snapshots as JSON | `saveRevision`, `listRevisions`, `getRevision` |
+| `history.ts` | Page history tracking | `getPageHistory` |
 | `page-split.ts` | Page size limits, H2-based split suggestions | `checkPageSize`, `suggestSplit` |
 | `logger.ts` | Append-only operation log | `appendLog`, `getRecentLogs`, `parseLog` |
 | `callout-remark-plugin.ts` | Remark plugin for `> [!type]` callouts | `remarkCallout` (13 types with aliases) |
 | `embed-remark-plugin.ts` | Remark plugin for `![[embed]]` syntax | `remarkEmbed` (page, section, block, image) |
+| `config.ts` | Wiki subsystem configuration | `getWikiConfig` |
+| `config-types.ts` | Wiki config type definitions | `WikiConfig` interface |
+| `config-migration.ts` | Config schema migration helpers | `migrateConfig`, `getConfigVersion` |
+| `types.ts` | Core wiki type definitions | `WikiPage`, `WikiFrontmatter`, `PageMeta` |
+| `syntax-highlighter.ts` | Markdown syntax highlighting | `highlightSyntax`, `SyntaxToken` |
+| `type-registry.ts` | Page type registry & validation | `registerType`, `isValidType` |
+| `prompt-subtypes.ts` | Subtype prompt templates | `getSubtypePrompt` |
+| `subtype-folders.ts` | Subtype → folder mapping | `getFolderForSubtype` |
+| `auto-extract.ts` | Automatic entity/lore extraction | `autoExtractFromContent` |
+| `bulk-move.ts` | Bulk page moves | `bulkMovePages` |
+| `bulk-recategorize.ts` | Bulk page recategorization | `bulkRecategorizePages` |
+| `merge.ts` | Page merging | `mergePages` |
+| `merge-suggester.ts` | Merge suggestion engine | `suggestMerges` |
+| `move-page.ts` | Single page move with link rewrites | `movePage` |
+| `path-guard.ts` | Path traversal protection | `sanitizePath`, `isPathAllowed` |
+| `wiki-root.ts` | Wiki root directory resolution | `getWikiRoot`, `ensureWikiRoot` |
 
 ## FRONTMATTER SCHEMA
 ```yaml

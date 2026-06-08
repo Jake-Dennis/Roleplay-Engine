@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Volume2, Plus, Trash2, Play, Save, Sparkles, Check, Mic } from "lucide-react";
-import { useActiveUniverse } from "@/contexts/active-universe";
+import { useApp } from "@/contexts/app-context";
 import { TIMEOUTS } from "@/lib/config";
 import { logger } from "@/lib/logger";
 
@@ -25,7 +25,7 @@ interface SavedProfile {
 }
 
 export default function VoiceCombinerPage() {
-  const { activeUniverse } = useActiveUniverse();
+  const { activeUniverse } = useApp();
   const [voices, setVoices] = useState<Voice[]>([]);
   const [slots, setSlots] = useState<VoiceSlot[]>([{ voiceId: "", weight: 50 }]);
   const [profileName, setProfileName] = useState("");

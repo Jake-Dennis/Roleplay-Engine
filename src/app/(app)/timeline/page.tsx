@@ -6,7 +6,6 @@ import { Clock, Sparkles, Trash2, Plus, ArrowUp, ArrowDown } from "lucide-react"
 import Link from "next/link";
 import { ENTRY_TYPE_LABELS, IMPORTANCE_COLORS } from "@/lib/entity-constants";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
-import { useActiveUniverse } from "@/contexts/active-universe";
 import { useApp } from "@/contexts/app-context";
 
 interface TimelineEntry {
@@ -23,7 +22,7 @@ interface TimelineEntry {
 }
 
 export default function TimelinePage() {
-  const { activeUniverse } = useActiveUniverse();
+  const { activeUniverse } = useApp();
   const { activeGroup } = useApp();
   const [entries, setEntries] = useState<TimelineEntry[]>([]);
   const [loading, setLoading] = useState(true);

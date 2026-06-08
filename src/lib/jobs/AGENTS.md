@@ -1,26 +1,31 @@
 # JOB PROCESSING — src/lib/jobs/
 
 ## OVERVIEW
-14 files implementing the async job system. On-demand processing via API triggers and idle tiers. No persistent workers. 20 job types across 12 handler modules.
+19 files (16 implementation + 3 tests) implementing the async job system. On-demand processing via API triggers and idle tiers. No persistent workers. 20 job types across 12 handler modules.
 
 ## STRUCTURE
 ```
 src/lib/jobs/
 ├── types.ts                    # 20 job types, 5 priorities, 5 statuses, constants
 ├── queue.ts                    # Core: queueJob, getUserJobs, updateJobProgress, markJobCompleted/Failed
-├── job-processor.ts            # Orchestrator: processUserJobs, processJobsByType
-├── summarization-handler.ts    # Message summarization (summarize_messages)
-├── wiki-handler.ts (518L)      # 7 wiki job types: ingest, enrich, deepen, auto-extract, sync
-├── embedding-handler.ts        # Vector embedding computation (generate_embeddings)
-├── relationship-analysis-handler.ts # Relationship state detection (analyze_relationships)
-├── decay-handler.ts            # Time-based relationship decay (decay_relationships)
-├── relationship-summary-handler.ts  # Rewrite relationship summaries
 ├── archival-handler.ts         # Data retention/cleanup (archival_processing)
-├── thread-analysis-handler.ts  # Narrative thread tracking (thread_analysis)
+├── decay-handler.ts            # Time-based relationship decay (decay_relationships)
+├── embedding-handler.ts        # Vector embedding computation (generate_embeddings)
 ├── lore-extraction.ts          # Event/lore extraction (extract_lore_comprehensive)
 ├── npc-evolution.ts            # NPC personality evolution
+├── npc-wiki-sync.ts            # NPC wiki page synchronization
+├── relationship-analysis-handler.ts # Relationship state detection (analyze_relationships)
+├── relationship-summary-handler.ts  # Rewrite relationship summaries
+├── scene-handler.ts            # Scene state extraction
 ├── session-recap.ts            # Full session narrative recap
-└── scene-handler.ts            # Scene state extraction
+├── summarization-handler.ts    # Message summarization (summarize_messages)
+├── thread-analysis-handler.ts  # Narrative thread tracking (thread_analysis)
+├── wiki-handler.ts (518L)      # 7 wiki job types: ingest, enrich, deepen, auto-extract, sync
+├── wiki-restructure-suggestions.ts # Wiki restructuring suggestions
+├── __tests__/                  # Test helpers + handler unit tests
+│   ├── helpers.ts
+│   ├── npc-wiki-sync.test.ts
+│   └── wiki-restructure-suggestions.test.ts
 ```
 
 ## HANDLER CONVENTIONS

@@ -131,6 +131,42 @@ export interface RetrievedContext {
   };
 }
 
+/** Token cost and inclusion info for a single item in a budget section */
+export interface BudgetItemInfo {
+  index: number;
+  label: string;
+  tokens: number;
+  included: boolean;
+  importance?: number;
+}
+
+/** Budget tracking for one retrieval section (messages, lore, etc.) */
+export interface SectionBudget {
+  label: string;
+  percentage: number;
+  budgetTokens: number;
+  usedTokens: number;
+  originalCount: number;
+  finalCount: number;
+  isTruncated: boolean;
+  items: BudgetItemInfo[];
+}
+
+/** Overall token budget allocation breakdown */
+export interface BudgetBreakdown {
+  maxTokens: number;
+  overhead: number;
+  availableTokens: number;
+  usedTokens: number;
+  sections: Record<string, SectionBudget>;
+}
+
+/** Response shape for the retrieval inspector endpoint */
+export interface RetrievalInspectorResponse {
+  context: RetrievedContext;
+  budget: BudgetBreakdown;
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

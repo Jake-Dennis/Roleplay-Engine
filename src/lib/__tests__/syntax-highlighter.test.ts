@@ -8,7 +8,7 @@
  *   - edge cases: empty, whitespace, multi-line
  */
 import { describe, it, expect } from "bun:test";
-import { highlightMarkdown } from "@/components/wiki/editor/syntax-highlighter";
+import { highlightMarkdown } from "@/lib/wiki/syntax-highlighter";
 
 // ===========================================================================
 // Block tokens

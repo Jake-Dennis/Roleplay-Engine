@@ -16,12 +16,26 @@ src/app/
 │   ├── global-error.tsx    # Root error boundary (<html><body> required)
 │   ├── not-found.tsx       # 404 page
 │   ├── loading.tsx         # Suspense fallback for (app) group
+│   ├── admin/              # Admin pages
+│   ├── canon/              # Canon layer pages
+│   ├── characters/         # Character browsing pages
 │   ├── dashboard/          # Dashboard pages
+│   ├── events/             # Event pages
+│   ├── groups/             # Group pages
+│   ├── jobs/               # Job monitoring pages
+│   ├── narrative-threads/  # Narrative thread pages
+│   ├── npcs/               # NPC management pages
+│   ├── personas/           # Persona pages
+│   ├── relationships/      # Relationship pages
 │   ├── session/            # Session pages + error.tsx
+│   ├── settings/           # Settings pages
 │   ├── timeline/           # Timeline pages + error.tsx
+│   ├── universe/           # Universe pages
+│   ├── validations/        # Validation pages
+│   ├── voice-combiner/     # Voice combiner pages
 │   ├── wiki/[...slug]/     # Catch-all wiki route
-│   └── ...                 # 13 route groups total
-├── api/                    # 94 REST route handlers (see api/AGENTS.md)
+│   └── ...                 # 18 route groups total
+├── api/                    # 107 REST route handlers (see api/AGENTS.md)
 ├── login/                  # Auth pages (outside route group)
 └── register/
 ```

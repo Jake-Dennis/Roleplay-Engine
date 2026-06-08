@@ -23,7 +23,7 @@ import {
 } from 'react';
 import { FileText } from 'lucide-react';
 
-import { highlightMarkdown } from '@/components/wiki/editor/syntax-highlighter';
+import { highlightMarkdown } from '@/lib/wiki/syntax-highlighter';
 import { useWikilinkAutocomplete } from '@/components/wiki/editor/use-wikilink-autocomplete';
 import '@/components/wiki/editor/editor-styles.css';
 

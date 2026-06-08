@@ -6,7 +6,6 @@ import { GitBranch, Sparkles, Trash2, Plus, CheckCircle, PauseCircle, AlertTrian
 import Link from "next/link";
 import { ARC_TYPE_LABELS, ESCALATION_COLORS, THREAD_STATUS_ICONS, THREAD_STATUS_COLORS } from "@/lib/entity-constants";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
-import { useActiveUniverse } from "@/contexts/active-universe";
 import { useApp } from "@/contexts/app-context";
 
 interface NarrativeThread {
@@ -24,7 +23,7 @@ interface NarrativeThread {
 }
 
 export default function NarrativeThreadsPage() {
-  const { activeUniverse } = useActiveUniverse();
+  const { activeUniverse } = useApp();
   const { activeGroup } = useApp();
   const [threads, setThreads] = useState<NarrativeThread[]>([]);
   const [loading, setLoading] = useState(true);

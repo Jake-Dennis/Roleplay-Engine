@@ -2,6 +2,7 @@
 
 import { TIMEOUTS, IDLE_TIERS } from "@/lib/config";
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useApp } from "@/contexts/app-context";
 
 interface IdleConfig {
   /** How often to check idle state and send heartbeat (ms). Default: TIMEOUTS.HEALTH_CHECK_INTERVAL */
@@ -21,6 +22,7 @@ interface IdleConfig {
  * - isIdle: true when idle >= first threshold (5 min)
  */
 export function useIdleTracker(config: IdleConfig = {}) {
+  const { activeUniverse } = useApp();
   const {
     heartbeatInterval = TIMEOUTS.HEALTH_CHECK_INTERVAL,
     idleThresholds = [IDLE_TIERS.TIER_1, IDLE_TIERS.TIER_2, IDLE_TIERS.TIER_3, IDLE_TIERS.TIER_4],
@@ -71,7 +73,7 @@ export function useIdleTracker(config: IdleConfig = {}) {
         setCurrentTier(tier);
 
         try {
-          const universeId = localStorage.getItem("active-universe-id");
+          const universeId = activeUniverse?.id ?? null;
           await fetch("/api/idle/heartbeat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -89,7 +91,7 @@ export function useIdleTracker(config: IdleConfig = {}) {
     }, heartbeatInterval);
 
     return () => clearInterval(interval);
-  }, [heartbeatInterval, idleThresholds, currentTier]);
+  }, [heartbeatInterval, idleThresholds, currentTier, activeUniverse]);
 
   return {
     idleTime,

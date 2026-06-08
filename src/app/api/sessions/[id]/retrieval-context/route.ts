@@ -7,43 +7,8 @@ import {
   applyContextBudget,
   estimateTokens,
 } from "@/lib/prompt-builder";
-import type { RetrievedContext } from "@/lib/retrieval";
+import type { RetrievedContext, RetrievalInspectorResponse, BudgetBreakdown, SectionBudget, BudgetItemInfo } from "@/lib/retrieval";
 
-// ---------------------------------------------------------------------------
-// Response Types
-// ---------------------------------------------------------------------------
-
-export interface BudgetItemInfo {
-  index: number;
-  label: string;
-  tokens: number;
-  included: boolean;
-  importance?: number;
-}
-
-export interface SectionBudget {
-  label: string;
-  percentage: number;
-  budgetTokens: number;
-  usedTokens: number;
-  originalCount: number;
-  finalCount: number;
-  isTruncated: boolean;
-  items: BudgetItemInfo[];
-}
-
-export interface BudgetBreakdown {
-  maxTokens: number;
-  overhead: number;
-  availableTokens: number;
-  usedTokens: number;
-  sections: Record<string, SectionBudget>;
-}
-
-export interface RetrievalInspectorResponse {
-  context: RetrievedContext;
-  budget: BudgetBreakdown;
-}
 
 // ---------------------------------------------------------------------------
 // Budget computation helpers

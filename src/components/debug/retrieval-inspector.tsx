@@ -33,12 +33,12 @@ import {
   Layers,
   Loader2,
 } from "lucide-react";
-import type { RetrievedContext } from "@/lib/retrieval";
 import type {
+  RetrievedContext,
   RetrievalInspectorResponse,
   BudgetBreakdown,
   SectionBudget,
-} from "@/app/api/sessions/[id]/retrieval-context/route";
+} from "@/lib/retrieval";
 
 // ---------------------------------------------------------------------------
 // Props
