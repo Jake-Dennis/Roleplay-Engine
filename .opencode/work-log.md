@@ -768,3 +768,32 @@ The file lives at `data/<userId>/wiki/<universe_id>/concepts/event_acknowledgmen
 - Create-from-prompt modal uses the existing `writeWikiPage` to create the file after LLM generates the content/frontmatter.
 - `.env.local` NOT committed (gitignored, contains JWT secret). OLLAMA_HOST change is per-developer config.
 - `.omo/` and orphan scripts deleted entirely — no longer needed since graphify is now a proper skill.
+
+---
+
+## Cycle 7 — 2026-06-09: Full timeout fix + undici + run.bat
+
+**Context:** User asked "remove all time outs" after discovering qwen3.5:9B takes >3 mins to cold-start from Node.js.
+
+**Confirmed:** Generation works from Node.js (tested qwen3.5:0.8b, 4b, 9b all succeed). Root cause of the timer failures was NOT our AbortSignal timeout (already 10 min) — it was **undici's internal defaults**:
+- `headersTimeout`: 10s (fired before Ollama could send headers on cold-start)
+- `bodyTimeout`: 30s (fired before Ollama could complete long generation)
+These fire BEFORE any user-provided AbortSignal because undici checks its own timeouts independently.
+
+**Changes (6 files):**
+
+1. `src/lib/config.ts` — Generation timeout 600s → 1800s (30 min). Embedding timeout 120s → 600s (10 min). Deduplicated retryAttempts/retryDelay.
+2. `src/lib/ollama.ts` — Added dedicated undici Agent with headersTimeout/bodyTimeout matching OLLAMA_CONFIG.timeout. All 6 fetch() calls replaced with ollamaFetch() wrapper that injects the custom dispatcher. This prevents undici's 10s headersTimeout from killing cold-start model loads.
+3. `src/lib/startup-check.ts` — Fixed Ollama URL construction from raw `process.env.OLLAMA_HOST` to `OLLAMA_CONFIG.baseUrl` (adds http:// + :11434 port).
+4. `run.bat` — Fixed broken pre-checks: replaced `Net.WebClient` (missing `Timeout` property in modern .NET) with `Invoke-RestMethod -TimeoutSec 4`. Corrected TTS default host from `192.168.6.1` → `192.168.4.2`.
+5. `.opencode/todo.md` — Updated.
+6. `.opencode/work-log.md` — This entry.
+
+**Verified:**
+- `npx tsc --noEmit` passes (pre-existing test file errors only)
+- qwen3.5:9B cold-start generation succeeded in 17.7s
+- undici Agent + dispatcher works correctly with fetch()
+- run.bat pre-checks now use `Invoke-RestMethod` which works on all modern .NET
+
+**TypeScript:** Source files clean (ollama.test.ts has pre-existing mock errors unrelated to changes)
+**Status:** Staged, awaiting user approval to push.

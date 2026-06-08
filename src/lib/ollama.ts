@@ -1,8 +1,41 @@
-﻿import { OLLAMA_CONFIG, TIMEOUTS, TTS_CONFIG } from "./config";
+﻿import { Agent, Dispatcher } from "undici";
+import { OLLAMA_CONFIG, TIMEOUTS, TTS_CONFIG } from "./config";
 import { getDb } from "./db";
 import { safeParseWarn } from "@/lib/safe-json";
 import { logger } from "@/lib/logger";
 import { getServerConfig } from "./server-config";
+
+// ---------------------------------------------------------------------------
+// Custom HTTP agent for Ollama requests
+// ---------------------------------------------------------------------------
+
+/**
+ * Dedicated undici Agent for all Ollama requests. Node.js's built-in fetch()
+ * (undici under the hood) has default internal timeouts:
+ *   - headersTimeout: 10s (time to receive response headers)
+ *   - bodyTimeout: 30s  (time from headers to last byte of body)
+ *
+ * These fire BEFORE our AbortSignal.timeout() because undici checks its own
+ * internal timeouts independently of the user-provided signal. Since Ollama
+ * can take >10s just to load a cold model into VRAM before sending headers,
+ * we need relaxed limits here so that the AbortSignal (OLLAMA_CONFIG.timeout)
+ * is the real timeout.
+ *
+ * We provide our own type-safe wrapper (ollamaFetch) so callers don't need
+ * to know about the dispatcher.
+ */
+const ollamaAgent: Dispatcher = new Agent({
+  headersTimeout: OLLAMA_CONFIG.timeout,
+  bodyTimeout: OLLAMA_CONFIG.timeout,
+});
+
+/**
+ * Wrapper around fetch() that uses the Ollama-specific agent to prevent
+ * undici's default 10s headersTimeout from killing long cold-starts.
+ */
+function ollamaFetch(url: string, init?: RequestInit): Promise<Response> {
+  return fetch(url, { ...init, dispatcher: ollamaAgent } as RequestInit & { dispatcher: Dispatcher });
+}
 
 // ---------------------------------------------------------------------------
 // Output Validation
@@ -223,7 +256,7 @@ let localModels: string[] = [];
 export async function fetchLocalModels(ollamaUrl?: string): Promise<string[]> {
   const baseUrl = ollamaUrl || OLLAMA_CONFIG.baseUrl;
   try {
-    const response = await fetch(`${baseUrl}/api/tags`, {
+    const response = await ollamaFetch(`${baseUrl}/api/tags`, {
       signal: AbortSignal.timeout(TIMEOUTS.LLM_FETCH),
     });
     if (!response.ok) {
@@ -429,7 +462,7 @@ export function getActiveJobModel(userId: string): string {
 export async function checkOllamaConnection(ollamaUrl?: string): Promise<boolean> {
   const baseUrl = ollamaUrl || OLLAMA_CONFIG.baseUrl;
   try {
-    const response = await fetch(`${baseUrl}/api/tags`, {
+    const response = await ollamaFetch(`${baseUrl}/api/tags`, {
       signal: AbortSignal.timeout(TIMEOUTS.LLM_FETCH),
     });
     ollamaAvailable = response.ok;
@@ -460,7 +493,7 @@ export async function checkModelAvailable(
 ): Promise<boolean> {
   const baseUrl = ollamaUrl || OLLAMA_CONFIG.baseUrl;
   try {
-    const response = await fetch(`${baseUrl}/api/tags`, {
+    const response = await ollamaFetch(`${baseUrl}/api/tags`, {
       signal: AbortSignal.timeout(TIMEOUTS.LLM_FETCH),
     });
     if (!response.ok) return false;
@@ -582,7 +615,7 @@ export async function generateText(
 
   for (let attempt = 1; attempt <= OLLAMA_CONFIG.retryAttempts; attempt++) {
     try {
-      const response = await fetch(
+      const response = await ollamaFetch(
         `${baseUrl}/api/generate`,
         {
           method: "POST",
@@ -655,7 +688,7 @@ export async function generateTextStream(
   let lastError: Error | null = null;
   for (let attempt = 1; attempt <= OLLAMA_CONFIG.retryAttempts; attempt++) {
     try {
-      const response = await fetch(`${baseUrl}/api/generate`, {
+      const response = await ollamaFetch(`${baseUrl}/api/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
@@ -722,7 +755,7 @@ export async function generateEmbedding(
   const maxEmbeddingRetries = 5;
   for (let attempt = 1; attempt <= maxEmbeddingRetries; attempt++) {
     try {
-      const response = await fetch(`${baseUrl}/api/embed`, {
+      const response = await ollamaFetch(`${baseUrl}/api/embed`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),

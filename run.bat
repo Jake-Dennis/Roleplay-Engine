@@ -27,12 +27,12 @@ if exist ".env.local" (
 )
 if not defined OLLAMA_HOST set "OLLAMA_HOST=192.168.6.1"
 if not defined OLLAMA_PORT set "OLLAMA_PORT=11434"
-if not defined TTS_HOST set "TTS_HOST=192.168.6.1"
+if not defined TTS_HOST set "TTS_HOST=192.168.4.2"
 if not defined TTS_PORT set "TTS_PORT=8880"
 
-:: Quick Ollama check (timeout after 3s)
+:: Quick Ollama check (timeout after 4s)
 echo Checking Ollama connection at %OLLAMA_HOST%:%OLLAMA_PORT%...
-powershell -NoProfile -Command "try { $wc = New-Object Net.WebClient; $wc.Timeout = 4000; $wc.DownloadString('http://%OLLAMA_HOST%:%OLLAMA_PORT%/api/tags') | Out-Null; exit 0 } catch { exit 1 }" >nul 2>&1
+powershell -NoProfile -Command "try { Invoke-RestMethod -Uri 'http://%OLLAMA_HOST%:%OLLAMA_PORT%/api/tags' -TimeoutSec 4 | Out-Null; exit 0 } catch { exit 1 }" >nul 2>&1
 if errorlevel 1 (
     echo WARNING: Cannot reach Ollama at %OLLAMA_HOST%:%OLLAMA_PORT%
     echo The engine will start but generation will fail until Ollama is reachable.
@@ -43,7 +43,7 @@ echo.
 
 :: Quick TTS check (timeout after 4s)
 echo Checking TTS connection at %TTS_HOST%:%TTS_PORT%...
-powershell -NoProfile -Command "try { $wc = New-Object Net.WebClient; $wc.Timeout = 4000; $wc.DownloadString('http://%TTS_HOST%:%TTS_PORT%/v1/audio/voices') | Out-Null; exit 0 } catch { exit 1 }" >nul 2>&1
+powershell -NoProfile -Command "try { Invoke-RestMethod -Uri 'http://%TTS_HOST%:%TTS_PORT%/v1/audio/voices' -TimeoutSec 4 | Out-Null; exit 0 } catch { exit 1 }" >nul 2>&1
 if errorlevel 1 (
     echo WARNING: Cannot reach TTS at %TTS_HOST%:%TTS_PORT%
     echo The engine will start but TTS will be unavailable.

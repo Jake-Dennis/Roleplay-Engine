@@ -10,7 +10,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { APP_CONFIG, TIMEOUTS } from '@/lib/config';
+import { APP_CONFIG, OLLAMA_CONFIG, TIMEOUTS } from '@/lib/config';
 
 export async function runStartupChecks(): Promise<void> {
   // JWT_SECRET check
@@ -30,9 +30,10 @@ export async function runStartupChecks(): Promise<void> {
     process.exit(1);
   }
 
-  // Ollama check (warn only)
+  // Ollama check (warn only) — uses OLLAMA_CONFIG.baseUrl to properly
+  // construct http://host:port from the OLLAMA_HOST/OLLAMA_PORT env vars
   try {
-    const res = await fetch(`${process.env.OLLAMA_HOST || 'http://192.168.6.1:11434'}/api/tags`, { signal: AbortSignal.timeout(TIMEOUTS.HEALTH_CHECK) });
+    const res = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/tags`, { signal: AbortSignal.timeout(TIMEOUTS.HEALTH_CHECK) });
     console.log(`[startup] Ollama: ${res.ok ? 'connected' : `HTTP ${res.status}`}`);
   } catch {
     console.warn('[startup] Ollama: not reachable (LLM features disabled)');

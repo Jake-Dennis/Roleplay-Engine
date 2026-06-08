@@ -2,7 +2,7 @@
 
 Persistent cross-session task checklist. Updated by the conductor before, during, and after each work cycle.
 
-**Last updated:** 2026-06-08 (Plan 023 completed and committed)
+**Last updated:** 2026-06-09 (Cycle 7 — all timeout fixes)
 
 ---
 
@@ -12,12 +12,13 @@ Persistent cross-session task checklist. Updated by the conductor before, during
 
 ## Recently Completed
 
-### Plan 023: AI Wiki Editing UI + Cleanup (committed as `67afc28`)
-- **Layer 1 — Cleanup:** Fixed "via middleware" comment, added OLLAMA_HOST to .env.local, deleted `.omo/` directory, deleted orphan `_graphify_*.py` and `_archive/` scripts, fixed `_check_chunks.py`, security review of `app-layout-shell.tsx`
-- **Layer 2 — 8 new API endpoints:** `text/{rewrite,expand,summarize,improve,generate}`, `enrich`, `deepen`, `generate-rumors`
-- **Layer 3 — 3 new UI components:** `create-from-prompt-modal.tsx`, `selection-toolbar.tsx`, `wiki-ai-header-buttons.tsx`
-- **Layer 4 — Integration:** Wiki page header buttons, MarkdownEditor textareaRef passthrough, 5 new prompt templates
-- **Build:** ✓ Compiled, TypeScript clean, 103 routes, 17 files staged, commit `67afc28`
+### Cycle 7 — Full timeout fix (run.bat + undici agent + config)
+- **run.bat:** `Net.WebClient.Timeout` → `Invoke-RestMethod -TimeoutSec 4`, TTS default `192.168.6.1` → `192.168.4.2`
+- **ollama.ts:** Added undici Agent with 30-min headersTimeout/bodyTimeout → undici's internal 10s default was killing cold-starts before AbortSignal could fire
+- **config.ts:** Timeout 600s → 1800s, embedding 120s → 600s
+- **startup-check.ts:** URL construction uses `OLLAMA_CONFIG.baseUrl` now
+
+---
 
 ## Backlog
 
@@ -27,6 +28,8 @@ Persistent cross-session task checklist. Updated by the conductor before, during
 
 ## Completed Plans History
 
+- 2026-06-09 — **Cycle 7**: run.bat fixes + undici agent + timeouts (all files staged)
+- 2026-06-09 — **Plan 024**: Chat session fixes committed `6833761`
 - 2026-06-08 — **Plan 023**: AI Wiki Editing UI + Cleanup (`67afc28`)
 - 2026-06-07 — **Plan 006**: Rich Wiki Editor (archived)
 - 2026-06-07 — **Plan 005**: Jobs Model (archived)

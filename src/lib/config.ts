@@ -19,8 +19,12 @@ export const OLLAMA_CONFIG = {
   },
   model: process.env.OLLAMA_MODEL || "qwen3.5:9B",
   embeddingModel: process.env.OLLAMA_EMBEDDING_MODEL || "qwen3-embedding:8b",
-  timeout: 600000,
-  embeddingTimeout: 120000,
+  // 30-minute timeout for generation — qwen3.5:9B can take several
+  // minutes to cold-start (model load into VRAM over LAN).
+  timeout: 1800000,
+  // 10-minute timeout for embeddings — generous for cold-start + retries
+  embeddingTimeout: 600000,
+  // 3 retries with 2s exponential backoff for streaming fetch
   retryAttempts: 3,
   retryDelay: 2000,
   options: {
