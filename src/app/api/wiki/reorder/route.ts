@@ -3,8 +3,9 @@ import { withErrorHandler } from "@/lib/with-error-handler";
 import { withAuth } from "@/lib/with-auth";
 import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import { moveWikiPage } from "@/lib/wiki/move-page";
-import { writeWikiConfig, getResolvedFolderOrder } from "@/lib/wiki/config";
+import { readWikiConfig, writeWikiConfig, getResolvedFolderOrder } from "@/lib/wiki/config";
 import { readWikiPage, writeWikiPage, listWikiPages } from "@/lib/wiki/file-io";
+import { getTypeRegistry } from "@/lib/wiki/type-registry";
 import { badRequestError, requireJson } from "@/lib/error-response";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limiter";
 import path from "path";
@@ -97,8 +98,9 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       }
 
       if (oldPath !== newPath) {
-        // File move + wikilink rewrite
-        const result = moveWikiPage(oldPath, newPath, wikiRoot);
+        // File move + wikilink rewrite, with type registry for subtype resolution
+        const registry = getTypeRegistry(wikiRoot);
+        const result = moveWikiPage(oldPath, newPath, wikiRoot, registry);
         results.push({
           oldPath: result.oldPath,
           newPath: result.newPath,
@@ -129,10 +131,13 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     const validFolders = new Set(getResolvedFolderOrder(wikiRoot));
     for (const f of folderOrder) {
       if (typeof f !== "string" || !validFolders.has(f)) {
-        return badRequestError(`Invalid folder in folderOrder: ${f}`);
+        return badRequestError("Invalid folder in folderOrder: " + f);
       }
     }
-    writeWikiConfig(wikiRoot, { folderOrder });
+    // Read full v2 config, update folderOrder, write back
+    const config = readWikiConfig(wikiRoot);
+    config.folderOrder = folderOrder;
+    writeWikiConfig(wikiRoot, config);
   }
 
   // Re-derive the resolved folder order
@@ -170,7 +175,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   return NextResponse.json({
     pages: pages.map((p) => ({
       path: path.relative(wikiRoot, p.path).replace(/\\/g, "/"),
-      folder: path.dirname(p.path).replace(/\\/g, "/").split(path.sep).pop() || "",
+      folder: path.dirname(p.path).replace(/\\/g, "/").split("/").pop() || "",
       order: p.frontmatter.order ?? null,
       title: p.frontmatter.title || "",
       type: p.frontmatter.type,

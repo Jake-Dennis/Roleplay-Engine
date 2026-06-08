@@ -145,4 +145,42 @@ describe("rewriteLinksForPageMove", () => {
       "Embed: ![[characters/foo]]",
     ].join("\n"));
   });
+
+  // ---- 2-level folder move tests ----
+
+  it("rewrites links when moving between subtype folders within the same type", () => {
+    const content = "See [[entities/characters/gandalf]] for details.";
+    expect(rewriteLinksForPageMove(content, "entities/characters", "entities/locations", "Gandalf", "gandalf"))
+      .toBe("See [[entities/locations/gandalf]] for details.");
+  });
+
+  it("rewrites links when moving from top-level folder into a subtype subfolder", () => {
+    const content = "See [[entities/gandalf]] for details.";
+    expect(rewriteLinksForPageMove(content, "entities", "entities/characters", "Gandalf", "gandalf"))
+      .toBe("See [[entities/characters/gandalf]] for details.");
+  });
+
+  it("rewrites links when moving from subtype subfolder to top-level folder", () => {
+    const content = "See [[entities/characters/gandalf]] for details.";
+    expect(rewriteLinksForPageMove(content, "entities/characters", "entities", "Gandalf", "gandalf"))
+      .toBe("See [[entities/gandalf]] for details.");
+  });
+
+  it("rewrites links when moving between different types with subtypes", () => {
+    const content = "[[entities/characters/gandalf]] is powerful.";
+    expect(rewriteLinksForPageMove(content, "entities/characters", "concepts/events", "Gandalf", "gandalf"))
+      .toBe("[[concepts/events/gandalf]] is powerful.");
+  });
+
+  it("does NOT rewrite 2-level links when oldFolder prefix doesn't match the link", () => {
+    const content = "[[entities/items/sting]] is a weapon.";
+    expect(rewriteLinksForPageMove(content, "entities/characters", "entities/locations", "Gandalf", "gandalf"))
+      .toBe("[[entities/items/sting]] is a weapon.");
+  });
+
+  it("only rewrites links matching the moved page in 2-level folders", () => {
+    const content = "[[entities/characters/gandalf]] and [[entities/characters/frodo]].";
+    expect(rewriteLinksForPageMove(content, "entities/characters", "entities/locations", "Gandalf", "gandalf"))
+      .toBe("[[entities/locations/gandalf]] and [[entities/characters/frodo]].");
+  });
 });

@@ -1,0 +1,34 @@
+{
+  "jobId": "benchmark-8aec6985-e41f-494c-ba65-99648ee80d4b-1780757349180-s75yki",
+  "userId": "8aec6985-e41f-494c-ba65-99648ee80d4b",
+  "status": "failed",
+  "progress": 100,
+  "message": "Failed",
+  "config": {
+    "model": "qwen3.5:2b",
+    "ollamaHost": "http://192.168.4.2:11434",
+    "testContextSizes": [
+      2048,
+      4096,
+      8192,
+      16384,
+      32768
+    ],
+    "quickMode": true,
+    "retentionTestTurns": 3,
+    "needleDepthPercent": 50,
+    "thinkingMode": false,
+    "maxContextSize": 131072
+  },
+  "createdAt": "2026-06-06T14:49:09.180Z",
+  "updatedAt": "2026-06-06T14:55:19.916Z",
+  "stage": "memory-retention",
+  "startedAt": "2026-06-06T14:49:09.182Z",
+  "currentTest": "memory-needle",
+  "stageProgress": {
+    "current": 1,
+    "total": 9
+  },
+  "error": "Invalid count value: -3216",
+  "completedAt": "2026-06-06T14:55:19.916Z"
+}

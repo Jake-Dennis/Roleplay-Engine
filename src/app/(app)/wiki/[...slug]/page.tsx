@@ -211,8 +211,9 @@ export default function WikiPageView() {
         return;
       }
 
-      // Navigate to the new page
-      const slug = pagePath.replace('.md', '').replace(/_/g, '-');
+      // Navigate to the new page. URL matches on-disk filename exactly
+      // (no underscore → dash conversion) to avoid 404s.
+      const slug = pagePath.replace(/\.md$/, '');
       router.push(`/wiki/${slug}`);
     } catch {
       alert('Network error while creating page');
@@ -288,7 +289,8 @@ export default function WikiPageView() {
       (m) => m.oldPath === page?.path || m.newPath === page?.path,
     );
     if (moveAffectingCurrent && moveAffectingCurrent.newPath !== page?.path) {
-      const slugStr = moveAffectingCurrent.newPath.replace(/\.md$/, '').replace(/_/g, '-');
+      // URL matches on-disk filename exactly (no underscore → dash conversion).
+      const slugStr = moveAffectingCurrent.newPath.replace(/\.md$/, '');
       router.push(`/wiki/${slugStr}`);
     }
   }, [activeUniverse?.id, refreshWikiData, page?.path, router]);

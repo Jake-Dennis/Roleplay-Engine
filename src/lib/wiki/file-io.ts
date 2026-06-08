@@ -349,14 +349,11 @@ export function deleteWikiPage(filePath: string): void {
 }
 
 /**
- * List all wiki pages across all wiki folders.
+ * List all wiki pages, including pages in subtype subfolders (2-level deep).
+ * Recursively scans directories, skipping hidden dirs and known system dirs.
  *
- * Scans the standard wiki subdirectories under `wikiRoot` plus any custom
- * folders registered in the wiki config or discovered on disk. Pages within
- * each folder are sorted by their `order` frontmatter field (ascending),
- * then alphabetically by title for stable ordering.
- *
- * Skips files that fail to parse (e.g., non-frontmatter markdown).
+ * Pages are sorted by top-level folder order (from wiki config), then by
+ * subtype folder path, then by `order` frontmatter field, then by title.
  */
 export function listWikiPages(wikiRoot: string): WikiPage[] {
   const pages: WikiPage[] = [];
@@ -369,30 +366,79 @@ export function listWikiPages(wikiRoot: string): WikiPage[] {
     const dir = path.join(wikiRoot, folder);
     if (!fs.existsSync(dir)) continue;
 
-    const files = fs.readdirSync(dir).filter((f) => f.endsWith(".md"));
-    for (const file of files) {
-      const filePath = path.join(dir, file);
+    collectPagesRecursive(dir, folder, pages);
+  }
+
+  // Sort by top-level folder order, then subtype folder path,
+  // then by order field, then by title
+  const folderIndex = new Map(folders.map((f, i) => [f, i] as const));
+  pages.sort((a, b) => {
+    // Compute relative directory paths, normalizing to forward slashes
+    const aRel = path
+      .relative(wikiRoot, path.dirname(a.path))
+      .replace(/\\/g, "/");
+    const bRel = path
+      .relative(wikiRoot, path.dirname(b.path))
+      .replace(/\\/g, "/");
+
+    // Extract top-level folder
+    const aTop = aRel.split("/")[0];
+    const bTop = bRel.split("/")[0];
+    const aIdx = folderIndex.get(aTop) ?? Number.POSITIVE_INFINITY;
+    const bIdx = folderIndex.get(bTop) ?? Number.POSITIVE_INFINITY;
+    if (aIdx !== bIdx) return aIdx - bIdx;
+
+    // Sort by the full relative folder path
+    if (aRel !== bRel) return aRel.localeCompare(bRel);
+
+    // Then by order field
+    const aOrder = a.frontmatter.order ?? Number.POSITIVE_INFINITY;
+    const bOrder = b.frontmatter.order ?? Number.POSITIVE_INFINITY;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+
+    // Then by title
+    return (a.frontmatter.title || "").localeCompare(b.frontmatter.title || "");
+  });
+
+  return pages;
+}
+
+/**
+ * Recursively collect wiki pages from a directory and its subdirectories.
+ * Skips hidden dirs (starting with .), system dirs (_review, _archive, conflicts, node_modules),
+ * and non-.md files.
+ */
+function collectPagesRecursive(
+  dirPath: string,
+  _relativePrefix: string,
+  pages: WikiPage[],
+): void {
+  let entries;
+  try {
+    entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  } catch {
+    // Skip directories that can't be read (permission errors, etc.)
+    return;
+  }
+
+  const SKIP_DIRS = new Set(["_review", "_archive", "conflicts", "node_modules"]);
+
+  for (const entry of entries) {
+    if (entry.name.startsWith(".")) continue; // hidden files/dirs
+
+    const fullPath = path.join(dirPath, entry.name);
+    const nextPrefix = `${_relativePrefix}/${entry.name}`;
+
+    if (entry.isDirectory()) {
+      if (SKIP_DIRS.has(entry.name)) continue;
+      collectPagesRecursive(fullPath, nextPrefix, pages);
+    } else if (entry.isFile() && entry.name.endsWith(".md")) {
       try {
-        pages.push(readWikiPage(filePath));
+        const page = readWikiPage(fullPath);
+        pages.push(page);
       } catch {
         // Skip files that can't be parsed
       }
     }
   }
-
-  // Sort by folder order, then by order field, then by title
-  const folderIndex = new Map(folders.map((f, i) => [f, i] as const));
-  pages.sort((a, b) => {
-    const aFolder = path.basename(path.dirname(a.path));
-    const bFolder = path.basename(path.dirname(b.path));
-    const aFolderIdx = folderIndex.get(aFolder) ?? 0;
-    const bFolderIdx = folderIndex.get(bFolder) ?? 0;
-    if (aFolderIdx !== bFolderIdx) return aFolderIdx - bFolderIdx;
-    const aOrder = a.frontmatter.order ?? Number.POSITIVE_INFINITY;
-    const bOrder = b.frontmatter.order ?? Number.POSITIVE_INFINITY;
-    if (aOrder !== bOrder) return aOrder - bOrder;
-    return (a.frontmatter.title || "").localeCompare(b.frontmatter.title || "");
-  });
-
-  return pages;
 }

@@ -1,6 +1,7 @@
 'use client';
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   DndContext,
   DragOverlay,
@@ -9,6 +10,7 @@ import {
   closestCorners,
   useSensor,
   useSensors,
+  useDroppable,
   DragStartEvent,
   DragOverEvent,
   DragEndEvent,
@@ -22,10 +24,26 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Folder, FileText, ChevronRight, ChevronDown, Users, BookOpen, FileText as FileIcon, GitBranch, Plus, AlertTriangle, RefreshCw, FolderPlus } from 'lucide-react';
+import {
+  Folder,
+  FileText,
+  ChevronRight,
+  ChevronDown,
+  Users,
+  BookOpen,
+  FileText as FileIcon,
+  GitBranch,
+  Plus,
+  AlertTriangle,
+  RefreshCw,
+  FolderPlus,
+  X,
+  Loader2,
+  Check,
+} from 'lucide-react';
 
 export interface FileTreePageItem {
-  path: string;          // relative path e.g. "entities/foo.md"
+  path: string;          // relative path e.g. "entities/characters/foo.md"
   title: string;
   type: string;
   order?: number;
@@ -34,6 +52,22 @@ export interface FileTreePageItem {
 export interface ReorderChange {
   moves: Array<{ oldPath: string; newPath: string; order?: number }>;
   folderOrder?: string[];
+}
+
+interface SubfolderInfo {
+  /** Subfolder path, e.g. "entities/characters" */
+  path: string;
+  /** Display name, e.g. "characters" */
+  name: string;
+  /** Pages within this subfolder */
+  pages: FileTreePageItem[];
+}
+
+interface TopLevelInfo {
+  /** Pages directly in the top folder (no subtype subfolder) */
+  directPages: FileTreePageItem[];
+  /** Subtype subfolders */
+  subfolders: SubfolderInfo[];
 }
 
 interface FileTreeProps {
@@ -45,10 +79,37 @@ interface FileTreeProps {
   isLoading?: boolean;
   error?: string | null;
   onRetry?: () => void;
+  /** Legacy callback — used by empty-state "Create your first page" button */
   onCreatePage?: () => void;
   onCreateFolder?: () => void;
   onReorder?: (change: ReorderChange) => Promise<void>;
 }
+
+// ---------------------------------------------------------------------------
+// Type/subtype definitions for the quick-create flow
+// ---------------------------------------------------------------------------
+const QUICK_CREATE_TYPES: Array<{
+  type: string;
+  folder: string;
+  label: string;
+  subtypes: string[];
+}> = [
+  { type: 'entity', folder: 'entities', label: 'Entity', subtypes: ['character', 'location', 'item', 'faction', 'organization', 'creature'] },
+  { type: 'concept', folder: 'concepts', label: 'Concept', subtypes: ['theme', 'rule', 'mechanic', 'lore', 'event', 'tradition'] },
+  { type: 'source', folder: 'sources', label: 'Source', subtypes: [] },
+  { type: 'synthesis', folder: 'synthesis', label: 'Synthesis', subtypes: [] },
+];
+
+const TYPE_CREATE_ICONS: Record<string, typeof FileText> = {
+  entity: Users,
+  concept: BookOpen,
+  source: FileIcon,
+  synthesis: GitBranch,
+};
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 const TYPE_ICONS: Record<string, typeof FileText> = {
   entity: Users,
@@ -57,12 +118,80 @@ const TYPE_ICONS: Record<string, typeof FileText> = {
   synthesis: GitBranch,
 };
 
-const folderOf = (path: string) => path.includes('/') ? path.split('/')[0] : '';
+/** Extract the top-level folder from a path: "entities/characters/gandalf.md" → "entities" */
+const topFolderOf = (path: string) => path.includes('/') ? path.split('/')[0] : '';
+
+/** Alias for backward compat */
+const folderOf = topFolderOf;
+
+/**
+ * Extract the 2-level subfolder path from a path.
+ * "entities/characters/gandalf.md" → "entities/characters"
+ * "entities/foo.md" → null (no subfolder, page is directly in top folder)
+ */
+const subfolderOf = (path: string): string | null => {
+  const parts = path.split('/');
+  if (parts.length >= 3) return parts.slice(0, 2).join('/');
+  return null;
+};
+
 const pathOf = (folder: string, filename: string) => `${folder}/${filename.replace(/\.md$/, '')}.md`;
 const idForPage = (path: string) => `page:${path}`;
 const idForFolder = (name: string) => `folder:${name}`;
+const idForSubfolder = (subfolderPath: string) => `subfolder:${subfolderPath}`;
 const pageIdToPath = (id: string) => id.startsWith('page:') ? id.slice(5) : '';
 const folderIdToName = (id: string) => id.startsWith('folder:') ? id.slice(7) : '';
+const subfolderIdToPath = (id: string) => id.startsWith('subfolder:') ? id.slice('subfolder:'.length) : '';
+
+// ---------------------------------------------------------------------------
+// Hierarchy builder
+// ---------------------------------------------------------------------------
+
+function buildHierarchy(pagesByFolder: Record<string, FileTreePageItem[]>): Record<string, TopLevelInfo> {
+  const hierarchy: Record<string, TopLevelInfo> = {};
+
+  for (const [topFolder, pages] of Object.entries(pagesByFolder)) {
+    const directPages: FileTreePageItem[] = [];
+    const subfolderMap = new Map<string, FileTreePageItem[]>();
+
+    for (const page of pages) {
+      const sf = subfolderOf(page.path);
+      if (sf) {
+        if (!subfolderMap.has(sf)) subfolderMap.set(sf, []);
+        subfolderMap.get(sf)!.push(page);
+      } else {
+        directPages.push(page);
+      }
+    }
+
+    // Sort pages within each subfolder by order, then title
+    const sortPages = (arr: FileTreePageItem[]) =>
+      arr.sort((a, b) => {
+        const aOrder = a.order ?? Number.POSITIVE_INFINITY;
+        const bOrder = b.order ?? Number.POSITIVE_INFINITY;
+        if (aOrder !== bOrder) return aOrder - bOrder;
+        return (a.title || a.path).localeCompare(b.title || b.path);
+      });
+
+    const subfolders: SubfolderInfo[] = [];
+    for (const [sfPath, sfPages] of subfolderMap) {
+      const name = sfPath.split('/').pop() || '';
+      subfolders.push({ path: sfPath, name, pages: sortPages(sfPages) });
+    }
+    subfolders.sort((a, b) => a.name.localeCompare(b.name));
+
+    hierarchy[topFolder] = {
+      directPages: sortPages(directPages),
+      subfolders,
+    };
+  }
+
+  return hierarchy;
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton / Empty / Error states
+// ---------------------------------------------------------------------------
 
 function SkeletonTree() {
   return (
@@ -149,7 +278,229 @@ function ErrorState({ error, onRetry }: { error: string; onRetry?: () => void })
   );
 }
 
-// --- Sortable bits --------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Quick Create Modal
+// ---------------------------------------------------------------------------
+
+interface CreateFlowProps {
+  open: boolean;
+  onClose: () => void;
+  onCreateComplete: (type: string, subtype: string | null, title: string) => Promise<void>;
+}
+
+function QuickCreateModal({ open, onClose, onCreateComplete }: CreateFlowProps) {
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedSubtype, setSelectedSubtype] = useState<string | null>(null);
+  const [title, setTitle] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus the input when step 3 is reached
+  const focusInput = useCallback(() => {
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }, []);
+
+  if (!open) return null;
+
+  const currentTypeDef = QUICK_CREATE_TYPES.find((t) => t.type === selectedType);
+  const hasSubtypes = currentTypeDef && currentTypeDef.subtypes.length > 0;
+
+  const reset = () => {
+    setStep(1);
+    setSelectedType(null);
+    setSelectedSubtype(null);
+    setTitle('');
+    setCreating(false);
+    setError(null);
+  };
+
+  const handleClose = () => {
+    reset();
+    onClose();
+  };
+
+  const handleTypeSelect = (typeDef: (typeof QUICK_CREATE_TYPES)[0]) => {
+    setSelectedType(typeDef.type);
+    setSelectedSubtype(null);
+    if (typeDef.subtypes.length === 0) {
+      // No subtypes, go straight to title
+      setStep(3);
+      focusInput();
+    } else {
+      setStep(2);
+    }
+  };
+
+  const handleSubtypeSelect = (subtype: string) => {
+    setSelectedSubtype(subtype);
+    setStep(3);
+    focusInput();
+  };
+
+  const handleCreate = async () => {
+    if (!selectedType || !title.trim()) return;
+    setCreating(true);
+    setError(null);
+    try {
+      await onCreateComplete(selectedType, selectedSubtype, title.trim());
+      reset();
+      onClose();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to create page');
+      setCreating(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
+
+      {/* Modal */}
+      <div className="relative z-10 w-full max-w-sm bg-bg-elevated border border-border-default rounded-xl shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border-default">
+          <h3 className="text-sm font-semibold text-text-primary">
+            {step === 1 && 'Select page type'}
+            {step === 2 && 'Select subtype'}
+            {step === 3 && 'Enter page title'}
+          </h3>
+          <button
+            onClick={handleClose}
+            className="p-1 rounded hover:bg-bg-highlight text-text-muted hover:text-text-primary transition-colors"
+            aria-label="Close"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-4">
+          {/* Step indicator */}
+          <div className="flex items-center gap-1.5 mb-4">
+            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${
+              step >= 1 ? 'bg-accent text-white' : 'bg-bg-raised text-text-muted'
+            }`}>1</span>
+            <span className="h-px w-6 bg-border-default" />
+            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${
+              step >= 2 ? 'bg-accent text-white' : 'bg-bg-raised text-text-muted'
+            }`}>2</span>
+            <span className="h-px w-6 bg-border-default" />
+            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${
+              step >= 3 ? 'bg-accent text-white' : 'bg-bg-raised text-text-muted'
+            }`}>3</span>
+          </div>
+
+          {error && (
+            <div className="mb-3 p-2 rounded bg-error/10 border border-error/20 text-error text-xs">
+              {error}
+            </div>
+          )}
+
+          {step === 1 && (
+            <div className="space-y-2">
+              {QUICK_CREATE_TYPES.map((tdef) => {
+                const Icon = TYPE_CREATE_ICONS[tdef.type] || FileText;
+                return (
+                  <button
+                    key={tdef.type}
+                    onClick={() => handleTypeSelect(tdef)}
+                    className="flex items-center gap-3 w-full p-3 rounded-lg border border-border-default bg-bg-base hover:bg-bg-raised hover:border-accent/30 transition-colors text-left"
+                  >
+                    <div className="p-1.5 rounded-lg bg-accent/10 text-accent">
+                      <Icon size={16} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-text-primary">{tdef.label}</p>
+                      {tdef.subtypes.length > 0 && (
+                        <p className="text-[11px] text-text-muted mt-0.5">
+                          {tdef.subtypes.length} subtypes &middot; {tdef.folder} folder
+                        </p>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {step === 2 && currentTypeDef && (
+            <div className="grid grid-cols-2 gap-2">
+              {currentTypeDef.subtypes.map((subtype) => (
+                <button
+                  key={subtype}
+                  onClick={() => handleSubtypeSelect(subtype)}
+                  className="flex items-center gap-2 p-3 rounded-lg border border-border-default bg-bg-base hover:bg-bg-raised hover:border-accent/30 transition-colors text-left"
+                >
+                  <span className="text-sm capitalize text-text-primary">{subtype}</span>
+                </button>
+              ))}
+              {/* Back button */}
+              <button
+                onClick={() => setStep(1)}
+                className="col-span-2 text-xs text-text-muted hover:text-text-primary transition-colors mt-1"
+              >
+                &larr; Back to type selection
+              </button>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div>
+              <div className="mb-3 text-xs text-text-muted">
+                Creating a{selectedSubtype ? ` ${selectedSubtype}` : ''} page in{' '}
+                <span className="font-medium text-text-primary">
+                  {currentTypeDef?.folder}/{selectedSubtype ? `${selectedSubtype}s` : ''}
+                </span>
+              </div>
+              <input
+                ref={inputRef}
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && title.trim() && !creating) handleCreate();
+                  if (e.key === 'Escape') handleClose();
+                }}
+                placeholder="Enter page title..."
+                className="w-full px-3 py-2 rounded-lg bg-bg-base border border-border-default text-text-primary text-sm placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
+                disabled={creating}
+                autoFocus
+              />
+              <div className="flex items-center gap-2 mt-4">
+                <button
+                  onClick={() => hasSubtypes ? setStep(2) : setStep(1)}
+                  className="text-xs text-text-muted hover:text-text-primary transition-colors"
+                  disabled={creating}
+                >
+                  &larr; Back
+                </button>
+                <button
+                  onClick={handleCreate}
+                  disabled={!title.trim() || creating}
+                  className="ml-auto inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-accent text-white text-xs font-medium hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {creating ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Check size={12} />
+                  )}
+                  {creating ? 'Creating...' : 'Create Page'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sortable page row
+// ---------------------------------------------------------------------------
 
 function SortablePageRow({
   page,
@@ -171,7 +522,7 @@ function SortablePageRow({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: idForPage(page.path), data: { type: 'page', folder: folderOf(page.path) } });
+  } = useSortable({ id: idForPage(page.path), data: { type: 'page', folder: folderOf(page.path), subfolder: subfolderOf(page.path) } });
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -180,9 +531,8 @@ function SortablePageRow({
 
   const Icon = TYPE_ICONS[page.type] || FileText;
   const folder = folderOf(page.path);
-  const slug = page.path.split('/').pop()?.replace(/\.md$/, '').replace(/_/g, '-') || '';
+  const slug = page.path.split('/').pop()?.replace(/\.md$/, '') || '';
 
-  // When dragging the original item, dim it; the overlay is the visible ghost
   const opacity = isDragging && !isOverlay ? 0.3 : 1;
 
   return (
@@ -211,61 +561,53 @@ function SortablePageRow({
   );
 }
 
-function SortableFolderSection({
-  folder,
-  pages,
+// ---------------------------------------------------------------------------
+// Subfolder section (droppable header + sortable page list)
+// ---------------------------------------------------------------------------
+
+function SubfolderSection({
+  subfolder,
   basePath,
   orphanSet,
   currentPage,
   isExpanded,
   onToggle,
-  isFolderDragging,
-  dragHandleProps,
-  dragHandleAttributes,
 }: {
-  folder: string;
-  pages: FileTreePageItem[];
+  subfolder: SubfolderInfo;
   basePath: string;
   orphanSet: Set<string>;
   currentPage?: string;
   isExpanded: boolean;
   onToggle: () => void;
-  isFolderDragging: boolean;
-  dragHandleProps?: Record<string, unknown>;
-  dragHandleAttributes?: Record<string, unknown>;
 }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: idForSubfolder(subfolder.path),
+    data: { type: 'subfolder', subfolder: subfolder.path },
+  });
+
   return (
-    <div className={isFolderDragging ? 'opacity-50' : ''}>
-      <div className="flex items-center">
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            onToggle();
-          }}
-          className="flex items-center gap-1 flex-1 px-2 py-1 hover:bg-bg-raised rounded text-left"
-        >
-          {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-          <Folder size={14} className="text-accent" />
-          <span className="font-medium">{folder}</span>
-          <span className="text-xxs text-text-muted ml-1">({pages.length})</span>
-        </button>
-        <button
-          {...(dragHandleProps ?? {})}
-          {...(dragHandleAttributes ?? {})}
-          aria-label={`Drag to reorder folder ${folder}`}
-          className="px-1.5 py-1 mr-1 text-text-muted hover:text-text-primary cursor-grab active:cursor-grabbing touch-none"
-          title="Drag to reorder folder"
-        >
-          <span className="block w-1 h-3 leading-none text-[10px] tracking-tighter">⋮⋮</span>
-        </button>
-      </div>
+    <div ref={setNodeRef}>
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          onToggle();
+        }}
+        className={`flex items-center gap-1 w-full px-2 py-1 rounded text-left transition-colors ${
+          isOver ? 'bg-accent/10' : 'hover:bg-bg-raised'
+        }`}
+      >
+        {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        <span className="text-text-muted text-[10px]">&mdash;</span>
+        <span className="font-medium text-sm">{subfolder.name}</span>
+        <span className="text-[10px] text-text-muted ml-1">({subfolder.pages.length})</span>
+      </button>
       {isExpanded && (
         <div className="ml-4">
           <SortableContext
-            items={pages.map((p) => idForPage(p.path))}
+            items={subfolder.pages.map((p) => idForPage(p.path))}
             strategy={verticalListSortingStrategy}
           >
-            {pages.map((p) => (
+            {subfolder.pages.map((p) => (
               <SortablePageRow
                 key={p.path}
                 page={p}
@@ -274,8 +616,8 @@ function SortableFolderSection({
                 isOrphan={orphanSet.has(p.path)}
               />
             ))}
-            {pages.length === 0 && (
-              <div className="text-xxs text-text-muted px-2 py-1 italic">
+            {subfolder.pages.length === 0 && (
+              <div className="text-[10px] text-text-muted px-2 py-1 italic">
                 Drop pages here
               </div>
             )}
@@ -286,259 +628,143 @@ function SortableFolderSection({
   );
 }
 
-// --- Main component -------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Top-level folder: always expanded, contains direct pages + subfolders
+// ---------------------------------------------------------------------------
 
-export default function FileTree({
-  pagesByFolder,
-  folderOrder,
+function TopLevelFolderContent({
+  topFolder,
+  info,
+  basePath,
+  orphanSet,
   currentPage,
-  basePath = '/wiki',
-  orphanPaths,
-  isLoading,
-  error,
-  onRetry,
-  onCreatePage,
-  onCreateFolder,
-  onReorder,
-}: FileTreeProps) {
-  const [expanded, setExpanded] = useState<Set<string>>(
-    () => new Set(folderOrder.length > 0 ? folderOrder : []),
-  );
-  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
-  const lastCommittedRef = useRef<ReorderChange | null>(null);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
-
-  const orphanSet = useMemo(() => new Set(orphanPaths || []), [orphanPaths]);
-
-  // Flatten pages into a single map for lookup
-  const pageByPath = useMemo(() => {
-    const map = new Map<string, FileTreePageItem>();
-    for (const folder of Object.keys(pagesByFolder)) {
-      for (const p of pagesByFolder[folder]) {
-        map.set(p.path, p);
-      }
-    }
-    return map;
-  }, [pagesByFolder]);
-
-  if (isLoading) {
-    return <SkeletonTree />;
-  }
-
-  if (error) {
-    return <ErrorState error={error} onRetry={onRetry} />;
-  }
-
-  const totalPages = Object.values(pagesByFolder).reduce((sum, arr) => sum + arr.length, 0);
-  const hasPages = totalPages > 0;
-
-  if (!hasPages) {
-    return <EmptyState onCreatePage={onCreatePage} onCreateFolder={onCreateFolder} />;
-  }
-
-  const toggle = (folder: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(folder)) next.delete(folder);
-      else next.add(folder);
-      return next;
-    });
-  };
-
-  // Find which container (folder) a sortable id belongs to
-  const findContainer = (id: UniqueIdentifier): string | null => {
-    const sid = String(id);
-    if (sid.startsWith('folder:')) return null; // folder headers aren't in a page container
-    if (sid.startsWith('page:')) {
-      const path = pageIdToPath(sid);
-      return folderOf(path);
-    }
-    return null;
-  };
-
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id);
-  };
-
-  const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-    const activeSid = String(active.id);
-    const overSid = String(over.id);
-
-    // Only pages can move between folders; folders stay in the folder list
-    if (activeSid.startsWith('folder:')) return;
-
-    const activeContainer = findContainer(active.id);
-    let overContainer = findContainer(over.id);
-
-    // If hovering over a folder header, treat the folder as the target container
-    if (overSid.startsWith('folder:')) {
-      overContainer = folderIdToName(overSid);
-    }
-
-    if (!activeContainer || !overContainer) return;
-    if (activeContainer === overContainer) return;
-
-    // Cross-container move: update the local view by remapping
-    // The actual reorder is committed on drag end
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveId(null);
-    if (!over || !onReorder) return;
-    const activeSid = String(active.id);
-    const overSid = String(over.id);
-
-    // Folder reorder
-    if (activeSid.startsWith('folder:') && overSid.startsWith('folder:')) {
-      const oldIndex = folderOrder.indexOf(folderIdToName(activeSid));
-      const newIndex = folderOrder.indexOf(folderIdToName(overSid));
-      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
-      const newFolderOrder = arrayMove(folderOrder, oldIndex, newIndex);
-      const change: ReorderChange = { moves: [], folderOrder: newFolderOrder };
-      lastCommittedRef.current = change;
-      try {
-        await onReorder(change);
-      } catch {
-        // Parent will revert; nothing to do here
-      }
-      return;
-    }
-
-    // Page move / reorder
-    if (!activeSid.startsWith('page:')) return;
-
-    const activePath = pageIdToPath(activeSid);
-    const activeFolder = folderOf(activePath);
-    let targetFolder = activeFolder;
-    let targetIndex = -1;
-
-    if (overSid.startsWith('folder:')) {
-      targetFolder = folderIdToName(overSid);
-      targetIndex = (pagesByFolder[targetFolder]?.length ?? 0);
-    } else if (overSid.startsWith('page:')) {
-      const overPath = pageIdToPath(overSid);
-      targetFolder = folderOf(overPath);
-      targetIndex = pagesByFolder[targetFolder]?.findIndex((p) => p.path === overPath) ?? -1;
-    } else {
-      return;
-    }
-
-    if (targetIndex === -1) return;
-
-    // Compute new path and order
-    const oldIndex = pagesByFolder[activeFolder]?.findIndex((p) => p.path === activePath) ?? -1;
-    if (oldIndex === -1) return;
-
-    const filename = activePath.split('/').pop() || '';
-    const newPath = pathOf(targetFolder, filename);
-    const order = targetIndex;
-
-    const change: ReorderChange = {
-      moves: [{ oldPath: activePath, newPath, order }],
-    };
-    if (activeFolder !== targetFolder) {
-      change.folderOrder = folderOrder; // keep order, no change
-    }
-    lastCommittedRef.current = change;
-    try {
-      await onReorder(change);
-    } catch {
-      // Parent will revert
-    }
-  };
-
-  const activeItem = activeId ? findActiveItem(activeId, pageByPath, folderOrder) : null;
+  subfolderExpanded,
+  onSubfolderToggle,
+}: {
+  topFolder: string;
+  info: TopLevelInfo;
+  basePath: string;
+  orphanSet: Set<string>;
+  currentPage?: string;
+  subfolderExpanded: Set<string>;
+  onSubfolderToggle: (subfolderPath: string) => void;
+}) {
+  const totalPages = info.directPages.length +
+    info.subfolders.reduce((sum, sf) => sum + sf.pages.length, 0);
 
   return (
-    <div className="text-sm">
-      <div className="flex items-center justify-between px-2 py-1 mb-1">
-        <span className="text-xxs font-semibold uppercase tracking-wider text-text-muted">Pages</span>
-        <div className="flex items-center gap-0.5">
-          {onCreateFolder && (
-            <button
-              onClick={onCreateFolder}
-              title="New folder"
-              aria-label="New folder"
-              className="inline-flex items-center justify-center w-5 h-5 rounded text-text-muted hover:text-text-primary hover:bg-bg-raised transition-colors"
-            >
-              <FolderPlus size={12} />
-            </button>
-          )}
-          {onCreatePage && (
-            <button
-              onClick={onCreatePage}
-              title="New page"
-              aria-label="New page"
-              className="inline-flex items-center justify-center w-5 h-5 rounded text-text-muted hover:text-text-primary hover:bg-bg-raised transition-colors"
-            >
-              <Plus size={12} />
-            </button>
-          )}
-        </div>
-      </div>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={folderOrder.map(idForFolder)}
-          strategy={verticalListSortingStrategy}
-        >
-          {folderOrder.map((folder) => {
-            const pages = pagesByFolder[folder] || [];
-            const isExpanded = expanded.has(folder);
-            return (
-              <SortableFolderWrapper
-                key={folder}
-                folder={folder}
-                pages={pages}
+    <div className="ml-4">
+      {/* Direct pages in top folder (no subtype subfolder) */}
+      {info.directPages.length > 0 && (
+        <div className="mb-1">
+          <SortableContext
+            items={info.directPages.map((p) => idForPage(p.path))}
+            strategy={verticalListSortingStrategy}
+          >
+            {info.directPages.map((p) => (
+              <SortablePageRow
+                key={p.path}
+                page={p}
                 basePath={basePath}
-                orphanSet={orphanSet}
-                currentPage={currentPage}
-                isExpanded={isExpanded}
-                onToggle={() => toggle(folder)}
+                isActive={p.path === currentPage}
+                isOrphan={orphanSet.has(p.path)}
               />
-            );
-          })}
-        </SortableContext>
-        <DragOverlay>
-          {activeItem ? <DragPreview item={activeItem} /> : null}
-        </DragOverlay>
-      </DndContext>
+            ))}
+          </SortableContext>
+        </div>
+      )}
+
+      {/* No pages at all */}
+      {info.directPages.length === 0 && info.subfolders.length === 0 && (
+        <div className="text-[10px] text-text-muted px-2 py-1 italic">
+          Empty folder
+        </div>
+      )}
+
+      {/* Subtype subfolders */}
+      {info.subfolders.map((sf) => (
+        <SubfolderSection
+          key={sf.path}
+          subfolder={sf}
+          basePath={basePath}
+          orphanSet={orphanSet}
+          currentPage={currentPage}
+          isExpanded={subfolderExpanded.has(sf.path)}
+          onToggle={() => onSubfolderToggle(sf.path)}
+        />
+      ))}
     </div>
   );
 }
 
-function findActiveItem(
-  id: UniqueIdentifier,
-  pageByPath: Map<string, FileTreePageItem>,
-  folderOrder: string[],
-): { type: 'page' | 'folder'; page?: FileTreePageItem; folder?: string } | null {
-  const sid = String(id);
-  if (sid.startsWith('page:')) {
-    const path = pageIdToPath(sid);
-    const page = pageByPath.get(path);
-    if (page) return { type: 'page', page };
-  } else if (sid.startsWith('folder:')) {
-    const name = folderIdToName(sid);
-    if (folderOrder.includes(name)) return { type: 'folder', folder: name };
-  }
-  return null;
+// ---------------------------------------------------------------------------
+// Sortable folder wrapper (for folder reordering)
+// ---------------------------------------------------------------------------
+
+function SortableFolderWrapper(props: {
+  folder: string;
+  info: TopLevelInfo;
+  basePath: string;
+  orphanSet: Set<string>;
+  currentPage?: string;
+  subfolderExpanded: Set<string>;
+  onSubfolderToggle: (subfolderPath: string) => void;
+}) {
+  const { folder, info, subfolderExpanded, onSubfolderToggle } = props;
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: idForFolder(folder),
+    data: { type: 'folder' },
+  });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const totalPages = info.directPages.length +
+    info.subfolders.reduce((sum, sf) => sum + sf.pages.length, 0);
+
+  return (
+    <div ref={setNodeRef} style={style} className={isDragging ? 'opacity-50' : ''}>
+      <div className="flex items-center">
+        <div className="flex items-center gap-1 flex-1 px-2 py-1 text-left">
+          <Folder size={14} className="text-accent shrink-0" />
+          <span className="font-medium">{folder}</span>
+          <span className="text-[10px] text-text-muted ml-1">({totalPages})</span>
+        </div>
+        <button
+          {...(listeners as unknown as Record<string, unknown>)}
+          {...(attributes as unknown as Record<string, unknown>)}
+          aria-label={`Drag to reorder folder ${folder}`}
+          className="px-1.5 py-1 mr-1 text-text-muted hover:text-text-primary cursor-grab active:cursor-grabbing touch-none"
+          title="Drag to reorder folder"
+        >
+          <span className="block w-1 h-3 leading-none text-[10px] tracking-tighter">⋮⋮</span>
+        </button>
+      </div>
+      <TopLevelFolderContent
+        topFolder={folder}
+        info={info}
+        basePath={props.basePath}
+        orphanSet={props.orphanSet}
+        currentPage={props.currentPage}
+        subfolderExpanded={subfolderExpanded}
+        onSubfolderToggle={onSubfolderToggle}
+      />
+    </div>
+  );
 }
+
+// ---------------------------------------------------------------------------
+// Drag preview
+// ---------------------------------------------------------------------------
 
 function DragPreview({ item }: { item: { type: 'page' | 'folder'; page?: FileTreePageItem; folder?: string } }) {
   if (item.type === 'page' && item.page) {
@@ -561,48 +787,342 @@ function DragPreview({ item }: { item: { type: 'page' | 'folder'; page?: FileTre
   return null;
 }
 
-// Wrapper that connects folder sortable + child sortable context
-function SortableFolderWrapper(props: {
-  folder: string;
-  pages: FileTreePageItem[];
-  basePath: string;
-  orphanSet: Set<string>;
-  currentPage?: string;
-  isExpanded: boolean;
-  onToggle: () => void;
-}) {
-  const { folder, pages, isExpanded, onToggle } = props;
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: idForFolder(folder),
-    data: { type: 'folder' },
-  });
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
 
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+export default function FileTree({
+  pagesByFolder,
+  folderOrder,
+  currentPage,
+  basePath = '/wiki',
+  orphanPaths,
+  isLoading,
+  error,
+  onRetry,
+  onCreatePage,
+  onCreateFolder,
+  onReorder,
+}: FileTreeProps) {
+  const router = useRouter();
+  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
+  const lastCommittedRef = useRef<ReorderChange | null>(null);
+  const [subfolderExpanded, setSubfolderExpanded] = useState<Set<string>>(new Set());
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const orphanSet = useMemo(() => new Set(orphanPaths || []), [orphanPaths]);
+
+  // Build 2-level hierarchy
+  const hierarchy = useMemo(() => buildHierarchy(pagesByFolder), [pagesByFolder]);
+
+  // Flatten pages into a single map for lookup
+  const pageByPath = useMemo(() => {
+    const map = new Map<string, FileTreePageItem>();
+    for (const pages of Object.values(pagesByFolder)) {
+      for (const p of pages) {
+        map.set(p.path, p);
+      }
+    }
+    return map;
+  }, [pagesByFolder]);
+
+  const handleCreateComplete = useCallback(async (type: string, subtype: string | null, title: string) => {
+    const typeDef = QUICK_CREATE_TYPES.find((t) => t.type === type);
+    if (!typeDef) throw new Error('Unknown type');
+
+    const slug = title.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_-]/g, '').replace(/-+/g, '_') || `page_${Date.now()}`;
+
+    let pagePath: string;
+    if (subtype) {
+      pagePath = `${typeDef.folder}/${subtype}s/${slug}.md`;
+    } else {
+      pagePath = `${typeDef.folder}/${slug}.md`;
+    }
+
+    const frontmatter: Record<string, unknown> = {
+      title,
+      type,
+      status: 'draft',
+      tags: [],
+    };
+    if (subtype) {
+      frontmatter.subtype = subtype;
+    }
+
+    const res = await fetch('/api/wiki', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        path: pagePath,
+        content: `# ${title}\n\n`,
+        frontmatter,
+      }),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.error || 'Failed to create page');
+    }
+
+    // Navigate to the new page
+    const slugPath = pagePath.replace(/\.md$/, '');
+    router.push(`/wiki/${slugPath}`);
+  }, [router]);
+
+  if (isLoading) {
+    return <SkeletonTree />;
+  }
+
+  if (error) {
+    return <ErrorState error={error} onRetry={onRetry} />;
+  }
+
+  const totalPages = Object.values(pagesByFolder).reduce((sum, arr) => sum + arr.length, 0);
+  const hasPages = totalPages > 0;
+
+  if (!hasPages) {
+    return (
+      <>
+        <EmptyState onCreatePage={onCreatePage} onCreateFolder={onCreateFolder} />
+        <QuickCreateModal
+          open={createOpen}
+          onClose={() => setCreateOpen(false)}
+          onCreateComplete={handleCreateComplete}
+        />
+      </>
+    );
+  }
+
+  const toggleSubfolder = (subfolderPath: string) => {
+    setSubfolderExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(subfolderPath)) next.delete(subfolderPath);
+      else next.add(subfolderPath);
+      return next;
+    });
   };
 
+  // Drag-and-drop handlers
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id);
+  };
+
+  const handleDragOver = (_event: DragOverEvent) => {
+    // Cross-subfolder moves are committed on drag end.
+    // No local state updates needed during drag.
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+    if (!over || !onReorder) return;
+    const activeSid = String(active.id);
+    const overSid = String(over.id);
+
+    // Folder reorder
+    if (activeSid.startsWith('folder:') && overSid.startsWith('folder:')) {
+      const oldIndex = folderOrder.indexOf(folderIdToName(activeSid));
+      const newIndex = folderOrder.indexOf(folderIdToName(overSid));
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+      const newFolderOrder = arrayMove(folderOrder, oldIndex, newIndex);
+      const change: ReorderChange = { moves: [], folderOrder: newFolderOrder };
+      lastCommittedRef.current = change;
+      try {
+        await onReorder(change);
+      } catch {
+        // Parent will revert
+      }
+      return;
+    }
+
+    // Page move / reorder
+    if (!activeSid.startsWith('page:')) return;
+
+    const activePath = pageIdToPath(activeSid);
+    const activePage = pageByPath.get(activePath);
+    if (!activePage) return;
+
+    const activeSubfolder = subfolderOf(activePath);
+    const activeTopFolder = folderOf(activePath);
+
+    // Determine target subfolder/folder
+    let targetTopFolder: string;
+    let targetSubfolder: string | null;
+    let targetIndex = -1;
+
+    if (overSid.startsWith('subfolder:')) {
+      // Dropped on a subfolder header — add to end of that subfolder
+      const sfPath = subfolderIdToPath(overSid);
+      targetTopFolder = sfPath.split('/')[0];
+      targetSubfolder = sfPath;
+      // Count pages in the target to get index
+      const targetInfo = hierarchy[targetTopFolder];
+      if (targetInfo) {
+        const sfInfo = targetInfo.subfolders.find((sf) => sf.path === sfPath);
+        targetIndex = sfInfo ? sfInfo.pages.length : 0;
+      } else {
+        targetIndex = 0;
+      }
+    } else if (overSid.startsWith('folder:')) {
+      // Dropped on a top-level folder header — add to top-level (no subfolder)
+      targetTopFolder = folderIdToName(overSid);
+      targetSubfolder = null;
+      targetIndex = pagesByFolder[targetTopFolder]?.length ?? 0;
+    } else if (overSid.startsWith('page:')) {
+      // Dropped on a page — add next to it
+      const overPath = pageIdToPath(overSid);
+      const overSubfolder = subfolderOf(overPath);
+      const overTopFolder = folderOf(overPath);
+      targetTopFolder = overTopFolder;
+      targetSubfolder = overSubfolder;
+
+      // Find index within the target subfolder/pages
+      if (overSubfolder) {
+        const targetInfo = hierarchy[targetTopFolder];
+        if (targetInfo) {
+          const sfInfo = targetInfo.subfolders.find((sf) => sf.path === overSubfolder);
+          targetIndex = sfInfo ? sfInfo.pages.findIndex((p) => p.path === overPath) : -1;
+        }
+      } else {
+        // Over a page directly in the top folder
+        const targetInfo = hierarchy[targetTopFolder];
+        if (targetInfo) {
+          targetIndex = targetInfo.directPages.findIndex((p) => p.path === overPath);
+        }
+      }
+      if (targetIndex >= 0) {
+        // Insert after the target page
+        targetIndex += 1;
+      }
+    } else {
+      return;
+    }
+
+    if (targetIndex < 0) targetIndex = 0;
+
+    // Compute new path
+    const filename = activePath.split('/').pop() || '';
+    let newPath: string;
+    if (targetSubfolder) {
+      newPath = `${targetSubfolder}/${filename}`;
+    } else {
+      newPath = `${targetTopFolder}/${filename}`;
+    }
+
+    const change: ReorderChange = {
+      moves: [{ oldPath: activePath, newPath, order: targetIndex }],
+    };
+
+    // If moving between top-level folders, include current folder order
+    if (activeTopFolder !== targetTopFolder) {
+      change.folderOrder = folderOrder;
+    }
+
+    lastCommittedRef.current = change;
+    try {
+      await onReorder(change);
+    } catch {
+      // Parent will revert
+    }
+  };
+
+  const activeItem = activeId ? findActiveItem(activeId, pageByPath, folderOrder) : null;
+
   return (
-    <div ref={setNodeRef} style={style}>
-      <SortableFolderSection
-        folder={folder}
-        pages={pages}
-        basePath={props.basePath}
-        orphanSet={props.orphanSet}
-        currentPage={props.currentPage}
-        isExpanded={isExpanded}
-        onToggle={onToggle}
-        dragHandleProps={listeners as unknown as Record<string, unknown>}
-        dragHandleAttributes={attributes as unknown as Record<string, unknown>}
-        isFolderDragging={isDragging}
+    <div className="text-sm">
+      <div className="flex items-center justify-between px-2 py-1 mb-1">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Pages</span>
+        <div className="flex items-center gap-0.5">
+          {onCreateFolder && (
+            <button
+              onClick={onCreateFolder}
+              title="New folder"
+              aria-label="New folder"
+              className="inline-flex items-center justify-center w-5 h-5 rounded text-text-muted hover:text-text-primary hover:bg-bg-raised transition-colors"
+            >
+              <FolderPlus size={12} />
+            </button>
+          )}
+          <button
+            onClick={() => setCreateOpen(true)}
+            title="New page"
+            aria-label="New page"
+            className="inline-flex items-center justify-center w-5 h-5 rounded text-text-muted hover:text-text-primary hover:bg-bg-raised transition-colors"
+          >
+            <Plus size={12} />
+          </button>
+        </div>
+      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={folderOrder.map(idForFolder)}
+          strategy={verticalListSortingStrategy}
+        >
+          {folderOrder.map((folder) => {
+            const info = hierarchy[folder];
+            if (!info) return null;
+            return (
+              <SortableFolderWrapper
+                key={folder}
+                folder={folder}
+                info={info}
+                basePath={basePath}
+                orphanSet={orphanSet}
+                currentPage={currentPage}
+                subfolderExpanded={subfolderExpanded}
+                onSubfolderToggle={toggleSubfolder}
+              />
+            );
+          })}
+        </SortableContext>
+        <DragOverlay>
+          {activeItem ? <DragPreview item={activeItem} /> : null}
+        </DragOverlay>
+      </DndContext>
+
+      {/* Quick-create modal */}
+      <QuickCreateModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreateComplete={handleCreateComplete}
       />
     </div>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Active item resolver
+// ---------------------------------------------------------------------------
+
+function findActiveItem(
+  id: UniqueIdentifier,
+  pageByPath: Map<string, FileTreePageItem>,
+  folderOrder: string[],
+): { type: 'page' | 'folder'; page?: FileTreePageItem; folder?: string } | null {
+  const sid = String(id);
+  if (sid.startsWith('page:')) {
+    const path = pageIdToPath(sid);
+    const page = pageByPath.get(path);
+    if (page) return { type: 'page', page };
+  } else if (sid.startsWith('folder:')) {
+    const name = folderIdToName(sid);
+    if (folderOrder.includes(name)) return { type: 'folder', folder: name };
+  }
+  return null;
 }

@@ -75,8 +75,9 @@ export default function WikiHomePage() {
         return;
       }
 
-      // Navigate to the new page
-      const slug = pagePath.replace('.md', '').replace(/_/g, '-');
+      // Navigate to the new page. URL matches on-disk filename exactly
+      // (no underscore → dash conversion) to avoid 404s.
+      const slug = pagePath.replace(/\.md$/, '');
       router.push(`/wiki/${slug}`);
     } catch {
       alert('Network error while creating page');

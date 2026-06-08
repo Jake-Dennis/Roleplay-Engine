@@ -9,34 +9,18 @@ Persistent cross-session task checklist. Updated by the conductor before, during
 
 ## Active Work
 
-## [2026-06-07] Plan 006: Rich Wiki Editor (built from scratch) — COMPLETE, awaiting commit
+## [2026-06-08] Cycle 15: Hotfix — URL slug 404 regression (committed 3b57cca; uncommitted pending push)
+- Removed `.replace(/_/g, '-')` from 3 URL generation sites (file-tree.tsx, wiki/page.tsx, wiki/[...slug]/page.tsx) — URLs now mirror on-disk filename exactly.
+- 89/89 tests pass, build clean.
+- See `.opencode/work-log.md` Cycle 15 for full postmortem.
 
-### What was built (12 new + 3 modified files)
-- `src/lib/wiki/frontmatter.ts` — gray-matter wrapper
-- `src/components/wiki/editor/syntax-highlighter.ts` — 18-token pure markdown→HTML
-- `src/components/wiki/editor/editor-styles.css` — overlay + gutter + popup
-- `src/components/wiki/editor/wikilink-autocomplete.ts` + `use-wikilink-autocomplete.ts` — popup logic
-- `src/components/wiki/frontmatter-properties-panel.tsx` — Obsidian-style form
-- `src/components/wiki/markdown-editor.tsx` — textarea + overlay centerpiece
-- `src/components/wiki/wiki-quick-switcher.tsx` — Cmd-K modal
-- `src/lib/__tests__/frontmatter.test.ts` (12 tests)
-- `src/lib/__tests__/syntax-highlighter.test.ts` (23 tests)
-- `src/app/(app)/wiki/[...slug]/page.tsx` — integrated new components
-- `src/lib/wiki/types.ts` — widened `created`/`updated` to `string | Date`
+## [2026-06-08] Plans 008/009/010 written (wiki "ever evolving" evolution)
+- **Plan 008: Wiki Type Registry** — move subtype definitions from code into `.wiki-config.json`, LLM prompts read the registry at runtime. 8 tasks, 3 layers.
+- **Plan 009: Subtype Folder Structure** — 2-level folder mapping (`entities/characters/`, `concepts/events/`, etc.) + one-time migration. 8 tasks, 3 layers. Depends on 008.
+- **Plan 010: Evolution Tooling** — bulk-move, bulk-recategorize, merge-duplicates, dormancy, admin panel, new job. 10 tasks, 3 layers. Depends on 008 + 009.
+- Recommended execution order: 008 → 009 → 010. Plans ready; awaiting user go-ahead.
 
-### Verification
-- 8/8 verify-plan commands passed
-- 77/77 tests pass (35 new)
-- `npm run build` — 58 routes, 33s
-- No new third-party editor deps
-- Plan archived: `.opencode/plans/completed/plan-006-rich-wiki-editor.md`
 
-### Bugs caught + fixed
-- Italic regex "stole" the leading `*` of `*italic*` after `**bold**` (added lookbehind/lookahead)
-- A lone `---` was classified as frontmatter opener (added peek-ahead for closing `---`)
-- Pre-existing universe_id missing from PUT URL (fixed in handleSave)
-- Type duplication FrontmatterData vs WikiFrontmatter (collapsed)
-- Name collision with markdown-utils.parseFrontmatter (renamed to parseWikiFrontmatter)
 
 ---
 
@@ -44,8 +28,8 @@ Persistent cross-session task checklist. Updated by the conductor before, during
 _Items discovered but not yet scheduled._
 
 - **Plan 007: AI wiki editing** — selection toolbar (Rewrite/Expand/Summarize/Improve on text select), page header buttons (Enrich/Deepen/Generate Rumors), create-page-from-prompt modal. Reuse existing job system + the new frontmatter utility. From-scratch UI.
-- **Plan 008: Wiki organization** — clickable category cards, clickable tag chips, /api/wiki filter params (type, tag), /wiki/type/[type] and /wiki/tag/[tag] pages.
-- `git pull --rebase` + `git push` the 4 local commits (`2c3569c` setup, `d48dbcc` middleware, `a66aa64` auth route, `241e085` cycle 7 cleanup).
+- **Plan 008/009/010: Wiki evolution** — see Active Work above. Awaiting user go-ahead to execute in order 008 → 009 → 010.
+- `git pull --rebase` + `git push` the 5 local commits (2c3569c, d48dbcc, a66aa64, 241e085, 3b57cca + uncommitted Cycle 15 hotfix).
 - **Decide on `scripts/_graphify_*.py` and `scripts/_archive/`** — currently untracked.
 - Fix stale "via middleware" comment in `src/lib/idle-processing.ts:6` → "via proxy". 9 other matches in `ARCHITECTURE.md` and `src/app/api/AGENTS.md`.
 - Add `OLLAMA_HOST=http://localhost:11434/v1` to `.env.local` (root cause of dev-server Ollama warning).

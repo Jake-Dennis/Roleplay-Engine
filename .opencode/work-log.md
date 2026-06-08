@@ -538,4 +538,69 @@ Replaced the raw `<textarea>` wiki editor with a hand-rolled, from-scratch markd
 
 **Files changed:** 12 new + 3 modified. Plan archived: `.opencode/plans/completed/plan-006-rich-wiki-editor.md`.
 
+---
+
+## 2026-06-07 — Cycle 15: Hotfix for "Page not found" 404 regression
+
+**Trigger:** User reported that wiki pages were returning "Page not found" (HTTP 404), specifically `/wiki/concepts/event-acknowledgment-of-the-journey-to-rivendell`.
+
+**Root cause:** URL slug generation was converting underscores to dashes with `.replace(/_/g, '-')`, but the on-disk filename uses underscores (from `title.trim().toLowerCase().replace(/\s+/g, '_').md` in the page-create flow). The API does a literal `path.join(wikiRoot, relativePath)` lookup — no slug normalization — so any URL containing dashes for a file whose name contains underscores 404s.
+
+The file lives at `data/<userId>/wiki/<universe_id>/concepts/event_acknowledgment-of-the-journey-to-rivendell.md` (universe-specific subfolder, underscores from title normalization).
+
+**Fix:** Removed the `.replace(/_/g, '-')` from URL generation in 3 places — URLs now mirror the on-disk filename exactly:
+- `src/components/wiki/file-tree.tsx:185` — dnd-kit file tree link href
+- `src/app/(app)/wiki/page.tsx:79` — wiki home post-create navigation
+- `src/app/(app)/wiki/[...slug]/page.tsx:215` — slug page post-create navigation
+- `src/app/(app)/wiki/[...slug]/page.tsx:291` — slug page post-move navigation
+
+**Note:** `wiki-quick-switcher.tsx:116` already used `path` (the on-disk relative path) directly — it was correct.
+
+**Verification:**
+- `npm test` → 89/89 pass, 223 expect() calls
+- `npm run build` → 58 routes, 0 errors, 3 pre-existing Turbopack warnings in `src/lib/auth.ts:127` (unrelated)
+- Manual: file tree link now uses underscores, matching the file name on disk
+
+**Files changed:** 4 lines across 3 files (1 line per occurrence, plus 1 comment block). No new tests needed (fix is a 1-line slug change; URL generation is straightforward concatenation).
+
+---
+
+## 2026-06-07 — Cycle 16: Plan 009 — Subtype Folder Structure
+
+**Trigger:** Continue execution of Plan 009 (part of wiki evolution initiative, Plans 008-010).
+
+**What was done:**
+
+### Layer 1 (completed from previous session)
+- T1: `subtype-folders.ts` — folder resolver (`folderForSubtype`, `folderForType`, `folderForPage`, `subtypeFromFolder`)
+- T2: Updated `ingest.ts`, `lore-extraction.ts`, `wiki-handler.ts` to use registry-driven folder resolution
+
+### Layer 2 (this session)
+- **T3: Recursive `listWikiPages`** — Rewrote `listWikiPages()` in `file-io.ts` with `collectPagesRecursive()` helper. Scans subfolders recursively, skips hidden/system dirs. 12 new tests in `file-io.test.ts`.
+- **T4: 2-level file tree** — Updated `file-tree.tsx` with `buildHierarchy()` to group pages into top-level → subtype subfolders. Added `QuickCreateModal` (3-step type→subtype→title flow). Updated `reorder/route.ts` and `move-page.ts` for 2-level path support.
+- **T5: Wikilink rewriter + move-page** — Added 5 new test cases for 2-level folder moves in `wikilinks-rewrite.test.ts`. Fixed `singularizeFolder()` in `move-page.ts` for multi-level paths. Fixed `synthesis: "syntheses"` → `synthesis: "synthesis"` data bug. Fixed Windows path bug in `reorder/route.ts:178` (`.split(path.sep)` → `.split("/")`).
+
+### Layer 3 (this session)
+- **T6: Migration script** — Created `scripts/migrate-wiki-to-subtype-folders.ts` (778 lines) with `--dry-run`, `--apply`, `--backup`, `--user`, `--universe` flags.
+- **T7: Migration executed** — Dry-run showed 32 files to move, then applied with backup. 32 files moved into correct subtype folders across 5 universes. 0 errors, 0 broken links.
+- **T8: Documentation** — Rewrote `docs/wiki-folder-structure.md` (489 lines), created `docs/wiki-migration-guide.md` (710 lines), updated `README.md` with folder structure section.
+
+### Verification
+- Plan 009 verified and archived (6/6 verification commands passed)
+- `npm run build` — compiled successfully
+- `npm test` — 144/144 pass, 324 expect() calls
+- Migration: 32 files moved, 0 errors, backup at `data/_backup_2026-06-08T05-10-56-443Z`
+
+**Files changed (code):** 14 source files modified, 4 new test files, 1 new script.
+**Files changed (docs):** 2 created, 1 rewritten, 1 updated (README).
+**Files changed (data):** 32 wiki pages moved to subtype subfolders.
+
+**Key decisions:**
+- `synthesis: "syntheses"` in `singularizeFolder` was a data bug — changed to `"synthesis"` (synthesis is already singular)
+- Migration uses copy-then-delete (not renameSync) for cross-filesystem safety
+- `relativePrefix` parameter retained in `collectPagesRecursive` (needed for recursive path building despite not being stored)
+- Documentation covers both migration steps AND ongoing usage of the 2-level structure
+
+
+
 

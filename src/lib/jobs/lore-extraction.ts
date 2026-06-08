@@ -16,6 +16,8 @@ import { logger } from "@/lib/logger";
 import { PROMPTS } from "@/lib/prompts";
 import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import { readWikiPage, writeWikiPage, sanitizeWikiFilename, WikiFrontmatter } from "@/lib/wiki/file-io";
+import { getTypeRegistry } from "@/lib/wiki/type-registry";
+import { folderForPage } from "@/lib/wiki/subtype-folders";
 import { generateIndex } from "@/lib/wiki/index-generator";
 // @deprecated: logger.ts is deprecated — use history.ts (SQLite wiki_versions) instead
 import { appendLog } from "@/lib/wiki/logger";
@@ -152,7 +154,11 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
           if (existingPages.has(pageKey)) continue;
 
           const filename = sanitizeWikiFilename(entityName);
-          const pagePath = path.join(entitiesDir, filename);
+          // Use registry-driven folder resolution
+          const registry = getTypeRegistry(wikiRoot);
+          const frontmatter = { type: "entity", subtype: ENTITY_TYPE_TO_SUBTYPE[entity.entityType] };
+          const folder = folderForPage(frontmatter, registry);
+          const pagePath = path.join(wikiRoot, folder, filename);
 
           // Create or update wiki page
           if (fs.existsSync(pagePath)) {
@@ -235,7 +241,11 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
           if (existingPages.has(pageKey)) continue;
 
           const filename = `event_${slug}.md`;
-          const pagePath = path.join(conceptsDir, filename);
+          // Use registry-driven folder resolution
+          const registry = getTypeRegistry(wikiRoot);
+          const folderFrontmatter = { type: "concept", subtype: "event" };
+          const folder = folderForPage(folderFrontmatter, registry);
+          const pagePath = path.join(wikiRoot, folder, filename);
 
           let body = `**Importance:** ${event.importance || "medium"}\n`;
           if (event.participants && event.participants.length > 0) {
@@ -292,7 +302,11 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
           if (existingPages.has(pageKey)) continue;
 
           const filename = `relationship_${slug}.md`;
-          const pagePath = path.join(conceptsDir, filename);
+          // Use registry-driven folder resolution
+          const registry = getTypeRegistry(wikiRoot);
+          const folderFrontmatter = { type: "concept" }; // relationship is concept type
+          const folder = folderForPage(folderFrontmatter, registry);
+          const pagePath = path.join(wikiRoot, folder, filename);
 
           // Create or update wiki page
           if (fs.existsSync(pagePath)) {
@@ -312,7 +326,7 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
             }
           } else {
             const body = `**Nature:** ${rel.nature || "unknown"}\n**Entities:** [[${rel.source}]] ↔ [[${rel.target}]]\n\n## Description\n${rel.description || ""}\n\n*Extracted from messages (batch ${Math.floor(i / batchSize) + 1}).*`;
-            const frontmatter: WikiFrontmatter = {
+            const relFrontmatter: WikiFrontmatter = {
               title: `${rel.source} ↔ ${rel.target}`,
               type: "concept",
               status: "draft",
@@ -320,7 +334,7 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
               tags: ["relationship", "extracted", `nature:${rel.nature || "unknown"}`],
               created: new Date().toISOString(),
             };
-            writeWikiPage(pagePath, body, frontmatter);
+            writeWikiPage(pagePath, body, relFrontmatter);
           }
           existingPages.add(pageKey);
           pagesCreated++;

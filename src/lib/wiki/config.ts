@@ -1,15 +1,13 @@
 import fs from "fs";
 import path from "path";
+import type { WikiConfigV2, WikiTypeDef } from "./config-types";
+import { readAndMigrateConfig, writeWikiConfigV2 } from "./config-migration";
 
 /**
  * Wiki configuration stored in `.wiki-config.json` at the wiki root.
- * Currently tracks folder display order. Custom folders are auto-discovered
- * from the filesystem, so no type registry is needed.
+ * v2 adds full type registry with subtypes and folder mappings.
  */
-export interface WikiConfig {
-  /** Ordered list of folder names. Folders not in this list are appended alphabetically. */
-  folderOrder: string[];
-}
+export type WikiConfig = WikiConfigV2;
 
 export const DEFAULT_FOLDER_ORDER: string[] = [
   "entities",
@@ -22,37 +20,19 @@ export const DEFAULT_FOLDER_ORDER: string[] = [
 const CONFIG_FILENAME = ".wiki-config.json";
 
 /**
- * Read the wiki config for a given wiki root. Returns defaults if the config
- * file does not exist or is unreadable.
+ * Read the wiki config for a given wiki root.
+ * Returns v2 config (migrating from v1 if needed).
  */
-export function readWikiConfig(wikiRoot: string): WikiConfig {
-  const configPath = path.join(wikiRoot, CONFIG_FILENAME);
-  if (!fs.existsSync(configPath)) {
-    return { folderOrder: [] };
-  }
-  try {
-    const raw = fs.readFileSync(configPath, "utf-8");
-    const parsed = JSON.parse(raw) as WikiConfig;
-    if (!parsed || !Array.isArray(parsed.folderOrder)) {
-      return { folderOrder: [] };
-    }
-    return { folderOrder: parsed.folderOrder.filter((s) => typeof s === "string") };
-  } catch {
-    return { folderOrder: [] };
-  }
+export function readWikiConfig(wikiRoot: string): WikiConfigV2 {
+  return readAndMigrateConfig(wikiRoot);
 }
 
 /**
  * Write the wiki config atomically (write to .tmp then rename).
+ * Accepts full v2 config.
  */
-export function writeWikiConfig(wikiRoot: string, config: WikiConfig): void {
-  if (!fs.existsSync(wikiRoot)) {
-    fs.mkdirSync(wikiRoot, { recursive: true });
-  }
-  const configPath = path.join(wikiRoot, CONFIG_FILENAME);
-  const tmpPath = `${configPath}.tmp`;
-  fs.writeFileSync(tmpPath, JSON.stringify(config, null, 2), "utf-8");
-  fs.renameSync(tmpPath, configPath);
+export function writeWikiConfig(wikiRoot: string, config: WikiConfigV2): void {
+  writeWikiConfigV2(wikiRoot, config);
 }
 
 /**
@@ -95,4 +75,21 @@ export function addFolderToConfig(wikiRoot: string, folderName: string): string[
   }
   writeWikiConfig(wikiRoot, config);
   return getResolvedFolderOrder(wikiRoot);
+}
+
+/**
+ * Get the type registry for a wiki root (convenience wrapper).
+ * Reads v2 config and returns normalized registry.
+ */
+export function getTypeRegistryForConfig(wikiRoot: string): {
+  types: Record<string, WikiTypeDef>;
+  subtypeFolders: Record<string, string>;
+  fallbackFolder: string;
+} {
+  const config = readWikiConfig(wikiRoot);
+  return {
+    types: config.types,
+    subtypeFolders: config.subtypeFolders,
+    fallbackFolder: config.types["entity"]?.folder || "entities",
+  };
 }

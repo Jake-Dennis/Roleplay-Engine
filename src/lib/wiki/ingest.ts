@@ -2,6 +2,8 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 import { writeWikiPage, sanitizeWikiFilename, WikiFrontmatter } from "./file-io";
+import { getTypeRegistry } from "./type-registry";
+import { folderForPage } from "./subtype-folders";
 import { generateIndex } from "./index-generator";
 // @deprecated: logger.ts is deprecated — use history.ts (SQLite wiki_versions) instead
 import { appendLog } from "./logger";
@@ -211,7 +213,10 @@ function createWikiPageForItem(
   sourceRef: string
 ): { action: "created" | "updated"; pagePath: string } | null {
   try {
-    const folder = item.type === "entity" ? "entities" : "concepts";
+    // Use registry-driven folder resolution (supports 2-level structure)
+    const registry = getTypeRegistry(wikiRoot);
+    const frontmatter = { type: item.type, subtype: item.subtype };
+    const folder = folderForPage(frontmatter, registry);
     const filename = sanitizeWikiFilename(item.title);
     const pagePath = path.join(wikiRoot, folder, filename);
 
@@ -248,10 +253,10 @@ function createWikiPageForItem(
     }
 
     // Create new page
-    const frontmatter = buildFrontmatter(item.title, item.type, universeId, item.tags, sourceRef, item.subtype);
+    const newFrontmatter = buildFrontmatter(item.title, item.type, universeId, item.tags, sourceRef, item.subtype);
     const body = item.description;
 
-    writeWikiPage(pagePath, body, frontmatter);
+    writeWikiPage(pagePath, body, newFrontmatter);
     return { action: "created", pagePath };
   } catch (err: unknown) {
     logger.error(`[ingest] Failed to create page for "${item.title}":`, err);
@@ -269,15 +274,18 @@ function createSourcePage(
   universeId: string
 ): { pagePath: string } | null {
   try {
+    const registry = getTypeRegistry(wikiRoot);
+    const folderFrontmatter = { type: "source" };
+    const folder = folderForPage(folderFrontmatter, registry);
     const filename = sanitizeWikiFilename(path.basename(sourcePath, path.extname(sourcePath)));
-    const pagePath = path.join(wikiRoot, "sources", filename);
+    const pagePath = path.join(wikiRoot, folder, filename);
 
     // Check if source page already exists
     if (fs.existsSync(pagePath)) {
       return { pagePath };
     }
 
-    const frontmatter: WikiFrontmatter = {
+    const sourceFrontmatter: WikiFrontmatter = {
       title: path.basename(sourcePath, path.extname(sourcePath)),
       type: "source",
       status: "draft",
@@ -293,7 +301,7 @@ function createSourcePage(
 
     const body = `Source material ingested from:\n\`${sourcePath}\`\n\n---\n\n${preview}`;
 
-    writeWikiPage(pagePath, body, frontmatter);
+    writeWikiPage(pagePath, body, sourceFrontmatter);
     return { pagePath };
   } catch (err: unknown) {
     logger.error(`[ingest] Failed to create source page for "${sourcePath}":`, err);

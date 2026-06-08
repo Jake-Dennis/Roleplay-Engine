@@ -9,6 +9,8 @@ import {
   listWikiPages,
 } from "./file-io";
 import { rewriteLinksForPageMove } from "./wikilinks";
+import type { TypeRegistry } from "./type-registry";
+import { subtypeFromFolder } from "./subtype-folders";
 
 export interface MoveWikiPageResult {
   /** Relative path of the page before the move (e.g. "entities/foo.md"). */
@@ -22,26 +24,37 @@ export interface MoveWikiPageResult {
 /**
  * Convert a plural folder name to its likely singular `type` value.
  *
- * Examples:
- *   entities  → entity
- *   locations → location
- *   _review   → review
- *   factions  → faction
+ * For multi-level paths (e.g. "entities/characters"), only the last path
+ * segment is singularized.
  *
- * If the input is already singular-looking (no trailing 's' or ends in 'ss'),
- * it is returned as-is.
+ * Examples:
+ *   entities             → entity
+ *   entities/characters  → entities/character
+ *   concepts/events      → concepts/event
+ *   locations            → location
+ *   _review              → _review
+ *   factions             → faction
  */
 function singularizeFolder(folder: string): string {
-  const lower = folder.toLowerCase();
-  if (lower.endsWith("ies")) return lower.slice(0, -3) + "y";
-  if (
-    lower.endsWith("s") &&
-    !lower.endsWith("ss") &&
-    !lower.endsWith("us")
-  ) {
-    return lower.slice(0, -1);
-  }
-  return lower;
+  const map: Record<string, string> = {
+    entities: "entity",
+    concepts: "concept",
+    sources: "source",
+    synthesis: "synthesis",
+    characters: "character",
+    locations: "location",
+    items: "item",
+    events: "event",
+    timelines: "timeline",
+    factions: "faction",
+    species: "species",
+  };
+  // Handle multi-level paths (e.g., "entities/characters" → "entities/character")
+  const parts = folder.replace(/\\/g, "/").split("/");
+  const last = parts[parts.length - 1];
+  const singular = map[last] || last.replace(/s$/, "");
+  parts[parts.length - 1] = singular;
+  return parts.join("/");
 }
 
 /**
@@ -49,7 +62,8 @@ function singularizeFolder(folder: string): string {
  *
  * - Renames the file on disk.
  * - Updates the page's frontmatter `type` to match the new folder (when the
- *   folder changes).
+ *   folder changes). When a registry is provided and the target is a 2-level
+ *   path (e.g. "entities/characters"), also sets the `subtype` frontmatter.
  * - Rewrites path-based wikilinks in all other pages that point to the moved
  *   page (e.g. `[[entities/foo]]` → `[[characters/foo]]`). Bare-name and
  *   namespace links still resolve via the 3-pass resolver, so they are left
@@ -58,6 +72,7 @@ function singularizeFolder(folder: string): string {
  * @param oldRelPath - Current relative path (e.g. "entities/foo.md")
  * @param newRelPath - Target relative path (e.g. "characters/foo.md")
  * @param wikiRoot - Absolute path to the wiki root directory
+ * @param registry - Optional type registry for resolving subtype from folder paths
  * @returns Result with the old/new paths and list of pages that had links rewritten
  * @throws If the source doesn't exist, the destination already exists, or paths escape the wiki root
  */
@@ -65,6 +80,7 @@ export function moveWikiPage(
   oldRelPath: string,
   newRelPath: string,
   wikiRoot: string,
+  registry?: TypeRegistry,
 ): MoveWikiPageResult {
   const oldFullPath = path.join(wikiRoot, oldRelPath);
   const newFullPath = path.join(wikiRoot, newRelPath);
@@ -97,11 +113,32 @@ export function moveWikiPage(
   const page = readWikiPage(oldFullPath);
   const pageTitle = (page.frontmatter.title || filename).toString();
 
-  // Update type in frontmatter if folder changed
+  // Update type/subtype in frontmatter if folder changed
   if (oldFolder !== newFolder) {
-    const newType = singularizeFolder(newFolder);
-    if (newType && page.frontmatter.type !== newType) {
-      page.frontmatter.type = newType;
+    const folderParts = newFolder.split("/");
+    if (registry && folderParts.length >= 2) {
+      // 2-level folder: extract type from first segment, subtype from registry
+      const topFolder = folderParts[0];
+      const typeFromFolder = singularizeFolder(topFolder);
+      if (typeFromFolder && page.frontmatter.type !== typeFromFolder) {
+        page.frontmatter.type = typeFromFolder;
+      }
+      const subtype = subtypeFromFolder(newFolder, registry);
+      // Use the index signature to set/delete subtype safely
+      const fm = page.frontmatter as Record<string, unknown>;
+      if (subtype) {
+        fm.subtype = subtype;
+      } else {
+        delete fm.subtype;
+      }
+    } else {
+      // Flat folder (no subtype): singularize the full folder name
+      const newType = singularizeFolder(newFolder);
+      if (newType && page.frontmatter.type !== newType) {
+        page.frontmatter.type = newType;
+      }
+      // Clear subtype since we're not in a 2-level subtype folder
+      delete page.frontmatter["subtype"];
     }
   }
 

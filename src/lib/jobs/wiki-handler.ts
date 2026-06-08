@@ -19,6 +19,8 @@ import { ingestSource } from "@/lib/wiki/ingest";
 import { extractAndCreateWikiEntities } from "@/lib/wiki/auto-extract";
 import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import { listWikiPages, writeWikiPage, readWikiPage, WikiFrontmatter } from "@/lib/wiki/file-io";
+import { getTypeRegistry } from "@/lib/wiki/type-registry";
+import { folderForPage } from "@/lib/wiki/subtype-folders";
 import { generateIndex } from "@/lib/wiki/index-generator";
 // @deprecated: logger.ts is deprecated — use history.ts (SQLite wiki_versions) instead
 import { appendLog } from "@/lib/wiki/logger";
@@ -221,9 +223,13 @@ async function handleWikiGenerateRumors(jobId: string, payload: JobPayload): Pro
       const rumors = await generateText(prompt, { temperature: 0.5, num_predict: 512, userId: userId as string, model: getActiveJobModel(userId as string) });
 
       const filename = `rumor_${event.title.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-")}.md`;
-      const pagePath = `${wikiRoot}/concepts/${filename}`;
+      // Use registry-driven folder resolution
+      const registry = getTypeRegistry(wikiRoot);
+      const folderFrontmatter = { type: "concept", subtype: "event" };
+      const folder = folderForPage(folderFrontmatter, registry);
+      const pagePath = path.join(wikiRoot, folder, filename);
 
-      const frontmatter: WikiFrontmatter = {
+      const rumorFrontmatter: WikiFrontmatter = {
         title: `Rumor: ${event.title}`,
         type: "concept",
         status: "draft",
@@ -232,7 +238,7 @@ async function handleWikiGenerateRumors(jobId: string, payload: JobPayload): Pro
         created: new Date().toISOString(),
       };
 
-      writeWikiPage(pagePath, rumors, frontmatter);
+      writeWikiPage(pagePath, rumors, rumorFrontmatter);
       processed++;
     } catch {
       // Skip failed events
@@ -472,11 +478,15 @@ async function handleWikiExtractEvent(jobId: string, payload: JobPayload): Promi
       if (parsed && Array.isArray(parsed.events)) {
         for (const event of parsed.events) {
           const filename = `event_${event.title.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-")}.md`;
-          const pagePath = `${wikiRoot}/concepts/${filename}`;
+          // Use registry-driven folder resolution
+          const registry = getTypeRegistry(wikiRoot);
+          const folderFrontmatter = { type: "concept", subtype: "event" };
+          const folder = folderForPage(folderFrontmatter, registry);
+          const pagePath = path.join(wikiRoot, folder, filename);
 
           const body = `**Event Type:** ${event.eventType || "other"}\n**Outcome:** ${event.outcome || "Unknown"}\n**Importance:** ${event.importance || "medium"}\n\n## Details\nExtracted from session ${sessionId}.`;
 
-          const frontmatter: WikiFrontmatter = {
+          const eventFrontmatter: WikiFrontmatter = {
             title: `Event: ${event.title || "Unknown Event"}`,
             type: "concept",
             status: "draft",
@@ -485,7 +495,7 @@ async function handleWikiExtractEvent(jobId: string, payload: JobPayload): Promi
             created: new Date().toISOString(),
           };
 
-          writeWikiPage(pagePath, body, frontmatter);
+          writeWikiPage(pagePath, body, eventFrontmatter);
           extracted++;
 
           // Auto-create timeline entry for wiki event

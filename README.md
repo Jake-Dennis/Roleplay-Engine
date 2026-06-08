@@ -51,6 +51,49 @@ Roleplay-Engine/
 └── scripts/                    # Utility scripts
 ```
 
+### Wiki Folder Structure
+
+Wiki content is organized in a configurable 2-level folder hierarchy: **type folders**
+(e.g., `entities/`, `concepts/`) at the top level, and **subtype subfolders** (e.g.,
+`entities/characters/`, `concepts/events/`) at the second level. This keeps related
+pages grouped together for large wikis (1000+ pages).
+
+Default structure:
+```
+wiki/
+├── entities/              # type: entity
+│   ├── characters/        # subtype: character
+│   ├── locations/         # subtype: location
+│   ├── items/             # subtype: item
+│   ├── factions/          # subtype: faction
+│   ├── organizations/     # subtype: organization
+│   ├── creatures/         # subtype: creature
+│   └── misc/              # Catch-all for pages without a recognized subtype
+├── concepts/              # type: concept
+│   ├── themes/            # subtype: theme
+│   ├── rules/             # subtype: rule
+│   ├── mechanics/         # subtype: mechanic
+│   ├── lore/              # subtype: lore
+│   ├── events/            # subtype: event
+│   ├── traditions/        # subtype: tradition
+│   └── misc/
+├── sources/               # Ingested source material (flat)
+├── synthesis/             # LLM-generated analysis pages (flat)
+├── _review/               # Conflict diffs and review artifacts
+└── .wiki-config.json      # Type Registry — defines types, subtypes, folder mapping
+```
+
+The structure is fully configurable via the Type Registry (`.wiki-config.json`). You
+can add custom types/subtypes, change folder paths, and reorder folders — all without
+touching application code. Pages are placed based on their `type` and `subtype`
+frontmatter fields, resolved by the pipeline in `subtype-folders.ts`. Existing pages
+in flat folders (e.g., `entities/gandalf.md`) continue to work alongside the new
+2-level hierarchy.
+
+For full details: [docs/wiki-folder-structure.md](docs/wiki-folder-structure.md),
+[docs/wiki-type-registry.md](docs/wiki-type-registry.md),
+[docs/wiki-migration-guide.md](docs/wiki-migration-guide.md).
+
 The request flow works like this. A user sends a message from the chat UI, which hits the session API. The server assembles context from recent messages, wiki lore, narrative memories, character relationships, and active story threads. It sends the assembled prompt to a local Ollama instance for generation. The response streams back to the client via SSE, with optional TTS audio generated through Kokoro. Background jobs handle wiki enrichment, memory compression, and relationship decay during idle time.
 
 ## Getting Started
@@ -120,7 +163,10 @@ The app binds to `http://0.0.0.0:3000` by default.
 - [Schema Reference](docs/historical-evidence/omo/refs/schema.md) - Database schema, tables, indexes, and relationships
 - [API Catalog](docs/historical-evidence/omo/refs/api-catalog.md) - Complete API route reference
 - [Wiki Schema Reference](docs/wiki-schema-reference.md) - Frontmatter fields, page types, wikilink conventions
-- [Wiki Migration Guide](docs/wiki-migration.md) - Architecture, step-by-page migration, troubleshooting
+- [Wiki Folder Structure](docs/wiki-folder-structure.md) - 2-level subtype folder hierarchy, resolution pipeline, config integration
+- [Wiki Type Registry](docs/wiki-type-registry.md) - Type/subtype configuration, custom types, Lucide icons
+- [Wiki Migration Guide (Legacy DB)](docs/wiki-migration.md) - Migrating from pre-wiki lore database
+- [Wiki Migration Guide (Subtype Folders)](docs/wiki-migration-guide.md) - Migrating to 2-level subtype folder structure
 
 ## License and Acknowledgments
 
