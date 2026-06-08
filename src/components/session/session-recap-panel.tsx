@@ -13,7 +13,7 @@
  *   />
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { Sparkles, Loader2, X, AlertCircle, FileText, RotateCcw } from "lucide-react";
 import { JobProgress } from "@/components/jobs/job-progress";
 import { safeParse } from "@/lib/safe-json";
@@ -25,7 +25,7 @@ interface SessionRecapPanelProps {
 
 type RecapStatus = "idle" | "running" | "completed" | "failed";
 
-export function SessionRecapPanel({ sessionId, onClose }: SessionRecapPanelProps) {
+export const SessionRecapPanel = memo(function SessionRecapPanel({ sessionId, onClose }: SessionRecapPanelProps) {
   const [jobId, setJobId] = useState<string | null>(null);
   const [status, setStatus] = useState<RecapStatus>("idle");
   const [recap, setRecap] = useState<string>("");
@@ -279,4 +279,4 @@ export function SessionRecapPanel({ sessionId, onClose }: SessionRecapPanelProps
       </div>
     </div>
   );
-}
+});

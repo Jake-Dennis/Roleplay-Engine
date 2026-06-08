@@ -2,9 +2,11 @@
  * useSession Hook
  *
  * Manages session state including participants, turn management, and SSE connection.
+ * State is consolidated into a single `SessionState` object accessed via `state.*`.
  *
  * Usage:
- *   const { session, messages, sceneState, participants, turnConfig, isOwner, claimTurn, advanceTurn, refresh } = useSession(sessionId);
+ *   const { state, claimTurn, advanceTurn, refresh } = useSession(sessionId);
+ *   // Access: state.session, state.messages, state.sceneState, etc.
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -57,7 +59,7 @@ interface SceneState {
   updated_at: string;
 }
 
-interface UseSessionResult {
+export interface SessionState {
   session: Session | null;
   messages: Message[];
   sceneState: SceneState | null;
@@ -67,56 +69,64 @@ interface UseSessionResult {
   isObserver: boolean;
   loading: boolean;
   error: string | null;
+}
+
+interface UseSessionResult {
+  state: SessionState;
   claimTurn: () => Promise<boolean>;
   advanceTurn: () => Promise<boolean>;
   refresh: () => Promise<void>;
 }
 
+const INITIAL_STATE: SessionState = {
+  session: null,
+  messages: [],
+  sceneState: null,
+  participants: [],
+  turnConfig: null,
+  isOwner: false,
+  isObserver: false,
+  loading: true,
+  error: null,
+};
+
 export function useSession(sessionId: string): UseSessionResult {
-  const [session, setSession] = useState<Session | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [sceneState, setSceneState] = useState<SceneState | null>(null);
-  const [participants, setParticipants] = useState<Participant[]>([]);
-  const [turnConfig, setTurnConfig] = useState<TurnConfig | null>(null);
-  const [isOwner, setIsOwner] = useState(false);
-  const [isObserver, setIsObserver] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [state, setState] = useState<SessionState>(INITIAL_STATE);
   const pending = useRef(false);
 
   const refresh = useCallback(async () => {
     if (!sessionId) return;
     if (pending.current) return;
-    setLoading(true);
-    setError(null);
+    setState((prev) => ({ ...prev, loading: true, error: null }));
     pending.current = true;
     try {
       // Browser automatically sends httpOnly cookies with same-origin requests
       const res = await fetch(`/api/sessions/${sessionId}`);
       if (!res.ok) throw new Error(`Failed to load session: ${res.status}`);
       const data = await res.json();
-      setSession(data.session || null);
-      setMessages(data.messages || []);
-      setSceneState(data.sceneState || null);
-      setParticipants(data.participants || []);
-      setTurnConfig(data.turnConfig || null);
-      setIsOwner(data.isOwner || false);
       // Check if current user is an observer
       const currentUserParticipant = (data.participants || []).find(
         (p: Participant) => p.role === "observer"
       );
-      setIsObserver(!!currentUserParticipant);
+      setState({
+        session: data.session || null,
+        messages: data.messages || [],
+        sceneState: data.sceneState || null,
+        participants: data.participants || [],
+        turnConfig: data.turnConfig || null,
+        isOwner: data.isOwner || false,
+        isObserver: !!currentUserParticipant,
+        loading: false,
+        error: null,
+      });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Unknown error");
-      setSession(null);
-      setMessages([]);
-      setSceneState(null);
-      setParticipants([]);
-      setTurnConfig(null);
-      setIsOwner(false);
+      setState({
+        ...INITIAL_STATE,
+        loading: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+      });
     } finally {
       pending.current = false;
-      setLoading(false);
     }
   }, [sessionId]);
 
@@ -124,34 +134,34 @@ export function useSession(sessionId: string): UseSessionResult {
     (async () => {
       if (!sessionId) return;
       if (pending.current) return;
-      setLoading(true);
-      setError(null);
+      setState((prev) => ({ ...prev, loading: true, error: null }));
       pending.current = true;
       try {
         const res = await fetch(`/api/sessions/${sessionId}`);
         if (!res.ok) throw new Error(`Failed to load session: ${res.status}`);
         const data = await res.json();
-        setSession(data.session || null);
-        setMessages(data.messages || []);
-        setSceneState(data.sceneState || null);
-        setParticipants(data.participants || []);
-        setTurnConfig(data.turnConfig || null);
-        setIsOwner(data.isOwner || false);
         const currentUserParticipant = (data.participants || []).find(
           (p: Participant) => p.role === "observer"
         );
-        setIsObserver(!!currentUserParticipant);
+        setState({
+          session: data.session || null,
+          messages: data.messages || [],
+          sceneState: data.sceneState || null,
+          participants: data.participants || [],
+          turnConfig: data.turnConfig || null,
+          isOwner: data.isOwner || false,
+          isObserver: !!currentUserParticipant,
+          loading: false,
+          error: null,
+        });
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "Unknown error");
-        setSession(null);
-        setMessages([]);
-        setSceneState(null);
-        setParticipants([]);
-        setTurnConfig(null);
-        setIsOwner(false);
+        setState({
+          ...INITIAL_STATE,
+          loading: false,
+          error: err instanceof Error ? err.message : "Unknown error",
+        });
       } finally {
         pending.current = false;
-        setLoading(false);
       }
     })();
   }, [sessionId]);
@@ -188,7 +198,9 @@ export function useSession(sessionId: string): UseSessionResult {
       });
       if (!res.ok) return false;
       const data = await res.json();
-      if (data.turnConfig) setTurnConfig(data.turnConfig);
+      if (data.turnConfig) {
+        setState((prev) => ({ ...prev, turnConfig: data.turnConfig }));
+      }
       return true;
     } catch {
       return false;
@@ -205,7 +217,9 @@ export function useSession(sessionId: string): UseSessionResult {
       });
       if (!res.ok) return false;
       const data = await res.json();
-      if (data.turnConfig) setTurnConfig(data.turnConfig);
+      if (data.turnConfig) {
+        setState((prev) => ({ ...prev, turnConfig: data.turnConfig }));
+      }
       return true;
     } catch {
       return false;
@@ -213,15 +227,7 @@ export function useSession(sessionId: string): UseSessionResult {
   }, [sessionId]);
 
   return {
-    session,
-    messages,
-    sceneState,
-    participants,
-    turnConfig,
-    isOwner,
-    isObserver,
-    loading,
-    error,
+    state,
     claimTurn,
     advanceTurn,
     refresh,

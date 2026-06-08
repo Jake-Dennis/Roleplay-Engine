@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, memo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -503,7 +503,7 @@ function QuickCreateModal({ open, onClose, onCreateComplete }: CreateFlowProps) 
 // Sortable page row
 // ---------------------------------------------------------------------------
 
-function SortablePageRow({
+const SortablePageRow = memo(function SortablePageRow({
   page,
   basePath,
   isActive,
@@ -560,13 +560,13 @@ function SortablePageRow({
       </Link>
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Subfolder section (droppable header + sortable page list)
 // ---------------------------------------------------------------------------
 
-function SubfolderSection({
+const SubfolderSection = memo(function SubfolderSection({
   subfolder,
   basePath,
   orphanSet,
@@ -627,7 +627,7 @@ function SubfolderSection({
       )}
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Top-level folder: always expanded, contains direct pages + subfolders
@@ -702,7 +702,7 @@ function TopLevelFolderContent({
 // Sortable folder wrapper (for folder reordering)
 // ---------------------------------------------------------------------------
 
-function SortableFolderWrapper(props: {
+const SortableFolderWrapper = memo(function SortableFolderWrapper(props: {
   folder: string;
   info: TopLevelInfo;
   basePath: string;
@@ -761,13 +761,13 @@ function SortableFolderWrapper(props: {
       />
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Drag preview
 // ---------------------------------------------------------------------------
 
-function DragPreview({ item }: { item: { type: 'page' | 'folder'; page?: FileTreePageItem; folder?: string } }) {
+const DragPreview = memo(function DragPreview({ item }: { item: { type: 'page' | 'folder'; page?: FileTreePageItem; folder?: string } }) {
   if (item.type === 'page' && item.page) {
     const Icon = TYPE_ICONS[item.page.type] || FileText;
     return (
@@ -786,7 +786,7 @@ function DragPreview({ item }: { item: { type: 'page' | 'folder'; page?: FileTre
     );
   }
   return null;
-}
+});
 
 // ---------------------------------------------------------------------------
 // Main component
@@ -917,14 +917,14 @@ export default function FileTree({
     );
   }
 
-  const toggleSubfolder = (subfolderPath: string) => {
+  const toggleSubfolder = useCallback((subfolderPath: string) => {
     setSubfolderExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(subfolderPath)) next.delete(subfolderPath);
       else next.add(subfolderPath);
       return next;
     });
-  };
+  }, []);
 
   // Drag-and-drop handlers
 

@@ -20,22 +20,19 @@ function normalizeMode(mode: string): string {
 }
 
 function getTurnConfig(db: DbDatabase, sessionId: string) {
-  const turnMode = db.prepare(
-    "SELECT value FROM session_config WHERE session_id = ? AND key = 'turn_mode'"
-  ).get(sessionId) as { value: string } | undefined;
+  const rows = db.prepare(
+    "SELECT key, value FROM session_config WHERE session_id = ? AND key IN ('turn_mode', 'turn_order', 'current_turn')"
+  ).all(sessionId) as { key: string; value: string }[];
 
-  const turnOrder = db.prepare(
-    "SELECT value FROM session_config WHERE session_id = ? AND key = 'turn_order'"
-  ).get(sessionId) as { value: string } | undefined;
-
-  const currentTurn = db.prepare(
-    "SELECT value FROM session_config WHERE session_id = ? AND key = 'current_turn'"
-  ).get(sessionId) as { value: string } | undefined;
+  const config = new Map<string, string>();
+  for (const row of rows) {
+    config.set(row.key, row.value);
+  }
 
   return {
-    turnMode: turnMode?.value || "freeform",
-    turnOrder: safeParseWarn<string[]>(turnOrder?.value, "turn order", []) ?? [],
-    currentTurn: currentTurn?.value || null,
+    turnMode: config.get('turn_mode') || "freeform",
+    turnOrder: safeParseWarn<string[]>(config.get('turn_order'), "turn order", []) ?? [],
+    currentTurn: config.get('current_turn') || null,
   };
 }
 

@@ -484,6 +484,16 @@ export async function getWikiContext(
     }
 
     if (entries.length > 0) {
+      // --- Entity mention boost for scoring (Task 25) — fetched once for both paths ---
+      let mentionNames: string[] = [];
+      try {
+        const dbMention = getDb();
+        const mentionRows = dbMention.prepare(
+          "SELECT DISTINCT entity_name FROM entity_mentions WHERE user_id = ? AND frequency > 1 ORDER BY frequency DESC LIMIT 10"
+        ).all(userId) as { entity_name: string }[];
+        mentionNames = mentionRows.map(m => m.entity_name.toLowerCase());
+      } catch { /* non-blocking */ }
+
       // --- Vector search hybrid scoring (additive enhancement) ---
       try {
         const queryEmbedding = await generateEmbedding(query);
@@ -512,16 +522,6 @@ export async function getWikiContext(
             }
             
             if (vectorMap.size > 0) {
-              // Query entity mentions for scoring boost (Task 25)
-              let mentionNames: string[] = [];
-              try {
-                const db3 = getDb();
-                const mentionRows = db3.prepare(
-                  "SELECT DISTINCT entity_name FROM entity_mentions WHERE user_id = ? AND frequency > 1 ORDER BY frequency DESC LIMIT 10"
-                ).all(userId) as { entity_name: string }[];
-                mentionNames = mentionRows.map(m => m.entity_name.toLowerCase());
-              } catch { /* non-blocking */ }
-
               // Compute hybrid scores: 0.6 × keyword_score + 0.4 × vector_similarity
               const withHybridScores = entries.map((entry, idx) => {
                 const storedVector = vectorMap.get(entry.name);
@@ -553,27 +553,17 @@ export async function getWikiContext(
         // Vector search unavailable — fall back to keyword-only results
       }
 
-      // --- Entity mention boost (Task 25) ---
-      try {
-        const db3 = getDb();
-        const mentions = db3.prepare(
-          "SELECT DISTINCT entity_name FROM entity_mentions WHERE user_id = ? AND frequency > 1 ORDER BY frequency DESC LIMIT 10"
-        ).all(userId) as { entity_name: string }[];
-
-        if (mentions.length > 0) {
-          const mentionNames = mentions.map(m => m.entity_name.toLowerCase());
-          const withEntityBoost = entries.map((entry, idx) => {
-            const entryName = entry.name.toLowerCase();
-            const isMatched = mentionNames.some(m => entryName.includes(m) || m.includes(entryName));
-            const entityBoost = isMatched ? 0.2 : 0;
-            const keywordScore = entries.length > 0 ? (entries.length - idx) / entries.length : 0.1;
-            return { entry, score: keywordScore + entityBoost, entityBoost };
-          });
-          withEntityBoost.sort((a, b) => b.score - a.score);
-          return { entries: withEntityBoost.slice(0, 10).map(e => e.entry) };
-        }
-      } catch {
-        // Entity boost is non-blocking
+      // --- Entity mention boost (Task 25) — using hoisted mentionNames ---
+      if (mentionNames.length > 0) {
+        const withEntityBoost = entries.map((entry, idx) => {
+          const entryName = entry.name.toLowerCase();
+          const isMatched = mentionNames.some(m => entryName.includes(m) || m.includes(entryName));
+          const entityBoost = isMatched ? 0.2 : 0;
+          const keywordScore = entries.length > 0 ? (entries.length - idx) / entries.length : 0.1;
+          return { entry, score: keywordScore + entityBoost, entityBoost };
+        });
+        withEntityBoost.sort((a, b) => b.score - a.score);
+        return { entries: withEntityBoost.slice(0, 10).map(e => e.entry) };
       }
 
       return { entries };

@@ -14,9 +14,7 @@
  *   />
  */
 
-"use client";
-
-import { useState } from "react";
+import { useState, memo } from "react";
 import { MapPin, Target, Palette, Users, GitBranch, MessageCircle } from "lucide-react";
 import { safeParse } from "@/lib/safe-json";
 
@@ -51,7 +49,7 @@ interface DirtyEdit {
   sceneSummary?: string;
 }
 
-export function SceneStatePanel({ scene, onSave, onClose }: SceneStatePanelProps) {
+export const SceneStatePanel = memo(function SceneStatePanel({ scene, onSave, onClose }: SceneStatePanelProps) {
   const [dirty, setDirty] = useState<DirtyEdit>({});
 
   // Derive edit values from scene prop + user's dirty overrides
@@ -180,4 +178,4 @@ export function SceneStatePanel({ scene, onSave, onClose }: SceneStatePanelProps
       </div>
     </div>
   );
-}
+});

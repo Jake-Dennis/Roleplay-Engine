@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, memo } from "react";
 
 interface MessageInputProps {
   onSend: (content: string) => void;
@@ -8,7 +8,7 @@ interface MessageInputProps {
   placeholder?: string;
 }
 
-export function MessageInput({
+export const MessageInput = memo(function MessageInput({
   onSend,
   disabled = false,
   placeholder = "Type your action or dialogue...",
@@ -64,4 +64,4 @@ export function MessageInput({
       </div>
     </form>
   );
-}
+});

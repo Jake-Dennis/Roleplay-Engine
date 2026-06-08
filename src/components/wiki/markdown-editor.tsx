@@ -13,6 +13,7 @@
  */
 
 import {
+  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -48,7 +49,7 @@ export interface MarkdownEditorProps {
  * by wrapping it in a <span class="wiki-autocomplete-match">. Renders as a
  * React child, so React handles HTML escaping for us.
  */
-function HighlightedMatch({ text, query }: { text: string; query: string }) {
+const HighlightedMatch = memo(function HighlightedMatch({ text, query }: { text: string; query: string }) {
   if (!query) return <>{text}</>;
   const idx = text.toLowerCase().indexOf(query.toLowerCase());
   if (idx === -1) return <>{text}</>;
@@ -62,9 +63,9 @@ function HighlightedMatch({ text, query }: { text: string; query: string }) {
       {after}
     </>
   );
-}
+});
 
-function MarkdownEditor({
+const MarkdownEditor = memo(function MarkdownEditor({
   value,
   onChange,
   onSave,
@@ -211,7 +212,7 @@ function MarkdownEditor({
       </div>
     </div>
   );
-}
+});
 
 export default MarkdownEditor;
 export { MarkdownEditor };

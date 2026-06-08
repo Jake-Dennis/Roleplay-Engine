@@ -16,7 +16,7 @@
  */
 
 import { TIME } from "@/lib/config";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import {
   Heart,
   HeartCrack,
@@ -259,13 +259,13 @@ export function RelationshipTimeline({
   }, []);
 
   // ── Format time from ISO ────────────────────────────────────────────────
-  const formatTime = (iso: string) => {
+  const formatTime = useCallback((iso: string) => {
     const d = new Date(iso);
     return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
-  };
+  }, []);
 
   // ── Format relative time ────────────────────────────────────────────────
-  const formatRelativeTime = (iso: string) => {
+  const formatRelativeTime = useCallback((iso: string) => {
     const d = new Date(iso);
     const now = new Date();
     const diffMs = now.getTime() - d.getTime();
@@ -277,7 +277,7 @@ export function RelationshipTimeline({
     const diffDays = Math.floor(diffHours / 24);
     if (diffDays < 7) return `${diffDays}d ago`;
     return d.toLocaleDateString();
-  };
+  }, []);
 
   // ── Selected relationship ───────────────────────────────────────────────
   const selectedRel = relationships.find((r) => r.id === selectedRelId);
@@ -471,7 +471,7 @@ export function RelationshipTimeline({
 
 // ── Timeline Entry Row ──────────────────────────────────────────────────────
 
-function TimelineEntryRow({
+const TimelineEntryRow = memo(function TimelineEntryRow({
   entry,
   isLast,
   formatTime,
@@ -580,11 +580,11 @@ function TimelineEntryRow({
       </div>
     </button>
   );
-}
+});
 
 // ── Evolution Detail Modal Content ──────────────────────────────────────────
 
-function EvolutionDetail({
+const EvolutionDetail = memo(function EvolutionDetail({
   entry,
   relationshipName,
 }: {
@@ -740,4 +740,4 @@ function EvolutionDetail({
       )}
     </div>
   );
-}
+});

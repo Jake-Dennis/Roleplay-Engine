@@ -51,15 +51,7 @@ export default function SessionChatPage() {
 
   // H2: Use useSession hook for session state management
   const {
-    session,
-    messages,
-    sceneState,
-    participants,
-    turnConfig,
-    isOwner,
-    isObserver,
-    loading,
-    error,
+    state,
     refresh: refreshSession,
     claimTurn,
     advanceTurn,
@@ -68,17 +60,17 @@ export default function SessionChatPage() {
   // Set session context so sidebar locks to this session's universe
   const { setActiveSession, refreshAll } = useApp();
   useEffect(() => {
-    if (session) {
+    if (state.session) {
       setActiveSession({
-        id: session.id,
-        name: session.name,
-        type: session.type || "solo",
-        group_id: session.group_id || null,
-        universe_id: session.universe_id || null,
+        id: state.session.id,
+        name: state.session.name,
+        type: state.session.type || "solo",
+        group_id: state.session.group_id || null,
+        universe_id: state.session.universe_id || null,
       });
       refreshAll();
     }
-  }, [session, refreshAll, setActiveSession]);
+  }, [state.session, refreshAll, setActiveSession]);
 
   // Persona state (declared before useEffect that references them)
   const [personas, setPersonas] = useState<{ id: string; name: string }[]>([]);
@@ -128,7 +120,7 @@ export default function SessionChatPage() {
           setPersonas(list);
           // Only set global active persona if session doesn't have its own personaId
           // (session.personaId takes precedence — set by the restore effect below)
-          if (!session?.personaId) {
+          if (!state.session?.personaId) {
             const active = list.find((p: { isActive: number }) => p.isActive === 1);
             if (active) setActivePersonaId(active.id);
           }
@@ -136,16 +128,16 @@ export default function SessionChatPage() {
         .catch((err) => logger.warn("persona list load failed", err))
         .finally(() => setPersonasLoading(false));
     });
-  }, [session]);
+  }, [state.session]);
 
   // Restore session's selected persona on mount
   useEffect(() => {
     queueMicrotask(() => {
-      if (session?.personaId) {
-        setActivePersonaId(session.personaId);
+      if (state.session?.personaId) {
+        setActivePersonaId(state.session.personaId);
       }
     });
-  }, [session]);
+  }, [state.session]);
 
   // Load narrator voice assignment for TTS default
   useEffect(() => {
@@ -186,12 +178,14 @@ export default function SessionChatPage() {
     }
   }, [showPersonaSelector]);
 
-  const isGroup = session?.type === "group";
+  const isGroup = state.session?.type === "group";
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
   const ttsBlobUrlRef = useRef<string | null>(null);
+  const streamAccumulator = useRef("");
+  const lastFlushTime = useRef(0);
 
   // M7: Cleanup TTS audio on unmount
   useEffect(() => {
@@ -223,7 +217,7 @@ export default function SessionChatPage() {
 
   useEffect(() => {
     shouldScrollRef.current = true;
-  }, [messages, streamContent]);
+  }, [state.messages, streamContent]);
 
   useRenderLoop(
     useCallback(() => {
@@ -232,7 +226,7 @@ export default function SessionChatPage() {
         shouldScrollRef.current = false;
       }
     }, []),
-    streaming || !!(messages?.length)
+    streaming || !!(state.messages?.length)
   );
 
   // -----------------------------------------------------------------------
@@ -365,6 +359,8 @@ export default function SessionChatPage() {
 
     setStreaming(true);
     setStreamContent("");
+    streamAccumulator.current = "";
+    lastFlushTime.current = 0;
     setGenerationError(null);
     setChoices(null);
 
@@ -406,16 +402,24 @@ export default function SessionChatPage() {
           if (!line.trim()) continue;
           const parsed = safeParse<Record<string, unknown>>(line);
           if (parsed?.chunk) {
-            setStreamContent((prev) => prev + parsed.chunk);
+            streamAccumulator.current += parsed.chunk as string;
+            const now = Date.now();
+            if (now - lastFlushTime.current > 100) {
+              setStreamContent(streamAccumulator.current);
+              lastFlushTime.current = now;
+            }
           }
           if (parsed?.done) {
             doneReceived = true;
+            setStreamContent(streamAccumulator.current);
+            streamAccumulator.current = "";
             await refreshSession();
             setStreaming(false);
             setStreamContent("");
           }
           if (parsed?.error) {
             doneReceived = true;
+            streamAccumulator.current = "";
             setGenerationError(parsed.error as string);
             setStreaming(false);
           }
@@ -426,6 +430,8 @@ export default function SessionChatPage() {
       }
 
       if (!doneReceived) {
+        setStreamContent(streamAccumulator.current);
+        streamAccumulator.current = "";
         await refreshSession();
         setStreaming(false);
         setStreamContent("");
@@ -699,7 +705,7 @@ export default function SessionChatPage() {
   // Render
   // -----------------------------------------------------------------------
 
-  if (loading) {
+  if (state.loading) {
     return (
       <div className="flex items-center justify-center py-20 text-text-muted">
         <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
@@ -708,13 +714,13 @@ export default function SessionChatPage() {
     );
   }
 
-  if (error || !session) {
+  if (state.error || !state.session) {
     return (
       <div className="text-center py-20 text-text-muted text-xs">Session not found</div>
     );
   }
 
-  const allMessages = messages || [];
+  const allMessages = state.messages || [];
 
   return (
     <div className="flex h-full flex-col">
@@ -730,7 +736,7 @@ export default function SessionChatPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-sm font-semibold text-text-primary">
-                {session.name}
+                {state.session.name}
               </h1>
               {/* Persona selector */}
               <div ref={personaDropdownRef} className="relative">
@@ -789,7 +795,7 @@ export default function SessionChatPage() {
                   </div>
                 )}
               </div>
-              {sceneState && (
+              {state.sceneState && (
                 <button
                   onClick={() => setShowScenePanel(!showScenePanel)}
                   className="rounded p-1 text-text-muted transition-colors hover:bg-bg-raised hover:text-accent"
@@ -840,8 +846,8 @@ export default function SessionChatPage() {
             </div>
             <p className="text-xxs text-text-muted">
               {allMessages.length} message{allMessages.length !== 1 ? "s" : ""}
-              {sceneState?.active_location_id &&
-                ` · ${sceneState.active_location_id}`}
+              {state.sceneState?.active_location_id &&
+                ` · ${state.sceneState.active_location_id}`}
             </p>
           </div>
         </div>
@@ -850,7 +856,7 @@ export default function SessionChatPage() {
       {showScenePanel && (
         <div className="shrink-0">
           <SceneStatePanel
-            scene={sceneState}
+            scene={state.sceneState}
             onSave={(data) => handleSceneSave(data)}
             onClose={() => setShowScenePanel(false)}
           />
@@ -861,9 +867,9 @@ export default function SessionChatPage() {
       {showParticipantPanel && isGroup && (
         <div className="shrink-0">
           <ParticipantList
-          participants={participants}
-          isOwner={isOwner}
-          turnConfig={turnConfig}
+          participants={state.participants}
+          isOwner={state.isOwner}
+          turnConfig={state.turnConfig}
           onInvite={handleInvite}
           onKick={handleKick}
           onLeave={() => setConfirmAction({ type: "leave" })}
@@ -891,7 +897,7 @@ export default function SessionChatPage() {
         <div className="shrink-0">
           <RelationshipTimeline
             sessionId={sessionId}
-            sessionUniverseId={session?.universe_id}
+            sessionUniverseId={state.session?.universe_id}
             onClose={() => setShowRelationshipTimeline(false)}
           />
         </div>
@@ -951,7 +957,7 @@ export default function SessionChatPage() {
         sessionId={sessionId}
         editHistoryMessageId={editHistoryMessageId}
         onEditHistoryClose={() => setEditHistoryMessageId(null)}
-        disabled={isObserver}
+        disabled={state.isObserver}
         choices={choices}
         onChoiceSelect={handleChoiceSelect}
         onRegenerateChoices={handleRegenerateChoices}
@@ -980,7 +986,7 @@ export default function SessionChatPage() {
       <CharacterDeclarationModal
         open={showCharacterModal}
         sessionId={sessionId}
-        takenCharacters={participants
+        takenCharacters={state.participants
           .filter((p) => p.character_name)
           .map((p) => p.character_name!)}
         onJoin={async (characterName) => {
@@ -1004,8 +1010,8 @@ export default function SessionChatPage() {
       {/* Narrative State Debug Panel */}
       <NarrativeStatePanel
         sessionId={sessionId}
-        sceneState={sceneState}
-        session={session as unknown as Record<string, unknown> | null}
+        sceneState={state.sceneState}
+        session={state.session as unknown as Record<string, unknown> | null}
       />
     </div>
   );

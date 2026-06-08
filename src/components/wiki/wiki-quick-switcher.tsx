@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, X, CornerDownLeft, ArrowUp, ArrowDown } from 'lucide-react';
 
@@ -66,7 +66,61 @@ function renderHintIcon(icon: 'up' | 'down' | 'enter' | 'text', text?: string) {
   return <>{text}</>;
 }
 
-export default function WikiQuickSwitcher({ open, onClose, pages }: WikiQuickSwitcherProps) {
+const ResultsList = memo(function ResultsList({
+  query,
+  results,
+  activeIndex,
+  onNavigate,
+  onHover,
+}: {
+  query: string;
+  results: WikiPage[];
+  activeIndex: number;
+  onNavigate: (path: string) => void;
+  onHover: (index: number) => void;
+}) {
+  const showEmpty = query.length > 0 && results.length === 0;
+
+  if (showEmpty) {
+    return (
+      <div className="px-4 py-8 text-center text-sm text-text-muted">
+        No pages found for &lsquo;{query}&rsquo;
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {query.length === 0 && <div className="px-4 pb-1 text-xxs text-text-muted">Type to search&hellip;</div>}
+      {results.map((page, index) => {
+        const isActive = index === activeIndex;
+        return (
+          <div
+            key={page.path}
+            role="option"
+            aria-selected={isActive}
+            data-active={isActive ? 'true' : undefined}
+            className={`flex items-center gap-3 px-4 py-2 cursor-pointer transition-colors ${isActive ? 'bg-accent-muted' : 'hover:bg-bg-highlight'}`}
+            onClick={() => onNavigate(page.path)}
+            onMouseEnter={() => onHover(index)}
+          >
+            <div className="flex-1 min-w-0">
+              <div className="text-text-primary text-sm font-medium truncate">{page.title}</div>
+              <div className="text-text-muted text-xs truncate">{page.path}</div>
+            </div>
+            {page.type && TYPE_BADGE_CLASSES[page.type] && (
+              <span className={`inline-block px-1.5 py-0.5 rounded text-xxs uppercase tracking-wider ${TYPE_BADGE_CLASSES[page.type]}`}>
+                {page.type}
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </>
+  );
+});
+
+export default memo(function WikiQuickSwitcher({ open, onClose, pages }: WikiQuickSwitcherProps) {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -155,8 +209,6 @@ export default function WikiQuickSwitcher({ open, onClose, pages }: WikiQuickSwi
 
   if (!open) return null;
 
-  const showEmpty = query.length > 0 && results.length === 0;
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center pt-24 bg-black/60 backdrop-blur-sm"
@@ -191,39 +243,13 @@ export default function WikiQuickSwitcher({ open, onClose, pages }: WikiQuickSwi
         </div>
 
         <div className="max-h-[400px] overflow-y-auto py-2">
-          {showEmpty ? (
-            <div className="px-4 py-8 text-center text-sm text-text-muted">
-              No pages found for &lsquo;{query}&rsquo;
-            </div>
-          ) : (
-            <>
-              {query.length === 0 && <div className="px-4 pb-1 text-xxs text-text-muted">Type to search&hellip;</div>}
-              {results.map((page, index) => {
-                const isActive = index === activeIndex;
-                return (
-                  <div
-                    key={page.path}
-                    role="option"
-                    aria-selected={isActive}
-                    data-active={isActive ? 'true' : undefined}
-                    className={`flex items-center gap-3 px-4 py-2 cursor-pointer transition-colors ${isActive ? 'bg-accent-muted' : 'hover:bg-bg-highlight'}`}
-                    onClick={() => navigateToPage(page.path)}
-                    onMouseEnter={() => setActiveIndex(index)}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="text-text-primary text-sm font-medium truncate">{page.title}</div>
-                      <div className="text-text-muted text-xs truncate">{page.path}</div>
-                    </div>
-                    {page.type && TYPE_BADGE_CLASSES[page.type] && (
-                      <span className={`inline-block px-1.5 py-0.5 rounded text-xxs uppercase tracking-wider ${TYPE_BADGE_CLASSES[page.type]}`}>
-                        {page.type}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </>
-          )}
+          <ResultsList
+            query={query}
+            results={results}
+            activeIndex={activeIndex}
+            onNavigate={navigateToPage}
+            onHover={setActiveIndex}
+          />
         </div>
 
         <div className="flex items-center gap-4 px-4 py-2 border-t border-border-default text-xxs text-text-muted">
@@ -237,4 +263,4 @@ export default function WikiQuickSwitcher({ open, onClose, pages }: WikiQuickSwi
       </div>
     </div>
   );
-}
+});

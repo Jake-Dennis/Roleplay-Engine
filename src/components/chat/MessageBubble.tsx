@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { clsx } from "clsx";
 
 interface MessageBubbleProps {
@@ -13,7 +13,7 @@ interface MessageBubbleProps {
   onAction: (action: string, messageId: string, data?: string) => void;
 }
 
-export function MessageBubble({
+export const MessageBubble = memo(function MessageBubble({
   id,
   content,
   sender_name,
@@ -167,4 +167,4 @@ export function MessageBubble({
       )}
     </div>
   );
-}
+});
