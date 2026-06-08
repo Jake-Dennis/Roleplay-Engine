@@ -6,7 +6,7 @@ import { DEDUP_WINDOW_MS, JOB_DEBOUNCE_INTERVALS, JOB_RETENTION_DAYS } from "./j
  * model selection, generation parameters, and retry behavior.
  */
 export const OLLAMA_CONFIG = {
-  host: process.env.OLLAMA_HOST || "192.168.4.2",
+  host: process.env.OLLAMA_HOST || "192.168.6.1",
   port: parseInt(process.env.OLLAMA_PORT || "11434", 10),
   get baseUrl() {
     return `http://${this.host}:${this.port}`;

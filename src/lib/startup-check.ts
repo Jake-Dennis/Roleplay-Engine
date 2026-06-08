@@ -32,7 +32,7 @@ export async function runStartupChecks(): Promise<void> {
 
   // Ollama check (warn only)
   try {
-    const res = await fetch(`${process.env.OLLAMA_HOST || 'http://192.168.4.2:11434'}/api/tags`, { signal: AbortSignal.timeout(TIMEOUTS.HEALTH_CHECK) });
+    const res = await fetch(`${process.env.OLLAMA_HOST || 'http://192.168.6.1:11434'}/api/tags`, { signal: AbortSignal.timeout(TIMEOUTS.HEALTH_CHECK) });
     console.log(`[startup] Ollama: ${res.ok ? 'connected' : `HTTP ${res.status}`}`);
   } catch {
     console.warn('[startup] Ollama: not reachable (LLM features disabled)');
