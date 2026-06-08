@@ -1,4 +1,4 @@
-﻿import { Agent, Dispatcher } from "undici";
+﻿import { Agent, setGlobalDispatcher } from "undici";
 import { OLLAMA_CONFIG, TIMEOUTS, TTS_CONFIG } from "./config";
 import { getDb } from "./db";
 import { safeParseWarn } from "@/lib/safe-json";
@@ -6,36 +6,30 @@ import { logger } from "@/lib/logger";
 import { getServerConfig } from "./server-config";
 
 // ---------------------------------------------------------------------------
-// Custom HTTP agent for Ollama requests
+// Undici Agent — relaxed timeouts for cold-start model loads
 // ---------------------------------------------------------------------------
 
 /**
- * Dedicated undici Agent for all Ollama requests. Node.js's built-in fetch()
- * (undici under the hood) has default internal timeouts:
+ * Node.js's built-in fetch() (undici under the hood) has default internal
+ * timeouts that fire BEFORE any user-provided AbortSignal:
  *   - headersTimeout: 10s (time to receive response headers)
  *   - bodyTimeout: 30s  (time from headers to last byte of body)
  *
- * These fire BEFORE our AbortSignal.timeout() because undici checks its own
- * internal timeouts independently of the user-provided signal. Since Ollama
- * can take >10s just to load a cold model into VRAM before sending headers,
- * we need relaxed limits here so that the AbortSignal (OLLAMA_CONFIG.timeout)
- * is the real timeout.
+ * Ollama can take >10s just to load a cold model into VRAM before sending
+ * response headers. With the default 10s headersTimeout, the request fails
+ * before our 30-minute AbortSignal can even fire.
  *
- * We provide our own type-safe wrapper (ollamaFetch) so callers don't need
- * to know about the dispatcher.
+ * We set a global undici Agent with timeouts matching OLLAMA_CONFIG, so
+ * the AbortSignal controls the real timeout. Since per-request abort
+ * signals (TTS: 3s, health: 5s) fire much sooner than 30 min, setting a
+ * global relaxed timeout is safe — it only matters for requests that
+ * actually take minutes (i.e. cold Ollama model loads).
  */
-const ollamaAgent: Dispatcher = new Agent({
+const relaxedAgent = new Agent({
   headersTimeout: OLLAMA_CONFIG.timeout,
   bodyTimeout: OLLAMA_CONFIG.timeout,
 });
-
-/**
- * Wrapper around fetch() that uses the Ollama-specific agent to prevent
- * undici's default 10s headersTimeout from killing long cold-starts.
- */
-function ollamaFetch(url: string, init?: RequestInit): Promise<Response> {
-  return fetch(url, { ...init, dispatcher: ollamaAgent } as RequestInit & { dispatcher: Dispatcher });
-}
+setGlobalDispatcher(relaxedAgent);
 
 // ---------------------------------------------------------------------------
 // Output Validation
@@ -256,7 +250,7 @@ let localModels: string[] = [];
 export async function fetchLocalModels(ollamaUrl?: string): Promise<string[]> {
   const baseUrl = ollamaUrl || OLLAMA_CONFIG.baseUrl;
   try {
-    const response = await ollamaFetch(`${baseUrl}/api/tags`, {
+    const response = await fetch(`${baseUrl}/api/tags`, {
       signal: AbortSignal.timeout(TIMEOUTS.LLM_FETCH),
     });
     if (!response.ok) {
@@ -462,7 +456,7 @@ export function getActiveJobModel(userId: string): string {
 export async function checkOllamaConnection(ollamaUrl?: string): Promise<boolean> {
   const baseUrl = ollamaUrl || OLLAMA_CONFIG.baseUrl;
   try {
-    const response = await ollamaFetch(`${baseUrl}/api/tags`, {
+    const response = await fetch(`${baseUrl}/api/tags`, {
       signal: AbortSignal.timeout(TIMEOUTS.LLM_FETCH),
     });
     ollamaAvailable = response.ok;
@@ -493,7 +487,7 @@ export async function checkModelAvailable(
 ): Promise<boolean> {
   const baseUrl = ollamaUrl || OLLAMA_CONFIG.baseUrl;
   try {
-    const response = await ollamaFetch(`${baseUrl}/api/tags`, {
+    const response = await fetch(`${baseUrl}/api/tags`, {
       signal: AbortSignal.timeout(TIMEOUTS.LLM_FETCH),
     });
     if (!response.ok) return false;
@@ -615,7 +609,7 @@ export async function generateText(
 
   for (let attempt = 1; attempt <= OLLAMA_CONFIG.retryAttempts; attempt++) {
     try {
-      const response = await ollamaFetch(
+      const response = await fetch(
         `${baseUrl}/api/generate`,
         {
           method: "POST",
@@ -688,7 +682,7 @@ export async function generateTextStream(
   let lastError: Error | null = null;
   for (let attempt = 1; attempt <= OLLAMA_CONFIG.retryAttempts; attempt++) {
     try {
-      const response = await ollamaFetch(`${baseUrl}/api/generate`, {
+      const response = await fetch(`${baseUrl}/api/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
@@ -755,7 +749,7 @@ export async function generateEmbedding(
   const maxEmbeddingRetries = 5;
   for (let attempt = 1; attempt <= maxEmbeddingRetries; attempt++) {
     try {
-      const response = await ollamaFetch(`${baseUrl}/api/embed`, {
+      const response = await fetch(`${baseUrl}/api/embed`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
