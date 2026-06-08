@@ -4,6 +4,12 @@ import { DEDUP_WINDOW_MS, JOB_DEBOUNCE_INTERVALS, JOB_RETENTION_DAYS } from "./j
  * Ollama LLM configuration.
  * Controls connection to the self-hosted Ollama instance,
  * model selection, generation parameters, and retry behavior.
+ *
+ * NOTE: These values are FALLBACK DEFAULTS only. The actual model used
+ * at generation time is resolved via user settings (getUserModels):
+ *   persona.llmModel > user_settings.llmModel > OLLAMA_CONFIG.model
+ * Same for embeddingModel: user_settings.embeddingModel > this default.
+ * See ollama.ts getUserModels() and generate/[id]/route.ts for the chain.
  */
 export const OLLAMA_CONFIG = {
   host: process.env.OLLAMA_HOST || "192.168.6.1",
@@ -12,7 +18,7 @@ export const OLLAMA_CONFIG = {
     return `http://${this.host}:${this.port}`;
   },
   model: process.env.OLLAMA_MODEL || "qwen3.5:9B",
-  embeddingModel: process.env.OLLAMA_EMBEDDING_MODEL || "bge-m3",
+  embeddingModel: process.env.OLLAMA_EMBEDDING_MODEL || "qwen3-embedding:8b",
   timeout: 600000,
   embeddingTimeout: 120000,
   retryAttempts: 3,

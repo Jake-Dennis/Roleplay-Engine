@@ -532,7 +532,7 @@ export async function getWikiContext(
 
       // --- Vector search hybrid scoring (additive enhancement) ---
       try {
-        const queryEmbedding = await generateEmbedding(query);
+        const queryEmbedding = await generateEmbedding(query, { userId });
         if (queryEmbedding && queryEmbedding.length > 0) {
           const db2 = getDb();
           const entryNames = entries.map(e => e.name);

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
-import { generateTextStream, getUserModels, getActivePersonaContext, buildPersonaPrompt, type PersonaContext } from "@/lib/ollama";
+import { generateTextStream, getUserModels, getActivePersonaContext, buildPersonaPrompt, checkModelAvailable, type PersonaContext } from "@/lib/ollama";
 import { getRetrievedContext, assemblePromptWithBudget, type RetrievedContext } from "@/lib/retrieval";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { queueJob, processJobsByType, processUserJobs } from "@/lib/job-processor";
@@ -73,10 +73,6 @@ export async function POST(
   const messageError = validateLength(userMessage, 10000, "userMessage");
   if (messageError) return NextResponse.json({ error: messageError }, { status: 400 });
 
-  // L3: Skip pre-flight connection check — let generateTextStream handle
-  // retries internally. The pre-check would reject immediately without
-  // giving the actual generation a chance to connect.
-
   // Session-aware persona: session persona → global active → undefined
   let persona: PersonaContext | null = null;
   const sessionPersonaId = (session as Record<string, unknown>).persona_id as string | undefined;
@@ -121,6 +117,23 @@ export async function POST(
   if (!persona) {
     persona = getActivePersonaContext(userId);
   }
+
+  // Pre-flight model check: verify the resolved model exists on Ollama
+  // before entering the retrieval pipeline or creating any placeholders.
+  // This fails fast (~3s) instead of waiting for the 10-minute generation
+  // timeout if the model hasn't been pulled yet.
+  const preflightUserModels = getUserModels(userId);
+  const preflightModel = persona?.llmModel || preflightUserModels.llmModel;
+  if (preflightModel) {
+    const modelAvailable = await checkModelAvailable(preflightModel);
+    if (!modelAvailable) {
+      return NextResponse.json({
+        error: `Model "${preflightModel}" is not available on Ollama. Make sure it's pulled: ollama pull ${preflightModel}`,
+        model: preflightModel,
+      }, { status: 503 });
+    }
+  }
+
   const baseSystemPrompt = `You are the Narrator and world engine for a roleplay session. You control the setting, NPCs, and narrative events. The player controls their own character — you must NEVER write actions, dialogue, or internal thoughts for the player's character. Narrate the world's response to the player's actions, describe scenes, and roleplay NPCs. Write in a literary style with vivid description. Stay consistent with established lore. Keep responses to 2-4 paragraphs unless the situation demands more.`;
   const systemPrompt = buildPersonaPrompt(persona, baseSystemPrompt);
 
@@ -169,9 +182,8 @@ export async function POST(
       // Mark Ollama busy so background jobs yield during generation
       markOllamaBusy();
       try {
-        // Resolve model: persona > user > default
-        const userModels = getUserModels(userId);
-        const resolvedModel = persona?.llmModel || userModels.llmModel;
+        // Use the model resolved during pre-flight check (persona > user > default)
+        const resolvedModel = preflightModel;
 
         let chunkCount = 0;
         await generateTextStream(prompt, (chunk) => {

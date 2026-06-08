@@ -445,6 +445,39 @@ export function isOllamaAvailable(): boolean {
 }
 
 /**
+ * Check if a specific model is available on the Ollama server.
+ * Fetches the model list via /api/tags (fast, ~3s timeout) and checks
+ * for an exact match. Used as a pre-flight check before generation to
+ * fail fast instead of waiting for the 10-minute generation timeout.
+ *
+ * @param modelName - The model name to check (e.g. "qwen3.5:9b")
+ * @param ollamaUrl - Optional custom Ollama URL (defaults to OLLAMA_CONFIG.baseUrl)
+ * @returns true if the model is available, false otherwise
+ */
+export async function checkModelAvailable(
+  modelName: string,
+  ollamaUrl?: string
+): Promise<boolean> {
+  const baseUrl = ollamaUrl || OLLAMA_CONFIG.baseUrl;
+  try {
+    const response = await fetch(`${baseUrl}/api/tags`, {
+      signal: AbortSignal.timeout(TIMEOUTS.LLM_FETCH),
+    });
+    if (!response.ok) return false;
+
+    const data = await response.json();
+    const models: { name: string }[] = data.models || [];
+    // Ollama lists models with tags like "qwen3.5:9b" — match against the
+    // user-facing name (case-insensitive for user-friendly matching).
+    return models.some(
+      (m) => m.name.toLowerCase() === modelName.toLowerCase()
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Resolve the effective generation options for a model. The fallback
  * chain is layered:
  *
@@ -619,43 +652,59 @@ export async function generateTextStream(
     },
   };
 
-  const response = await fetch(`${baseUrl}/api/generate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(requestBody),
-    signal: AbortSignal.timeout(OLLAMA_CONFIG.timeout),
-  });
+  let lastError: Error | null = null;
+  for (let attempt = 1; attempt <= OLLAMA_CONFIG.retryAttempts; attempt++) {
+    try {
+      const response = await fetch(`${baseUrl}/api/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+        signal: AbortSignal.timeout(OLLAMA_CONFIG.timeout),
+      });
 
-  if (!response.ok) {
-    throw new Error(`Ollama responded with ${response.status}`);
-  }
+      if (!response.ok) {
+        throw new Error(`Ollama responded with ${response.status}`);
+      }
 
-  const reader = response.body?.getReader();
-  if (!reader) throw new Error("No response body");
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response body");
 
-  const decoder = new TextDecoder();
-  let buffer = "";
+      const decoder = new TextDecoder();
+      let buffer = "";
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-    buffer += decoder.decode(value, { stream: true });
+        buffer += decoder.decode(value, { stream: true });
 
-    // Process complete JSON lines
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
+        // Process complete JSON lines
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
 
-    for (const line of lines) {
-      if (line.trim()) {
-        const data = safeParseWarn<Record<string, unknown>>(line, "streaming JSON line");
-        if (data?.response) {
-          onChunk(validateLlmOutput(data.response as string));
+        for (const line of lines) {
+          if (line.trim()) {
+            const data = safeParseWarn<Record<string, unknown>>(line, "streaming JSON line");
+            if (data?.response) {
+              onChunk(validateLlmOutput(data.response as string));
+            }
+            if (data?.done) return;
+          }
         }
-        if (data?.done) return;
+      }
+      return; // Stream completed successfully
+    } catch (err: unknown) {
+      ollamaAvailable = false;
+      lastError = err as Error;
+
+      if (attempt < OLLAMA_CONFIG.retryAttempts) {
+        logger.warn(`[stream] Attempt ${attempt} failed: ${lastError.message}. Retrying in ${OLLAMA_CONFIG.retryDelay * attempt}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, OLLAMA_CONFIG.retryDelay * attempt));
       }
     }
   }
+
+  throw lastError || new Error("Ollama stream generation failed");
 }
 
 export async function generateEmbedding(
@@ -670,7 +719,8 @@ export async function generateEmbedding(
     input: text,
   };
 
-  for (let attempt = 1; ; attempt++) {
+  const maxEmbeddingRetries = 5;
+  for (let attempt = 1; attempt <= maxEmbeddingRetries; attempt++) {
     try {
       const response = await fetch(`${baseUrl}/api/embed`, {
         method: "POST",
@@ -689,10 +739,16 @@ export async function generateEmbedding(
     } catch (err: unknown) {
       ollamaAvailable = false;
 
-      // Exponential backoff: 2s, 4s, 8s, 16s... capped at 60s â€” gives GPU time to free memory
-      const delay = Math.min(OLLAMA_CONFIG.retryDelay * Math.pow(2, attempt - 1), 60000);
-      logger.warn(`[embedding] Attempt ${attempt} failed: ${(err as Error).message}. Retrying in ${delay}ms...`);
-      await new Promise((resolve) => setTimeout(resolve, delay));
+      if (attempt < maxEmbeddingRetries) {
+        // Exponential backoff: 2s, 4s, 8s, 16s... capped at 60s — gives GPU time to free memory
+        const delay = Math.min(OLLAMA_CONFIG.retryDelay * Math.pow(2, attempt - 1), 60000);
+        logger.warn(`[embedding] Attempt ${attempt} failed: ${(err as Error).message}. Retrying in ${delay}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      } else {
+        logger.error(`[embedding] All ${maxEmbeddingRetries} attempts failed`, { error: (err as Error).message });
+        throw err;
+      }
     }
   }
+  throw new Error("Embedding generation failed after all retries");
 }
