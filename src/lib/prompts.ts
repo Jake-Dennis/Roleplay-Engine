@@ -202,6 +202,30 @@ ${messageText}
   // Narrative: Branching Choices
   // -----------------------------------------------------------------------
 
+  // -----------------------------------------------------------------------
+  // Wiki: AI Text Operations (selection toolbar)
+  // -----------------------------------------------------------------------
+
+  /** Rewrite selected text to be clearer, more vivid, or better-paced */
+  wikiRewriteText: (text: string, context?: string) =>
+    `Rewrite the following text to be clearer and more engaging. Improve flow and pacing while keeping the same information and length.\n\nText:\n<user_content>\n${text}\n</user_content>\n${context ? `\nContext: ${context}\n` : ""}\n\nReturn only the rewritten text, no explanations.`,
+
+  /** Expand selected text with more detail */
+  wikiExpandText: (text: string, context?: string) =>
+    `Expand the following text by adding 2-3 sentences of relevant detail. Keep the same tone and style. Do not repeat the original.\n\nText:\n<user_content>\n${text}\n</user_content>\n${context ? `\nContext: ${context}\n` : ""}\n\nReturn only the expanded text, no explanations.`,
+
+  /** Summarize selected text in 1-2 sentences */
+  wikiSummarizeText: (text: string) =>
+    `Summarize the following text in 1-2 concise sentences. Capture only the key information.\n\nText:\n<user_content>\n${text}\n</user_content>\n\nReturn only the summary, no explanations.`,
+
+  /** Improve selected text: fix grammar, clarity, and style */
+  wikiImproveText: (text: string) =>
+    `Improve the following text by fixing grammar, clarity, and style. Preserve all information and voice.\n\nText:\n<user_content>\n${text}\n</user_content>\n\nReturn only the improved text, no explanations.`,
+
+  /** Generate a full wiki page from a user description prompt */
+  wikiGenerateFromPrompt: (prompt: string) =>
+    `Create a wiki page based on this description:\n<user_content>\n${prompt}\n</user_content>\n\nGenerate wiki content in markdown format. Include a title (as a single # heading), followed by well-structured sections. Output ONLY valid JSON with no other text:\n{\n  "title": "Page Title",\n  "type": "entity|concept",\n  "subtype": "",\n  "content": "# Title\\n\\nFull markdown content...",\n  "tags": ["tag1", "tag2"]\n}`,
+
   /** Generate branching narrative direction choices from the current exchange */
   generateChoices: (userMessage: string, aiResponse: string) =>
     `Based on this roleplay exchange, suggest 4 different narrative choices for what the player could do next.

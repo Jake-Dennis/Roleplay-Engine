@@ -716,3 +716,55 @@ The file lives at `data/<userId>/wiki/<universe_id>/concepts/event_acknowledgmen
 - IPv6-mapped IPv4 bypass fixed: added `::ffff:x.x.x.x` detection alongside direct IPv4 check
 
 **Build:** Passes (65 routes, TypeScript clean)
+
+---
+
+## 2026-06-08 — Cycle: Plan 023 — AI Wiki Editing UI + Cleanup
+
+**Trigger:** User said "do it all" — execute remaining backlog (Plan 007 AI wiki editing UI + all cleanup items).
+
+**What was done:**
+
+**Layer 1 — Quick Cleanup:**
+- Fixed stale "via middleware" → "via proxy" comment in `src/lib/idle-processing.ts:6`
+- Added `OLLAMA_HOST=http://localhost:11434/v1` to `.env.local` (fixes dev-server Ollama warning)
+- Deleted `.omo/` directory (35 items, obsolete OMO workflow)
+- Deleted `scripts/_graphify_*.py` (14 obsolete manual graphify workflow scripts)
+- Deleted `scripts/_archive/` (7 obsolete archival scripts)
+- Fixed `scripts/_check_chunks.py` — removed dead `.omo/evidence/` path references
+- Security review of `app-layout-shell.tsx` — no actionable vulnerabilities found
+
+**Layer 2 — API Endpoints (8 new route files):**
+- `POST /api/wiki/text/rewrite` — rewrites selected text via Ollama
+- `POST /api/wiki/text/expand` — expands selected text with more detail
+- `POST /api/wiki/text/summarize` — summarizes selected text
+- `POST /api/wiki/text/improve` — improves grammar/clarity/style
+- `POST /api/wiki/text/generate` — creates a full wiki page from a user prompt
+- `POST /api/wiki/enrich` — queues `wiki_enrich_entity` background job
+- `POST /api/wiki/deepen` — queues `wiki_deepen_page` background job
+- `POST /api/wiki/generate-rumors` — queues `wiki_generate_rumors` background job
+
+**Layer 3 — UI Components (3 new files):**
+- `src/components/wiki/create-from-prompt-modal.tsx` — modal with textarea, type/subtype dropdowns, generates page via LLM, navigates on success
+- `src/components/wiki/selection-toolbar.tsx` — floating toolbar in edit mode: Rewrite, Expand, Summarize, Improve buttons on text selection
+- `src/components/wiki/wiki-ai-header-buttons.tsx` — Enrich/Deepen/Rumors buttons in page header, queue background jobs with toast notifications
+
+**Layer 4 — Integration:**
+- Modified `src/app/(app)/wiki/[...slug]/page.tsx` — added AI Create button, header job buttons, selection toolbar in editor, prompt modal at bottom
+- Modified `src/components/wiki/markdown-editor.tsx` — added `textareaRef` prop passthrough for selection toolbar
+- Added prompt templates in `src/lib/prompts.ts` for all 5 text operations (wikiRewriteText, wikiExpandText, wikiSummarizeText, wikiImproveText, wikiGenerateFromPrompt)
+
+**Verification:**
+- `npm run build` — ✓ Compiled successfully, TypeScript clean, 103 routes
+
+**Files changed (17 staged):**
+- 5 modified: `page.tsx`, `markdown-editor.tsx`, `prompts.ts`, `idle-processing.ts`, `_check_chunks.py`
+- 12 new: 8 API routes, 3 components, 1 archived plan
+- 22 deleted: `.omo/*`, `scripts/_graphify_*`, `scripts/_archive/*`
+
+**Decisions:**
+- Selection toolbar works in **edit mode** only (MarkdownEditor textarea) — view mode selection would require HTML→markdown mapping which is significantly more complex. Can be added later.
+- Page header AI buttons use background jobs (queueJob) with a toast notification — user sees "Job queued" immediately; job runs asynchronously.
+- Create-from-prompt modal uses the existing `writeWikiPage` to create the file after LLM generates the content/frontmatter.
+- `.env.local` NOT committed (gitignored, contains JWT secret). OLLAMA_HOST change is per-developer config.
+- `.omo/` and orphan scripts deleted entirely — no longer needed since graphify is now a proper skill.

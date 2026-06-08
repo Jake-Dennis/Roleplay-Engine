@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import FileTree, { type FileTreePageItem, type ReorderChange } from '@/components/wiki/file-tree';
 import NewFolderModal from '@/components/wiki/new-folder-modal';
@@ -12,6 +12,9 @@ import FrontmatterPropertiesPanel from '@/components/wiki/frontmatter-properties
 import MarkdownEditor from '@/components/wiki/markdown-editor';
 import WikiQuickSwitcher, { type WikiPage as SwitcherPage } from '@/components/wiki/wiki-quick-switcher';
 import TemplateSelector, { type WikiTemplate } from '@/components/wiki/template-selector';
+import CreateFromPromptModal from '@/components/wiki/create-from-prompt-modal';
+import WikiAiHeaderButtons from '@/components/wiki/wiki-ai-header-buttons';
+import SelectionToolbar from '@/components/wiki/selection-toolbar';
 import {
   parseWikiFrontmatter,
   serializeWikiFrontmatter,
@@ -53,6 +56,9 @@ export default function WikiPageView() {
 
   // New page template selector
   const [templateOpen, setTemplateOpen] = useState(false);
+  // AI create-from-prompt modal
+  const [promptModalOpen, setPromptModalOpen] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
 
   // New folder modal
@@ -269,6 +275,11 @@ export default function WikiPageView() {
     }
   }, [activeUniverse?.id]);
 
+  const handleNavigateToPage = useCallback((path: string) => {
+    const slug = path.replace(/\.md$/, '');
+    router.push(`/wiki/${slug}`);
+  }, [router]);
+
   const handleReorder = useCallback(async (change: ReorderChange) => {
     const res = await fetch('/api/wiki/reorder', {
       method: 'POST',
@@ -367,11 +378,22 @@ export default function WikiPageView() {
                     Links
                   </button>
                   <button
+                    onClick={() => setPromptModalOpen(true)}
+                    className="px-3 py-1.5 rounded text-xs font-medium bg-gradient-to-r from-accent to-accent-hover text-text-primary hover:opacity-90 transition-opacity"
+                  >
+                    AI Create
+                  </button>
+                  <span className="w-px h-5 bg-border-default mx-1" />
+                  <button
                     onClick={handleEditStart}
                     className="px-3 py-1.5 rounded text-xs font-medium bg-accent text-text-primary hover:bg-accent-hover transition-colors"
                   >
                     Edit
                   </button>
+                  <WikiAiHeaderButtons
+                    pagePath={page.path}
+                    universeId={activeUniverse?.id}
+                  />
                 </>
               ) : (
                 <>
@@ -433,13 +455,19 @@ export default function WikiPageView() {
                   onChange={setEditFrontmatter}
                   readOnlyFields={['created', 'updated']}
                 />
-                <div className="flex-1 overflow-y-auto p-8">
+                <div className="flex-1 overflow-y-auto p-8 relative">
                   <MarkdownEditor
                     value={editBody}
                     onChange={setEditBody}
                     onSave={handleSave}
                     existingPages={allPages?.map(p => p.path) || []}
                     minRows={20}
+                    textareaRef={textareaRef}
+                  />
+                  <SelectionToolbar
+                    textareaRef={textareaRef}
+                    value={editBody}
+                    onChange={setEditBody}
                   />
                 </div>
               </div>
@@ -515,6 +543,12 @@ export default function WikiPageView() {
         open={templateOpen}
         onClose={() => setTemplateOpen(false)}
         onSelect={handleTemplateSelect}
+      />
+      <CreateFromPromptModal
+        open={promptModalOpen}
+        onClose={() => setPromptModalOpen(false)}
+        universeId={activeUniverse?.id}
+        onCreated={handleNavigateToPage}
       />
       <NewFolderModal
         open={newFolderOpen}

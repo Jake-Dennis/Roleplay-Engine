@@ -3,7 +3,7 @@
  * 
  * Coordinates background job processing during user idle periods.
  * Since there are no persistent background workers, processing is triggered
- * by user requests (via middleware) when enough idle time has passed.
+ * by user requests (via proxy) when enough idle time has passed.
  * 
  * Processing tiers:
  * - 5 minutes: High-priority job processing (response generation)

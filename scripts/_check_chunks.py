@@ -23,7 +23,5 @@ for f in [
     'src/app/api/wiki/page/[slug]/route.ts',
     'src/app/api/wiki/page/[slug]/validate/route.ts',
     'src/app/(app)/session/[id]/page.tsx',
-    '.omo/evidence/ultrawork-oracle-verification-4.txt',
-    '.omo/evidence/ultrawork-oracle-verification.txt',
 ]:
     print(f'  {"OK " if Path(f).is_file() else "MISS"}  {f}')

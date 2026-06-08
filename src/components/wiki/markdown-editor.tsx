@@ -18,6 +18,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  type RefObject,
   type ChangeEvent,
   type KeyboardEvent,
 } from 'react';
@@ -42,6 +43,8 @@ export interface MarkdownEditorProps {
   minRows?: number;
   /** Read-only mode. Default: false. */
   readOnly?: boolean;
+  /** Optional external ref to the textarea element (for selection toolbar). */
+  textareaRef?: RefObject<HTMLTextAreaElement | null>;
 }
 
 /**
@@ -73,9 +76,17 @@ const MarkdownEditor = memo(function MarkdownEditor({
   placeholder,
   minRows = 20,
   readOnly = false,
+  textareaRef: externalRef,
 }: MarkdownEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const overlayRef = useRef<HTMLPreElement>(null);
+
+  // Sync internal ref to external ref when provided (for selection toolbar)
+  useEffect(() => {
+    if (externalRef) {
+      (externalRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = textareaRef.current;
+    }
+  });
 
   // Compute the highlight overlay and gutter line count from value
   // directly during render (useMemo) rather than via effect + setState.
