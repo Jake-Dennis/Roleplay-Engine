@@ -349,13 +349,14 @@ export async function POST(
           } catch { /* non-fatal — falls back to idle processing */ }
         })();
       } catch (err: unknown) {
-        logger.error("Generation stream failed", err as Error);
+        const errMsg = err instanceof Error ? err.message : "Unknown error";
+        logger.error("Generation stream failed", { message: errMsg });
         // Remove empty AI placeholder message created before stream
         db.prepare("DELETE FROM messages WHERE id = ?").run(aiMessageId);
         controller.enqueue(
           encoder.encode(
             JSON.stringify({
-              error: "Internal server error",
+              error: `Generation failed: ${errMsg}`,
             }) + "\n"
           )
         );
