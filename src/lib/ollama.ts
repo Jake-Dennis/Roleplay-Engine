@@ -1,13 +1,143 @@
-﻿import { OLLAMA_CONFIG, TIMEOUTS, TTS_CONFIG } from "./config";
+﻿import { request, Dispatcher } from "undici";
+import { OLLAMA_CONFIG, TIMEOUTS, TTS_CONFIG } from "./config";
 import { getDb } from "./db";
 import { safeParseWarn } from "@/lib/safe-json";
 import { logger } from "@/lib/logger";
 import { getServerConfig } from "./server-config";
 
-// NOTE: The global undici Agent with relaxed headersTimeout/bodyTimeout is
-// set in startup-check.ts (runStartupChecks), which executes fresh on every
-// server boot. Module-level Agent setup in this file was unreliable because
-// Next.js/Turbopack caches module evaluation across file changes.
+// ---------------------------------------------------------------------------
+// Custom HTTP transport — bypasses Next.js's patched fetch()
+// ---------------------------------------------------------------------------
+//
+// Next.js wraps globalThis.fetch with its own caching/dedup logic. When
+// fetch() passes through this wrapper, the `dispatcher` option (which we
+// used to pass a custom Agent with relaxed timeouts) may be stripped.
+// Even setGlobalDispatcher() is unreliable because Next.js/Turbopack
+// caches module evaluation — the setGlobalDispatcher call may never run.
+//
+// Solution: use undici.request() directly. This is the low-level API
+// that underlies fetch() but accepts headersTimeout/bodyTimeout directly
+// in the options, bypassing the global dispatcher entirely. It always
+// works regardless of what Next.js does to globalThis.fetch.
+
+/**
+ * Convert a Node.js Readable stream to a web ReadableStream.
+ * Required because undici.request() returns Node.js streams internally,
+ * but generateTextStream expects response.body.getReader().
+ */
+function nodeToWeb<T extends Uint8Array>(nodeStream: NodeJS.ReadableStream): ReadableStream<T> {
+  return new ReadableStream<T>({
+    start(controller) {
+      nodeStream.on("data", (chunk: Buffer | string) => {
+        controller.enqueue(
+          (typeof chunk === "string" ? Buffer.from(chunk) : chunk) as T
+        );
+      });
+      nodeStream.on("end", () => controller.close());
+      nodeStream.on("error", (err) => controller.error(err));
+    },
+  });
+}
+
+/**
+ * Execute an HTTP request to Ollama using undici.request() directly,
+ * bypassing Next.js's patched fetch(). Returns a standard Response
+ * object so the rest of the code doesn't need to change.
+ *
+ * Timeouts (headersTimeout, bodyTimeout) are passed directly to the
+ * undici Dispatcher, which means they are ALWAYS respected regardless
+ * of the global dispatcher or Next.js fetch patching.
+ */
+async function ollamaFetch(
+  url: string,
+  init?: {
+    method?: string;
+    headers?: Record<string, string>;
+    body?: string;
+    signal?: AbortSignal;
+  },
+  streamResponse?: boolean
+): Promise<Response> {
+  // Determine effective timeout — use the request's AbortSignal timeout
+  // duration as the undici timeout ceiling, or fall back to the config.
+  const signalTimeout = init?.signal
+    ? "timeout" in init.signal
+      ? (init.signal as AbortSignal & { timeout?: number }).timeout
+      : undefined
+    : undefined;
+  const effectiveTimeout = signalTimeout ?? OLLAMA_CONFIG.timeout;
+
+  const undiciOptions: Dispatcher.RequestOptions = {
+    method: (init?.method || "GET") as Dispatcher.HttpMethod,
+    headers: init?.headers as Record<string, string>,
+    body: init?.body,
+    signal: init?.signal,
+    headersTimeout: effectiveTimeout,
+    bodyTimeout: effectiveTimeout,
+  };
+
+  const responseData = await request(url, undiciOptions);
+
+  if (streamResponse) {
+    // Streaming case: wrap the Node.js Readable as a web ReadableStream
+    const webStream = nodeToWeb(responseData.body);
+    return new Response(webStream, {
+      status: responseData.statusCode,
+      statusText: responseData.statusCode === 200 ? "OK" : "Error",
+    });
+  }
+
+  // Non-streaming case: buffer the full body
+  const chunks: Buffer[] = [];
+  for await (const chunk of responseData.body) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  const body = Buffer.concat(chunks);
+  return new Response(body, {
+    status: responseData.statusCode,
+    statusText: responseData.statusCode === 200 ? "OK" : "Error",
+  });
+}
+
+/** Convenience: non-streaming GET */
+function ollamaGet(url: string, signal?: AbortSignal): Promise<Response> {
+  return ollamaFetch(url, { method: "GET", signal });
+}
+
+/** Convenience: non-streaming POST */
+function ollamaPost(
+  url: string,
+  body: string,
+  signal?: AbortSignal
+): Promise<Response> {
+  return ollamaFetch(
+    url,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      signal,
+    }
+  );
+}
+
+/** Convenience: streaming POST */
+function ollamaPostStream(
+  url: string,
+  body: string,
+  signal?: AbortSignal
+): Promise<Response> {
+  return ollamaFetch(
+    url,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      signal,
+    },
+    true // streamResponse
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Output Validation
@@ -228,9 +358,10 @@ let localModels: string[] = [];
 export async function fetchLocalModels(ollamaUrl?: string): Promise<string[]> {
   const baseUrl = ollamaUrl || OLLAMA_CONFIG.baseUrl;
   try {
-    const response = await fetch(`${baseUrl}/api/tags`, {
-      signal: AbortSignal.timeout(TIMEOUTS.LLM_FETCH),
-    });
+    const response = await ollamaGet(
+      `${baseUrl}/api/tags`,
+      AbortSignal.timeout(TIMEOUTS.LLM_FETCH)
+    );
     if (!response.ok) {
       ollamaAvailable = false;
       return [];
@@ -434,9 +565,10 @@ export function getActiveJobModel(userId: string): string {
 export async function checkOllamaConnection(ollamaUrl?: string): Promise<boolean> {
   const baseUrl = ollamaUrl || OLLAMA_CONFIG.baseUrl;
   try {
-    const response = await fetch(`${baseUrl}/api/tags`, {
-      signal: AbortSignal.timeout(TIMEOUTS.LLM_FETCH),
-    });
+    const response = await ollamaGet(
+      `${baseUrl}/api/tags`,
+      AbortSignal.timeout(TIMEOUTS.LLM_FETCH)
+    );
     ollamaAvailable = response.ok;
     return response.ok;
   } catch {
@@ -465,9 +597,10 @@ export async function checkModelAvailable(
 ): Promise<boolean> {
   const baseUrl = ollamaUrl || OLLAMA_CONFIG.baseUrl;
   try {
-    const response = await fetch(`${baseUrl}/api/tags`, {
-      signal: AbortSignal.timeout(TIMEOUTS.LLM_FETCH),
-    });
+    const response = await ollamaGet(
+      `${baseUrl}/api/tags`,
+      AbortSignal.timeout(TIMEOUTS.LLM_FETCH)
+    );
     if (!response.ok) return false;
 
     const data = await response.json();
@@ -587,14 +720,10 @@ export async function generateText(
 
   for (let attempt = 1; attempt <= OLLAMA_CONFIG.retryAttempts; attempt++) {
     try {
-      const response = await fetch(
+      const response = await ollamaPost(
         `${baseUrl}/api/generate`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestBody),
-          signal: AbortSignal.timeout(requestTimeout),
-        }
+        JSON.stringify(requestBody),
+        AbortSignal.timeout(requestTimeout)
       );
 
       if (!response.ok) {
@@ -660,12 +789,11 @@ export async function generateTextStream(
   let lastError: Error | null = null;
   for (let attempt = 1; attempt <= OLLAMA_CONFIG.retryAttempts; attempt++) {
     try {
-      const response = await fetch(`${baseUrl}/api/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
-        signal: AbortSignal.timeout(OLLAMA_CONFIG.timeout),
-      });
+      const response = await ollamaPostStream(
+        `${baseUrl}/api/generate`,
+        JSON.stringify(requestBody),
+        AbortSignal.timeout(OLLAMA_CONFIG.timeout)
+      );
 
       if (!response.ok) {
         throw new Error(`Ollama responded with ${response.status}`);
@@ -727,12 +855,11 @@ export async function generateEmbedding(
   const maxEmbeddingRetries = 5;
   for (let attempt = 1; attempt <= maxEmbeddingRetries; attempt++) {
     try {
-      const response = await fetch(`${baseUrl}/api/embed`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
-        signal: AbortSignal.timeout(OLLAMA_CONFIG.embeddingTimeout),
-      });
+      const response = await ollamaPost(
+        `${baseUrl}/api/embed`,
+        JSON.stringify(requestBody),
+        AbortSignal.timeout(OLLAMA_CONFIG.embeddingTimeout)
+      );
 
       if (!response.ok) {
         throw new Error(`Ollama embed responded with ${response.status}`);
