@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { buildSubtypePromptSection, buildCompactSubtypeList } from "../prompt-subtypes";
 import { getTypeRegistry, clearTypeRegistryCache } from "../type-registry";
 import { writeWikiConfigV2 } from "../config-migration";
-import { DEFAULT_TYPE_DEFS, DEFAULT_SUBTYPE_FOLDERS } from "../config-types";
+import { DEFAULT_TYPE_DEFS, DEFAULT_SUBTYPE_FOLDERS, type WikiConfigV2 } from "../config-types";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -32,7 +32,7 @@ describe("prompt-subtypes", () => {
     });
 
     it("includes custom entity subtypes from registry", () => {
-      const config = {
+      const config: WikiConfigV2 = {
         version: 2,
         folderOrder: ["entities", "concepts"],
         types: {
@@ -55,7 +55,7 @@ describe("prompt-subtypes", () => {
     });
 
     it("includes custom types with subtypes", () => {
-      const config = {
+      const config: WikiConfigV2 = {
         version: 2,
         folderOrder: ["entities", "concepts", "vehicles"],
         types: {
@@ -79,7 +79,7 @@ describe("prompt-subtypes", () => {
     });
 
     it("handles empty subtypes gracefully", () => {
-      const config = {
+      const config: WikiConfigV2 = {
         version: 2,
         folderOrder: ["entities", "concepts"],
         types: {
@@ -108,7 +108,7 @@ describe("prompt-subtypes", () => {
     });
 
     it("includes custom types", () => {
-      const config = {
+      const config: WikiConfigV2 = {
         version: 2,
         folderOrder: ["entities", "concepts", "vehicles"],
         types: {

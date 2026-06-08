@@ -173,7 +173,7 @@ export async function handleNpcWikiSync(
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Helpers (exported for testing)
 // ---------------------------------------------------------------------------
 
 /**
@@ -187,7 +187,7 @@ export async function handleNpcWikiSync(
  *   **Behavior Patterns:**
  *   - responds well to authority
  */
-function buildTraitsSection(npc: {
+export function buildTraitsSection(npc: {
   name: string;
   description: string | null;
   personality_traits: string | null;
@@ -239,7 +239,7 @@ function buildTraitsSection(npc: {
  *   2. Replace existing `## Personality` section
  *   3. Append `## NPC Evolution` section at end
  */
-function updateBodyTraitsSection(body: string, traitsSection: string): string {
+export function updateBodyTraitsSection(body: string, traitsSection: string): string {
   // Pattern 1: Replace **Traits:** inline section — finds from **Traits:** to next heading or EOF
   const traitsRegex = /\*\*Traits:\*\*[\s\S]*?(?=\n\s*#|\n*$)/;
   if (traitsRegex.test(body)) {

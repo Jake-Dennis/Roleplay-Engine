@@ -3,10 +3,10 @@ import { safeParse, safeParseWarn } from "../safe-json";
 
 describe("safeParse", () => {
   it("parses valid JSON", () => {
-    expect(safeParse('{"a": 1}')).toEqual({ a: 1 });
-    expect(safeParse("[1, 2, 3]")).toEqual([1, 2, 3]);
-    expect(safeParse('"hello"')).toBe("hello");
-    expect(safeParse("42")).toBe(42);
+    expect(safeParse<any>('{"a": 1}')).toEqual({ a: 1 });
+    expect(safeParse<any>("[1, 2, 3]")).toEqual([1, 2, 3]);
+    expect(safeParse<any>('"hello"')).toBe("hello");
+    expect(safeParse<any>("42")).toBe(42);
   });
 
   it("returns null on invalid JSON without fallback", () => {
@@ -39,7 +39,7 @@ describe("safeParse", () => {
 
 describe("safeParseWarn", () => {
   it("parses valid JSON", () => {
-    expect(safeParseWarn('{"b": 2}', "test")).toEqual({ b: 2 });
+    expect(safeParseWarn<any>('{"b": 2}', "test")).toEqual({ b: 2 });
   });
 
   it("returns null on invalid JSON without fallback", () => {

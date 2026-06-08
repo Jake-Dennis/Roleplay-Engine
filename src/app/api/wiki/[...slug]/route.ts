@@ -192,16 +192,29 @@ export async function GET(
   const universeId = request.nextUrl.searchParams.get("universe_id") || "";
   const { slug } = await params;
   const wikiRoot = getWikiRoot(userId, universeId || undefined);
-  const relativePath = resolveSlugPath(slug);
-  const fullPath = path.join(wikiRoot, relativePath);
+  let relativePath = resolveSlugPath(slug);
+  let fullPath = path.join(wikiRoot, relativePath);
 
   // Security: prevent path traversal
   if (!isPathWithinRoot(fullPath, wikiRoot)) {
     return badRequestError("Invalid path");
   }
 
+  // If the exact path doesn't exist, search for the page in subtype subfolders
+  // This handles URLs like /wiki/concepts/about finding concepts/lore/about.md
   if (!fs.existsSync(fullPath)) {
-    return notFoundError("Wiki page");
+    const allSearchPages = listWikiPages(wikiRoot);
+    const normalizedTarget = relativePath.replace(/\\/g, "/").toLowerCase();
+    const found = allSearchPages.find((p) => {
+      const rel = path.relative(wikiRoot, p.path).replace(/\\/g, "/").toLowerCase();
+      return rel === normalizedTarget || rel.endsWith("/" + normalizedTarget);
+    });
+    if (!found) {
+      return notFoundError("Wiki page");
+    }
+    // Found at a different path — update to the actual location
+    fullPath = found.path;
+    relativePath = path.relative(wikiRoot, found.path).replace(/\\/g, "/");
   }
 
   try {

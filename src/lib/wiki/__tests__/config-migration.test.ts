@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { migrateConfigV1toV2, readAndMigrateConfig, writeWikiConfigV2 } from "../config-migration";
-import { DEFAULT_TYPE_DEFS, DEFAULT_SUBTYPE_FOLDERS } from "../config-types";
+import { DEFAULT_TYPE_DEFS, DEFAULT_SUBTYPE_FOLDERS, type WikiConfigV2 } from "../config-types";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -30,8 +30,8 @@ describe("config-migration", () => {
     });
 
     it("returns v2 config unchanged (idempotent)", () => {
-      const v2Config = {
-        version: 2,
+      const v2Config: WikiConfigV2 = {
+        version: 2 as const,
         folderOrder: ["entities", "concepts"],
         types: DEFAULT_TYPE_DEFS,
         subtypeFolders: DEFAULT_SUBTYPE_FOLDERS,
@@ -41,8 +41,8 @@ describe("config-migration", () => {
     });
 
     it("handles missing folderOrder gracefully", () => {
-      const v1Config = {};
-      const v2 = migrateConfigV1toV2(v1Config);
+      const v1Config: Record<string, unknown> = {};
+      const v2 = migrateConfigV1toV2(v1Config as any);
       expect(v2.version).toBe(2);
       expect(v2.folderOrder).toEqual([]);
       expect(v2.types).toEqual(DEFAULT_TYPE_DEFS);
@@ -105,7 +105,7 @@ describe("config-migration", () => {
   describe("writeWikiConfigV2", () => {
     it("creates config file atomically", () => {
       const configPath = path.join(tmpDir, ".wiki-config.json");
-      const config = {
+      const config: WikiConfigV2 = {
         version: 2,
         folderOrder: ["entities", "concepts"],
         types: DEFAULT_TYPE_DEFS,
@@ -121,7 +121,7 @@ describe("config-migration", () => {
 
     it("creates directory if missing", () => {
       const newDir = path.join(tmpDir, "new-wiki");
-      const config = {
+      const config: WikiConfigV2 = {
         version: 2,
         folderOrder: [],
         types: DEFAULT_TYPE_DEFS,

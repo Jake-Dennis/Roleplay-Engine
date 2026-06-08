@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { folderForSubtype, folderForType, folderForPage, subtypeFromFolder } from "../subtype-folders";
 import { getTypeRegistry, clearTypeRegistryCache } from "../type-registry";
 import { writeWikiConfigV2 } from "../config-migration";
-import { DEFAULT_TYPE_DEFS, DEFAULT_SUBTYPE_FOLDERS } from "../config-types";
+import { DEFAULT_TYPE_DEFS, DEFAULT_SUBTYPE_FOLDERS, type WikiConfigV2 } from "../config-types";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -35,7 +35,7 @@ describe("subtype-folders", () => {
 
     it("falls back to derived folder for unmapped but known subtype", () => {
       // Add a subtype not in subtypeFolders map but in types
-      const config = {
+      const config: WikiConfigV2 = {
         version: 2,
         folderOrder: ["entities", "concepts"],
         types: {
