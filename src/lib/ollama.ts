@@ -274,39 +274,49 @@ export function isModelAvailable(model: string): boolean {
 export function isValidServiceUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    const hostname = parsed.hostname;
+    let hostname = parsed.hostname;
+
+    // Strip brackets for IPv6 address processing (Bun's URL parser
+    // returns bracketed IPv6 hostnames, e.g. "[::ffff:7f00:1]").
+    const cleanedHostname = hostname.replace(/^\[|\]$/g, "");
 
     // IPv6 loopback
-    if (hostname === "::1" || hostname === "[::1]") {
+    if (cleanedHostname === "::1") {
       return false;
     }
 
-    // Check for IPv6-mapped IPv4 addresses (e.g. ::ffff:127.0.0.1)
-    const ipv4Mapped = hostname.replace(/^::ffff:/, "");
-    const isIpv4Mapped = ipv4Mapped !== hostname && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ipv4Mapped);
+    // Check for IPv6-mapped IPv4 addresses (e.g. ::ffff:127.0.0.1).
+    // Some runtimes (Node.js) preserve the dotted-decimal form while
+    // others (Bun) hex-encode it as two 16-bit groups (::ffff:7f00:1).
+    if (cleanedHostname.startsWith("::ffff:")) {
+      const embedded = cleanedHostname.slice(7); // Remove "::ffff:"
 
-    if (isIpv4Mapped) {
-      // Apply same denylist checks to the embedded IPv4 address
-      if (ipv4Mapped.startsWith("127.")) return false;
-      if (ipv4Mapped === "0.0.0.0") return false;
-      if (ipv4Mapped === "169.254.169.254") return false;
+      // Dotted-decimal format (Node.js style)
+      if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(embedded)) {
+        if (embedded.startsWith("127.")) return false;
+        if (embedded === "0.0.0.0") return false;
+        if (embedded === "169.254.169.254") return false;
+      }
+
+      // Hex-encoded format (Bun style: two 16-bit groups like 7f00:1)
+      const hexMatch = embedded.match(/^([0-9a-fA-F]{1,4}):([0-9a-fA-F]{1,4})$/);
+      if (hexMatch) {
+        const high = parseInt(hexMatch[1], 16);
+        const low = parseInt(hexMatch[2], 16);
+        const ipv4 = `${(high >> 8) & 0xFF}.${high & 0xFF}.${(low >> 8) & 0xFF}.${low & 0xFF}`;
+        if (ipv4.startsWith("127.")) return false;
+        if (ipv4 === "0.0.0.0") return false;
+        if (ipv4 === "169.254.169.254") return false;
+      }
+
+      // Non-denylisted ::ffff: addresses are allowed (e.g. 10.0.0.1, 192.168.x.x)
     }
 
-    // Check if hostname is an IPv4 address
-    const ipv4Match = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname);
-    if (ipv4Match) {
-      // Loopback (127.0.0.0/8)
-      if (hostname.startsWith("127.")) {
-        return false;
-      }
-      // All interfaces
-      if (hostname === "0.0.0.0") {
-        return false;
-      }
-      // Cloud metadata endpoint
-      if (hostname === "169.254.169.254") {
-        return false;
-      }
+    // Check if hostname is a plain IPv4 address
+    if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) {
+      if (hostname.startsWith("127.")) return false;
+      if (hostname === "0.0.0.0") return false;
+      if (hostname === "169.254.169.254") return false;
     }
 
     // All other hostnames are allowed (DNS names, LAN IPs, etc.)

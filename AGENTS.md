@@ -19,22 +19,26 @@ Roleplay-Engine/
 ├── src/
 │   ├── app/                    # Next.js App Router
 │   │   ├── (app)/              # Route group: authenticated pages (sidebar layout)
-│   │   ├── api/                # 94 REST route handlers (route.ts)
+│   │   ├── api/                # 107 REST route handlers (route.ts)
 │   │   ├── login/ / register/  # Auth pages (outside route group)
 │   │   ├── layout.tsx          # Root layout — force-dynamic, Inter font
 │   │   └── page.tsx            # Redirects to /login
-│   ├── components/             # 71 .tsx files, 12 feature directories
-│   │   ├── wiki/               # 12 wiki UI components
-│   │   ├── ui/                 # 7 shared primitives (Modal, LoadingState, etc.)
+│   ├── components/             # 98 .tsx files, 18 feature directories
+│   │   ├── wiki/               # 20 wiki UI components
+│   │   ├── ui/                 # 12 shared primitives (Modal, LoadingState, Button, etc.)
 │   │   ├── chat/ / session/    # Session/chat components
 │   │   ├── timeline/ / canon/  # Timeline/canon layers
 │   │   ├── relationships/ / relationship/  # ⚠ SINGULAR vs PLURAL — different dirs
-│   │   └── tts/ / narrative/ / jobs/ / backlinks/
+│   │   ├── personas/ / npcs/   # Character management
+│   │   ├── jobs/ / settings/ / debug/  # Utility feature dirs
+│   │   └── tts/ / narrative/ / layout/ / backlinks/
 │   ├── contexts/               # 2 files: app-context.tsx + active-universe.tsx (compat shim)
 │   ├── hooks/                  # 10 custom hooks (use-* prefix)
-│   ├── lib/                    # 37 flat utility files + wiki/ subdirectory
-│   │   ├── wiki/               # 14-file wiki subsystem (I/O, wikilinks, ingest, query, lint)
-│   │   └── jobs/               # 14-file job processing (types, queue, handlers, see lib/jobs/AGENTS.md)
+│   ├── lib/                    # 61 flat utility files + 6 subdirectories
+│   │   ├── wiki/               # 33-file wiki subsystem (43 incl. tests)
+│   │   ├── jobs/               # 19-file job processing (16 impl + 3 tests, see lib/jobs/AGENTS.md)
+│   │   ├── benchmark/          # 10-file Ollama benchmarking suite
+│   │   └── idle/ / validation/ / __tests__/
 │   └── middleware.ts           # Edge middleware (auth redirects, mostly no-op)
 ├── data/                       # Runtime data (gitignored): SQLite DBs + per-user wiki markdown
 ├── scripts/                    # One-off migration/utility scripts
@@ -110,7 +114,7 @@ Supporting: `src/app/(app)/session/[id]/page.tsx`, `src/app/api/sessions/[id]/tu
 - **No barrel exports**: Zero `index.ts` re-export files. Always import from specific file paths.
 - **File naming**: kebab-case for files/dirs, PascalCase for component files.
 - **API routes**: All `route.ts` files. No server actions (`"use server"` = none).
-- **Client/Server split**: Server by default. `"use client"` only when hooks/browser APIs needed. 66% of components are client (47 of 71).
+- **Client/Server split**: Server by default. `"use client"` only when hooks/browser APIs needed. 59% of components are client (58 of 98).
 - **Auth pattern**: Every route does inline token verification. Two extraction styles coexist: direct cookie access (older) and `getAuthToken()` utility (newer).
 - **Error responses**: Always `NextResponse.json({ error: "..." }, { status: N })`.
 - **DB access**: Raw better-sqlite3, no ORM. `db.prepare("...").get/all/run()`. Parameterized with `?`.

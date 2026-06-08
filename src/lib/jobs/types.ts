@@ -28,7 +28,8 @@ export type JobType =
   | "wiki_auto_extract"
   | "universe_wiki_sync"
   | "npc_wiki_sync"
-  | "wiki_suggest_restructure";
+  | "wiki_suggest_restructure"
+  | "generate_choices";
 
 export type JobPriority = "high" | "medium" | "low" | "idle";
 export type JobStatus = "queued" | "processing" | "completed" | "failed" | "cancelled";
@@ -106,6 +107,7 @@ export const JOB_TYPES = [
   "wiki_extract_event",
   "wiki_generate_rumors",
   "wiki_ingest",
+  "generate_choices",
   "wiki_suggest_restructure",
 ] as const;
 
@@ -131,6 +133,7 @@ export const JOB_TYPE_LABELS: Record<string, string> = {
   wiki_generate_rumors: "Wiki Generate Rumors",
   wiki_ingest: "Wiki Ingest",
   wiki_suggest_restructure: "Wiki Restructure Suggestions",
+  generate_choices: "Generate Choices",
 };
 
 export const PRIORITY_COLORS: Record<string, string> = {

@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
-import { generateText, generateTextStream, getUserModels, getActivePersonaContext, buildPersonaPrompt, type PersonaContext } from "@/lib/ollama";
+import { generateTextStream, getUserModels, getActivePersonaContext, buildPersonaPrompt, type PersonaContext } from "@/lib/ollama";
 import { getRetrievedContext, assemblePromptWithBudget, type RetrievedContext } from "@/lib/retrieval";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { queueJob, processJobsByType, processUserJobs } from "@/lib/job-processor";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 import { withAuth } from '@/lib/with-auth';
 import { logger } from '@/lib/logger';
-import { PROMPTS } from '@/lib/prompts';
 import { validateLength } from '@/lib/validation';
 import { markOllamaBusy, markOllamaIdle } from '@/lib/ollama-busy';
 
@@ -314,29 +313,18 @@ export async function POST(
           )
         );
 
-        // Generate branching narrative choices while keeping the stream alive
-        try {
-          const choicesPrompt = PROMPTS.generateChoices(userMessage, fullResponse);
-          const choicesRaw = await generateText(choicesPrompt, {
-            userId,
-            temperature: 0.8,
-            top_p: 0.9,
-          });
-          const choicesParsed = JSON.parse(choicesRaw) as { options: string[] };
-          if (
-            choicesParsed?.options &&
-            Array.isArray(choicesParsed.options) &&
-            choicesParsed.options.length > 0
-          ) {
-            controller.enqueue(
-              encoder.encode(
-                JSON.stringify({ choices: choicesParsed.options }) + "\n"
-              )
-            );
-          }
-        } catch {
-          // Non-fatal: choice generation failure should not break generation
-        }
+        // Queue background job for narrative choices — this replaces the
+        // synchronous generateText() call that used to block the SSE stream
+        // from closing for 5–15 seconds. The job handler emits choices via
+        // event bus → session SSE stream when complete.
+        queueJob(userId, "generate_choices", {
+          sessionId,
+          userId,
+          universeId: session.universe_id || undefined,
+          userMessage,
+          fullResponse,
+          messageId: aiMessageId,
+        }, "low", session.universe_id || undefined);
 
         controller.close();
         eventBus.unregisterController(controller);

@@ -251,6 +251,8 @@ export const SessionEvents = {
   JOB_COMPLETED: "job:completed",
   JOB_PROGRESS: "job:progress",
   SESSION_UPDATED: "session:updated",
+  // Choice generation events
+  CHOICES_GENERATED: "session:choices",
   // Wiki page events
   WIKI_PAGE_CREATED: "wiki:page_created",
   WIKI_PAGE_UPDATED: "wiki:page_updated",

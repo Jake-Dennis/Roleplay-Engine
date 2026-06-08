@@ -3,6 +3,9 @@
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState, memo } from "react";
 import Link from "next/link";
+// Initialize CSRF fetch patching (side-effect import runs once)
+import "@/lib/csrf-client";
+
 import {
   MessageSquare,
   LayoutDashboard,
@@ -389,7 +392,7 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
           {isFullBleed ? (
             <div className="min-h-full">{children}</div>
           ) : (
-            <div className="mx-auto min-h-full max-w-5xl px-6 py-6">{children}</div>
+            <div className="mx-auto flex h-full w-full max-w-5xl flex-col px-6 py-6">{children}</div>
           )}
 
           {/* Idle status indicator */}

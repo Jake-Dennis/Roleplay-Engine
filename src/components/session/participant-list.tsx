@@ -21,9 +21,7 @@
  *   />
  */
 
-"use client";
-
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Users, UserMinus, UserPlus, Footprints, Eye } from "lucide-react";
 
 interface Participant {
@@ -54,7 +52,7 @@ interface ParticipantListProps {
   onClose: () => void;
 }
 
-export function ParticipantList({
+export const ParticipantList = memo(function ParticipantList({
   participants,
   isOwner,
   turnConfig,
@@ -235,4 +233,4 @@ export function ParticipantList({
       )}
     </div>
   );
-}
+});

@@ -11,14 +11,47 @@
  *  7. Merge candidates (same title in same universe)
  *  8. Superseded_by chain health
  *  9. Orphan pages (no inbound wikilinks)
+ * 10. Cross-universe wikilink reporting
+ * 11. Page size statistics (total, average, largest, smallest)
+ * 12. Tag-based subtype inference
+ * 13. --fix mode for auto-resolving common issues
  *
- * Usage: npx tsx scripts/audit-wiki.ts
+ * Usage:
+ *   npx tsx scripts/audit-wiki.ts              # Full audit (read-only)
+ *   npx tsx scripts/audit-wiki.ts --fix        # Auto-resolve issues
+ *   npx tsx scripts/audit-wiki.ts --fix --dry-run  # Preview fixes only
+ *   npx tsx scripts/audit-wiki.ts --help       # Show usage
  */
 
 import fs from "fs";
 import path from "path";
 
 const DATA_DIR = path.resolve(__dirname, "..", "data");
+
+// ── Argument parsing ────────────────────────────────────────────────────────
+
+const args = process.argv.slice(2);
+const FLAG_FIX = args.includes("--fix");
+const FLAG_DRY_RUN = args.includes("--dry-run");
+const FLAG_HELP = args.includes("--help");
+
+if (FLAG_HELP) {
+  console.log(`
+  Wiki Audit Script — scans all wiki roots and reports health.
+
+  Usage:
+    npx tsx scripts/audit-wiki.ts              # Read-only audit
+    npx tsx scripts/audit-wiki.ts --fix        # Auto-resolve issues
+    npx tsx scripts/audit-wiki.ts --fix --dry-run  # Preview fixes
+
+  Options:
+    --fix       Auto-resolve TYPE_MISMATCH, NO_FRONTMATTER, and
+                MISSING_WIKI_CONFIG issues
+    --dry-run   Show what --fix would change without writing (implies --fix)
+    --help      Show this help message
+`);
+  process.exit(0);
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -58,6 +91,85 @@ function parseFrontmatter(filePath: string): Record<string, unknown> | null {
   }
 }
 
+/**
+ * Serialize frontmatter back to YAML string (simple serializer, no deps).
+ * Matches the key ordering convention used in the project.
+ */
+function serializeFrontmatter(fm: Record<string, unknown>): string {
+  const lines: string[] = [];
+  // Order keys conventionally
+  const order = ["title", "type", "status", "subtype", "universe", "tags", "created", "updated"];
+  const seen = new Set<string>();
+  for (const key of order) {
+    if (key in fm) {
+      lines.push(`${key}: ${formatYamlValue(fm[key])}`);
+      seen.add(key);
+    }
+  }
+  for (const [key, val] of Object.entries(fm)) {
+    if (!seen.has(key)) {
+      lines.push(`${key}: ${formatYamlValue(val)}`);
+    }
+  }
+  return lines.join("\n") + "\n";
+}
+
+function formatYamlValue(val: unknown): string {
+  if (Array.isArray(val)) {
+    return "[" + val.map((v) => `"${String(v)}"`).join(", ") + "]";
+  }
+  if (typeof val === "string") {
+    // Quote if it contains special chars
+    if (val.includes(":") || val.includes("#") || val.includes("[") || val.includes("{")) {
+      return `"${val}"`;
+    }
+    return val;
+  }
+  return String(val);
+}
+
+/**
+ * Normalize type names to a canonical form so that singular/plural pairs match.
+ * E.g. "concept" and "concepts" both normalize to "concepts".
+ */
+const TYPE_ALIASES: Record<string, string> = {
+  concept: "concepts",
+  concepts: "concepts",
+  entity: "entities",
+  entities: "entities",
+  event: "events",
+  events: "events",
+  location: "locations",
+  locations: "locations",
+  character: "characters",
+  characters: "characters",
+  item: "items",
+  items: "items",
+  lore: "lores",
+  lores: "lores",
+};
+
+/** Inverse mapping: plural folder name -> singular type name */
+const FOLDER_TO_TYPE: Record<string, string> = {
+  concepts: "concept",
+  entities: "entity",
+  events: "event",
+  locations: "location",
+  characters: "character",
+  items: "item",
+  lores: "lore",
+  sources: "source",
+  synthesis: "synthesis",
+};
+
+function normalizeType(t: string): string {
+  return TYPE_ALIASES[t] ?? t;
+}
+
+function folderToType(folder: string): string {
+  return FOLDER_TO_TYPE[folder] ?? folder;
+}
+
 /** Simple pluralization for subtype folder names. */
 function pluralizeSubtype(subtype: string): string {
   const special: Record<string, string> = {
@@ -72,6 +184,17 @@ function pluralizeSubtype(subtype: string): string {
     return subtype + "es";
   return subtype + "s";
 }
+
+/** Known type tags that can imply a frontmatter subtype. */
+const TAG_TO_SUBTYPE: Record<string, string> = {
+  location: "location",
+  event: "event",
+  concept: "concept",
+  entity: "entity",
+  character: "character",
+  item: "item",
+  lore: "lore",
+};
 
 interface WikiPage {
   path: string;
@@ -107,9 +230,98 @@ interface UserAudit {
   universes: UniverseAudit[];
 }
 
+// ── Fix tracking ────────────────────────────────────────────────────────────
+
+interface FixAction {
+  description: string;
+  apply: () => void;
+}
+
+const fixActions: FixAction[] = [];
+
+function recordFix(description: string, apply: () => void): void {
+  fixActions.push({ description, apply });
+}
+
+function applyFixes(): void {
+  if (fixActions.length === 0) {
+    console.log("  No fixes to apply.");
+    return;
+  }
+  if (FLAG_DRY_RUN) {
+    console.log();
+    console.log(`  [DRY RUN] Would apply ${fixActions.length} fix(es):`);
+    for (const action of fixActions) {
+      console.log(`    - ${action.description}`);
+    }
+    console.log();
+    console.log("  (Run without --dry-run to apply these changes)");
+  } else {
+    console.log();
+    console.log(`  Applying ${fixActions.length} fix(es)...`);
+    for (const action of fixActions) {
+      action.apply();
+    }
+    console.log("  Done.");
+  }
+}
+
+// ── Default wiki config template ────────────────────────────────────────────
+
+function createDefaultWikiConfig(): Record<string, unknown> {
+  return {
+    version: 2,
+    folderOrder: ["entities", "concepts", "sources", "synthesis", "_review"],
+    types: {
+      entity: {
+        icon: "user",
+        folder: "entities",
+        subtypes: ["character", "location", "item", "faction", "organization", "creature"],
+      },
+      concept: {
+        icon: "book-open",
+        folder: "concepts",
+        subtypes: ["theme", "rule", "mechanic", "lore", "event", "tradition"],
+      },
+      source: {
+        icon: "file-text",
+        folder: "sources",
+        subtypes: [],
+      },
+      synthesis: {
+        icon: "sparkles",
+        folder: "synthesis",
+        subtypes: [],
+      },
+    },
+    subtypeFolders: {
+      character: "entities/characters",
+      location: "entities/locations",
+      item: "entities/items",
+      faction: "entities/factions",
+      organization: "entities/organizations",
+      creature: "entities/creatures",
+      theme: "concepts/themes",
+      rule: "concepts/rules",
+      mechanic: "concepts/mechanics",
+      lore: "concepts/lore",
+      event: "concepts/events",
+      tradition: "concepts/traditions",
+    },
+  };
+}
+
 // ── Scan ───────────────────────────────────────────────────────────────────
 
 const users: UserAudit[] = [];
+
+// Track cross-universe link data across all universes
+interface CrossUniverseLink {
+  sourcePage: string;
+  targetUniverse: string;
+  targetPage: string;
+}
+const allCrossUniverseLinks: CrossUniverseLink[] = [];
 
 const userDirs = fs
   .readdirSync(DATA_DIR, { withFileTypes: true })
@@ -188,6 +400,22 @@ for (const userDir of userDirs) {
 
     collectMd(uniPath, uniPath);
 
+    // ── Cross-universe wikilink scan ─────────────────────────────────────
+    for (const p of pages) {
+      // Match [[SomeUniverse::PageName]] or [[SomeUniverse::Page Name|alias]]
+      const xLinkRegex = /\[\[([^\[\]]+?)::([^\[\]|]+)(?:\|[^\[\]]+)?\]\]/g;
+      let match: RegExpExecArray | null;
+      while ((match = xLinkRegex.exec(p.content)) !== null) {
+        const targetUniverse = match[1].trim();
+        const targetPage = match[2].trim();
+        allCrossUniverseLinks.push({
+          sourcePage: `${universeId}:${p.relPath}`,
+          targetUniverse,
+          targetPage,
+        });
+      }
+    }
+
     // ── Checks ──────────────────────────────────────────────────────────
 
     // 1. Wiki config check
@@ -201,6 +429,19 @@ for (const userDir of userDirs) {
 
       if (!fm) {
         addIssue("error", "frontmatter", `NO_FRONTMATTER: ${p.relPath}`);
+
+        // --fix: add minimal frontmatter
+        if (FLAG_FIX) {
+          const inferredType = folderToType(p.typeFolder);
+          recordFix(
+            `Add minimal frontmatter to ${p.relPath} (type: ${inferredType})`,
+            () => {
+              const newFm = `---\ntype: ${inferredType}\n---\n`;
+              const content = fs.readFileSync(p.path, "utf-8");
+              fs.writeFileSync(p.path, newFm + content, "utf-8");
+            }
+          );
+        }
         continue;
       }
 
@@ -218,7 +459,7 @@ for (const userDir of userDirs) {
       if (!type || type.trim() === "") {
         addIssue("error", "frontmatter", `MISSING_TYPE: ${p.relPath}`);
       } else if (
-        type !== p.typeFolder &&
+        normalizeType(type) !== normalizeType(p.typeFolder) &&
         !/^[a-f0-9\-]{36}$/.test(p.typeFolder)
       ) {
         // Skip UUID-named folders (sub-universes)
@@ -227,6 +468,26 @@ for (const userDir of userDirs) {
           "folder",
           `TYPE_MISMATCH: ${p.relPath} — frontmatter type is "${type}" but folder is "${p.typeFolder}"`
         );
+
+        // --fix: update frontmatter type to match folder
+        if (FLAG_FIX) {
+          const correctType = folderToType(p.typeFolder);
+          recordFix(
+            `Fix TYPE_MISMATCH in ${p.relPath}: change type from "${fm.type}" to "${correctType}"`,
+            () => {
+              const content = fs.readFileSync(p.path, "utf-8");
+              const end = content.indexOf("---", 3);
+              const before = content.slice(0, end);
+              const after = content.slice(end);
+              // Replace the type line in frontmatter
+              const updated = before.replace(
+                /^type:\s*.+$/m,
+                `type: ${correctType}`
+              );
+              fs.writeFileSync(p.path, updated + after, "utf-8");
+            }
+          );
+        }
       }
 
       // Status
@@ -265,6 +526,38 @@ for (const userDir of userDirs) {
               "folder",
               `WRONG_SUBTYPE_FOLDER: ${p.relPath} — subtype "${subtype}" expects folder "${expectedFolder}" but is in "${p.subtypeFolder}"`
             );
+          }
+        }
+      }
+
+      // ── Tag-based subtype inference ────────────────────────────────────
+      if (fm && fm.tags && Array.isArray(fm.tags) && (!subtype || subtype.trim() === "")) {
+        const tags = fm.tags as string[];
+        for (const tag of tags) {
+          const inferredSubtype = TAG_TO_SUBTYPE[tag];
+          if (inferredSubtype) {
+            addIssue(
+              "info",
+              "subtype-inference",
+              `INFERRED_SUBTYPE: ${p.relPath} — tag "${tag}" suggests subtype "${inferredSubtype}"`
+            );
+
+            // --fix: add the inferred subtype
+            if (FLAG_FIX) {
+              recordFix(
+                `Add subtype "${inferredSubtype}" to ${p.relPath} (inferred from tag "${tag}")`,
+                () => {
+                  const content = fs.readFileSync(p.path, "utf-8");
+                  const end = content.indexOf("---", 3);
+                  const before = content.slice(0, end);
+                  const after = content.slice(end);
+                  // Add subtype line before the closing ---
+                  const updated = before.replace(/---\s*$/, `subtype: ${inferredSubtype}\n---`);
+                  fs.writeFileSync(p.path, updated + after, "utf-8");
+                }
+              );
+            }
+            break; // Only infer one subtype per page
           }
         }
       }
@@ -359,6 +652,57 @@ for (const userDir of userDirs) {
       }
     }
 
+    // 7. Wiki config fix
+    if (!hasConfig && FLAG_FIX) {
+      recordFix(
+        `Create .wiki-config.json in universe "${universeId}"`,
+        () => {
+          const configPath = path.join(uniPath, ".wiki-config.json");
+          fs.writeFileSync(
+            configPath,
+            JSON.stringify(createDefaultWikiConfig(), null, 2) + "\n",
+            "utf-8"
+          );
+        }
+      );
+    }
+
+    // ── Page size statistics ─────────────────────────────────────────────
+    if (pages.length > 0) {
+      const sizes = pages.map((p) => p.size);
+      const totalSize = sizes.reduce((a, b) => a + b, 0);
+      const avgSize = Math.round(totalSize / sizes.length);
+      const maxSize = Math.max(...sizes);
+      const minSize = Math.min(...sizes);
+      const largestPage = pages.find((p) => p.size === maxSize);
+      const smallestPage = pages.find((p) => p.size === minSize);
+
+      addIssue(
+        "info",
+        "size-stats",
+        `TOTAL_SIZE: ${formatBytes(totalSize)} (${sizes.length} pages)`
+      );
+      addIssue(
+        "info",
+        "size-stats",
+        `AVG_SIZE: ${formatBytes(avgSize)}`
+      );
+      if (largestPage) {
+        addIssue(
+          "info",
+          "size-stats",
+          `LARGEST_PAGE: ${largestPage.relPath} (${formatBytes(maxSize)})`
+        );
+      }
+      if (smallestPage) {
+        addIssue(
+          "info",
+          "size-stats",
+          `SMALLEST_PAGE: ${smallestPage.relPath} (${formatBytes(minSize)})`
+        );
+      }
+    }
+
     userAudit.universes.push({
       universeId,
       hasConfig,
@@ -369,6 +713,12 @@ for (const userDir of userDirs) {
   }
 
   users.push(userAudit);
+}
+
+// ── Apply fixes (if --fix was specified) ────────────────────────────────────
+
+if (FLAG_FIX) {
+  applyFixes();
 }
 
 // ── Report ─────────────────────────────────────────────────────────────────
@@ -389,6 +739,9 @@ const totalUniverses = users.reduce(
 
 console.log("=".repeat(80));
 console.log("  WIKI AUDIT REPORT —", new Date().toISOString().slice(0, 19));
+if (FLAG_FIX) {
+  console.log(`  Mode:       ${FLAG_DRY_RUN ? "DRY RUN (preview only)" : "FIX (applying changes)"}`);
+}
 console.log("=".repeat(80));
 console.log();
 console.log(`  Users:      ${totalUsers}`);
@@ -408,6 +761,21 @@ for (const user of users) {
     console.log(`  Config:   ${uni.hasConfig ? "OK" : "MISSING"}`);
     console.log(`  Pages:    ${uni.pageCount}`);
     console.log(`  Issues:   ${uni.issues.length}`);
+
+    // ── Page size statistics in universe summary ─────────────────────────
+    if (uni.pages.length > 0) {
+      const sizes = uni.pages.map((p) => p.size);
+      const totalSize = sizes.reduce((a, b) => a + b, 0);
+      const avgSize = Math.round(totalSize / sizes.length);
+      console.log(`  Total size:  ${formatBytes(totalSize)}`);
+      console.log(`  Avg size:    ${formatBytes(avgSize)}`);
+      const maxSize = Math.max(...sizes);
+      const minSize = Math.min(...sizes);
+      const largestPage = uni.pages.find((p) => p.size === maxSize);
+      const smallestPage = uni.pages.find((p) => p.size === minSize);
+      if (largestPage) console.log(`  Largest:     ${formatBytes(maxSize)} — ${largestPage.relPath}`);
+      if (smallestPage) console.log(`  Smallest:    ${formatBytes(minSize)} — ${smallestPage.relPath}`);
+    }
 
     if (uni.pageCount > 0) {
       console.log();
@@ -432,7 +800,7 @@ for (const user of users) {
     if (uni.issues.length > 0) {
       console.log();
       console.log("  Issues:");
-      // Group by severity
+      // Group by category
       const grouped: Record<string, AuditIssue[]> = {};
       for (const issue of uni.issues) {
         if (!grouped[issue.category]) grouped[issue.category] = [];
@@ -450,6 +818,90 @@ for (const user of users) {
   }
 }
 
+// ── Cross-universe wikilink summary ─────────────────────────────────────────
+
+if (allCrossUniverseLinks.length > 0) {
+  console.log("-".repeat(80));
+  console.log("  CROSS-UNIVERSE WIKILINKS");
+  console.log("-".repeat(80));
+  console.log();
+  console.log(`  Total cross-universe links: ${allCrossUniverseLinks.length}`);
+  console.log();
+
+  // Per-target-universe counts
+  const perUniverse = new Map<string, number>();
+  for (const link of allCrossUniverseLinks) {
+    perUniverse.set(link.targetUniverse, (perUniverse.get(link.targetUniverse) ?? 0) + 1);
+  }
+  console.log("  Links per target universe:");
+  for (const [uniName, count] of [...perUniverse.entries()].sort((a, b) => b[1] - a[1])) {
+    console.log(`    ${uniName}: ${count}`);
+  }
+  console.log();
+
+  // Per-target-page breakdown (show top 10)
+  console.log("  Source pages with cross-universe links:");
+  const perSource = new Map<string, number>();
+  for (const link of allCrossUniverseLinks) {
+    perSource.set(link.sourcePage, (perSource.get(link.sourcePage) ?? 0) + 1);
+  }
+  const sortedSources = [...perSource.entries()].sort((a, b) => b[1] - a[1]);
+  const topSources = sortedSources.slice(0, 10);
+  for (const [src, count] of topSources) {
+    console.log(`    ${formatLinkSource(src)}: ${count} link(s)`);
+  }
+  if (sortedSources.length > 10) {
+    console.log(`    ... and ${sortedSources.length - 10} more source pages`);
+  }
+  console.log();
+}
+
+// ── Global size summary ────────────────────────────────────────────────────
+
+const allPagesFlat = users.flatMap((u) => u.universes.flatMap((uni) => uni.pages));
+if (allPagesFlat.length > 0) {
+  const allSizes = allPagesFlat.map((p) => p.size);
+  const grandTotalSize = allSizes.reduce((a, b) => a + b, 0);
+  const grandAvgSize = Math.round(grandTotalSize / allSizes.length);
+  const grandMaxSize = Math.max(...allSizes);
+  const grandMinSize = Math.min(...allSizes);
+  const largestGlobalPage = allPagesFlat.find((p) => p.size === grandMaxSize);
+  const smallestGlobalPage = allPagesFlat.find((p) => p.size === grandMinSize);
+
+  console.log("=".repeat(80));
+  console.log("  GLOBAL SIZE STATISTICS");
+  console.log("=".repeat(80));
+  console.log();
+  console.log(`  Total wiki data:   ${formatBytes(grandTotalSize)}`);
+  console.log(`  Average page size: ${formatBytes(grandAvgSize)}`);
+  if (largestGlobalPage) {
+    console.log(`  Largest page:      ${formatBytes(grandMaxSize)} — ${largestGlobalPage.relPath}`);
+  }
+  if (smallestGlobalPage) {
+    console.log(`  Smallest page:     ${formatBytes(grandMinSize)} — ${smallestGlobalPage.relPath}`);
+  }
+  console.log();
+}
+
 console.log("=".repeat(80));
 console.log("  AUDIT COMPLETE");
 console.log("=".repeat(80));
+
+// ── Utilities ──────────────────────────────────────────────────────────────
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatLinkSource(source: string): string {
+  // source is formatted as "universeId:path"
+  const colonIdx = source.indexOf(":");
+  if (colonIdx === -1) return source;
+  const universe = source.slice(0, colonIdx);
+  const pagePath = source.slice(colonIdx + 1);
+  // Truncate long universe IDs
+  const shortUni = universe.length > 8 ? universe.slice(0, 8) + "…" : universe;
+  return `${shortUni}::${pagePath}`;
+}

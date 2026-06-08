@@ -622,13 +622,49 @@ async function handleUniverseWikiSync(jobId: string, payload: JobPayload): Promi
     boundariesText ? `**Boundaries:**\n${boundariesText}\n` : "",
   ].filter(Boolean).join("\n");
 
-  const pagePath = path.join(wikiRoot, "concepts", "about.md");
-  writeWikiPage(pagePath, content, {
-    title: `${name} — Universe Overview`,
-    type: "concept",
-    status: "draft",
-    tags: ["auto-generated", "universe-info"],
+  const expectedTitle = `${name} — Universe Overview`;
+
+  // Try to find the existing universe overview page first
+  // Search by title match OR by type+filename+tag heuristics
+  const allPages = listWikiPages(wikiRoot);
+  const existing = allPages.find((p) => {
+    const title = (p.frontmatter?.title || "").trim().toLowerCase();
+    if (title === expectedTitle.toLowerCase()) return true;
+    // Heuristic: concept-type page named about.md with universe-info tag
+    const tags = Array.isArray(p.frontmatter?.tags) ? p.frontmatter.tags : [];
+    const filename = path.basename(p.path, ".md");
+    return (
+      p.frontmatter?.type === "concept" &&
+      filename === "about" &&
+      tags.includes("universe-info")
+    );
   });
+
+  let pagePath: string;
+  let relativePagePath: string;
+
+  if (existing) {
+    // Update existing page in place (preserves subtype folder structure)
+    pagePath = existing.path;
+    relativePagePath = path.relative(wikiRoot, existing.path).replace(/\\/g, "/");
+    writeWikiPage(pagePath, content, {
+      ...existing.frontmatter,
+      title: expectedTitle,
+      updated: new Date().toISOString(),
+    });
+  } else {
+    // Create new page using registry-driven folder
+    const registry = getTypeRegistry(wikiRoot);
+    const conceptFolder = folderForPage({ type: "concept" }, registry) || "concepts";
+    pagePath = path.join(wikiRoot, conceptFolder, "about.md");
+    relativePagePath = path.relative(wikiRoot, pagePath).replace(/\\/g, "/");
+    writeWikiPage(pagePath, content, {
+      title: expectedTitle,
+      type: "concept",
+      status: "draft",
+      tags: ["auto-generated", "universe-info"],
+    });
+  }
 
   updateJobProgress(jobId, 70, "Regenerating index...");
   generateIndex(wikiRoot);
@@ -636,7 +672,7 @@ async function handleUniverseWikiSync(jobId: string, payload: JobPayload): Promi
   updateJobProgress(jobId, 90, "Emitting SSE event...");
   eventBus.emit(`${SessionEvents.WIKI_PAGE_CREATED}:${universeId}`, {
     universeId,
-    page: "concepts/about.md",
+    page: relativePagePath,
   });
 
   markJobCompleted(jobId);
@@ -644,6 +680,6 @@ async function handleUniverseWikiSync(jobId: string, payload: JobPayload): Promi
     success: true,
     jobId,
     type: "universe_wiki_sync",
-    data: { page: "concepts/about.md" },
+    data: { page: relativePagePath },
   };
 }

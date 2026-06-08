@@ -1,16 +1,13 @@
 "use client";
 
 /**
- * @deprecated This file is not currently imported by any source module.
- * Kept for reference. Will be removed in a future cleanup pass once
- * all consumers are verified.
- * @reason This session header component was replaced by an inline header
- * in the session page layout. The toggle panels (scene, participants,
- * private state, relationships, recap) are now managed directly by the
- * session page component rather than via this separate header.
+ * SessionHeader Component
+ *
+ * Displays session name, persona selector, toggle buttons for panels,
+ * message count, ChatSearch, and ChatExport.
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -50,7 +47,7 @@ interface SessionHeaderProps {
   onToggleRecapPanel: () => void;
 }
 
-export function SessionHeader({
+export const SessionHeader = memo(function SessionHeader({
   sessionId,
   sessionName,
   messageCount,
@@ -224,4 +221,4 @@ export function SessionHeader({
       <ChatSearch sessionId={sessionId} />
     </div>
   );
-}
+});

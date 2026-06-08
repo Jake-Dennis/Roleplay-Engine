@@ -16,7 +16,7 @@
  *   />
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { Lock, MessageSquare, Heart, Bookmark, X } from "lucide-react";
 import { PrivateThoughts } from "./private-thoughts";
 import { PersonalRelationships } from "./personal-relationships";
@@ -55,7 +55,7 @@ interface PrivateStatePanelProps {
   onClose: () => void;
 }
 
-export function PrivateStatePanel({ sessionId, onClose }: PrivateStatePanelProps) {
+export const PrivateStatePanel = memo(function PrivateStatePanel({ sessionId, onClose }: PrivateStatePanelProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("thoughts");
   const [state, setState] = useState<PrivateState>({
     thoughts: [],
@@ -190,4 +190,4 @@ export function PrivateStatePanel({ sessionId, onClose }: PrivateStatePanelProps
       </div>
     </div>
   );
-}
+});

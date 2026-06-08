@@ -1,11 +1,16 @@
 "use client";
 
+import { memo } from "react";
+
 interface GenerationErrorBannerProps {
   message: string | null;
   onDismiss: () => void;
 }
 
-export function GenerationErrorBanner({ message, onDismiss }: GenerationErrorBannerProps) {
+export const GenerationErrorBanner = memo(function GenerationErrorBanner({
+  message,
+  onDismiss,
+}: GenerationErrorBannerProps) {
   if (!message) return null;
 
   return (
@@ -19,4 +24,4 @@ export function GenerationErrorBanner({ message, onDismiss }: GenerationErrorBan
       </button>
     </div>
   );
-}
+});

@@ -1,0 +1,6 @@
+[test]
+root = "src"
+preload = "./src/setup.ts"
+coverage = true
+coverageDir = "coverage"
+coverageThreshold = 0

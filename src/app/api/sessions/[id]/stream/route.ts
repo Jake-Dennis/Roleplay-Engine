@@ -144,6 +144,8 @@ export async function GET(
         SessionEvents.THREAD_UPDATED,
         SessionEvents.JOB_COMPLETED,
         SessionEvents.JOB_PROGRESS,
+        // Choice generation events
+        SessionEvents.CHOICES_GENERATED,
         // Wiki page events
         SessionEvents.WIKI_PAGE_CREATED,
         SessionEvents.WIKI_PAGE_UPDATED,

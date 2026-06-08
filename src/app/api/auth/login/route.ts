@@ -1,16 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { authenticateUser, validateUsername, validatePassword } from "@/lib/auth";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries, getClientIp } from "@/lib/rate-limiter";
+import { generateCsrfToken, setCsrfCookie } from "@/lib/csrf";
 
 /**
  * POST /api/auth/login
  *
  * Authenticates a user with username and password credentials.
- * On success, sets an httpOnly auth-token cookie for subsequent requests.
+ * On success, sets an httpOnly auth-token cookie for subsequent requests,
+ * a non-httpOnly csrf-token cookie for CSRF protection (Double Submit Cookie),
+ * and returns the CSRF token in the response body for client-side use.
  *
  * @param request - The incoming Next.js request object containing JSON body with username and password
- * @returns NextResponse with { success, user: { id, username } } and httpOnly auth-token cookie
+ * @returns NextResponse with { success, user: { id, username }, csrfToken } and both cookies
  * @throws 400 - If username or password is missing, or validation fails
  * @throws 401 - If credentials are invalid
  * @throws 429 - If rate limit exceeded for this IP
@@ -54,12 +57,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Generate CSRF token for Double Submit Cookie pattern
+    const csrfToken = generateCsrfToken();
+
     const response = NextResponse.json({
       success: true,
       user: {
         id: result.user.id,
         username: result.user.username,
       },
+      csrfToken, // Client-side JS reads this to set X-CSRF-Token header
     });
 
     // Set secure httpOnly cookie — XSS-resistant, MITM-resistant
@@ -71,6 +78,10 @@ export async function POST(request: NextRequest) {
       path: "/",
     });
 
+    // Set non-httpOnly CSRF cookie — Double Submit Cookie pattern
+    // Client JS reads this too (or uses the response body value)
+    setCsrfCookie(response, csrfToken);
+
     return response;
   } catch {
     return NextResponse.json(
@@ -79,3 +90,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

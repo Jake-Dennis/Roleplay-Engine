@@ -34,6 +34,65 @@ function resolveSlugPath(slug: string[]): string {
   return joined.endsWith(".md") ? joined : `${joined}.md`;
 }
 
+/**
+ * Resolve a wiki page path with fuzzy search fallback for subtype subfolders.
+ * Returns { fullPath, relativePath } or null if not found.
+ *
+ * If the exact slug path doesn't exist on disk, searches all wiki pages
+ * for a filename match within the same top-level folder. This handles URLs
+ * like /wiki/concepts/about finding concepts/lore/about.md after a page
+ * was moved into a subtype subfolder during restructuring.
+ */
+function resolveWikiPagePath(
+  wikiRoot: string,
+  slug: string[]
+): { fullPath: string; relativePath: string } | null {
+  const relativePath = resolveSlugPath(slug);
+  const fullPath = path.join(wikiRoot, relativePath);
+
+  // Security: prevent path traversal
+  if (!isPathWithinRoot(fullPath, wikiRoot)) return null;
+
+  if (fs.existsSync(fullPath)) {
+    return { fullPath, relativePath };
+  }
+
+  // Fuzzy search: find page by filename within same top-level folder
+  const allSearchPages = listWikiPages(wikiRoot);
+  const normalizedTarget = relativePath.replace(/\\/g, "/").toLowerCase();
+  const targetParts = normalizedTarget.split("/");
+  const targetFilename = targetParts[targetParts.length - 1];
+  const targetFolder = targetParts[0];
+
+  const matches = allSearchPages
+    .filter((p) => {
+      const rel = path.relative(wikiRoot, p.path).replace(/\\/g, "/").toLowerCase();
+      // Exact match or suffix match (original behavior)
+      if (rel === normalizedTarget || rel.endsWith("/" + normalizedTarget)) return true;
+      // Broader search: same filename under the same top-level folder
+      // Handles pages moved into subtype subfolders (e.g., concepts/lore/about.md)
+      const relParts = rel.split("/");
+      return (
+        relParts.length >= 2 &&
+        relParts[0] === targetFolder &&
+        relParts[relParts.length - 1] === targetFilename
+      );
+    })
+    // Prefer the shallowest path (original location before subfolder move)
+    .sort((a, b) => {
+      const aDepth = path.relative(wikiRoot, a.path).split(path.sep).length;
+      const bDepth = path.relative(wikiRoot, b.path).split(path.sep).length;
+      return aDepth - bDepth;
+    });
+
+  if (matches.length === 0) return null;
+
+  return {
+    fullPath: matches[0].path,
+    relativePath: path.relative(wikiRoot, matches[0].path).replace(/\\/g, "/"),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Embed helpers
 // ---------------------------------------------------------------------------
@@ -192,30 +251,12 @@ export async function GET(
   const universeId = request.nextUrl.searchParams.get("universe_id") || "";
   const { slug } = await params;
   const wikiRoot = getWikiRoot(userId, universeId || undefined);
-  let relativePath = resolveSlugPath(slug);
-  let fullPath = path.join(wikiRoot, relativePath);
 
-  // Security: prevent path traversal
-  if (!isPathWithinRoot(fullPath, wikiRoot)) {
-    return badRequestError("Invalid path");
+  const resolved = resolveWikiPagePath(wikiRoot, slug);
+  if (!resolved) {
+    return notFoundError("Wiki page");
   }
-
-  // If the exact path doesn't exist, search for the page in subtype subfolders
-  // This handles URLs like /wiki/concepts/about finding concepts/lore/about.md
-  if (!fs.existsSync(fullPath)) {
-    const allSearchPages = listWikiPages(wikiRoot);
-    const normalizedTarget = relativePath.replace(/\\/g, "/").toLowerCase();
-    const found = allSearchPages.find((p) => {
-      const rel = path.relative(wikiRoot, p.path).replace(/\\/g, "/").toLowerCase();
-      return rel === normalizedTarget || rel.endsWith("/" + normalizedTarget);
-    });
-    if (!found) {
-      return notFoundError("Wiki page");
-    }
-    // Found at a different path — update to the actual location
-    fullPath = found.path;
-    relativePath = path.relative(wikiRoot, found.path).replace(/\\/g, "/");
-  }
+  let { fullPath, relativePath } = resolved;
 
   try {
     const page = readWikiPage(fullPath);
@@ -366,20 +407,18 @@ export async function PUT(
 
   const { slug } = await params;
   const wikiRoot = getWikiRoot(userId, universeId || undefined);
-  const relativePath = resolveSlugPath(slug);
-  const fullPath = path.join(wikiRoot, relativePath);
 
-  // Security: prevent path traversal
-  if (!isPathWithinRoot(fullPath, wikiRoot)) {
-    return badRequestError("Invalid path");
-  }
-
-  if (!fs.existsSync(fullPath)) {
+  const resolved = resolveWikiPagePath(wikiRoot, slug);
+  if (!resolved) {
     return notFoundError("Wiki page");
   }
+  const { fullPath, relativePath } = resolved;
+  // Derive the canonical slug from the resolved path for consistent
+  // revision storage (handles URL → actual path redirects)
+  const resolvedSlug = relativePath.replace(/\\/g, "/").replace(/\.md$/i, "").split("/");
 
-    requireJson(request);
-    const body = await request.json();
+  requireJson(request);
+  const body = await request.json();
   const { content, frontmatter, expectedLastModified } = body;
 
   if (content === undefined && !frontmatter) {
@@ -403,7 +442,7 @@ export async function PUT(
       : (existing.frontmatter as WikiFrontmatter);
 
     // Save revision snapshot before overwriting
-    saveRevision(wikiRoot, slug, existing.content, existing.frontmatter);
+    saveRevision(wikiRoot, resolvedSlug, existing.content, existing.frontmatter);
 
     writeWikiPage(fullPath, mergedContent, mergedFrontmatter as WikiFrontmatter, {
       expectedLastModified,
@@ -413,7 +452,7 @@ export async function PUT(
     // Record version in DB-backed history
     try {
       const rawContent = fs.readFileSync(fullPath, "utf-8");
-      const snapshotPath = createSnapshotFile(wikiRoot, slug, rawContent);
+      const snapshotPath = createSnapshotFile(wikiRoot, resolvedSlug, rawContent);
       const versionNumber = getNextVersionNumber(relativePath, userId);
       recordVersion(relativePath, userId, versionNumber, "", snapshotPath);
     } catch {
@@ -463,17 +502,12 @@ export async function DELETE(
   const universeId = request.nextUrl.searchParams.get("universe_id") || "";
   const { slug } = await params;
   const wikiRoot = getWikiRoot(userId, universeId || undefined);
-  const relativePath = resolveSlugPath(slug);
-  const fullPath = path.join(wikiRoot, relativePath);
 
-  // Security: prevent path traversal
-  if (!isPathWithinRoot(fullPath, wikiRoot)) {
-    return badRequestError("Invalid path");
-  }
-
-  if (!fs.existsSync(fullPath)) {
+  const resolved = resolveWikiPagePath(wikiRoot, slug);
+  if (!resolved) {
     return notFoundError("Wiki page");
   }
+  const { fullPath } = resolved;
 
   try {
     deleteWikiPage(fullPath);

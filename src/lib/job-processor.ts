@@ -78,6 +78,7 @@ import { handleRefineRelationshipSummary } from "./jobs/relationship-summary-han
 import { handleArchivalProcessing } from "./jobs/archival-handler";
 import { handleThreadAnalysis } from "./jobs/thread-analysis-handler";
 import { handleWikiSuggestRestructure } from "./jobs/wiki-restructure-suggestions";
+import { process as handleGenerateChoices } from "./jobs/choices-handler";
 
 // ---------------------------------------------------------------------------
 // Job Processing
@@ -130,6 +131,8 @@ export async function processJob(job: QueuedJob): Promise<JobResult> {
         return await handleLoreExtractionJob(job.id, payload);
       case "generate_session_recap":
         return await handleSessionRecapJob(job.id, payload);
+      case "generate_choices":
+        return await handleGenerateChoices(job);
       default:
         throw new Error(`Unknown job type: ${job.type}`);
     }

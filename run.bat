@@ -67,6 +67,11 @@ if not exist "data\global.db" (
     echo.
 )
 
+:: Clear stale build cache
+if exist ".next" (
+    rmdir /s /q ".next" >nul 2>&1
+)
+
 :: Start the application
 echo Starting Roleplay Engine (development mode)...
 echo Local:    http://localhost:3000

@@ -12,8 +12,6 @@ export const metadata: Metadata = {
   description: "Persistent narrative roleplay engine",
 };
 
-export const dynamic = "force-dynamic";
-
 export default function RootLayout({
   children,
 }: {

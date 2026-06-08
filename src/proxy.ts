@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyTokenBasic } from "@/lib/auth-edge";
+import { validateCsrfToken, csrfErrorResponse } from "@/lib/csrf";
 
 // Routes that don't require authentication
 const publicRoutes = ["/login", "/register", "/api/auth/login", "/api/auth/register", "/api/auth/me"];
@@ -49,35 +50,24 @@ export async function proxy(request: NextRequest) {
   requestHeaders.set('x-real-ip', realIp);
   requestHeaders.set('x-request-id', requestId);
 
-  // CSRF protection: validate Origin/Referer for state-changing methods.
-  // SameSite=Strict cookies provide baseline protection; this adds defense-in-depth.
+  // CSRF protection: Double Submit Cookie pattern.
+  // Validates that the X-CSRF-Token header matches the csrf-token cookie.
+  // Cross-origin attackers cannot set custom headers, so a matching pair
+  // proves the request originated from the same site.
+  // Auth routes (login, register) are skipped — they run before CSRF exists.
+  // NOTE: /api/generate is intentionally excluded from the proxy matcher
+  // (see config.matcher below) because SSE streaming responses would break
+  // from a 403 mid-stream. The auth cookie + rate limiter provide sufficient
+  // protection for the generation endpoint.
   const method = request.method;
-  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
-    if (process.env.NODE_ENV !== 'development') {
-      const origin = request.headers.get('origin');
-      const referer = request.headers.get('referer');
-      const host = request.headers.get('host');
-
-      const originHost = origin
-        ? (() => { try { return new URL(origin).host; } catch { return null; } })()
-        : (referer
-          ? (() => { try { return new URL(referer).host; } catch { return null; } })()
-          : null);
-
-      if (originHost) {
-        if (originHost !== host) {
-          const forbiddenResponse = new NextResponse('Forbidden', { status: 403 });
-          forbiddenResponse.headers.set('X-Request-Id', requestId);
-          return forbiddenResponse;
-        }
-      } else if (!origin && !referer) {
-        // No Origin/Referer — allow only if X-Requested-With indicates same-origin AJAX
-        const xRequestedWith = request.headers.get('x-requested-with');
-        if (xRequestedWith !== 'XMLHttpRequest') {
-          const forbiddenResponse = new NextResponse('Forbidden', { status: 403 });
-          forbiddenResponse.headers.set('X-Request-Id', requestId);
-          return forbiddenResponse;
-        }
+  if (['POST', 'PUT', 'DELETE'].includes(method)) {
+    const excludedAuthRoutes = ['/api/auth/login', '/api/auth/register'];
+    const isExcluded = excludedAuthRoutes.some((route) => pathname.startsWith(route));
+    if (!isExcluded) {
+      if (!validateCsrfToken(request)) {
+        const forbiddenResponse = csrfErrorResponse();
+        forbiddenResponse.headers.set('X-Request-Id', requestId);
+        return forbiddenResponse;
       }
     }
   }
@@ -128,3 +118,4 @@ export const config = {
     "/((?!_next/static|_next/image|favicon.ico|api/tts|api/generate|api/embed).*)",
   ],
 };
+

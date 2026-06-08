@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Tags,
   Loader2,
@@ -12,22 +12,7 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
-const TYPE_OPTIONS = ["", "entity", "concept", "source", "synthesis"];
-const SUBTYPE_OPTIONS = [
-  "",
-  "character",
-  "location",
-  "item",
-  "event",
-  "faction",
-  "species",
-  "lore",
-  "timeline",
-  "magic",
-  "technology",
-  "organization",
-  "concept",
-];
+const DEFAULT_TYPES = ["entity", "concept", "source", "synthesis"];
 const STATUS_OPTIONS = ["", "draft", "reviewed", "locked", "rejected"];
 
 interface RecategorizeChange {
@@ -61,6 +46,26 @@ export function BulkRecategorizeTab() {
   const [addTags, setAddTags] = useState("");
   const [removeTags, setRemoveTags] = useState("");
   const [newStatus, setNewStatus] = useState("");
+
+  // Dynamic options loaded from config
+  const [typeOptions, setTypeOptions] = useState<string[]>(["", ...DEFAULT_TYPES]);
+  const [subtypeOptions, setSubtypeOptions] = useState<string[]>([""]);
+
+  // Load wiki config for dynamic type/subtype options
+  useEffect(() => {
+    fetch("/api/wiki/config")
+      .then((r) => r.json())
+      .then((config) => {
+        const types = config.types ? Object.keys(config.types) : DEFAULT_TYPES;
+        setTypeOptions(["", ...types]);
+        const subtypes = Array.isArray(config.subtypes) ? config.subtypes : [];
+        setSubtypeOptions(["", ...subtypes]);
+      })
+      .catch(() => {
+        // Fallback to defaults
+        setTypeOptions(["", ...DEFAULT_TYPES]);
+      });
+  }, []);
 
   // State
   const [previewResult, setPreviewResult] = useState<RecategorizeResult | null>(null);
@@ -177,7 +182,7 @@ export function BulkRecategorizeTab() {
               onChange={(e) => setFilterType(e.target.value)}
               className="rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-xs text-text-primary outline-none transition-colors focus:border-accent"
             >
-              {TYPE_OPTIONS.map((t) => (
+              {typeOptions.map((t) => (
                 <option key={t} value={t}>{t || "Any"}</option>
               ))}
             </select>
@@ -189,7 +194,7 @@ export function BulkRecategorizeTab() {
               onChange={(e) => setFilterSubtype(e.target.value)}
               className="rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-xs text-text-primary outline-none transition-colors focus:border-accent"
             >
-              {SUBTYPE_OPTIONS.map((s) => (
+              {subtypeOptions.map((s) => (
                 <option key={s} value={s}>{s || "Any"}</option>
               ))}
             </select>
@@ -233,7 +238,7 @@ export function BulkRecategorizeTab() {
               onChange={(e) => setNewType(e.target.value)}
               className="rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-xs text-text-primary outline-none transition-colors focus:border-accent"
             >
-              {TYPE_OPTIONS.map((t) => (
+              {typeOptions.map((t) => (
                 <option key={t} value={t}>{t || "No change"}</option>
               ))}
             </select>
@@ -245,7 +250,7 @@ export function BulkRecategorizeTab() {
               onChange={(e) => setNewSubtype(e.target.value)}
               className="rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-xs text-text-primary outline-none transition-colors focus:border-accent"
             >
-              {SUBTYPE_OPTIONS.map((s) => (
+              {subtypeOptions.map((s) => (
                 <option key={s} value={s}>{s || "No change"}</option>
               ))}
             </select>

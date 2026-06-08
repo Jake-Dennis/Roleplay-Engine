@@ -13,7 +13,7 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
-const FOLDER_OPTIONS = ["entities", "concepts", "sources", "synthesis"];
+const DEFAULT_FOLDERS = ["entities", "concepts", "sources", "synthesis"];
 
 interface WikiPageRef {
   path: string;
@@ -27,10 +27,28 @@ interface BulkMoveResult {
 }
 
 export function BulkMoveTab() {
-  const [fromFolder, setFromFolder] = useState(FOLDER_OPTIONS[0]);
-  const [toFolder, setToFolder] = useState(FOLDER_OPTIONS[1]);
+  const [folderOptions, setFolderOptions] = useState<string[]>(DEFAULT_FOLDERS);
+  const [fromFolder, setFromFolder] = useState(DEFAULT_FOLDERS[0]);
+  const [toFolder, setToFolder] = useState(DEFAULT_FOLDERS[1]);
   const [pages, setPages] = useState<WikiPageRef[]>([]);
   const [pagesLoading, setPagesLoading] = useState(true);
+
+  // Load folder options from wiki config (supports custom type folders)
+  useEffect(() => {
+    fetch("/api/wiki/config")
+      .then((r) => r.json())
+      .then((config) => {
+        const folders = config.folderOrder || DEFAULT_FOLDERS;
+        setFolderOptions(folders);
+        // Reset selections if current choices are no longer valid
+        setFromFolder((prev) => (folders.includes(prev) ? prev : folders[0]));
+        setToFolder((prev) => (folders.includes(prev) ? prev : folders[folders.length > 1 ? 1 : 0]));
+      })
+      .catch(() => {
+        // Fallback to defaults
+        setFolderOptions(DEFAULT_FOLDERS);
+      });
+  }, []);
   const [previewResult, setPreviewResult] = useState<BulkMoveResult | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -139,7 +157,7 @@ export function BulkMoveTab() {
             onChange={(e) => { setFromFolder(e.target.value); setPreviewResult(null); }}
             className="rounded-lg border border-border-default bg-bg-elevated px-3 py-2 text-xs text-text-primary outline-none transition-colors focus:border-accent"
           >
-            {FOLDER_OPTIONS.map((f) => (
+            {folderOptions.map((f) => (
               <option key={f} value={f}>{f}</option>
             ))}
           </select>
@@ -154,7 +172,7 @@ export function BulkMoveTab() {
             onChange={(e) => { setToFolder(e.target.value); setPreviewResult(null); }}
             className="rounded-lg border border-border-default bg-bg-elevated px-3 py-2 text-xs text-text-primary outline-none transition-colors focus:border-accent"
           >
-            {FOLDER_OPTIONS.map((f) => (
+            {folderOptions.map((f) => (
               <option key={f} value={f}>{f}</option>
             ))}
           </select>

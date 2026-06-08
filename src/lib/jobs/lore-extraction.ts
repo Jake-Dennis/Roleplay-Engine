@@ -103,16 +103,7 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
   let pagesCreated = 0;
   const existingPages = new Set<string>(); // Track created pages to avoid duplicates
 
-  // Ensure wiki directories exist
-  const entitiesDir = path.join(wikiRoot, "entities");
-  const conceptsDir = path.join(wikiRoot, "concepts");
-  try {
-    if (!fs.existsSync(entitiesDir)) fs.mkdirSync(entitiesDir, { recursive: true });
-    if (!fs.existsSync(conceptsDir)) fs.mkdirSync(conceptsDir, { recursive: true });
-  } catch {
-    // Non-fatal — writeWikiPage creates dirs
-  }
-
+  // writeWikiPage creates parent directories automatically
   for (let i = 0; i < messages.length; i += batchSize) {
     const batch = messages.slice(i, i + batchSize);
     const messageText = batch
