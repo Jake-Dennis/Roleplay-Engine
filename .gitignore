@@ -90,6 +90,12 @@ setup-firewall.ps1
 # OpenCode JSON schema (auto-managed)
 opencode.schema.json
 
+# Obsidian API documentation (auto-generated)
+obsidian-docs/
+
+# Session output working directories (UUID-named)
+[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]/
+
 # Misc artifacts
 next-env.d.ts
 UsersJakeP*/
