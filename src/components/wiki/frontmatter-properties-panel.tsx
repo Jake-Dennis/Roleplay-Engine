@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Tag, X, Plus } from 'lucide-react';
 import { EMPTY_FRONTMATTER } from '@/lib/wiki/frontmatter';
 import type { WikiFrontmatter } from '@/lib/wiki/types';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
 interface FrontmatterPropertiesPanelProps {
   frontmatter: WikiFrontmatter;
@@ -22,6 +23,7 @@ const STATUS_OPTIONS: ReadonlyArray<WikiFrontmatter['status']> = [
   'draft',
   'reviewed',
   'locked',
+  'dormant',
   'rejected',
 ];
 
@@ -54,6 +56,7 @@ export default function FrontmatterPropertiesPanel({
 }: FrontmatterPropertiesPanelProps) {
   const [tagDraft, setTagDraft] = useState('');
   const [titleWarning, setTitleWarning] = useState(false);
+  const [showDormantConfirm, setShowDormantConfirm] = useState(false);
 
   const tags = frontmatter.tags ?? [];
   const isNewPage = frontmatter === EMPTY_FRONTMATTER;
@@ -68,6 +71,36 @@ export default function FrontmatterPropertiesPanel({
     value: WikiFrontmatter[K]
   ): void {
     onChange({ ...frontmatter, [field]: value });
+  }
+
+  function handleStatusChange(e: React.ChangeEvent<HTMLSelectElement>): void {
+    const newStatus = e.target.value as WikiFrontmatter['status'];
+
+    // If selecting dormant and not already dormant, show confirmation
+    if (newStatus === 'dormant' && frontmatter.status !== 'dormant') {
+      setShowDormantConfirm(true);
+      return;
+    }
+
+    // If waking up from dormant, clear deprecated_at
+    if (frontmatter.status === 'dormant' && newStatus !== 'dormant') {
+      const next = { ...frontmatter, status: newStatus };
+      delete next.deprecated_at;
+      onChange(next);
+      return;
+    }
+
+    update('status', newStatus);
+  }
+
+  function handleDormantConfirm(): void {
+    const iso = new Date().toISOString();
+    onChange({ ...frontmatter, status: 'dormant', deprecated_at: iso });
+    setShowDormantConfirm(false);
+  }
+
+  function handleDormantCancel(): void {
+    setShowDormantConfirm(false);
   }
 
   function addTag(): void {
@@ -158,9 +191,7 @@ export default function FrontmatterPropertiesPanel({
             id="fm-status"
             disabled={statusRO}
             value={frontmatter.status}
-            onChange={(e) =>
-              update('status', e.target.value as WikiFrontmatter['status'])
-            }
+            onChange={handleStatusChange}
             className={INPUT_CLASS}
           >
             {STATUS_OPTIONS.map((opt) => (
@@ -170,7 +201,7 @@ export default function FrontmatterPropertiesPanel({
             ))}
           </select>
           <span className={EXPLAINER_CLASS}>
-            draft → reviewed → locked. Locked pages are immutable.
+            draft → reviewed → locked. Dormant pages are hidden from default views and LLM retrieval.
           </span>
         </div>
 
@@ -261,7 +292,28 @@ export default function FrontmatterPropertiesPanel({
             </span>
           </>
         )}
+
+        {/* Deprecated At (read-only, shown when dormant) */}
+        {frontmatter.deprecated_at && (
+          <>
+            <span className={LABEL_CLASS}>Deprecated</span>
+            <span className="text-sm text-text-secondary py-2">
+              {formatTimestamp(frontmatter.deprecated_at)}
+            </span>
+          </>
+        )}
       </div>
+
+      {/* Dormant confirmation dialog */}
+      <ConfirmationDialog
+        open={showDormantConfirm}
+        onClose={handleDormantCancel}
+        onConfirm={handleDormantConfirm}
+        title="Mark as Dormant"
+        message="This page will be hidden from default views and LLM retrieval. Wikilinks will still resolve. Continue?"
+        confirmLabel="Mark as Dormant"
+        confirmVariant="default"
+      />
     </div>
   );
 }

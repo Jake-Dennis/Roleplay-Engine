@@ -25,7 +25,7 @@ export interface WikiFrontmatter {
    * matches the plural form of its type.
    */
   type: string;
-  status: "draft" | "reviewed" | "locked" | "rejected";
+  status: "draft" | "reviewed" | "locked" | "rejected" | "dormant";
   universe?: string;
   tags?: string[];
   created?: string | Date;
@@ -36,6 +36,8 @@ export interface WikiFrontmatter {
   rejection_reason?: string;
   /** ISO timestamp when the page was rejected. */
   rejected_at?: string;
+  /** ISO timestamp when the page was marked as dormant (deprecated). */
+  deprecated_at?: string;
   /** ID of the persona this page was auto-created from. */
   persona_id?: string;
   /** Source identifier for auto-generated pages (e.g. "persona", "universe"). */
@@ -49,6 +51,17 @@ export interface WikiFrontmatter {
   subtype?:
     | "character" | "location" | "item" | "faction" | "organization" | "creature"
     | "theme" | "rule" | "mechanic" | "lore" | "event" | "tradition";
+  /**
+   * Relative path (relative to wiki root) of the page that supersedes this one.
+   * Set when a page has been merged into another page. When a wikilink resolves
+   * to a page with this field, the resolver follows the redirect one hop to the
+   * superseding page.
+   *
+   * Format: `"entities/characters/gandalf.md"` (includes `.md` extension).
+   */
+  superseded_by?: string;
+  /** ISO timestamp when this page was superseded (via merge, etc.). */
+  superseded_at?: string;
   /** Additional frontmatter fields beyond the known schema. */
   [key: string]: unknown;
 }

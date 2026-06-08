@@ -352,10 +352,16 @@ export function deleteWikiPage(filePath: string): void {
  * List all wiki pages, including pages in subtype subfolders (2-level deep).
  * Recursively scans directories, skipping hidden dirs and known system dirs.
  *
+ * By default, pages with `frontmatter.status === "dormant"` are excluded.
+ * Pass `{ includeDormant: true }` to include them.
+ *
  * Pages are sorted by top-level folder order (from wiki config), then by
  * subtype folder path, then by `order` frontmatter field, then by title.
  */
-export function listWikiPages(wikiRoot: string): WikiPage[] {
+export function listWikiPages(
+  wikiRoot: string,
+  options?: { includeDormant?: boolean }
+): WikiPage[] {
   const pages: WikiPage[] = [];
 
   if (!fs.existsSync(wikiRoot)) return pages;
@@ -399,6 +405,11 @@ export function listWikiPages(wikiRoot: string): WikiPage[] {
     // Then by title
     return (a.frontmatter.title || "").localeCompare(b.frontmatter.title || "");
   });
+
+  // Filter out dormant pages by default unless includeDormant is explicitly true
+  if (!options?.includeDormant) {
+    return pages.filter((p) => p.frontmatter.status !== "dormant");
+  }
 
   return pages;
 }

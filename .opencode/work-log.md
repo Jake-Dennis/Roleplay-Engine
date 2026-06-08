@@ -601,6 +601,43 @@ The file lives at `data/<userId>/wiki/<universe_id>/concepts/event_acknowledgmen
 - `relativePrefix` parameter retained in `collectPagesRecursive` (needed for recursive path building despite not being stored)
 - Documentation covers both migration steps AND ongoing usage of the 2-level structure
 
+---
 
+## 2026-06-08 — Cycle 8: Plan 010 — Wiki Evolution Tooling
+
+**Trigger:** Continue execution of Plan 010 (wiki evolution tooling — bulk ops, merge, dormancy, restructure).
+
+**What was done:**
+
+### Layer 1
+- **T1: Dormancy frontmatter** — Added `status: "dormant"`, `deprecated_at` to `WikiFrontmatter` in `types.ts`. Updated `listWikiPages` filter to exclude dormant by default. Added `includeDormant` parameter. Updated `validation.ts` to accept dormant status. Updated `orphans.ts` to skip dormant pages. Updated `retrieval.ts` to exclude dormant pages from LLM context. Added `"Show dormant"` toggle to file tree.
+- **T2: Bulk-move module** — Created `bulk-move.ts` (validates target folder, batch-moves files, rewrites wikilinks in 2 passes: internal cross-refs + external linking pages). API at `bulk-move/route.ts`. 18 tests in `bulk-move.test.ts`.
+- **T3: Bulk-recategorize module** — Created `bulk-recategorize.ts` (filter by type/subtype/tag/status/folder, apply subtype+tag changes, detect folder moves). API at `bulk-recategorize/route.ts`. 22 tests in `bulk-recategorize.test.ts`.
+- **T4: Merge suggester module** — Created `merge-suggester.ts` (3 strategies: A = exact title match, confidence 0.95; B = Jaccard wikilink overlap ≥80%; C = LLM stub). API at `merge-suggestions/route.ts`. 14 tests in `merge-suggestions.test.ts`.
+
+### Layer 2
+- **T5: Merge function** — Created `merge.ts` (`mergePages()`: source→target merge, frontmatter union, superseded_by set, wikilink rewrite, redirect stub). API at `merge/route.ts`. 15 tests in `merge.test.ts`.
+- **T6: Admin restructure page** — `/admin/restructure` with 4 tabs (Bulk Move, Bulk Recategorize, Merge Suggestions, Dormancy). 8 component files in `tabs/` subdirectory.
+- **T7: Dormant page UI** — Updated `frontmatter-properties-panel.tsx` with status dropdown (confirmation dialog for `dormant` → other states), `deprecated_at` timestamp display, file tree toggle.
+
+### Layer 3
+- **T8: Restructure job handler** — Added `wiki_suggest_restructure` job type + handler `suggestRestructure()` (detects subtype-not-in-registry, wrong-folder, type-mismatch issues). 9 tests in `wiki-restructure-suggestions.test.ts`.
+- **T9: Superseded_by resolution** — Added `superseded_by`/`superseded_at` frontmatter fields. `resolveWikilink` follows one-hop redirect. `detectCollisions` excludes superseded pairs. 12 tests in `wikilinks-rewrite.test.ts`.
+- **T10: Documentation** — Created `docs/wiki-evolution-tooling.md` (432 lines), `docs/wiki-merge-workflow.md` (480 lines), `docs/wiki-dormancy.md` (441 lines), `docs/wiki-bulk-operations.md` (467 lines). Updated `README.md` with Wiki Evolution section (+26 lines).
+
+### Verification
+- Plan 010 verified and archived (11/11 verification commands passed)
+- `npm run build` — compiled successfully (65 routes, including `/admin/restructure`)
+- All wiki tests pass individually (isolated test runs)
+- Pre-existing issue: `npc-wiki-sync.test.ts` mock leaks break full-suite runs (44 failures)
+
+**Files changed:** 50+ source files: 8 new lib modules, 4 new API routes, 8 admin UI components, 4 doc files, 8 test files, 1 README update.
+
+**Key decisions:**
+- Merge uses `superseded_by` soft-delete (status: `dormant`) rather than hard delete — preserves history
+- Link rewriting for merges uses custom regex (handles same-folder + cross-folder), not `rewriteLinksForPageMove`
+- LLM Strategy C in merge suggester is a stub — ready for Ollama backend integration
+- Bulk operations use 2-phase approach: file operations → batch wikilink rewrite (atomic within lock)
+- Recategorize automatically moves pages to correct type folder when subtype changes cause type mismatch
 
 

@@ -389,7 +389,7 @@ function loadAllWikiEntries(wikiRoot: string, universeId: string): LoreContext {
       (p) => !p.frontmatter.universe || p.frontmatter.universe === universeId
     );
 
-    const statusPriority: Record<string, number> = { locked: 0, reviewed: 1, draft: 2, rejected: 3 };
+    const statusPriority: Record<string, number> = { locked: 0, reviewed: 1, draft: 2, rejected: 3, dormant: 4 };
     filtered.sort(
       (a, b) =>
         (statusPriority[a.frontmatter.status ?? "draft"] ?? 2) -

@@ -21,6 +21,7 @@ import {
   Users as UsersIcon,
   FolderOpen,
   Shield,
+  Shuffle,
 } from "lucide-react";
 import { TIME } from "@/lib/config";
 import { renderLoop } from "@/lib/render-loop";
@@ -43,6 +44,7 @@ const navItems = [
   { href: "/voice-combiner", label: "Voice Mixer", icon: Volume2 },
   { href: "/jobs", label: "Jobs", icon: ListTodo },
   { href: "/admin/jobs", label: "Admin", icon: Shield },
+  { href: "/admin/restructure", label: "Restructure", icon: Shuffle },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

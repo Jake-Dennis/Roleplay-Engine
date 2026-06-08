@@ -24,6 +24,7 @@ const VALID_STATUSES: ReadonlyArray<WikiFrontmatter["status"]> = [
   "reviewed",
   "locked",
   "rejected",
+  "dormant",
 ];
 
 /**
@@ -81,7 +82,7 @@ export function serializeWikiFrontmatter(
  * Checks performed:
  * - `title` is a non-empty string
  * - `type` is one of: entity, concept, source, synthesis
- * - `status` is one of: draft, reviewed, locked, rejected
+ * - `status` is one of: draft, reviewed, locked, rejected, dormant
  *
  * @param fm - Frontmatter to validate
  * @returns Array of error messages (empty if valid)

@@ -47,6 +47,7 @@ export interface FileTreePageItem {
   title: string;
   type: string;
   order?: number;
+  status?: string;       // frontmatter status (used for dormant filtering)
 }
 
 export interface ReorderChange {
@@ -809,6 +810,7 @@ export default function FileTree({
   const lastCommittedRef = useRef<ReorderChange | null>(null);
   const [subfolderExpanded, setSubfolderExpanded] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
+  const [showDormant, setShowDormant] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -821,19 +823,32 @@ export default function FileTree({
 
   const orphanSet = useMemo(() => new Set(orphanPaths || []), [orphanPaths]);
 
+  // Filter out dormant pages unless showDormant is toggled on
+  const visiblePagesByFolder = useMemo<Record<string, FileTreePageItem[]>>(() => {
+    if (showDormant) return pagesByFolder;
+    const filtered: Record<string, FileTreePageItem[]> = {};
+    for (const [folder, pages] of Object.entries(pagesByFolder)) {
+      const nonDormant = pages.filter((p) => p.status !== "dormant");
+      if (nonDormant.length > 0) {
+        filtered[folder] = nonDormant;
+      }
+    }
+    return filtered;
+  }, [pagesByFolder, showDormant]);
+
   // Build 2-level hierarchy
-  const hierarchy = useMemo(() => buildHierarchy(pagesByFolder), [pagesByFolder]);
+  const hierarchy = useMemo(() => buildHierarchy(visiblePagesByFolder), [visiblePagesByFolder]);
 
   // Flatten pages into a single map for lookup
   const pageByPath = useMemo(() => {
     const map = new Map<string, FileTreePageItem>();
-    for (const pages of Object.values(pagesByFolder)) {
+    for (const pages of Object.values(visiblePagesByFolder)) {
       for (const p of pages) {
         map.set(p.path, p);
       }
     }
     return map;
-  }, [pagesByFolder]);
+  }, [visiblePagesByFolder]);
 
   const handleCreateComplete = useCallback(async (type: string, subtype: string | null, title: string) => {
     const typeDef = QUICK_CREATE_TYPES.find((t) => t.type === type);
@@ -1043,6 +1058,20 @@ export default function FileTree({
       <div className="flex items-center justify-between px-2 py-1 mb-1">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Pages</span>
         <div className="flex items-center gap-0.5">
+          {/* Dormant pages toggle */}
+          <label
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-text-muted hover:text-text-primary hover:bg-bg-raised transition-colors cursor-pointer"
+            title={showDormant ? "Hide dormant pages" : "Show dormant pages"}
+          >
+            <input
+              type="checkbox"
+              checked={showDormant}
+              onChange={(e) => setShowDormant(e.target.checked)}
+              className="w-2.5 h-2.5 rounded border-border-default accent-accent cursor-pointer"
+              aria-label="Show dormant pages"
+            />
+            <span>Dormant</span>
+          </label>
           {onCreateFolder && (
             <button
               onClick={onCreateFolder}

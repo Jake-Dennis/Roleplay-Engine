@@ -77,6 +77,7 @@ import { handleDecayRelationships } from "./jobs/decay-handler";
 import { handleRefineRelationshipSummary } from "./jobs/relationship-summary-handler";
 import { handleArchivalProcessing } from "./jobs/archival-handler";
 import { handleThreadAnalysis } from "./jobs/thread-analysis-handler";
+import { handleWikiSuggestRestructure } from "./jobs/wiki-restructure-suggestions";
 
 // ---------------------------------------------------------------------------
 // Job Processing
@@ -119,6 +120,8 @@ export async function processJob(job: QueuedJob): Promise<JobResult> {
       case "wiki_auto_extract":
       case "universe_wiki_sync":
         return await handleWikiJob(job.id, payload, job.type);
+      case "wiki_suggest_restructure":
+        return await handleWikiSuggestRestructure(job.id, payload);
       case "npc_evolution":
         return await handleNpcEvolutionJob(job.id, payload);
       case "npc_wiki_sync":

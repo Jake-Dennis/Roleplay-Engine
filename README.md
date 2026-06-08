@@ -94,6 +94,28 @@ For full details: [docs/wiki-folder-structure.md](docs/wiki-folder-structure.md)
 [docs/wiki-type-registry.md](docs/wiki-type-registry.md),
 [docs/wiki-migration-guide.md](docs/wiki-migration-guide.md).
 
+### Wiki Evolution
+
+The wiki subsystem includes **evolution tooling** (Plan 010) for maintaining,
+reorganizing, and cleaning up large wikis — bulk operations, page merging,
+dormancy management, and an admin restructure UI.
+
+| Tool | Purpose | Access |
+|------|---------|--------|
+| **Bulk Move** | Move all pages between folders in one batch, with automatic wikilink rewriting | `/admin/restructure` (Bulk Move tab) or `POST /api/wiki/bulk-move` |
+| **Bulk Re-categorize** | Change type/subtype/tags/status on pages matching a filter | `/admin/restructure` (Bulk Re-categorize tab) or `POST /api/wiki/bulk-recategorize` |
+| **Merge & Supersede** | Detect duplicate pages and combine them — content append, tag union, wikilink rewrite, soft-delete | `/admin/restructure` (Merge Suggestions tab) or `POST /api/wiki/merge` |
+| **Dormancy** | Soft-deactivate outdated or superseded pages — hidden from default views, excluded from LLM context, but wikilinks still resolve | `/admin/restructure` (Dormancy tab) or frontmatter panel |
+
+All tools default to **dry-run mode** — preview what will change before applying.
+Dormant pages can be woken (restored to draft) at any time. Merged pages preserve
+their content in the target page and are marked `superseded_by` for full traceability.
+
+For full details: [docs/wiki-evolution-tooling.md](docs/wiki-evolution-tooling.md),
+[docs/wiki-bulk-operations.md](docs/wiki-bulk-operations.md),
+[docs/wiki-merge-workflow.md](docs/wiki-merge-workflow.md),
+[docs/wiki-dormancy.md](docs/wiki-dormancy.md).
+
 The request flow works like this. A user sends a message from the chat UI, which hits the session API. The server assembles context from recent messages, wiki lore, narrative memories, character relationships, and active story threads. It sends the assembled prompt to a local Ollama instance for generation. The response streams back to the client via SSE, with optional TTS audio generated through Kokoro. Background jobs handle wiki enrichment, memory compression, and relationship decay during idle time.
 
 ## Getting Started
@@ -165,6 +187,10 @@ The app binds to `http://0.0.0.0:3000` by default.
 - [Wiki Schema Reference](docs/wiki-schema-reference.md) - Frontmatter fields, page types, wikilink conventions
 - [Wiki Folder Structure](docs/wiki-folder-structure.md) - 2-level subtype folder hierarchy, resolution pipeline, config integration
 - [Wiki Type Registry](docs/wiki-type-registry.md) - Type/subtype configuration, custom types, Lucide icons
+- [Wiki Evolution Tooling](docs/wiki-evolution-tooling.md) - Overview of Plan 010 tools: bulk move, recategorize, merge, dormancy
+- [Wiki Bulk Operations](docs/wiki-bulk-operations.md) - Bulk move and recategorize reference (dry-run, preview, apply workflow)
+- [Wiki Merge Workflow](docs/wiki-merge-workflow.md) - Duplicate detection (3 strategies), merge process, redirects, restore
+- [Wiki Dormancy](docs/wiki-dormancy.md) - Dormant page lifecycle, wake/delete, effects on LLM context and file tree
 - [Wiki Migration Guide (Legacy DB)](docs/wiki-migration.md) - Migrating from pre-wiki lore database
 - [Wiki Migration Guide (Subtype Folders)](docs/wiki-migration-guide.md) - Migrating to 2-level subtype folder structure
 

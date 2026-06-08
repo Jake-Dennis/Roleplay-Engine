@@ -96,6 +96,7 @@ export default function WikiHomePage() {
         title: (p.frontmatter?.title as string) || p.path.split('/').pop()?.replace('.md', '') || p.path,
         type: (p.frontmatter?.type as string) || '',
         order: p.frontmatter?.order as number | undefined,
+        status: p.frontmatter?.status as string | undefined,
       });
     }
     return grouped;

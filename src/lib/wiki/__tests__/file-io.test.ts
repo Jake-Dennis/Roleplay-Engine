@@ -10,7 +10,7 @@ import os from "os";
  * we use a cache-busting dynamic import in beforeAll.
  */
 
-let listWikiPages: (wikiRoot: string) => any[];
+let listWikiPages: (wikiRoot: string, options?: { includeDormant?: boolean }) => any[];
 let TEST_ROOT: string;
 
 beforeAll(async () => {
@@ -32,8 +32,8 @@ function writePage(relPath: string, frontmatter: Record<string, unknown>, body =
   fs.writeFileSync(fullPath, content, "utf-8");
 }
 
-function createPage(title: string, type: string, subtype?: string, order?: number): Record<string, unknown> {
-  const fm: Record<string, unknown> = { title, type, status: "draft" };
+function createPage(title: string, type: string, subtype?: string, order?: number, status?: string): Record<string, unknown> {
+  const fm: Record<string, unknown> = { title, type, status: status ?? "draft" };
   if (subtype) fm.subtype = subtype;
   if (order !== undefined) fm.order = order;
   return fm;
@@ -159,5 +159,32 @@ describe("listWikiPages (subfolder-aware)", () => {
     expect(pages[0].frontmatter.type).toBe("entity");
     expect(pages[0].frontmatter.subtype).toBe("character");
     expect(pages[0].content.trim()).toBe("Gandalf was a wizard.");
+  });
+
+  it("excludes dormant pages by default", () => {
+    writePage("entities/characters/active.md", createPage("Active", "entity", "character", undefined, "draft"));
+    writePage("entities/characters/dormant.md", createPage("Dormant", "entity", "character", undefined, "dormant"));
+    const pages = listWikiPages(TEST_ROOT);
+    expect(pages).toHaveLength(1);
+    expect(pages[0].frontmatter.title).toBe("Active");
+  });
+
+  it("includes dormant pages when includeDormant=true", () => {
+    writePage("entities/characters/active.md", createPage("Active", "entity", "character", undefined, "draft"));
+    writePage("entities/characters/dormant.md", createPage("Dormant", "entity", "character", undefined, "dormant"));
+    const pages = listWikiPages(TEST_ROOT, { includeDormant: true });
+    expect(pages).toHaveLength(2);
+  });
+
+  it("excludes only dormant pages — other statuses remain visible", () => {
+    writePage("entities/characters/draft.md", createPage("Draft", "entity", "character", undefined, "draft"));
+    writePage("entities/characters/reviewed.md", createPage("Reviewed", "entity", "character", undefined, "reviewed"));
+    writePage("entities/characters/locked.md", createPage("Locked", "entity", "character", undefined, "locked"));
+    writePage("entities/characters/rejected.md", createPage("Rejected", "entity", "character", undefined, "rejected"));
+    writePage("entities/characters/dormant.md", createPage("Dormant", "entity", "character", undefined, "dormant"));
+    const pages = listWikiPages(TEST_ROOT);
+    expect(pages).toHaveLength(4);
+    const titles = pages.map((p) => p.frontmatter.title).sort();
+    expect(titles).toEqual(["Draft", "Locked", "Rejected", "Reviewed"]);
   });
 });
