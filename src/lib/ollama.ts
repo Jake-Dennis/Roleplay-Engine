@@ -1,35 +1,13 @@
-﻿import { Agent, setGlobalDispatcher } from "undici";
-import { OLLAMA_CONFIG, TIMEOUTS, TTS_CONFIG } from "./config";
+﻿import { OLLAMA_CONFIG, TIMEOUTS, TTS_CONFIG } from "./config";
 import { getDb } from "./db";
 import { safeParseWarn } from "@/lib/safe-json";
 import { logger } from "@/lib/logger";
 import { getServerConfig } from "./server-config";
 
-// ---------------------------------------------------------------------------
-// Undici Agent — relaxed timeouts for cold-start model loads
-// ---------------------------------------------------------------------------
-
-/**
- * Node.js's built-in fetch() (undici under the hood) has default internal
- * timeouts that fire BEFORE any user-provided AbortSignal:
- *   - headersTimeout: 10s (time to receive response headers)
- *   - bodyTimeout: 30s  (time from headers to last byte of body)
- *
- * Ollama can take >10s just to load a cold model into VRAM before sending
- * response headers. With the default 10s headersTimeout, the request fails
- * before our 30-minute AbortSignal can even fire.
- *
- * We set a global undici Agent with timeouts matching OLLAMA_CONFIG, so
- * the AbortSignal controls the real timeout. Since per-request abort
- * signals (TTS: 3s, health: 5s) fire much sooner than 30 min, setting a
- * global relaxed timeout is safe — it only matters for requests that
- * actually take minutes (i.e. cold Ollama model loads).
- */
-const relaxedAgent = new Agent({
-  headersTimeout: OLLAMA_CONFIG.timeout,
-  bodyTimeout: OLLAMA_CONFIG.timeout,
-});
-setGlobalDispatcher(relaxedAgent);
+// NOTE: The global undici Agent with relaxed headersTimeout/bodyTimeout is
+// set in startup-check.ts (runStartupChecks), which executes fresh on every
+// server boot. Module-level Agent setup in this file was unreliable because
+// Next.js/Turbopack caches module evaluation across file changes.
 
 // ---------------------------------------------------------------------------
 // Output Validation

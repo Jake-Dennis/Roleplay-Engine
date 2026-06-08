@@ -10,9 +10,22 @@
 
 import fs from 'fs';
 import path from 'path';
+import { Agent, setGlobalDispatcher } from 'undici';
 import { APP_CONFIG, OLLAMA_CONFIG, TIMEOUTS } from '@/lib/config';
 
 export async function runStartupChecks(): Promise<void> {
+  // Set global undici Agent with relaxed timeouts — undici's default 10s
+  // headersTimeout kills cold-start Ollama model loads (>10s to load into
+  // VRAM before sending response headers). The AbortSignal passed to each
+  // fetch() call controls the real timeout; this is just a safety ceiling
+  // so the default 10s limit doesn't fire first.
+  // NOTE: Must be set here (not in ollama.ts) because Next.js/Turbopack
+  // caches module evaluation; startup-check.ts runs fresh on every boot.
+  setGlobalDispatcher(new Agent({
+    headersTimeout: OLLAMA_CONFIG.timeout,
+    bodyTimeout: OLLAMA_CONFIG.timeout,
+  }));
+
   // JWT_SECRET check
   if (!process.env.JWT_SECRET) {
     console.error('[startup] FATAL: JWT_SECRET is required');

@@ -788,12 +788,19 @@ These fire BEFORE any user-provided AbortSignal because undici checks its own ti
 4. `run.bat` — Fixed broken pre-checks: replaced `Net.WebClient` (missing `Timeout` property in modern .NET) with `Invoke-RestMethod -TimeoutSec 4`. Corrected TTS default host from `192.168.6.1` → `192.168.4.2`.
 5. `.opencode/todo.md` — Updated.
 6. `.opencode/work-log.md` — This entry.
+7. **V2 fix (same cycle):** Changed from `dispatcher` option per-request to `setGlobalDispatcher`. The per-request `dispatcher` option can be stripped by Next.js's fetch patching (Turbopack may not pass through unknown options). `setGlobalDispatcher` avoids this entirely by setting the global undici agent — independent of how Next.js wraps `fetch()`.
 
 **Verified:**
 - `npx tsc --noEmit` passes (pre-existing test file errors only)
-- qwen3.5:9B cold-start generation succeeded in 17.7s
-- undici Agent + dispatcher works correctly with fetch()
+- qwen3.5:9B cold-start generation succeeded in 17.7s (from raw Node.js)
+- qwen3.5:9B cold-start generation succeeded in 24.5s (from raw Node.js, second test)
+- `setGlobalDispatcher` works correctly with plain `fetch()`
 - run.bat pre-checks now use `Invoke-RestMethod` which works on all modern .NET
+- TTS health check (3s timeout) is unaffected — its AbortSignal fires before undici's relaxed headersTimeout
 
 **TypeScript:** Source files clean (ollama.test.ts has pre-existing mock errors unrelated to changes)
-**Status:** Staged, awaiting user approval to push.
+**Status:** Committed. User MUST restart dev server to pick up the global dispatcher.
+
+**NOTE:** The initial `dispatcher`-on-fetch approach in `4cbd1c6` was superseded by this
+`setGlobalDispatcher` approach. The module needs to be re-executed for
+`setGlobalDispatcher` to take effect — a dev server restart is required.
