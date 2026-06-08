@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { OLLAMA_CONFIG, TTS_CONFIG, TIMEOUTS } from "@/lib/config";
+import { TIMEOUTS } from "@/lib/config";
 import { getAuthToken } from "@/lib/auth-token";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { getServerConfig } from "@/lib/server-config";
 import { getClientIp, checkRateLimit, createRateLimitResponse } from "@/lib/rate-limiter";
 import { logger } from "@/lib/logger";
 
@@ -27,17 +28,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Accept optional custom URLs from query params (e.g. from user settings).
-  // The health check by default uses the server config URLs, but if a user
-  // has configured custom Ollama/TTS URLs in their settings, the frontend
-  // can pass them here for more accurate health reporting.
+  // Read the resolved Ollama/TTS URLs from server config (merges DB overrides,
+  // env vars, and hardcoded defaults). Accept optional ?ollamaUrl=/ttsUrl=
+  // query params for callers that want to override (e.g., the Settings page
+  // testing a URL before saving).
+  const cfg = getServerConfig();
   const { searchParams } = new URL(request.url);
-  const customOllamaUrl = searchParams.get("ollamaUrl") || undefined;
-  const customTtsUrl = searchParams.get("ttsUrl") || undefined;
+  const ollamaUrl = searchParams.get("ollamaUrl") || cfg.ollama.baseUrl;
+  const ttsUrl = searchParams.get("ttsUrl") || cfg.tts.baseUrl;
 
   const [ollamaResult, kokoroResult, dbResult] = await Promise.allSettled([
-    checkOllama(customOllamaUrl),
-    checkKokoro(customTtsUrl),
+    checkOllama(ollamaUrl),
+    checkKokoro(ttsUrl),
     checkDb(),
   ]);
 
@@ -58,11 +60,10 @@ export async function GET(request: NextRequest) {
   }, { status: allHealthy ? 200 : 503 });
 }
 
-async function checkOllama(customUrl?: string) {
+async function checkOllama(url: string) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), TIMEOUTS.HEALTH_CHECK);
-    const url = customUrl || OLLAMA_CONFIG.baseUrl;
 
     const response = await fetch(`${url}/api/tags`, {
       signal: controller.signal,
@@ -90,11 +91,10 @@ async function checkOllama(customUrl?: string) {
   }
 }
 
-async function checkKokoro(customUrl?: string) {
+async function checkKokoro(url: string) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), TIMEOUTS.HEALTH_CHECK);
-    const url = customUrl || TTS_CONFIG.baseUrl;
 
     const response = await fetch(`${url}/v1/audio/voices`, {
       signal: controller.signal,

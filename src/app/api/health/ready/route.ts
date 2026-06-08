@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { OLLAMA_CONFIG, TTS_CONFIG, TIMEOUTS } from "@/lib/config";
+import { TIMEOUTS } from "@/lib/config";
 import { getAuthToken } from "@/lib/auth-token";
 import { verifyToken } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { getServerConfig } from "@/lib/server-config";
 import { getClientIp } from "@/lib/rate-limiter";
 import { logger } from "@/lib/logger";
 
@@ -21,9 +22,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const cfg = getServerConfig();
+
   const [ollamaResult, kokoroResult, dbResult] = await Promise.allSettled([
-    checkOllama(),
-    checkKokoro(),
+    checkOllama(cfg.ollama.baseUrl),
+    checkKokoro(cfg.tts.baseUrl),
     checkDb(),
   ]);
 
@@ -43,12 +46,12 @@ export async function GET(request: NextRequest) {
   }, { status: allHealthy ? 200 : 503 });
 }
 
-async function checkOllama() {
+async function checkOllama(baseUrl: string) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), TIMEOUTS.HEALTH_CHECK);
 
-    const response = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/tags`, {
+    const response = await fetch(`${baseUrl}/api/tags`, {
       signal: controller.signal,
     });
     clearTimeout(timeout);
@@ -70,12 +73,12 @@ async function checkOllama() {
   }
 }
 
-async function checkKokoro() {
+async function checkKokoro(baseUrl: string) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), TIMEOUTS.HEALTH_CHECK);
 
-    const response = await fetch(`${TTS_CONFIG.baseUrl}/v1/audio/voices`, {
+    const response = await fetch(`${baseUrl}/v1/audio/voices`, {
       signal: controller.signal,
     });
     clearTimeout(timeout);
