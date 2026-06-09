@@ -266,10 +266,11 @@ Return JSON array:
 Existing wiki pages: ${existingTitles || "none"}
 
 Rules:
-- Extract ONLY relationships between clearly named entities
+- Extract relationships between clearly named entities
 - Both source and target must be named entities present in the scene
 - Nature describes the current dynamic between them
-- Skip passing mentions. Max 5 relationships total.
+- Include relationships involving minor characters (guards, servants, strangers) if they had meaningful interaction
+- Max 8 relationships total.
 - Return empty array [] if nothing to extract
 
 AI Response to analyze:
@@ -291,7 +292,7 @@ Return JSON array:
   }
 ]
 
-Universe Context:
+Universe Context (this is the existing world knowledge — use it to inform descriptions):
 <user_content>
 ${universeContext}
 </user_content>
@@ -299,11 +300,13 @@ ${universeContext}
 Existing wiki pages (skip these): ${existingTitles || "none"}
 
 Rules:
-- Extract ONLY named entities central to the scene
+- Extract named entities central to the scene
 - Types: characters → "character", locations → "location", organizations → "faction"
-- Skip passing mentions. Max 5 entities total.
+- Include named characters even if briefly mentioned (innkeepers, strangers, guards, merchants, etc.)
+- Always include the setting/location where the scene takes place, even if it's a known location
+- Max 10 entities total.
 - Return empty array [] if nothing to extract
-- Descriptions should be 1-3 sentences
+- Descriptions should be 2-3 sentences covering: appearance, role in the scene, personality/mannerisms (for characters), or atmosphere and notable features (for locations)
 
 AI Response to analyze:
 <user_content>

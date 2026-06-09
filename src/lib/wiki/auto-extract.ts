@@ -49,6 +49,62 @@ const IMPORTANCE_ORDER: Record<string, number> = {
 const ENTITIES_FOLDER = "entities";
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a universe context string from existing wiki pages.
+ * Reads the universe overview (concepts/about.md) and existing entity pages
+ * so the LLM has background lore when extracting entities from a response.
+ */
+function buildUniverseContext(wikiRoot: string): string {
+  const parts: string[] = [];
+  const MAX_CONTEXT_CHARS = 1500; // Keep extraction prompt manageable
+
+  // Read universe overview
+  const aboutPath = path.join(wikiRoot, "concepts", "about.md");
+  if (fs.existsSync(aboutPath)) {
+    try {
+      const aboutPage = readWikiPage(aboutPath);
+      const title = aboutPage.frontmatter.title || "Universe Overview";
+      const content = (aboutPage.content || "").trim();
+      if (content) {
+        const overview = `${content.substring(0, 800)}`;
+        parts.push(`[${title}]\n${overview}`);
+      }
+    } catch {
+      // Non-blocking — overview is optional context
+    }
+  }
+
+  // Read existing entity descriptions (up to 8 to stay within budget)
+  const entitiesDir = path.join(wikiRoot, "entities");
+  if (fs.existsSync(entitiesDir)) {
+    try {
+      const entityFiles = fs.readdirSync(entitiesDir).filter(f => f.endsWith(".md")).slice(0, 8);
+      for (const file of entityFiles) {
+        const currentLen = parts.join("\n").length;
+        if (currentLen >= MAX_CONTEXT_CHARS) break;
+        try {
+          const page = readWikiPage(path.join(entitiesDir, file));
+          const name = page.frontmatter.title || file.replace(".md", "");
+          const desc = (page.content || "").trim();
+          if (desc) {
+            parts.push(`- ${name}: ${desc.substring(0, 150)}`);
+          }
+        } catch {
+          // Skip unreadable entity pages
+        }
+      }
+    } catch {
+      // Non-blocking — entities are optional context
+    }
+  }
+
+  return parts.join("\n");
+}
+
+// ---------------------------------------------------------------------------
 // Auto-Extract
 // ---------------------------------------------------------------------------
 
@@ -62,7 +118,7 @@ const ENTITIES_FOLDER = "entities";
  * 3. Build list of existing page titles (for the LLM prompt)
  * 4. Call LLM to extract entities from the response
  * 5. Parse the JSON array returned by the LLM
- * 6. Sort by importance, take top 3, create/update/skip each
+ * 6. Sort by importance, take top 6, create/update/skip each
  * 7. Regenerate the wiki index
  * 8. Append to the operation log
  * 9. Return the summary
@@ -99,7 +155,8 @@ export async function extractAndCreateWikiEntities(
     // Step 4: Call LLM with extraction prompt
     let response: string;
     try {
-      const prompt = PROMPTS.extractEntitiesFromResponse(aiResponse, "", existingTitles);
+      const universeContext = buildUniverseContext(wikiRoot);
+      const prompt = PROMPTS.extractEntitiesFromResponse(aiResponse, universeContext, existingTitles);
       response = await generateText(prompt, { temperature: 0.3, userId, model: getActiveJobModel(userId) });
     } catch (err) {
       logger.error("[auto-extract] LLM call failed:", err);
@@ -119,7 +176,7 @@ export async function extractAndCreateWikiEntities(
       return { created: [], updated: [], skipped: [], errors: ["parse"] };
     }
 
-    // Step 6: Process entities with max 3 operations
+    // Step 6: Process entities with max 6 operations
     // Sort by importance: high first, medium second, low last
     entities.sort(
       (a, b) =>
@@ -127,7 +184,7 @@ export async function extractAndCreateWikiEntities(
         (IMPORTANCE_ORDER[b.importance] ?? 99)
     );
 
-    const maxOps = Math.min(entities.length, 3);
+    const maxOps = Math.min(entities.length, 6);
     const created: string[] = [];
     const updated: string[] = [];
     const skipped: string[] = [];

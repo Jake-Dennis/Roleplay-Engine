@@ -804,3 +804,43 @@ These fire BEFORE any user-provided AbortSignal because undici checks its own ti
 **NOTE:** The initial `dispatcher`-on-fetch approach in `4cbd1c6` was superseded by this
 `setGlobalDispatcher` approach. The module needs to be re-executed for
 `setGlobalDispatcher` to take effect — a dev server restart is required.
+
+---
+
+## 2026-06-09 — Cycle: Wiki extraction + retrieval improvements
+
+**Trigger:** User reported "AI isn't discerning places and people in the wiki"
+
+**A: Extraction prompt tuning**
+- Increased entity limit from 5 → 10 in `extractEntitiesFromResponse`
+- Increased relationship limit from 5 → 8 in `extractRelationshipsFromResponse`
+- Removed "Skip passing mentions" — replaced with "Include named characters even if briefly mentioned"
+- Added location extraction: "Always include the setting/location"
+- Richer description guidance: 2-3 sentences covering appearance, role, personality, atmosphere
+- Added `buildUniverseContext(wikiRoot)` helper that reads `concepts/about.md` + existing entities
+- Universe context is now passed to extraction prompt (was hardcoded `""`)
+- Increased maxOps from 3 → 6 per auto-extract turn
+- Added 1500 char budget to `buildUniverseContext` to avoid context overflow
+- Fixed stale JSDoc comment (top 3 → top 6)
+
+**C: Generation prompt improvements**
+- Universe overview (`concepts/about.md`) injected as first lore entry in `getWikiContext()`
+- Dedup check prevents duplicate overview if already loaded via scoring
+- `ensureOverviewInResult()` helper protects overview from being sliced out by re-ranking
+- LORE budget increased from 20% → 25% (MESSAGES reduced from 38% → 33% to keep sum = 1.0)
+- Active Entities section now includes descriptions from lore entries, not just names
+- WIKILINK_INSTRUCTION updated: stronger emphasis, explains wiki is critical for future responses
+- Active entities section builds a `loreMap` for description cross-reference
+
+**Files changed:**
+- `src/lib/prompts.ts` — extraction + relationship prompts
+- `src/lib/wiki/auto-extract.ts` — buildUniverseContext, maxOps 6, char budget
+- `src/lib/retrieval.ts` — universe overview injection, dedup, slice protection
+- `src/lib/prompt-builder.ts` — active entities descriptions, WIKILINK_INSTRUCTION
+- `src/lib/config.ts` — LORE 0.20→0.25, MESSAGES 0.38→0.33
+
+**Decisions:**
+- Universe overview is always injected as first lore entry (ensures world-level context)
+- Budget fractions trimmed proportionally (MESSAGES donated 5% to LORE, sum stays 1.0)
+- buildUniverseContext capped at 1500 chars to protect extraction context window
+- ensureOverviewInResult runs after both re-ranking paths to protect from slice(0,10)

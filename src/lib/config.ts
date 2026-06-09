@@ -194,8 +194,8 @@ export const JOB_CONFIG = {
  */
 export const PROMPT_BUDGET = {
   OVERHEAD: 500,         // System prompt + wikilink instruction + injection protection
-  MESSAGES: 0.38,        // Recent conversation history (38% of remaining 5500)
-  LORE: 0.20,            // Nearby wiki entries (20%)
+  MESSAGES: 0.33,        // Recent conversation history (33% of remaining 5500)
+  LORE: 0.25,            // Nearby wiki entries (25%)
   MEMORIES: 0.15,        // Narrative memories (15%)
   RELATIONSHIPS: 0.10,   // Character relationships (10%)
   ACTIVE_THREADS: 0.10,  // Narrative threads (10%)

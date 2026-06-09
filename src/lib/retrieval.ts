@@ -519,7 +519,49 @@ export async function getWikiContext(
       }
     }
 
+    // --- Inject universe overview as the first lore entry (always included) ---
+    // This ensures the AI always has world-level context about the setting.
+    // Dedup: check if the overview was already loaded via scoring to avoid duplicates.
+    let hasOverviewEntry = false;
+    try {
+      const aboutPath = path.join(wikiRoot, "concepts", "about.md");
+      if (fs.existsSync(aboutPath)) {
+        // Check if already present in entries
+        hasOverviewEntry = entries.some(e =>
+          e.type === "concept" && (e.name.toLowerCase().includes("overview") || e.name.toLowerCase().includes("universe"))
+        );
+        if (!hasOverviewEntry) {
+          const overviewPage = readWikiPage(aboutPath);
+          const overviewTitle = overviewPage.frontmatter.title || "Universe Overview";
+          const overviewContent = (overviewPage.content || "").trim();
+          if (overviewContent) {
+            entries.unshift({
+              id: -1,
+              name: overviewTitle,
+              description: overviewContent.substring(0, 500),
+              type: "concept",
+            });
+            hasOverviewEntry = true;
+          }
+        }
+      }
+    } catch { /* non-blocking — universe overview is optional */ }
+
     if (entries.length > 0) {
+      // Helper: ensure universe overview is never dropped by re-ranking slice()
+      const ensureOverviewInResult = (result: LoreContext["entries"]): LoreContext["entries"] => {
+        if (!hasOverviewEntry) return result;
+        const hasIt = result.some(e => e.id === -1);
+        if (hasIt) return result;
+        // Overview was sliced out — find it in original entries and prepend
+        const overview = entries.find(e => e.id === -1);
+        if (overview) {
+          result.pop(); // drop lowest-ranked entry to stay within budget
+          result.unshift(overview);
+        }
+        return result;
+      };
+
       // --- Entity mention boost for scoring (Task 25) — fetched once for both paths ---
       let mentionNames: string[] = [];
       try {
@@ -579,8 +621,9 @@ export async function getWikiContext(
               // Re-sort by hybrid score descending
               withHybridScores.sort((a, b) => b.hybridScore - a.hybridScore);
               
+              const vectorEntries = withHybridScores.slice(0, 10).map(e => e.entry);
               return {
-                entries: withHybridScores.slice(0, 10).map(e => e.entry)
+                entries: ensureOverviewInResult(vectorEntries)
               };
             }
           }
@@ -599,10 +642,10 @@ export async function getWikiContext(
           return { entry, score: keywordScore + entityBoost, entityBoost };
         });
         withEntityBoost.sort((a, b) => b.score - a.score);
-        return { entries: withEntityBoost.slice(0, 10).map(e => e.entry) };
+        return { entries: ensureOverviewInResult(withEntityBoost.slice(0, 10).map(e => e.entry)) };
       }
 
-      return { entries };
+      return { entries: ensureOverviewInResult(entries) };
     }
 
     return { entries: [] };
