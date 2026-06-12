@@ -84,21 +84,31 @@ export async function processRelationshipAnalysis(
 
     if (existing) {
       // Update existing relationship
-      db.prepare(`
-        UPDATE relationships
-        SET emotional_state = ?, relationship_stage = ?, shared_history = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(rel.emotionalState, rel.stage, rel.sharedHistory, existing.id);
+      try {
+        db.prepare(`
+          UPDATE relationships
+          SET emotional_state = ?, relationship_stage = ?, shared_history = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).run(rel.emotionalState, rel.stage, rel.sharedHistory, existing.id);
+      } catch (err) {
+        console.error("[SQL ERROR] UPDATE relationships failed", { error: String(err), rel, existingId: existing.id });
+        throw err;
+      }
 
       // Sync to markdown files
       syncRelationshipToFilesystem(existing.id);
     } else {
       // Create new relationship
       const relId = crypto.randomUUID();
-      db.prepare(`
-        INSERT INTO relationships (id, user_id, source_entity, target_entity, emotional_state, relationship_stage, shared_history, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      `).run(relId, userId, rel.source, rel.target, rel.emotionalState, rel.stage, rel.sharedHistory);
+      try {
+        db.prepare(`
+          INSERT INTO relationships (id, user_id, source_entity, target_entity, emotional_state, relationship_stage, shared_history, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        `).run(relId, userId, rel.source, rel.target, rel.emotionalState, rel.stage, rel.sharedHistory);
+      } catch (err) {
+        console.error("[SQL ERROR] INSERT relationships failed", { error: String(err), relId, rel });
+        throw err;
+      }
 
       // Sync to markdown files
       syncRelationshipToFilesystem(relId);
@@ -173,7 +183,7 @@ Recent messages:
 ${messageText}
 
 For each pair of entities that have interacted, provide:
-- emotionalState: current emotional state (e.g., "friendly", "tense", "romantic", "hostile", "neutral", "trusting")
+- emotionalState: a JSON object representing an emotion vector with scores 0-1, e.g. {"trust":0.8,"familiarity":0.6,"warmth":0.7,"tension":0.1}. Use keys like trust, familiarity, warmth, tension, respect, attraction, hostility.
 - stage: relationship stage (e.g., "strangers", "acquaintances", "friends", "close_friends", "allies", "rivals", "enemies", "lovers")
 - sharedHistory: brief summary of what happened between them
 
@@ -182,7 +192,7 @@ Format as JSON array:
   {
     "source": "entity name",
     "target": "entity name",
-    "emotionalState": "state",
+    "emotionalState": {"trust": 0.8, "familiarity": 0.6},
     "stage": "stage",
     "sharedHistory": "summary"
   }
