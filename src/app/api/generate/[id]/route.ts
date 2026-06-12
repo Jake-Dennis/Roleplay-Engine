@@ -280,7 +280,7 @@ export async function POST(
           model: resolvedModel,
           temperature: undefined,
           top_p: undefined,
-          num_ctx: undefined,
+          num_ctx: numCtx,
           think: getServerConfig().ollama.thinkingMode ? undefined : false,
         });
 
