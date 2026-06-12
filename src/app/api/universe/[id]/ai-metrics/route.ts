@@ -57,7 +57,6 @@ export const GET = withErrorHandler(async (
   const contextWindow = cfg.modelDefaults?.[model]?.numCtx || 131072;
   const choicesModel = cfg.ollama.choicesModel || null;
   const embeddingModel = cfg.ollama.embeddingModel || null;
-  const messageHistoryLimit = cfg.ollama.messageHistoryLimit ?? 30;
 
   let availableModels: string[] = [];
   try {
@@ -129,13 +128,13 @@ export const GET = withErrorHandler(async (
 
   const overheadTokens = 500; // system prompt + instructions
 
-  // Recent messages (capped at messageHistoryLimit)
+  // All non-deleted messages
   const recentMessages = db.prepare(
     `SELECT content FROM messages m
      JOIN sessions s ON s.id = m.session_id
      WHERE s.universe_id = ? AND s.owner_id = ? AND m.is_deleted = 0
-     ORDER BY m.timestamp DESC LIMIT ?`
-  ).all(universeId, userId, messageHistoryLimit) as { content: string }[];
+     ORDER BY m.timestamp DESC`
+  ).all(universeId, userId) as { content: string }[];
 
   let msgTokens = 0;
   for (const msg of recentMessages) {
@@ -231,7 +230,6 @@ export const GET = withErrorHandler(async (
       contextWindow,
       choicesModel,
       embeddingModel,
-      messageHistoryLimit,
       availableModels,
     },
     context: {

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Gauge } from "lucide-react";
+import { ArrowLeft, Brain, ScrollText } from "lucide-react";
 import Link from "next/link";
 import { OllamaSettingsSection } from "../ollama-settings";
+import { buildSystemPrompt } from "@/lib/prompt-builder";
 import { TTSSettingsSection } from "../tts-settings";
 import { ConnectionStatusSection } from "@/components/settings/connection-status-section";
 import { NarratorVoiceSection } from "@/components/settings/narrator-voice-section";
@@ -51,6 +52,7 @@ export default function ServerSettingsPage() {
   const [selectedEmbedding, setSelectedEmbedding] = useState("");
   const [selectedNumCtx, setSelectedNumCtx] = useState(16384);
   const [ollamaUrl, setOllamaUrl] = useState("");
+  const [choicesModel, setChoicesModel] = useState<string | null>(null);
   const [modelLoading, setModelLoading] = useState(false);
   const [modelSaving, setModelSaving] = useState(false);
   const [modelSaved, setModelSaved] = useState(false);
@@ -160,6 +162,7 @@ export default function ServerSettingsPage() {
       setSelectedLLM(data.ollama?.model ?? "");
       setSelectedEmbedding(data.ollama?.embeddingModel ?? "");
       setThinkingMode(data.ollama?.thinkingMode ?? false);
+      setChoicesModel(data.ollama?.choicesModel ?? null);
 
       // Capture the global defaults BEFORE applying per-model overrides,
       // so the "Reset to global" button always restores the true global
@@ -551,25 +554,50 @@ export default function ServerSettingsPage() {
         // Per-model overrides
         hasModelOverrides={Boolean(selectedLLM && modelDefaults[selectedLLM])}
         onResetModelOverrides={handleResetModelOverrides}
-        onApplyAutoTune={handleApplyAutoTune}
       />
 
-      {/* Link to the new benchmark page */}
-      <Link
-        href="/settings/benchmark"
-        className="flex items-center gap-2 rounded-xl border border-border-default bg-bg-elevated p-5 hover:border-accent transition-colors group"
-      >
-        <Gauge className="h-4 w-4 text-text-accent" />
-        <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors">
-            LLM Benchmark
-          </h2>
-          <p className="text-xs text-text-muted mt-0.5">
-            Find optimal num_ctx × num_predict for any model, plus standalone roleplay lore fidelity testing
-          </p>
+      {/* Choices Model */}
+      <div className="rounded-xl border border-border-default bg-bg-elevated p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Brain className="h-4 w-4 text-text-secondary" />
+          <h2 className="text-sm font-medium text-text-primary">Choices Model</h2>
         </div>
-        <span className="text-xs text-accent shrink-0">Open →</span>
-      </Link>
+        <p className="text-xs text-text-muted mb-3">
+          Separate model for generating narrative choices. Leave empty to use the chat model.
+        </p>
+        <select
+          value={choicesModel || ""}
+          onChange={async (e) => {
+            const val = e.target.value || null;
+            setChoicesModel(val);
+            await fetch("/api/settings", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ollamaChoicesModel: val }),
+            });
+          }}
+          className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary"
+        >
+          <option value="">Use chat model (default)</option>
+          {models.map((m: { name: string }) => (
+            <option key={m.name} value={m.name}>{m.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* System Prompt */}
+      <div className="rounded-xl border border-border-default bg-bg-elevated p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <ScrollText className="h-4 w-4 text-text-secondary" />
+          <h2 className="text-sm font-medium text-text-primary">System Prompt</h2>
+        </div>
+        <p className="text-xs text-text-muted mb-3">
+          This prompt is used for every generation. Change it in the source code at <code className="text-accent">src/lib/prompt-builder.ts</code>.
+        </p>
+        <pre className="whitespace-pre-wrap text-xxs text-text-secondary font-sans leading-relaxed bg-bg-raised rounded-lg p-3 max-h-96 overflow-y-auto border border-border-default">
+          {buildSystemPrompt('{universe name}', '{time period}')}
+        </pre>
+      </div>
 
       <NarratorVoiceSection voices={voices} narratorVoice={narratorVoice} voiceSaving={voiceSaving} voiceSuccess={voiceSuccess} voiceError={voiceError} setNarratorVoice={setNarratorVoice} handleNarratorVoice={handleNarratorVoice} />
 

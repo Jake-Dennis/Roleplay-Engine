@@ -812,21 +812,20 @@ export function getDecisionPoints(
 }
 
 /**
- * Fetch the most recent N messages for a session
+ * Fetch all non-deleted messages for a session (in chronological order).
+ * No artificial limit — the dynamic context budget handles truncation.
  */
 export function getRecentMessages(
   sessionId: string,
-  limit?: number
+  _limit?: number
 ): MessageContext {
-  const effectiveLimit = limit ?? getServerConfig().ollama.messageHistoryLimit ?? 30;
   const db = getDb();
   const messages = db.prepare(
     `SELECT id, sender_id as senderId, content, timestamp
      FROM messages
      WHERE session_id = ? AND is_deleted = 0
-     ORDER BY timestamp ASC
-     LIMIT ?`
-  ).all(sessionId, effectiveLimit) as { id: string; senderId: string | null; content: string; timestamp: string }[];
+     ORDER BY timestamp ASC`
+  ).all(sessionId) as { id: string; senderId: string | null; content: string; timestamp: string }[];
 
   return { messages: messages || [] };
 }

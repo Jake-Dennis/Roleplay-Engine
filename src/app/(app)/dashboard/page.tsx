@@ -40,7 +40,6 @@ interface AIMetricsData {
     contextWindow: number;
     choicesModel: string | null;
     embeddingModel: string | null;
-    messageHistoryLimit: number;
     availableModels: string[];
   };
   context: {

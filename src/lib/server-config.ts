@@ -44,6 +44,8 @@ export interface ResolvedServerConfig {
      */
     useJobsModel: boolean;
     jobModel: string | null;
+    /** Separate model for narrative choice generation */
+    choicesModel: string | null;
   };
   tts: {
     host: string;
@@ -80,6 +82,10 @@ export interface ModelSettings {
   topK?: number;
   numPredict?: number;
   numCtx?: number;
+  /** Target GPU index for Ollama inference (e.g., 1 for the card with more VRAM). */
+  mainGpu?: number;
+  /** Number of model layers to offload to GPU. Lower = more CPU/RAM usage, less VRAM pressure. */
+  numGpuLayers?: number;
 }
 
 export type ModelDefaultsMap = Record<string, ModelSettings>;
@@ -108,6 +114,7 @@ export type ServerConfigUpdate = Partial<{
    * via getServerConfig() and merge the change in the caller.
    */
   model_defaults: ModelDefaultsMap;
+  ollama_choices_model: string | null;
 }>;
 
 interface ServerConfigRow {
@@ -120,6 +127,7 @@ interface ServerConfigRow {
   ollama_use_custom_sampling: number | null;
   ollama_use_jobs_model: number | null;
   ollama_job_model: string | null;
+  ollama_choices_model: string | null;
   tts_host: string | null;
   tts_port: number | null;
   tts_default_voice: string | null;
@@ -160,6 +168,7 @@ export function getServerConfig(): ResolvedServerConfig {
       "ADD COLUMN ollama_use_custom_sampling INTEGER DEFAULT 0",
       "ADD COLUMN ollama_use_jobs_model INTEGER DEFAULT 0",
       "ADD COLUMN ollama_job_model TEXT",
+      "ADD COLUMN ollama_choices_model TEXT",
       "ADD COLUMN model_defaults TEXT",
     ]) {
       try { db.prepare(`ALTER TABLE server_config ${col}`).run(); } catch { /* already exists */ }
@@ -198,6 +207,7 @@ export function getServerConfig(): ResolvedServerConfig {
       useCustomSampling: row?.ollama_use_custom_sampling === null ? false : Boolean(row?.ollama_use_custom_sampling),
       useJobsModel: row?.ollama_use_jobs_model === null ? false : Boolean(row?.ollama_use_jobs_model),
       jobModel: row?.ollama_job_model ?? null,
+      choicesModel: row?.ollama_choices_model ?? null,
     },
     tts: {
       host: ttsHost,
@@ -228,6 +238,7 @@ export function updateServerConfig(changes: ServerConfigUpdate): void {
     "ADD COLUMN ollama_use_custom_sampling INTEGER DEFAULT 0",
     "ADD COLUMN ollama_use_jobs_model INTEGER DEFAULT 0",
     "ADD COLUMN ollama_job_model TEXT",
+    "ADD COLUMN ollama_choices_model TEXT",
     "ADD COLUMN model_defaults TEXT",
   ]) {
     try { db.prepare(`ALTER TABLE server_config ${col}`).run(); } catch { /* already exists */ }
@@ -275,6 +286,7 @@ function emptyRow(): Record<string, null> {
     tts_auto_play: null,
     tts_skip_long: null,
     tts_long_threshold: null,
+    ollama_choices_model: null,
     model_defaults: null,
   };
 }
