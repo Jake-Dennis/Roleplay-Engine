@@ -10,6 +10,7 @@ import { generateIndex } from "./index-generator";
 // @deprecated: logger.ts is deprecated — use history.ts (SQLite wiki_versions) instead
 import { appendLog } from "./logger";
 import { getWikiRoot } from "./wiki-root";
+import { queueJob } from "@/lib/jobs/queue";
 import type { WikiFrontmatter } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -59,9 +60,8 @@ const ENTITIES_FOLDER = "entities";
  */
 function buildUniverseContext(wikiRoot: string): string {
   const parts: string[] = [];
-  const MAX_CONTEXT_CHARS = 1500; // Keep extraction prompt manageable
 
-  // Read universe overview
+  // Read universe overview (full content)
   const aboutPath = path.join(wikiRoot, "concepts", "about.md");
   if (fs.existsSync(aboutPath)) {
     try {
@@ -69,28 +69,25 @@ function buildUniverseContext(wikiRoot: string): string {
       const title = aboutPage.frontmatter.title || "Universe Overview";
       const content = (aboutPage.content || "").trim();
       if (content) {
-        const overview = `${content.substring(0, 800)}`;
-        parts.push(`[${title}]\n${overview}`);
+        parts.push(`[${title}]\n${content}`);
       }
     } catch {
       // Non-blocking — overview is optional context
     }
   }
 
-  // Read existing entity descriptions (up to 8 to stay within budget)
+  // Read all existing entity descriptions (full content)
   const entitiesDir = path.join(wikiRoot, "entities");
   if (fs.existsSync(entitiesDir)) {
     try {
-      const entityFiles = fs.readdirSync(entitiesDir).filter(f => f.endsWith(".md")).slice(0, 8);
+      const entityFiles = fs.readdirSync(entitiesDir).filter(f => f.endsWith(".md"));
       for (const file of entityFiles) {
-        const currentLen = parts.join("\n").length;
-        if (currentLen >= MAX_CONTEXT_CHARS) break;
         try {
           const page = readWikiPage(path.join(entitiesDir, file));
           const name = page.frontmatter.title || file.replace(".md", "");
           const desc = (page.content || "").trim();
           if (desc) {
-            parts.push(`- ${name}: ${desc.substring(0, 150)}`);
+            parts.push(`- ${name}: ${desc}`);
           }
         } catch {
           // Skip unreadable entity pages
@@ -176,92 +173,56 @@ export async function extractAndCreateWikiEntities(
       return { created: [], updated: [], skipped: [], errors: ["parse"] };
     }
 
-    // Step 6: Process entities with max 6 operations
-    // Sort by importance: high first, medium second, low last
+    // Step 6: Queue each entity as a separate job
     entities.sort(
       (a, b) =>
         (IMPORTANCE_ORDER[a.importance] ?? 99) -
         (IMPORTANCE_ORDER[b.importance] ?? 99)
     );
 
-    const maxOps = Math.min(entities.length, 6);
     const created: string[] = [];
     const updated: string[] = [];
     const skipped: string[] = [];
     const errors: string[] = [];
 
-    for (let i = 0; i < maxOps; i++) {
-      const entity = entities[i];
-
-      // Each entity is wrapped in its own try/catch so one failure
-      // does not block the others.
+    for (const entity of entities) {
       try {
-        const sanitizedFilename = sanitizeWikiFilename(entity.name);
-        const pagePath = path.join(wikiRoot, ENTITIES_FOLDER, sanitizedFilename);
+        queueJob(userId, "wiki_create_entity", {
+          userId,
+          universeId: universeId || undefined,
+          sessionId,
+          entityType: entity.type,
+          entityId: entity.name,
+          name: entity.name,
+          type: entity.type,
+          description: entity.description,
+          importance: entity.importance,
+        }, "low", universeId || undefined);
+        created.push(entity.name);
 
-        if (fs.existsSync(pagePath)) {
-          // Page already exists — read frontmatter to decide action
-          const existingPage = readWikiPage(pagePath);
-          const status = existingPage.frontmatter.status;
-
-          if (status === "draft") {
-            // Draft pages get a new session-update section appended
-            const dateStr = new Date().toISOString().split("T")[0];
-            const updatedContent =
-              existingPage.content.trimEnd() +
-              `\n\n## Session Update (${dateStr})\n\n${entity.description}`;
-
-            const updatedFrontmatter: WikiFrontmatter = {
-              ...existingPage.frontmatter,
-              updated: new Date().toISOString(),
-            };
-
-            writeWikiPage(pagePath, updatedContent, updatedFrontmatter);
-            updated.push(entity.name);
-          } else {
-            // Non-draft pages (reviewed/locked/rejected) are skipped
-            skipped.push(entity.name);
-          }
-        } else {
-          // Page does not exist — create a new one
-          const frontmatter: WikiFrontmatter = {
-            title: entity.name,
-            type: "entity",
-            status: "draft",
-            tags: ["auto-generated", `type:${entity.type}`, `source:session-${sessionId}`],
-            created: new Date().toISOString(),
-            updated: new Date().toISOString(),
-          };
-
-          const content = `${entity.description}\n\n*Auto-extracted during session ${sessionId}*`;
-          writeWikiPage(pagePath, content, frontmatter);
-          created.push(entity.name);
-        }
-
-        // Auto-create NPC record for character-type entities
-        if (entity.type === "character") {
+        // Register entity in the entity registry (auxiliary — non-fatal)
+        const registryEntityType = entity.type === "character" ? "npc" : entity.type === "location" ? "location" : null;
+        if (registryEntityType) {
           try {
-            const existing = getDb().prepare(
-              "SELECT id FROM npcs WHERE user_id = ? AND universe_id = ? AND LOWER(name) = LOWER(?)"
-            ).get(userId, universeId, entity.name) as { id: string } | undefined;
+            const db = getDb();
+            const existing = db.prepare(
+              "SELECT id FROM entity_registry WHERE display_name = ? AND user_id = ?"
+            ).get(entity.name, userId) as { id: string } | undefined;
             if (!existing) {
-              getDb().prepare(
-                `INSERT INTO npcs (id, user_id, universe_id, name, description, is_canon)
-                 VALUES (?, ?, ?, ?, ?, 0)`
-              ).run(
-                crypto.randomUUID(),
-                userId,
-                universeId,
-                entity.name,
-                entity.description || null,
-              );
+              const entityId = `${registryEntityType}:${crypto.randomUUID()}`;
+              db.prepare(
+                "INSERT INTO entity_registry (id, entity_type, display_name, user_id, universe_id) VALUES (?, ?, ?, ?, ?)"
+              ).run(entityId, registryEntityType, entity.name, userId, universeId || null);
+              db.prepare(
+                "INSERT OR IGNORE INTO entity_aliases (id, entity_id, alias, source) VALUES (?, ?, ?, 'wiki_sync')"
+              ).run(crypto.randomUUID(), entityId, entity.name);
             }
           } catch {
-            // Non-fatal — NPC creation is a best-effort bonus
+            // non-fatal — registry is auxiliary
           }
         }
       } catch (err) {
-        logger.error(`[auto-extract] Failed to process entity "${entity.name}":`, err);
+        logger.error(`[auto-extract] Failed to queue entity job for "${entity.name}":`, err);
         errors.push(entity.name);
       }
     }

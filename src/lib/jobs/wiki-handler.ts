@@ -16,6 +16,7 @@ import { generateText, getActiveJobModel } from "@/lib/ollama";
 import { PROMPTS } from "@/lib/prompts";
 import { CONTENT_LIMITS, TIME } from "@/lib/config";
 import { ingestSource } from "@/lib/wiki/ingest";
+import { curatePage } from "@/lib/wiki/curate";
 import { extractAndCreateWikiEntities } from "@/lib/wiki/auto-extract";
 import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import { listWikiPages, writeWikiPage, readWikiPage, WikiFrontmatter } from "@/lib/wiki/file-io";
@@ -24,6 +25,7 @@ import { folderForPage } from "@/lib/wiki/subtype-folders";
 import { generateIndex } from "@/lib/wiki/index-generator";
 // @deprecated: logger.ts is deprecated — use history.ts (SQLite wiki_versions) instead
 import { appendLog } from "@/lib/wiki/logger";
+import fs from "fs";
 import path from "path";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import type { JobPayload, JobResult } from "@/lib/job-processor";
@@ -56,6 +58,10 @@ export async function handleWikiJob(jobId: string, payload: JobPayload, jobType:
       return handleWikiAutoExtract(jobId, payload);
     case "universe_wiki_sync":
       return handleUniverseWikiSync(jobId, payload);
+    case "wiki_create_entity":
+      return handleWikiCreateEntity(jobId, payload);
+    case "wiki_curate_page":
+      return handleWikiCuratePage(jobId, payload);
     default:
       throw new Error(`Unknown wiki job type: ${jobType}`);
   }
@@ -116,7 +122,7 @@ async function handleWikiEnrichEntity(jobId: string, payload: JobPayload): Promi
     const prompt = PROMPTS.wikiEnrichEntity(title, page.content.slice(0, CONTENT_LIMITS.SUMMARY_CHUNK));
 
     try {
-      const enrichment = await generateText(prompt, { temperature: 0.3, num_predict: 1024, userId: userId as string, model: getActiveJobModel(userId as string) });
+      const enrichment = await generateText(prompt, { temperature: 0.3, userId: userId as string, model: getActiveJobModel(userId as string) });
       const newContent = page.content.trimEnd() + `\n\n## Additional Details\n${enrichment}`;
 
       const updatedFrontmatter: WikiFrontmatter = {
@@ -220,7 +226,7 @@ async function handleWikiGenerateRumors(jobId: string, payload: JobPayload): Pro
     const prompt = PROMPTS.wikiGenerateRumors(event.title, event.event_type, event.outcome || "unknown");
 
     try {
-      const rumors = await generateText(prompt, { temperature: 0.5, num_predict: 512, userId: userId as string, model: getActiveJobModel(userId as string) });
+      const rumors = await generateText(prompt, { temperature: 0.5, userId: userId as string, model: getActiveJobModel(userId as string) });
 
       const filename = `rumor_${event.title.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-")}.md`;
       // Use registry-driven folder resolution
@@ -313,7 +319,7 @@ async function handleWikiDeepenPage(jobId: string, payload: JobPayload): Promise
     const prompt = PROMPTS.wikiDeepenPage(title, String(page.frontmatter.type), page.content.slice(0, 800));
 
     try {
-      const deepening = await generateText(prompt, { temperature: 0.4, num_predict: 2048, userId: userId as string, model: getActiveJobModel(userId as string) });
+      const deepening = await generateText(prompt, { temperature: 0.4, userId: userId as string, model: getActiveJobModel(userId as string) });
       const newContent = page.content.trimEnd() + `\n\n## Deeper Connections\n${deepening}`;
 
       const updatedFrontmatter: WikiFrontmatter = {
@@ -395,7 +401,7 @@ async function handleWikiDeepenLocation(jobId: string, payload: JobPayload): Pro
     const prompt = PROMPTS.wikiExpandLocation(title, existingContent.slice(0, 500));
 
     try {
-      const expansion = await generateText(prompt, { temperature: 0.5, num_predict: 2048, userId: userId as string, model: getActiveJobModel(userId as string) });
+      const expansion = await generateText(prompt, { temperature: 0.5, userId: userId as string, model: getActiveJobModel(userId as string) });
       const newContent = existingContent.trimEnd() + `\n\n## Additional Lore\n${expansion}`;
 
       const updatedFrontmatter: WikiFrontmatter = {
@@ -471,7 +477,7 @@ async function handleWikiExtractEvent(jobId: string, payload: JobPayload): Promi
 
   let extracted = 0;
   try {
-    const response = await generateText(prompt, { temperature: 0.3, num_predict: 1024, userId: userId as string, model: getActiveJobModel(userId as string) });
+    const response = await generateText(prompt, { temperature: 0.3, userId: userId as string, model: getActiveJobModel(userId as string) });
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = safeParseWarn<Record<string, unknown>>(jsonMatch[0], "LLM event extraction");
@@ -681,5 +687,204 @@ async function handleUniverseWikiSync(jobId: string, payload: JobPayload): Promi
     jobId,
     type: "universe_wiki_sync",
     data: { page: relativePagePath },
+  };
+}
+
+// ============================================================================
+// wiki_create_entity
+// Creates a new wiki entity page from extracted data.
+// Payload: { userId, universeId, sessionId, name, type, description, importance }
+// ============================================================================
+
+async function handleWikiCreateEntity(jobId: string, payload: JobPayload): Promise<JobResult> {
+  const userId = payload.userId as string;
+  const universeId = payload.universeId as string;
+  const name = payload.name as string;
+  const entityType = payload.entityType as string || payload.type as string;
+  const description = payload.description as string;
+  const importance = payload.importance as string;
+
+  if (!userId || !name) {
+    throw new Error("Missing required fields: userId, name");
+  }
+
+  try {
+    updateJobProgress(jobId, 20, "Resolving wiki root...");
+    const wikiRoot = getWikiRoot(userId, universeId);
+    const entitiesDir = path.join(wikiRoot, "entities");
+    const sanitizedFilename = name.replace(/[^a-zA-Z0-9\s_-]/g, "").replace(/\s+/g, "-").toLowerCase();
+    const pagePath = path.join(entitiesDir, `${sanitizedFilename}.md`);
+
+    // Ensure entities directory exists
+    await fs.promises.mkdir(entitiesDir, { recursive: true });
+
+    updateJobProgress(jobId, 40, "Checking existing page...");
+
+    // Register entity in the entity registry (auxiliary — non-fatal)
+    let entityId: string | undefined;
+    const registryEntityType = entityType === "character" ? "npc" : entityType === "location" ? "location" : null;
+    if (registryEntityType) {
+      try {
+        const db = getDb();
+        const existing = db.prepare(
+          "SELECT id FROM entity_registry WHERE display_name = ? AND user_id = ?"
+        ).get(name, userId) as { id: string } | undefined;
+        if (existing) {
+          entityId = existing.id;
+        } else {
+          entityId = `${registryEntityType}:${crypto.randomUUID()}`;
+          db.prepare(
+            "INSERT INTO entity_registry (id, entity_type, display_name, user_id, universe_id) VALUES (?, ?, ?, ?, ?)"
+          ).run(entityId, registryEntityType, name, userId, universeId || null);
+          db.prepare(
+            "INSERT OR IGNORE INTO entity_aliases (id, entity_id, alias, source) VALUES (?, ?, ?, 'wiki_sync')"
+          ).run(crypto.randomUUID(), entityId, name);
+        }
+      } catch {
+        // non-fatal — registry is auxiliary
+      }
+    }
+
+    // Check if page already exists
+    let pageAction: "created" | "updated" | "skipped";
+    if (fs.existsSync(pagePath)) {
+      const existingPage = readWikiPage(pagePath);
+      if (existingPage.frontmatter.status === "draft") {
+        // Append session update
+        const dateStr = new Date().toISOString().split("T")[0];
+        const content = existingPage.content.trimEnd() +
+          `\n\n## Session Update (${dateStr})\n\n${description}`;
+        writeWikiPage(pagePath, content, {
+          ...existingPage.frontmatter,
+          updated: new Date().toISOString(),
+          ...(entityId ? { entity_id: entityId } : {}),
+        });
+        pageAction = "updated";
+      } else {
+        pageAction = "skipped";
+      }
+    } else {
+      // Create new page
+      const frontmatter: WikiFrontmatter = {
+        title: name,
+        type: "entity",
+        status: "draft",
+        tags: ["auto-generated", `type:${entityType}`, `source:session-${payload.sessionId || "unknown"}`],
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+        ...(entityId ? { entity_id: entityId } : {}),
+      };
+      const content = `${description}\n\n*Auto-extracted during session ${payload.sessionId || "unknown"}*`;
+      writeWikiPage(pagePath, content, frontmatter);
+      pageAction = "created";
+    }
+
+    updateJobProgress(jobId, 70, "Creating NPC record...");
+
+    // Auto-create NPC record for character-type entities
+    if (entityType === "character") {
+      try {
+        const existing = getDb().prepare(
+          "SELECT id FROM npcs WHERE user_id = ? AND universe_id = ? AND LOWER(name) = LOWER(?)"
+        ).get(userId, universeId, name) as { id: string } | undefined;
+        if (!existing) {
+          getDb().prepare(
+            `INSERT INTO npcs (id, user_id, universe_id, name, description, is_canon)
+             VALUES (?, ?, ?, ?, ?, 0)`
+          ).run(crypto.randomUUID(), userId, universeId, name, description || null);
+        }
+      } catch {
+        // Non-fatal
+      }
+    }
+
+    // Regenerate wiki index
+    updateJobProgress(jobId, 90, "Regenerating index...");
+    try {
+      generateIndex(wikiRoot);
+    } catch {
+      // Non-fatal
+    }
+
+    markJobCompleted(jobId);
+    return {
+      success: true,
+      jobId,
+      type: "wiki_create_entity",
+      data: { name, action: pageAction },
+    };
+  } catch (error) {
+    // Error will be caught and logged by the job processor
+    throw error;
+  }
+}
+
+// ============================================================================
+// wiki_curate_page
+// Auto-tag, auto-categorize, and auto-link a single wiki page.
+// Payload: { userId, universeId, pagePath }
+// ============================================================================
+
+async function handleWikiCuratePage(jobId: string, payload: JobPayload): Promise<JobResult> {
+  const userId = payload.userId as string;
+  const universeId = payload.universeId as string;
+  const pagePath = payload.pagePath as string | undefined;
+
+  if (!userId) {
+    throw new Error("Missing required fields: userId");
+  }
+
+  // If no specific pagePath, iterate over draft pages that need curation
+  if (!pagePath) {
+    updateJobProgress(jobId, 10, "Finding pages to curate...");
+    const wikiRoot = getWikiRoot(userId, universeId);
+    const allPages = listWikiPages(wikiRoot);
+    const draftPages = allPages.filter(p =>
+      p.frontmatter.status === "draft" &&
+      p.frontmatter.type !== "synthesis"
+    );
+
+    let totalTagged = 0;
+    let totalLinked = 0;
+    let errors: string[] = [];
+
+    for (let i = 0; i < draftPages.length; i++) {
+      const pct = 10 + Math.round((i / draftPages.length) * 80);
+      updateJobProgress(jobId, pct, `Curating ${i + 1}/${draftPages.length}...`);
+      const result = await curatePage(userId, universeId, draftPages[i].path);
+      totalTagged += result.tagsAdded.length;
+      totalLinked += result.wikilinksAdded;
+      errors.push(...result.errors);
+    }
+
+    updateJobProgress(jobId, 95, "Regenerating index...");
+    try { generateIndex(wikiRoot); } catch { /* non-fatal */ }
+
+    markJobCompleted(jobId);
+    return {
+      success: errors.length === 0,
+      jobId,
+      type: "wiki_curate_page",
+      data: { pagesCurated: draftPages.length, tagsAdded: totalTagged, wikilinksAdded: totalLinked, errors },
+    };
+  }
+
+  // Curate a single specific page
+  updateJobProgress(jobId, 20, "Curating page...");
+  const result = await curatePage(userId, universeId, pagePath);
+
+  updateJobProgress(jobId, 90, "Curating complete...");
+
+  markJobCompleted(jobId);
+  return {
+    success: result.errors.length === 0,
+    jobId,
+    type: "wiki_curate_page",
+    data: {
+      tagsAdded: result.tagsAdded,
+      typeVerified: result.typeVerified,
+      wikilinksAdded: result.wikilinksAdded,
+      errors: result.errors,
+    },
   };
 }

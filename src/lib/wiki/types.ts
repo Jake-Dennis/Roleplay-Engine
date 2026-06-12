@@ -38,6 +38,8 @@ export interface WikiFrontmatter {
   rejected_at?: string;
   /** ISO timestamp when the page was marked as dormant (deprecated). */
   deprecated_at?: string;
+  /** Entity registry ID if this page represents a registered entity (e.g. "npc:uuid") */
+  entity_id?: string;
   /** ID of the persona this page was auto-created from. */
   persona_id?: string;
   /** Source identifier for auto-generated pages (e.g. "persona", "universe"). */
