@@ -393,7 +393,7 @@ function HowItWorksDocs() {
           { title: "Context Window", desc: "The model's working memory, set per-model in Server Settings. Determines how many tokens the AI can 'see' at once." },
           { title: "Dynamic Budget", desc: "Non-message sections (lore, memories, relationships) are measured first. Messages automatically shrink to fit whatever space remains." },
           { title: "Token Estimation", desc: "Token counts use a chars/4 approximation. Actual tokenization may vary by model. The budget bar is an estimate, not a precise count." },
-          { title: "Message Limit", desc: "Configurable cap on how many recent messages are fetched from the database. Default 30, adjustable in Server Settings." },
+          { title: "Auto-Sizing Messages", desc: "Messages automatically shrink to fit the context window. More lore/memories/relationships means fewer messages, and vice versa — no hard cap needed." },
         ].map(({ title, desc }) => (
           <div key={title} className="rounded-lg border border-border-default bg-bg-raised p-3">
             <p className="text-xs font-medium text-text-primary mb-1">{title}</p>
