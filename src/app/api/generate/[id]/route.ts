@@ -290,6 +290,13 @@ export async function POST(
           return /[A-Z]/.test(content) ? `[[${content}]]` : match;
         });
 
+        logger.info("[generate] Stream complete", { length: fullResponse.length, preview: fullResponse.slice(0, 100) });
+
+        // Send done signal to client stream
+        controller.enqueue(
+          encoder.encode(JSON.stringify({ done: true, messageId: aiMessageId }) + "\n")
+        );
+
         // If the response is empty, delete the placeholder and bail out
         if (!fullResponse || fullResponse.trim().length < 5) {
           db.prepare("DELETE FROM messages WHERE id = ?").run(aiMessageId);
