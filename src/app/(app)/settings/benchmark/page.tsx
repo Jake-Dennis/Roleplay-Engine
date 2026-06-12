@@ -122,18 +122,15 @@ export default function BenchmarkPage() {
   }).length;
 
   // Find best size: highest context size with good speed (>10 tok/s) and quality (>60%)
-  // Find best size: highest context size with usable speed
+  // Find best size: largest working context size
   const bestSize = (() => {
     let best: { size: number; score: number } | null = null;
     for (const ctx of testSizes) {
       const p = results.get(ctx);
       if (!p || !p.success) continue;
-      // Score favors higher context size, but penalizes slow speeds
-      const speedScore = Math.min(p.tokPerSec / 20, 1); // 20+ tok/s = perfect
-      const sizeBonus = Math.log2(ctx / 4096) * 0.1;
-      const total = speedScore * 0.7 + sizeBonus * 0.3;
-      if (!best || total > best.score) {
-        best = { size: ctx, score: total };
+      // Largest working size is best — speed info is shown but not weighted
+      if (!best || ctx > best.size) {
+        best = { size: ctx, score: 1 };
       }
     }
     return best;
@@ -247,7 +244,6 @@ export default function BenchmarkPage() {
             <thead>
               <tr className="border-b border-border-default text-text-muted">
                 <th className="py-1 text-left font-medium pr-3">Context</th>
-                <th className="py-1 text-left font-medium pr-3">Speed</th>
                 <th className="py-1 text-left font-medium pr-3">Time</th>
                 <th className="py-1 text-left font-medium">Status</th>
               </tr>
@@ -261,24 +257,14 @@ export default function BenchmarkPage() {
                   : durMs >= 1000
                     ? `${(durMs / 1000).toFixed(0)}s`
                     : "-";
-                const isBest = bestSize && bestSize.size === ctx;
                 return (
-                  <tr key={ctx} className={`border-b border-border-default/30 ${isBest ? "bg-status-success/5" : ""}`}>
-                    <td className="py-1 pr-3 font-mono text-text-primary">
-                      {(ctx / 1024).toFixed(0)}K
-                      {isBest && <span className="ml-1.5 text-xxs text-status-success font-medium">★ best</span>}
-                      {ctx === modelMaxCtx && !isBest && <span className="ml-1.5 text-xxs text-text-muted">(max)</span>}
-                    </td>
-                    <td className="py-1 pr-3 font-mono text-text-muted">
-                      {p.success ? `${p.tokPerSec.toFixed(1)} tok/s` : "-"}
-                    </td>
-                    <td className="py-1 pr-3 font-mono text-text-muted">
-                      {p.success ? timeStr : "-"}
-                    </td>
+                  <tr key={ctx} className="border-b border-border-default/30">
+                    <td className="py-1 pr-3 font-mono text-text-primary">{(ctx / 1024).toFixed(0)}K</td>
+                    <td className="py-1 pr-3 font-mono text-text-muted">{p.success ? timeStr : "-"}</td>
                     <td className="py-1 font-mono">
                       {p.success
-                        ? <span className="text-status-success">OK</span>
-                        : <span className="text-status-error">Failed</span>
+                        ? <span className="text-status-success">Pass</span>
+                        : <span className="text-status-error">Fail</span>
                       }
                     </td>
                   </tr>
@@ -288,7 +274,7 @@ export default function BenchmarkPage() {
           </table>
 
           {/* Recommendation */}
-          {bestSize && (
+          {bestSize && testedCount === testSizes.length && (
             <div className="mt-4 rounded-lg border border-accent/30 bg-accent/5 p-4">
               <div className="flex items-start gap-2">
                 <Sparkles className="h-4 w-4 text-accent mt-0.5 shrink-0" />
@@ -297,9 +283,7 @@ export default function BenchmarkPage() {
                     Recommended: <span className="text-accent">{(bestSize.size / 1024).toFixed(0)}K</span> context window
                   </p>
                   <p className="text-xxs text-text-muted mt-1">
-                    Best balance of context size and speed ({(results.get(bestSize.size)?.tokPerSec ?? 0).toFixed(1)} tok/s)
-                    for {model}. Set this as num_ctx in Server Settings → Model Defaults.
-                    Sizes above this may be slower or unstable.
+                    Largest size that worked for {model}. Set this as num_ctx in Server Settings.
                   </p>
                 </div>
               </div>
