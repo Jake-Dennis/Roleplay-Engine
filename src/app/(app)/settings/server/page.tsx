@@ -12,10 +12,6 @@ import { TIMEOUTS } from "@/lib/config";
 interface ServerSettings {
   ollama: { host: string; port?: number; model: string; embeddingModel: string; thinkingMode: boolean; localModels?: string[] };
   tts: { host: string; port?: number; defaultVoice: string };
-  defaults?: {
-    ttsSpeed: number; ttsVolume: number; ttsFormat: string;
-    ttsAutoPlay: boolean; ttsSkipLong: boolean; ttsLongThreshold: number;
-  };
   /**
    * Per-model overrides for generation params. Keyed by model name.
    * When a model has overrides, those values are used at generation
@@ -112,12 +108,6 @@ export default function ServerSettingsPage() {
 
   // TTS
   const [ttsUrl, setTtsUrl] = useState("");
-  const [ttsSpeed, setTtsSpeed] = useState(1.0);
-  const [ttsVolume, setTtsVolume] = useState(0.8);
-  const [ttsFormat, setTtsFormat] = useState("mp3");
-  const [ttsAutoPlay, setTtsAutoPlay] = useState(true);
-  const [ttsSkipLong, setTtsSkipLong] = useState(true);
-  const [ttsLongThreshold, setTtsLongThreshold] = useState(500);
   const [ttsSaving, setTtsSaving] = useState(false);
   const [ttsSuccess, setTtsSuccess] = useState(false);
 
@@ -199,14 +189,6 @@ export default function ServerSettingsPage() {
       setOllamaUrl(op ? `${oh}:${op}` : oh);
       const th = data.tts?.host ?? ""; const tp = data.tts?.port ?? "";
       setTtsUrl(tp ? `${th}:${tp}` : th);
-      if (data.defaults) {
-        if (data.defaults.ttsSpeed !== undefined) setTtsSpeed(data.defaults.ttsSpeed);
-        if (data.defaults.ttsVolume !== undefined) setTtsVolume(data.defaults.ttsVolume);
-        if (data.defaults.ttsFormat) setTtsFormat(data.defaults.ttsFormat);
-        if (data.defaults.ttsAutoPlay !== undefined) setTtsAutoPlay(data.defaults.ttsAutoPlay);
-        if (data.defaults.ttsSkipLong !== undefined) setTtsSkipLong(data.defaults.ttsSkipLong);
-        if (data.defaults.ttsLongThreshold !== undefined) setTtsLongThreshold(data.defaults.ttsLongThreshold);
-      }
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -252,12 +234,6 @@ export default function ServerSettingsPage() {
     setTtsSaving(true);
     try {
       const changes: Record<string, unknown> = {};
-      if (ttsSpeed !== undefined) changes.ttsDefaultSpeed = ttsSpeed;
-      if (ttsVolume !== undefined) changes.ttsDefaultVolume = ttsVolume;
-      if (ttsFormat) changes.ttsDefaultFormat = ttsFormat;
-      if (ttsAutoPlay !== undefined) changes.ttsAutoPlay = ttsAutoPlay;
-      if (ttsSkipLong !== undefined) changes.ttsSkipLong = ttsSkipLong;
-      if (ttsLongThreshold !== undefined) changes.ttsLongThreshold = ttsLongThreshold;
       if (ttsUrl) { const [h = "", p = ""] = ttsUrl.split(":"); changes.ttsHost = h; if (p) changes.ttsPort = parseInt(p, 10); }
       const res = await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(changes) });
       if (res.ok) { setTtsSuccess(true); setTimeout(() => setTtsSuccess(false), TIMEOUTS.HEALTH_CHECK); const upd = await fetch("/api/settings").then(r => r.json()); setSettings(upd); }
@@ -581,10 +557,6 @@ export default function ServerSettingsPage() {
 
       <TTSSettingsSection
         ttsUrl={ttsUrl} setTtsUrl={setTtsUrl}
-        ttsSpeed={ttsSpeed} setTtsSpeed={setTtsSpeed} ttsVolume={ttsVolume} setTtsVolume={setTtsVolume}
-        ttsFormat={ttsFormat} setTtsFormat={setTtsFormat}
-        ttsAutoPlay={ttsAutoPlay} setTtsAutoPlay={setTtsAutoPlay}
-        ttsSkipLong={ttsSkipLong} setTtsSkipLong={setTtsSkipLong} ttsLongThreshold={ttsLongThreshold} setTtsLongThreshold={setTtsLongThreshold}
         ttsSaving={ttsSaving} ttsSuccess={ttsSuccess} handleTTSSettings={handleTTSSettings}
         cacheStats={cacheStats} cacheLoading={cacheLoading} cacheClearing={cacheClearing} handleClearCache={handleClearCache}
       />
