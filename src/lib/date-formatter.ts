@@ -2,7 +2,8 @@
  * Date Formatter
  *
  * Centralized date formatting for consistent display across the app.
- * Replaces inline `new Date(xxx).toLocaleDateString()` calls in 18+ pages.
+ * All DB timestamps are UTC (no timezone suffix). This module treats
+ * them as UTC and converts to the user's local timezone for display.
  */
 
 export interface DateFormatOptions {
@@ -18,16 +19,31 @@ const DEFAULT_OPTIONS: DateFormatOptions = {
 };
 
 /**
+ * Parse a DB timestamp string as UTC. Treats any string without
+ * timezone info as UTC (consistent with SQLite CURRENT_TIMESTAMP).
+ */
+function parseDbTimestamp(dateInput: string | Date | null | undefined): Date | null {
+  if (!dateInput) return null;
+  if (dateInput instanceof Date) return isNaN(dateInput.getTime()) ? null : dateInput;
+
+  // If the string has no timezone marker (Z, +, - offset), treat it as UTC
+  if (typeof dateInput === "string" && !/[Zz+-]/.test(dateInput)) {
+    dateInput = dateInput.replace(" ", "T") + "Z";
+  }
+
+  const date = new Date(dateInput);
+  return isNaN(date.getTime()) ? null : date;
+}
+
+/**
  * Format a date string or timestamp for display
  */
 export function formatDate(
   dateInput: string | Date | null | undefined,
   options: DateFormatOptions = {}
 ): string {
-  if (!dateInput) return "Unknown";
-
-  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
-  if (isNaN(date.getTime())) return "Invalid date";
+  const date = parseDbTimestamp(dateInput);
+  if (!date) return "Unknown";
 
   const { locale = DEFAULT_OPTIONS.locale, dateStyle = DEFAULT_OPTIONS.dateStyle, timeStyle, relative } = options;
 
@@ -36,7 +52,7 @@ export function formatDate(
     return formatRelative(date);
   }
 
-  // Standard formatting
+  // Standard formatting — Intl.DateTimeFormat uses the user's locale timezone
   const formatter = new Intl.DateTimeFormat(locale, {
     dateStyle,
     timeStyle,
@@ -90,7 +106,8 @@ export function formatDateTime(dateInput: string | Date | null | undefined): str
  */
 export function formatRelativeTime(date: Date | string): string {
   const now = new Date();
-  const then = typeof date === 'string' ? new Date(date) : date;
+  const then = parseDbTimestamp(date instanceof Date ? date.toISOString() : date);
+  if (!then) return "";
   const seconds = Math.floor((now.getTime() - then.getTime()) / 1000);
   if (seconds < 60) return 'just now';
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
