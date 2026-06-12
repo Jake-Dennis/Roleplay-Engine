@@ -132,7 +132,7 @@ export default function JobsPage() {
       const params = new URLSearchParams();
       if (status && status !== "all") params.set("status", status);
       if (activeUniverse) params.set("universe_id", activeUniverse.id);
-      setLoading(true);
+      if (!jobs.length) setLoading(true);
       const res = await fetch(`/api/jobs?${params}`);
       const json = await res.json();
       setJobs(json.jobs || []);
@@ -488,7 +488,7 @@ export default function JobsPage() {
           <Loader2 className="h-6 w-6 animate-spin text-text-muted" />
         </div>
       ) : filteredJobs.length === 0 ? (
-        <div className="rounded-xl border border-border-default bg-bg-elevated py-12 text-center">
+        <div className="animate-fade-in rounded-xl border border-border-default bg-bg-elevated py-12 text-center">
           <Clock className="mx-auto h-8 w-8 text-text-muted" />
           <p className="mt-2 text-sm text-text-muted">No jobs found</p>
         </div>
@@ -500,7 +500,7 @@ export default function JobsPage() {
             const payload = parsePayload(job.payload);
 
             return (
-              <div key={job.id} className="rounded-lg border border-border-default bg-bg-elevated">
+              <div key={job.id} className="animate-fade-in rounded-lg border border-border-default bg-bg-elevated">
                 <div
                   role="button"
                   tabIndex={0}
