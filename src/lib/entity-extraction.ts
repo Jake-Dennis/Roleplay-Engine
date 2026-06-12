@@ -15,6 +15,28 @@ import { getDb } from "./db";
 const WIKILINK_REGEX = /(!?)\[\[([^\[\]]+?)(?:\|([^\[\]]+))?\]\]/g;
 const PROPER_NOUN_REGEX = /\b[A-Z][a-z]+(?:\s[A-Z][a-z]+)*\b/g;
 
+/**
+ * Resolve an entity name to a registry ID, creating a transient entry if needed.
+ */
+function resolveMentionEntityId(db: any, userId: string, name: string): string | null {
+  // First check entity_registry by display_name or alias
+  const found = db.prepare(`
+    SELECT er.id FROM entity_registry er
+    LEFT JOIN entity_aliases ea ON ea.entity_id = er.id
+    WHERE er.user_id = ? AND (er.display_name = ? OR ea.alias = ?)
+    LIMIT 1
+  `).get(userId, name, name) as { id: string } | undefined;
+  if (found) return found.id;
+
+  // Check if it matches a persona or NPC
+  for (const table of ['personas', 'npcs']) {
+    const row = db.prepare(`SELECT id FROM ${table} WHERE user_id = ? AND name = ?`).get(userId, name) as { id: string } | undefined;
+    if (row) return `${table === 'personas' ? 'persona' : 'npc'}:${row.id}`;
+  }
+
+  return null; // No registry entry needed — name-only tracking is fine
+}
+
 export interface EntityMentionResult {
   count: number;
   entities: string[];
@@ -67,14 +89,14 @@ export function extractEntityMentions(
   // Upsert each unique entity
   let inserted = 0;
   const selectStmt = db.prepare(
-    "SELECT id FROM entity_mentions WHERE user_id = ? AND entity_name = ? AND source_table = ? AND source_id = ?"
+    "SELECT id, entity_id FROM entity_mentions WHERE user_id = ? AND entity_name = ? AND source_table = ? AND source_id = ?"
   );
   const updateStmt = db.prepare(
     "UPDATE entity_mentions SET frequency = frequency + 1, last_seen_at = CURRENT_TIMESTAMP WHERE id = ?"
   );
   const insertStmt = db.prepare(
-    `INSERT INTO entity_mentions (id, user_id, entity_name, source_table, source_id, frequency, last_seen_at, created_at)
-     VALUES (?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+    `INSERT INTO entity_mentions (id, user_id, entity_name, entity_id, source_table, source_id, frequency, last_seen_at, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
   );
 
   for (const entityName of entities) {
@@ -86,7 +108,8 @@ export function extractEntityMentions(
       updateStmt.run(existing.id);
     } else {
       const id = crypto.randomUUID();
-      insertStmt.run(id, userId, entityName, sourceTable, sourceId);
+      const entityId = resolveMentionEntityId(db, userId, entityName);
+      insertStmt.run(id, userId, entityName, entityId, sourceTable, sourceId);
     }
     inserted++;
   }

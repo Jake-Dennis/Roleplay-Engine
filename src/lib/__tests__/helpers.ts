@@ -106,6 +106,19 @@ export function createTestDb(): Database.Database {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS entity_mentions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      entity_name TEXT NOT NULL,
+      entity_id TEXT REFERENCES entity_registry(id),
+      source_table TEXT NOT NULL,
+      source_id TEXT NOT NULL,
+      frequency INTEGER DEFAULT 1,
+      last_seen_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, entity_name, source_table, source_id)
+    );
+
     CREATE TABLE IF NOT EXISTS narrative_threads (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),

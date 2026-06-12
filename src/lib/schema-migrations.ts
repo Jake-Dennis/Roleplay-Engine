@@ -467,6 +467,13 @@ export function runSchemaMigrations(): void {
     // Index already exists — safe to ignore
   }
 
+  // Migration: Add entity_id column to entity_mentions (FK to entity_registry)
+  try {
+    db.prepare(
+      "ALTER TABLE entity_mentions ADD COLUMN entity_id TEXT REFERENCES entity_registry(id)"
+    ).run();
+  } catch { /* already exists */ }
+
   // Migration: Add entity_mentions frequency index for trending analysis
   try {
     db.prepare(

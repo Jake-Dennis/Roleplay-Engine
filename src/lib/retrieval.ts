@@ -1185,8 +1185,8 @@ export async function getRetrievedContext(
   let activeEntities: string[] | undefined;
   try {
     const mentionRows = db.prepare(
-      "SELECT entity_name FROM entity_mentions WHERE user_id = ? AND frequency > 1 GROUP BY entity_name ORDER BY MAX(frequency) DESC LIMIT 5"
-    ).all(userId) as { entity_name: string }[];
+      "SELECT entity_name, entity_id FROM entity_mentions WHERE user_id = ? AND frequency > 1 GROUP BY entity_name ORDER BY MAX(frequency) DESC LIMIT 5"
+    ).all(userId) as { entity_name: string; entity_id: string | null }[];
     if (mentionRows.length > 0) {
       activeEntities = mentionRows.map(r => r.entity_name);
     }

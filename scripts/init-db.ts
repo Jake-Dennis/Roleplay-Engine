@@ -193,6 +193,7 @@ function main() {
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),
       entity_name TEXT NOT NULL,
+      entity_id TEXT REFERENCES entity_registry(id),
       source_table TEXT NOT NULL,
       source_id TEXT NOT NULL,
       frequency INTEGER DEFAULT 1,
