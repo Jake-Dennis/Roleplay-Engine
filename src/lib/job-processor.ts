@@ -14,6 +14,7 @@
  */
 
 import { safeParseWarn } from "@/lib/safe-json";
+import { logger } from "@/lib/logger";
 
 // ---------------------------------------------------------------------------
 // Re-exports — all symbols remain importable from "@/lib/job-processor"
@@ -119,6 +120,8 @@ export async function processJob(job: QueuedJob): Promise<JobResult> {
       case "wiki_deepen_location":
       case "wiki_extract_event":
       case "wiki_auto_extract":
+      case "wiki_create_entity":
+      case "wiki_curate_page":
       case "universe_wiki_sync":
         return await handleWikiJob(job.id, payload, job.type);
       case "wiki_suggest_restructure":
@@ -138,6 +141,8 @@ export async function processJob(job: QueuedJob): Promise<JobResult> {
     }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : "";
+    logger.error("[processJob] Job failed", { jobId: job.id, type: job.type, error: message, stack });
     markJobFailed(job.id, message);
     return { success: false, jobId: job.id, type: job.type, error: message };
   }
