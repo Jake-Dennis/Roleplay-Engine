@@ -40,6 +40,12 @@ export async function GET(request: NextRequest) {
   if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   const db = getDb();
+
+  // Ensure auto-tts columns exist (migration for existing databases)
+  for (const col of ["auto_tts_narrator", "auto_tts_other_personas", "auto_tts_your_persona"]) {
+    try { db.exec(`ALTER TABLE users ADD COLUMN ${col} INTEGER DEFAULT 0`); } catch { /* already exists */ }
+  }
+
   const user = db.prepare(
     "SELECT settings, auto_tts_narrator, auto_tts_other_personas, auto_tts_your_persona FROM users WHERE id = ?"
   ).get(userId) as { settings: string | null; auto_tts_narrator: number | null; auto_tts_other_personas: number | null; auto_tts_your_persona: number | null } | undefined;
