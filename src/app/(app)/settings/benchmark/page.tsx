@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Loader2, CheckCircle2, XCircle, Play, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
@@ -13,17 +13,7 @@ interface BenchmarkPoint {
   durationMs: number;
 }
 
-function generateTestSizes(maxCtx: number): number[] {
-  const sizes: number[] = [];
-  for (let s = 4096; s <= maxCtx; s *= 2) {
-    sizes.push(s);
-  }
-  // Always include the max as the last test
-  if (sizes[sizes.length - 1] !== maxCtx) {
-    sizes.push(maxCtx);
-  }
-  return sizes;
-}
+const TEST_SIZES = [4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576];
 
 export default function BenchmarkPage() {
   const [model, setModel] = useState("");
@@ -42,22 +32,28 @@ export default function BenchmarkPage() {
       fetch("/api/settings", { credentials: "include" }).then(r => r.json()),
     ]).then(([modelsData, settingsData]) => {
       if (modelsData.models) setModels(modelsData.models);
-      // Auto-select model from server config
       const currentModel = settingsData?.ollama?.model || "";
       if (currentModel && modelsData.models?.includes(currentModel)) {
         setModel(currentModel);
       }
-      // Get max context window for this model
       if (currentModel && settingsData?.modelDefaults?.[currentModel]?.numCtx) {
         setModelMaxCtx(settingsData.modelDefaults[currentModel].numCtx);
       }
     }).catch(() => {});
   }, []);
 
-  const testSizes = useMemo(() => {
-    if (modelMaxCtx) return generateTestSizes(modelMaxCtx);
-    return [4096, 8192, 16384, 32768, 65536, 131072, 262144];
-  }, [modelMaxCtx]);
+  // When model changes, detect its native context window via Ollama's /api/show
+  useEffect(() => {
+    if (!model) { setModelMaxCtx(null); return; }
+    fetch(`/api/models/ollama/show?model=${encodeURIComponent(model)}`, { credentials: "include" })
+      .then(r => r.json())
+      .then(data => {
+        if (data.contextWindow) setModelMaxCtx(data.contextWindow);
+      })
+      .catch(() => {});
+  }, [model]);
+
+  const testSizes = TEST_SIZES;
 
   // Load saved results when model changes
   useEffect(() => {
@@ -127,7 +123,8 @@ export default function BenchmarkPage() {
   }).length;
 
   // Find best size: highest context size with good speed (>10 tok/s) and quality (>60%)
-  const bestSize = useMemo(() => {
+  // Find best size: highest context size with good speed (>10 tok/s) and quality (>60%)
+  const bestSize = (() => {
     let best: { size: number; score: number } | null = null;
     for (const ctx of testSizes) {
       const p = results.get(ctx);
@@ -143,7 +140,7 @@ export default function BenchmarkPage() {
       }
     }
     return best;
-  }, [results, testSizes]);
+  })();
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 py-6">
