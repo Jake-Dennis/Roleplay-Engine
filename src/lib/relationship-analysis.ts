@@ -215,9 +215,9 @@ Only include relationships that have changed or are newly formed.`;
         .map((r) => ({
           source: r.source as string,
           target: r.target as string,
-          emotionalState: r.emotionalState || "neutral",
-          stage: r.stage || "acquaintances",
-          sharedHistory: r.sharedHistory || "",
+          emotionalState: typeof r.emotionalState === 'object' ? JSON.stringify(r.emotionalState) : (r.emotionalState || "neutral"),
+          stage: typeof r.stage === 'object' ? JSON.stringify(r.stage) : (r.stage || "acquaintances"),
+          sharedHistory: typeof r.sharedHistory === 'object' ? JSON.stringify(r.sharedHistory) : (r.sharedHistory || ""),
         })),
     };
   } catch {
