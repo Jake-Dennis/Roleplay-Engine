@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Save, Check, Settings2, Lock } from "lucide-react";
+import { ArrowLeft, Save, Check, Settings2, Lock, Volume2, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export default function UserSettingsPage() {
@@ -15,6 +15,13 @@ export default function UserSettingsPage() {
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsSaved, setSettingsSaved] = useState(false);
+
+  // Narrator voice
+  const [voices, setVoices] = useState<{ id: string; name: string; gender: string; language: string }[]>([]);
+  const [narratorVoice, setNarratorVoice] = useState("");
+  const [voiceSaving, setVoiceSaving] = useState(false);
+  const [voiceSuccess, setVoiceSuccess] = useState(false);
+  const [voiceError, setVoiceError] = useState("");
 
   // Password change
   const [currentPassword, setCurrentPassword] = useState("");
@@ -39,6 +46,9 @@ export default function UserSettingsPage() {
         setSettingsLoading(false);
       })
       .catch(() => setSettingsLoading(false));
+
+    fetch("/api/tts/voices").then(r => r.json()).then(d => setVoices(d.voiceDetails || [])).catch(() => {});
+    fetch("/api/voice-assignments?entityType=narrator&entityId=default").then(r => r.json()).then(d => { if (d.assignment) setNarratorVoice(d.assignment.voiceName); }).catch(() => {});
   }, []);
 
   async function handleTTSSave() {
@@ -56,6 +66,16 @@ export default function UserSettingsPage() {
     } finally {
       setSettingsSaving(false);
     }
+  }
+
+  async function handleNarratorVoice() {
+    setVoiceSaving(true); setVoiceError("");
+    try {
+      const res = await fetch("/api/voice-assignments", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ entityType: "narrator", entityId: "default", voiceName: narratorVoice }) });
+      if (res.ok) { setVoiceSuccess(true); setTimeout(() => setVoiceSuccess(false), 3000); }
+      else { const err = await res.json().catch(() => ({ error: "Failed" })); setVoiceError(err.error || "Failed"); }
+    } catch { setVoiceError("Connection failed"); }
+    finally { setVoiceSaving(false); }
   }
 
   async function handlePasswordChange() {
@@ -231,6 +251,55 @@ export default function UserSettingsPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Narrator Voice */}
+      <div className="rounded-xl border border-border-default bg-bg-elevated p-5">
+        <div className="flex items-center gap-2.5 mb-4">
+          <Volume2 className="h-4 w-4 text-text-accent" />
+          <h2 className="text-sm font-medium text-text-primary">Narrator Voice</h2>
+        </div>
+        <p className="text-xs text-text-muted mb-3">
+          Choose the voice used for AI narration in story sessions
+        </p>
+        <div className="flex items-center gap-2">
+          <select
+            value={narratorVoice}
+            onChange={(e) => setNarratorVoice(e.target.value)}
+            disabled={voiceSaving}
+            className="flex-1 rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary focus:border-accent"
+          >
+            <option value="">No voice</option>
+            {voices.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.name || v.id} ({v.gender}, {v.language})
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={handleNarratorVoice}
+            disabled={voiceSaving}
+            className="flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-2 text-xs font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+          >
+            {voiceSaving ? (
+              <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+            ) : (
+              <Save className="h-3.5 w-3.5" />
+            )}
+            Save
+          </button>
+        </div>
+        {voiceSuccess && (
+          <div className="flex items-center gap-1.5 mt-3 rounded-lg border border-success/20 bg-success/10 px-3 py-2 text-xs text-success">
+            <Check className="h-3.5 w-3.5" />
+            Narrator voice saved
+          </div>
+        )}
+        {voiceError && (
+          <div className="flex items-center gap-1.5 mt-3 rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-xs text-error">
+            <span>{voiceError}</span>
+          </div>
+        )}
       </div>
 
       {/* Password Change */}

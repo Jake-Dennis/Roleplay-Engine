@@ -7,7 +7,6 @@ import { OllamaSettingsSection } from "../ollama-settings";
 import { buildSystemPrompt } from "@/lib/prompt-builder";
 import { TTSSettingsSection } from "../tts-settings";
 import { ConnectionStatusSection } from "@/components/settings/connection-status-section";
-import { NarratorVoiceSection } from "@/components/settings/narrator-voice-section";
 import { TIMEOUTS } from "@/lib/config";
 
 interface ServerSettings {
@@ -111,13 +110,6 @@ export default function ServerSettingsPage() {
    */
   const lastAppliedModelRef = useRef<string>("");
 
-  // Narrator voice
-  const [voices, setVoices] = useState<{ id: string; name: string; gender: string; language: string }[]>([]);
-  const [narratorVoice, setNarratorVoice] = useState("");
-  const [voiceSaving, setVoiceSaving] = useState(false);
-  const [voiceSuccess, setVoiceSuccess] = useState(false);
-  const [voiceError, setVoiceError] = useState("");
-
   // TTS
   const [ttsUrl, setTtsUrl] = useState("");
   const [ttsSpeed, setTtsSpeed] = useState(1.0);
@@ -143,8 +135,6 @@ export default function ServerSettingsPage() {
   const [connLoading, setConnLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/tts/voices").then(r => { if (!r.ok && r.status === 401) setAuthError(true); return r.json(); }).then(d => setVoices(d.voiceDetails || [])).catch(() => {});
-    fetch("/api/voice-assignments?entityType=narrator&entityId=default").then(r => { if (!r.ok && r.status === 401) setAuthError(true); return r.json(); }).then(d => { if (d.assignment) setNarratorVoice(d.assignment.voiceName); }).catch(() => {});
     fetch("/api/tts/cache").then(r => { if (!r.ok && r.status === 401) setAuthError(true); return r.json(); }).then(d => { setCacheStats(d.stats); setCacheLoading(false); }).catch(() => setCacheLoading(false));
     fetch("/api/health").then(r => r.json()).then(d => { setConnOllama(d.ollama || { status: "error" }); setConnKokoro(d.kokoro || { status: "error" }); setConnLoading(false); }).catch(() => { setConnOllama({ status: "error" }); setConnKokoro({ status: "error" }); setConnLoading(false); });
   }, []);
@@ -257,16 +247,6 @@ export default function ServerSettingsPage() {
     setTopK(override?.topK ?? g.topK);
     setNumPredict(override?.numPredict ?? g.numPredict);
   }, [selectedLLM]);
-
-  async function handleNarratorVoice() {
-    setVoiceSaving(true); setVoiceError("");
-    try {
-      const res = await fetch("/api/voice-assignments", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ entityType: "narrator", entityId: "default", voiceName: narratorVoice }) });
-      if (res.ok) { setVoiceSuccess(true); setTimeout(() => setVoiceSuccess(false), TIMEOUTS.HEALTH_CHECK); }
-      else { const err = await res.json().catch(() => ({ error: "Failed" })); setVoiceError(err.error || "Failed"); }
-    } catch { setVoiceError("Connection failed"); }
-    finally { setVoiceSaving(false); }
-  }
 
   async function handleTTSSettings() {
     setTtsSaving(true);
@@ -598,8 +578,6 @@ export default function ServerSettingsPage() {
           {buildSystemPrompt('{universe name}', '{time period}')}
         </pre>
       </div>
-
-      <NarratorVoiceSection voices={voices} narratorVoice={narratorVoice} voiceSaving={voiceSaving} voiceSuccess={voiceSuccess} voiceError={voiceError} setNarratorVoice={setNarratorVoice} handleNarratorVoice={handleNarratorVoice} />
 
       <TTSSettingsSection
         ttsUrl={ttsUrl} setTtsUrl={setTtsUrl}
