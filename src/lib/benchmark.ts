@@ -13,6 +13,7 @@ export interface BenchmarkPoint {
   tokPerSec: number;
   success: boolean;
   durationMs: number;
+  error?: string;
 }
 
 const TEST_PROMPT = `You are a narrator in a fantasy world. Write a short scene where a traveler arrives at an inn after a long journey. Describe the inn, the innkeeper, and one other patron. Include dialogue and sensory details.`;
@@ -49,7 +50,8 @@ export async function runBenchmark(
       success = true;
     }
   } catch (err) {
-    return { contextSize, tokPerSec: 0, success: false, durationMs: Date.now() - totalStart };
+    const msg = err instanceof Error ? err.message : String(err);
+    return { contextSize, tokPerSec: 0, success: false, durationMs: Date.now() - totalStart, error: msg };
   }
 
   return { contextSize, tokPerSec, success: true, durationMs: Date.now() - totalStart };

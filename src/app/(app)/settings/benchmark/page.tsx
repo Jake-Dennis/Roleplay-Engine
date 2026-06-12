@@ -9,6 +9,7 @@ interface BenchmarkPoint {
   tokPerSec: number;
   success: boolean;
   durationMs: number;
+  error?: string;
 }
 
 const TEST_SIZES = [4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576];
@@ -219,6 +220,11 @@ export default function BenchmarkPage() {
                   done.success
                     ? <CheckCircle2 className="mt-1 h-3 w-3 text-status-success" />
                     : <XCircle className="mt-1 h-3 w-3 text-status-error" />
+                )}
+                {done && !done.success && done.error && (
+                  <span className="mt-0.5 text-[8px] text-status-error truncate max-w-full" title={done.error}>
+                    {done.error.length > 20 ? done.error.slice(0, 20) + "..." : done.error}
+                  </span>
                 )}
               </button>
             );
