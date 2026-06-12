@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ChevronUp,
   ListTodo,
+  Tags,
 } from "lucide-react";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { StatusBadge, statusToVariant } from "@/components/ui/status-badge";
@@ -256,6 +257,15 @@ export default function JobsPage() {
     await loadJobs(statusFilter);
   }
 
+  async function handleCurate() {
+    await fetch("/api/jobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "queue", type: "wiki_curate_page", priority: "low" }),
+    });
+    await loadJobs(statusFilter);
+  }
+
   async function handleReindex(type: string) {
     setReindexing(type);
     setReindexResult(null);
@@ -305,9 +315,9 @@ export default function JobsPage() {
   ];
 
   return (
-    <>
+    <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="mb-6 flex items-start justify-between">
+      <div className="mb-6 flex items-start justify-between shrink-0">
         <div>
           <div className="flex items-center gap-2">
             <ListTodo className="h-5 w-5 text-text-accent" />
@@ -329,6 +339,13 @@ export default function JobsPage() {
             >
               <Zap className="h-3.5 w-3.5" />
               Queue Idle
+            </button>
+            <button
+              onClick={handleCurate}
+              className="flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-highlight"
+            >
+              <Tags className="h-3.5 w-3.5" />
+              Curate Pages
             </button>
             <button
               onClick={handleProcessNext}
@@ -465,6 +482,7 @@ export default function JobsPage() {
       </div>
 
       {/* Job List */}
+      <div className="flex-1 overflow-y-auto min-h-0">
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-text-muted" />
@@ -676,6 +694,7 @@ export default function JobsPage() {
           confirmLabel="Cancel All"
         />
       )}
+      </div>
 
       {retryAllConfirm && (
         <ConfirmationDialog
@@ -688,6 +707,6 @@ export default function JobsPage() {
           confirmLabel="Retry All"
         />
       )}
-    </>
+    </div>
   );
 }
