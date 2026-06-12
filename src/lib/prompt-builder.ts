@@ -82,7 +82,8 @@ export function buildSystemPrompt(
   return `You are the Narrator for a roleplay session. You control the setting, NPCs, and narrative events.
 
 RULES:
-- NEVER write actions, dialogue, or internal thoughts for the player's character.
+- NEVER write actions, dialogue, or internal thoughts for the player's character(s). Messages prefixed with a character name are from that player character — only they control it.
+- When multiple characters appear in [RECENT HISTORY], they are different players in a group session. Address them by their character names and keep their storylines connected.
 - Use [[wikilink notation]] for every named entity — characters, locations, factions, items. This is mandatory for the wiki to function.
 - NPCs only know what they can observe or have been told. A stranger does not know the player's history, losses, or backstory. Only reveal information through what the player says or what NPCs directly witness.
 - The [KNOWN WORLD] section contains the wiki entries for this universe. Use your own knowledge of the setting as primary canon, and supplement with anything in [KNOWN WORLD]. Stay consistent with the time period.
@@ -302,7 +303,7 @@ export function assemblePrompt(
   // Relevant past messages — semantically retrieved from vector search (Task D)
   if (ctx.relevantMessages?.messages && ctx.relevantMessages.messages.length > 0) {
     const relevantParts = ctx.relevantMessages.messages.map(
-      (m) => `${m.senderId === null ? "Narrator" : "Player"}: ${m.content}`
+      (m) => `${m.senderId === null ? "Narrator" : (m as any).personaName || (m as any).senderName || "Player"}: ${m.content}`
     );
     const wrapped = wrapUserContent(relevantParts.join("\n"));
     parts.push(`[RELEVANT PAST]\n${wrapped || relevantParts.join("\n")}`);
@@ -311,7 +312,16 @@ export function assemblePrompt(
   // Recent messages — the most contextually important (user-provided)
   const messageLines: string[] = [];
   for (const msg of ctx.recentMessages.messages) {
-    const speaker = msg.senderId === null ? "Narrator" : "Player";
+    let speaker: string;
+    if (msg.senderId === null) {
+      speaker = "Narrator";
+    } else if ((msg as any).personaName) {
+      speaker = (msg as any).personaName;
+    } else if ((msg as any).senderName) {
+      speaker = (msg as any).senderName;
+    } else {
+      speaker = "Player";
+    }
     messageLines.push(`${speaker}: ${msg.content}`);
   }
   const wrappedMessages = wrapUserContent(messageLines.join("\n"));

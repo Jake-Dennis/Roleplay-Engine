@@ -68,7 +68,7 @@ export interface RelationshipContext {
 }
 
 export interface MessageContext {
-  messages: { id: string; senderId: string | null; content: string; timestamp: string }[];
+  messages: { id: string; senderId: string | null; content: string; timestamp: string; senderName?: string | null; personaName?: string | null }[];
 }
 
 export interface RetrievedContext {
@@ -821,11 +821,13 @@ export function getRecentMessages(
 ): MessageContext {
   const db = getDb();
   const messages = db.prepare(
-    `SELECT id, sender_id as senderId, content, timestamp
-     FROM messages
-     WHERE session_id = ? AND is_deleted = 0
-     ORDER BY timestamp ASC`
-  ).all(sessionId) as { id: string; senderId: string | null; content: string; timestamp: string }[];
+    `SELECT m.id, m.sender_id as senderId, m.content, m.timestamp, u.username as senderName, p.name as personaName
+     FROM messages m
+     LEFT JOIN users u ON u.id = m.sender_id
+     LEFT JOIN personas p ON p.id = m.persona_id
+     WHERE m.session_id = ? AND m.is_deleted = 0
+     ORDER BY m.timestamp ASC`
+  ).all(sessionId) as { id: string; senderId: string | null; content: string; timestamp: string; senderName: string | null; personaName: string | null }[];
 
   return { messages: messages || [] };
 }
