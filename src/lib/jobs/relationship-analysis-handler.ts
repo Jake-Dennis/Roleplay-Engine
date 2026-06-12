@@ -8,6 +8,7 @@
 import { getDb } from "@/lib/db";
 import { processRelationshipAnalysis } from "@/lib/relationship-analysis";
 import { updateJobProgress, markJobCompleted, recordEvolution, recordAnchor } from "./queue";
+import { logger } from "@/lib/logger";
 import type { JobPayload, JobResult } from "./types";
 
 /**
@@ -20,24 +21,47 @@ export async function handleAnalyzeRelationships(jobId: string, payload: JobPayl
   if (!sessionId || !userId) throw new Error("Missing sessionId or userId");
 
   updateJobProgress(jobId, 20, "Analyzing messages...");
-  const result = await processRelationshipAnalysis(
-    userId as string,
-    sessionId as string
-  );
+  let result;
+  try {
+    result = await processRelationshipAnalysis(
+      userId as string,
+      sessionId as string
+    );
+  } catch (err) {
+    logger.error("[analyze_relationships] processRelationshipAnalysis failed", { error: String(err), jobId, sessionId });
+    throw err;
+  }
   updateJobProgress(jobId, 80, "Updating relationships...");
 
-  // Record evolution for all relationships after analysis
-  const db = getDb();
-  const allRelationships = db.prepare(
-    "SELECT id, emotional_state, relationship_stage FROM relationships WHERE user_id = ?"
-  ).all(userId) as { id: string; emotional_state: string | null; relationship_stage: string | null }[];
-  for (const rel of allRelationships) {
-    recordEvolution(rel.id, userId as string, rel.emotional_state, rel.relationship_stage, 'relationship_analysis');
+  // Only record evolution for relationships that actually changed
+  try {
+    const db = getDb();
+    const allRelationships = db.prepare(
+      "SELECT id, emotional_state, relationship_stage FROM relationships WHERE user_id = ?"
+    ).all(userId) as { id: string; emotional_state: string | null; relationship_stage: string | null }[];
+    for (const rel of allRelationships) {
+      const lastEvo = db.prepare(
+        "SELECT emotional_state, relationship_stage FROM relationship_evolution WHERE relationship_id = ? ORDER BY recorded_at DESC LIMIT 1"
+      ).get(rel.id) as { emotional_state: string | null; relationship_stage: string | null } | undefined;
+      const stateChanged = lastEvo?.emotional_state !== rel.emotional_state;
+      const stageChanged = lastEvo?.relationship_stage !== rel.relationship_stage;
+      if (stateChanged || stageChanged || !lastEvo) {
+        recordEvolution(rel.id, userId as string, rel.emotional_state, rel.relationship_stage, 'relationship_analysis');
+      }
+    }
+  } catch (err) {
+    logger.error("[analyze_relationships] Evolution recording failed", { error: String(err), jobId });
+    throw err;
   }
 
   // Detect significant emotional shifts and record narrative anchors
-  for (const rel of allRelationships) {
-    const previousEvolution = db.prepare(
+  try {
+    const db = getDb();
+    const allRelationships = db.prepare(
+      "SELECT id, emotional_state, relationship_stage FROM relationships WHERE user_id = ?"
+    ).all(userId) as { id: string; emotional_state: string | null; relationship_stage: string | null }[];
+    for (const rel of allRelationships) {
+      const previousEvolution = db.prepare(
       "SELECT emotional_state FROM relationship_evolution WHERE relationship_id = ? ORDER BY recorded_at DESC LIMIT 1 OFFSET 1"
     ).get(rel.id) as { emotional_state: string | null } | undefined;
 
@@ -63,6 +87,10 @@ export async function handleAnalyzeRelationships(jobId: string, payload: JobPayl
         );
       }
     }
+    }
+  } catch (err) {
+    logger.error("[analyze_relationships] Anchor recording failed", { error: String(err), jobId });
+    throw err;
   }
 
   markJobCompleted(jobId);
