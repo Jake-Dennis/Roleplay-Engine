@@ -143,11 +143,11 @@ interface ServerConfigRow {
 
 // ── Fallback defaults (mirrors src/lib/config.ts env-var resolution) ─
 
-const FALLBACK_OLLAMA_HOST = process.env.OLLAMA_HOST || "192.168.6.1";
+const FALLBACK_OLLAMA_HOST = process.env.OLLAMA_HOST || "";
 const FALLBACK_OLLAMA_PORT = parseInt(process.env.OLLAMA_PORT || "11434", 10);
 const FALLBACK_OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen3.5:9b";
 const FALLBACK_OLLAMA_EMBEDDING = process.env.OLLAMA_EMBEDDING_MODEL || "bge-m3";
-const FALLBACK_TTS_HOST = process.env.TTS_HOST || "192.168.4.2";
+const FALLBACK_TTS_HOST = process.env.TTS_HOST || "";
 const FALLBACK_TTS_PORT = parseInt(process.env.TTS_PORT || "8880", 10);
 
 // ── Public API ─────────────────────────────────────────────────────

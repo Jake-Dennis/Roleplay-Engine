@@ -12,7 +12,7 @@ import { DEDUP_WINDOW_MS, JOB_DEBOUNCE_INTERVALS, JOB_RETENTION_DAYS } from "./j
  * See ollama.ts getUserModels() and generate/[id]/route.ts for the chain.
  */
 export const OLLAMA_CONFIG = {
-  host: process.env.OLLAMA_HOST || "192.168.6.1",
+  host: process.env.OLLAMA_HOST || "",
   port: parseInt(process.env.OLLAMA_PORT || "11434", 10),
   get baseUrl() {
     return `http://${this.host}:${this.port}`;
@@ -46,7 +46,7 @@ export const OLLAMA_CONFIG = {
  * audio format, caching, and retry behavior.
  */
 export const TTS_CONFIG = {
-  host: process.env.TTS_HOST || "192.168.4.2",
+  host: process.env.TTS_HOST || "",
   port: parseInt(process.env.TTS_PORT || "8880", 10),
   get baseUrl() {
     return `http://${this.host}:${this.port}`;
