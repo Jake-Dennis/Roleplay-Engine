@@ -320,6 +320,7 @@ function HowItWorksDocs() {
                 "[MEMORIES]      Important narrative memories",
                 "[KNOWN WORLD]   Wiki entries (locations, NPCs, etc.)",
                 "[RELATIONSHIPS] Emotional state between characters",
+                "[CURRENT CONVERSATION]  Persona ↔ NPC exchanges (grouped by pair)",
                 "[RELEVANT PAST] Old messages relevant to now (RAG)",
                 "[RECENT HISTORY] Last N messages (auto-sized)",
               ].map((line) => (
@@ -387,13 +388,43 @@ function HowItWorksDocs() {
         </p>
       </div>
 
+      {/* Conversation Tracking */}
+      <div className="rounded-lg border border-border-default bg-bg-raised p-4">
+        <h3 className="text-sm font-semibold text-text-primary mb-2">Conversation Tracking</h3>
+        <p className="text-xxs text-text-muted mb-3">
+          In group sessions, messages are automatically grouped by which persona is talking to which NPC. The AI sees focused exchanges instead of one flat history.
+        </p>
+        <div className="flex flex-col items-center gap-1.5 mb-3">
+          <div className="rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs text-text-primary">AI generates: "Elrond said..."</div>
+          <ArrowDownIcon small />
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-1.5 text-xs text-text-primary">
+            detectSpeakingAs() → stores speaking_as: "Elrond"
+          </div>
+          <ArrowDownIcon small />
+          <div className="rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs text-text-primary">
+            getConversationPairMessages() → pairs Gandalf↔Elrond
+          </div>
+          <ArrowDownIcon small />
+          <div className="rounded-lg border border-green-500/30 bg-green-500/5 px-3 py-1.5 text-xs text-text-primary">
+            [CURRENT CONVERSATION] in prompt → focused exchanges
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xxs text-text-muted">
+          <span className="rounded bg-bg-raised px-2 py-1">Supports multiple NPCs per response (<code className="text-accent">Elrond, Aragorn</code>)</span>
+          <span className="rounded bg-bg-raised px-2 py-1">Messages labeled by persona/NPC name, not generic "Player"</span>
+          <span className="rounded bg-bg-raised px-2 py-1">View all pairs in <span className="text-accent">Conversations</span> sidebar page</span>
+        </div>
+      </div>
+
       {/* Key Concepts */}
       <div className="grid md:grid-cols-2 gap-3">
         {[
           { title: "Context Window", desc: "The model's working memory, set per-model in Server Settings. Determines how many tokens the AI can 'see' at once." },
           { title: "Dynamic Budget", desc: "Non-message sections (lore, memories, relationships) are measured first. Messages automatically shrink to fit whatever space remains." },
-          { title: "Token Estimation", desc: "Token counts use a chars/4 approximation. Actual tokenization may vary by model. The budget bar is an estimate, not a precise count." },
+          { title: "Conversation Tracking", desc: "AI responses are scanned for NPC names — detected NPCs stored in speaking_as. Creates separate persona↔NPC pairs for focused context in group sessions." },
           { title: "Auto-Sizing Messages", desc: "Messages automatically shrink to fit the context window. More lore/memories/relationships means fewer messages, and vice versa — no hard cap needed." },
+          { title: "RAG for History", desc: "All messages are embedded via generate_embeddings jobs. Relevant older messages are retrieved via cosine similarity and shown as [RELEVANT PAST] in the prompt." },
+          { title: "Multi-NPC Detection", desc: "If the AI roleplays as multiple NPCs in one response (e.g., 'Elrond said... Aragorn replied...'), all are captured comma-separated and each gets its own conversation pair." },
         ].map(({ title, desc }) => (
           <div key={title} className="rounded-lg border border-border-default bg-bg-raised p-3">
             <p className="text-xs font-medium text-text-primary mb-1">{title}</p>
