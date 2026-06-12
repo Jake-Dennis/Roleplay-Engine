@@ -493,4 +493,43 @@ export function runSchemaMigrations(): void {
   } catch {
     // Column already exists — safe to ignore
   }
+
+  // Migration: Entity ID columns in relationships
+  for (const col of ["source_entity_id", "target_entity_id"]) {
+    try {
+      db.prepare(`ALTER TABLE relationships ADD COLUMN ${col} TEXT REFERENCES entity_registry(id)`).run();
+    } catch { /* already exists */ }
+  }
+
+  // Migration: Entity registry tables
+  try {
+    db.exec(`CREATE TABLE IF NOT EXISTS entity_registry (
+      id TEXT PRIMARY KEY,
+      entity_type TEXT NOT NULL CHECK(entity_type IN ('persona', 'npc', 'user', 'location', 'event')),
+      display_name TEXT NOT NULL,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      universe_id TEXT REFERENCES universes(id),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+  } catch { /* already exists */ }
+
+  try {
+    db.exec(`CREATE TABLE IF NOT EXISTS entity_aliases (
+      id TEXT PRIMARY KEY,
+      entity_id TEXT NOT NULL REFERENCES entity_registry(id) ON DELETE CASCADE,
+      alias TEXT NOT NULL,
+      source TEXT DEFAULT 'user_defined' CHECK(source IN ('user_defined', 'llm_extracted', 'wiki_sync')),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+  } catch { /* already exists */ }
+
+  for (const idx of [
+    "CREATE INDEX IF NOT EXISTS idx_entity_registry_user ON entity_registry(user_id)",
+    "CREATE INDEX IF NOT EXISTS idx_entity_registry_universe ON entity_registry(universe_id)",
+    "CREATE INDEX IF NOT EXISTS idx_entity_registry_type ON entity_registry(entity_type)",
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_entity_aliases_alias ON entity_aliases(alias)",
+  ]) {
+    try { db.exec(idx); } catch { /* already exists */ }
+  }
 }

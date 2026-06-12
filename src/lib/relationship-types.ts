@@ -39,6 +39,8 @@ export interface RelationshipRow {
   id: string;
   user_id: string;
   universe_id: string | null;
+  source_entity_id: string | null;
+  target_entity_id: string | null;
   source_entity: string;
   target_entity: string;
   emotional_state: string | null;  // JSON: EmotionalState

@@ -154,6 +154,8 @@ function main() {
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),
       universe_id TEXT REFERENCES universes(id),
+      source_entity_id TEXT REFERENCES entity_registry(id),
+      target_entity_id TEXT REFERENCES entity_registry(id),
       source_entity TEXT NOT NULL,
       target_entity TEXT NOT NULL,
       emotional_state TEXT,
@@ -197,6 +199,26 @@ function main() {
       last_seen_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(user_id, entity_name, source_table, source_id)
+    );
+
+    -- Entity registry — universal ID tracking for personas, NPCs, users, locations, events
+    CREATE TABLE IF NOT EXISTS entity_registry (
+      id TEXT PRIMARY KEY,
+      entity_type TEXT NOT NULL CHECK(entity_type IN ('persona', 'npc', 'user', 'location', 'event')),
+      display_name TEXT NOT NULL,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      universe_id TEXT REFERENCES universes(id),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Entity aliases — alternative names that resolve to the same entity (e.g., "Strider" → Aragorn)
+    CREATE TABLE IF NOT EXISTS entity_aliases (
+      id TEXT PRIMARY KEY,
+      entity_id TEXT NOT NULL REFERENCES entity_registry(id) ON DELETE CASCADE,
+      alias TEXT NOT NULL,
+      source TEXT DEFAULT 'user_defined' CHECK(source IN ('user_defined', 'llm_extracted', 'wiki_sync')),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
     -- Contradiction flags (wiki linting — Task 23)
@@ -485,6 +507,10 @@ function main() {
     CREATE INDEX IF NOT EXISTS idx_narrative_anchors_user ON narrative_anchors(user_id);
     CREATE INDEX IF NOT EXISTS idx_entity_mentions_user ON entity_mentions(user_id);
     CREATE INDEX IF NOT EXISTS idx_entity_mentions_name ON entity_mentions(entity_name);
+    CREATE INDEX IF NOT EXISTS idx_entity_registry_user ON entity_registry(user_id);
+    CREATE INDEX IF NOT EXISTS idx_entity_registry_universe ON entity_registry(universe_id);
+    CREATE INDEX IF NOT EXISTS idx_entity_registry_type ON entity_registry(entity_type);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_entity_aliases_alias ON entity_aliases(alias);
     CREATE INDEX IF NOT EXISTS idx_events_user ON events(user_id);
     CREATE INDEX IF NOT EXISTS idx_events_universe ON events(universe_id);
     CREATE INDEX IF NOT EXISTS idx_npcs_user ON npcs(user_id);

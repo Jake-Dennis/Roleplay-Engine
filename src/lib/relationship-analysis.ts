@@ -16,6 +16,56 @@ import { generateText, getActiveJobModel } from "@/lib/ollama";
 import { syncRelationshipToFilesystem } from "@/lib/relationship-markdown";
 import { safeParseWarn } from "@/lib/safe-json";
 import type { RelationshipRow } from "@/lib/relationship-types";
+import type { DbDatabase } from "@/lib/types";
+
+/**
+ * Resolve an entity name to a registered entity ID from the entity_registry.
+ *
+ * Resolution order:
+ * 1. Check entity_registry by display_name or aliases (user-scoped)
+ * 2. Check personas table by name
+ * 3. Check npcs table by name
+ * 4. Create a transient NPC entity in the registry as a fallback
+ *
+ * Returns the entity ID string (e.g. "persona:{uuid}" or "npc:{uuid}")
+ * or null if all resolution paths fail.
+ */
+function resolveEntityId(db: DbDatabase, userId: string, name: string): string | null {
+  // 1. Try to resolve via entity_registry (display_name or aliases)
+  const found = db.prepare(`
+    SELECT er.id FROM entity_registry er
+    LEFT JOIN entity_aliases ea ON ea.entity_id = er.id
+    WHERE er.user_id = ? AND (er.display_name = ? OR ea.alias = ?)
+    LIMIT 1
+  `).get(userId, name, name) as { id: string } | undefined;
+
+  if (found) return found.id;
+
+  // 2. Not found in registry — check if it matches a persona by name
+  const persona = db.prepare(
+    "SELECT id FROM personas WHERE user_id = ? AND name = ?"
+  ).get(userId, name) as { id: string } | undefined;
+
+  if (persona) return `persona:${persona.id}`;
+
+  // 3. Check if it matches an NPC by name
+  const npc = db.prepare(
+    "SELECT id FROM npcs WHERE user_id = ? AND name = ?"
+  ).get(userId, name) as { id: string } | undefined;
+
+  if (npc) return `npc:${npc.id}`;
+
+  // 4. Not in any table — create a transient entity in the registry
+  const id = `npc:${crypto.randomUUID()}`;
+  try {
+    db.prepare(
+      "INSERT INTO entity_registry (id, entity_type, display_name, user_id) VALUES (?, 'npc', ?, ?)"
+    ).run(id, name, userId);
+    return id;
+  } catch {
+    return null;
+  }
+}
 
 export interface RelationshipAnalysisResult {
   analyzedCount: number;
@@ -85,11 +135,14 @@ export async function processRelationshipAnalysis(
     if (existing) {
       // Update existing relationship
       try {
+        const sourceId = resolveEntityId(db, userId, rel.source);
+        const targetId = resolveEntityId(db, userId, rel.target);
         db.prepare(`
           UPDATE relationships
-          SET emotional_state = ?, relationship_stage = ?, shared_history = ?, updated_at = CURRENT_TIMESTAMP
+          SET emotional_state = ?, relationship_stage = ?, shared_history = ?,
+              source_entity_id = ?, target_entity_id = ?, updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
-        `).run(rel.emotionalState, rel.stage, rel.sharedHistory, existing.id);
+        `).run(rel.emotionalState, rel.stage, rel.sharedHistory, sourceId, targetId, existing.id);
       } catch (err) {
         console.error("[SQL ERROR] UPDATE relationships failed", { error: String(err), rel, existingId: existing.id });
         throw err;
@@ -101,10 +154,15 @@ export async function processRelationshipAnalysis(
       // Create new relationship
       const relId = crypto.randomUUID();
       try {
+        const sourceId = resolveEntityId(db, userId, rel.source);
+        const targetId = resolveEntityId(db, userId, rel.target);
         db.prepare(`
-          INSERT INTO relationships (id, user_id, source_entity, target_entity, emotional_state, relationship_stage, shared_history, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-        `).run(relId, userId, rel.source, rel.target, rel.emotionalState, rel.stage, rel.sharedHistory);
+          INSERT INTO relationships (id, user_id, source_entity, target_entity,
+            source_entity_id, target_entity_id,
+            emotional_state, relationship_stage, shared_history, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        `).run(relId, userId, rel.source, rel.target, sourceId, targetId,
+              rel.emotionalState, rel.stage, rel.sharedHistory);
       } catch (err) {
         console.error("[SQL ERROR] INSERT relationships failed", { error: String(err), relId, rel });
         throw err;

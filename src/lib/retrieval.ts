@@ -29,6 +29,8 @@ import { getServerConfig } from "@/lib/server-config";
 import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import { generateEmbedding } from "@/lib/ollama";
 import { calculateImportance, type ImportanceScores } from "@/lib/importance";
+import { generateEntityId } from "@/lib/entity-registry";
+import type { DbDatabase } from "@/lib/types";
 
 // H5: Re-export prompt assembly function from canonical source (prompt-builder.ts)
 export { assemblePromptWithBudget } from "@/lib/prompt-builder";
@@ -846,9 +848,34 @@ export function getRecentMessages(
 }
 
 /**
+ * Resolve an NPC name to a registered entity ID from the entity_registry.
+ * Scopes the lookup to the session's owner so we stay within the correct user namespace.
+ *
+ * Resolution order:
+ * 1. Check entity_registry by display_name or aliases (session-scoped)
+ *
+ * Returns the entity ID string (e.g. "npc:{uuid}" or "persona:{uuid}")
+ * or null if not found in the registry.
+ */
+function resolveNpcEntityId(db: DbDatabase, name: string, sessionId: string): string | null {
+  const found = db.prepare(`
+    SELECT er.id FROM entity_registry er
+    LEFT JOIN entity_aliases ea ON ea.entity_id = er.id
+    WHERE (er.display_name = ? OR ea.alias = ?) AND er.user_id IN (
+      SELECT owner_id FROM sessions WHERE id = ?
+    )
+    LIMIT 1
+  `).get(name, name, sessionId) as { id: string } | undefined;
+  return found?.id || null;
+}
+
+/**
  * Build conversation pair context for group sessions.
  * Groups messages by (persona ↔ NPC) pairs using the speaking_as column.
  * Returns the last ~10 exchanges per pair.
+ *
+ * NPC names are resolved to entity IDs via entity_registry so that aliases
+ * (e.g. "Strider" and "Aragorn") that map to the same entity merge into a single pair.
  */
 export function getConversationPairMessages(
   sessionId: string
@@ -907,7 +934,10 @@ export function getConversationPairMessages(
     const npcNames = row.speaking_as.split(",").map(n => n.trim()).filter(Boolean);
     
     for (const npcName of npcNames) {
-      const key = `${personaId || ''}||${npcName}`;
+      // Resolve NPC name to entity ID so aliases merge into the same pair
+      const npcEntityId = resolveNpcEntityId(db, npcName, sessionId);
+      const resolvedKey = npcEntityId || npcName;
+      const key = `${personaId || ''}||${resolvedKey}`;
       
       if (!pairMap.has(key)) {
         pairMap.set(key, {
