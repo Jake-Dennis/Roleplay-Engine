@@ -35,9 +35,12 @@ export default function PersonasPage() {
   const [formTags, setFormTags] = useState("");
   const [formWritingStyle, setFormWritingStyle] = useState("");
   const [formLlmModel, setFormLlmModel] = useState("");
+  const [formVoice, setFormVoice] = useState("");
+  const [voices, setVoices] = useState<{ id: string; name: string; gender: string; language: string }[]>([]);
 
   useEffect(() => {
     loadPersonas();
+    fetch("/api/tts/voices").then(r => r.json()).then(d => setVoices(d.voiceDetails || [])).catch(() => {});
   }, []);
 
   async function loadPersonas() {
@@ -66,6 +69,7 @@ export default function PersonasPage() {
       case "tags": setFormTags(value); break;
       case "writingStyle": setFormWritingStyle(value); break;
       case "llmModel": setFormLlmModel(value); break;
+      case "voice": setFormVoice(value); break;
     }
   }
 
@@ -82,6 +86,7 @@ export default function PersonasPage() {
     setFormTags("");
     setFormWritingStyle("");
     setFormLlmModel("");
+    setFormVoice("");
     setCreating(true);
     setSelectedId(null);
     setActiveTab("description");
@@ -103,6 +108,12 @@ export default function PersonasPage() {
     setFormWritingStyle(p.writing_style || "");
     setFormLlmModel(p.llm_model || "");
     setActiveTab("description");
+
+    // Load voice assignment for this persona
+    fetch(`/api/voice-assignments?entityType=persona&entityId=${p.id}`).then(r => r.json()).then(d => {
+      if (d.assignment) setFormVoice(d.assignment.voiceName);
+      else setFormVoice("");
+    }).catch(() => setFormVoice(""));
   }
 
   function cancelEdit() {
@@ -140,8 +151,15 @@ export default function PersonasPage() {
         if (res.ok) {
           await loadPersonas();
           const json = await res.json();
-          setSelectedId(json.persona.id);
+          const newId = json.persona.id;
+          setSelectedId(newId);
           setCreating(false);
+          // Save voice assignment for new persona
+          await fetch("/api/voice-assignments", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ entityType: "persona", entityId: newId, voiceName: formVoice || "" }),
+          });
         }
       } else if (selectedId) {
         const res = await fetch(`/api/personas/${selectedId}`, {
@@ -152,6 +170,12 @@ export default function PersonasPage() {
         if (res.ok) {
           await loadPersonas();
         }
+        // Save voice assignment (even if empty — clears it)
+        await fetch("/api/voice-assignments", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ entityType: "persona", entityId: selectedId, voiceName: formVoice || "" }),
+        });
       }
     } finally {
       setSaving(false);
@@ -255,6 +279,8 @@ export default function PersonasPage() {
             formPostHistory={formPostHistory}
             formCreatorNotes={formCreatorNotes}
             formLlmModel={formLlmModel}
+            formVoice={formVoice}
+            voices={voices}
             onChange={handleFieldChange}
           />
         )}
