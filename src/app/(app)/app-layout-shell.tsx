@@ -24,6 +24,7 @@ import {
   Users as UsersIcon,
   FolderOpen,
   Shuffle,
+  MessageCircle,
 } from "lucide-react";
 import { TIME } from "@/lib/config";
 import { renderLoop } from "@/lib/render-loop";
@@ -42,6 +43,7 @@ const navItems = [
   { href: "/npcs", label: "NPCs", icon: UsersIcon },
   { href: "/relationships", label: "Relationships", icon: Heart },
   { href: "/narrative-threads", label: "Threads", icon: GitBranch },
+  { href: "/conversations", label: "Conversations", icon: MessageCircle },
   { href: "/timeline", label: "Timeline", icon: Clock },
   { href: "/voice-combiner", label: "Voice Mixer", icon: Volume2 },
   { href: "/jobs", label: "Jobs", icon: ListTodo },

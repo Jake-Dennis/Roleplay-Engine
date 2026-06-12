@@ -29,7 +29,6 @@ import {
 import { ChatSearch } from "@/components/chat/chat-search";
 import { ChatExport } from "@/components/chat/chat-export";
 import { NarratorStyleInline } from "@/components/session/narrator-style-inline";
-import { ConversationLog } from "@/components/session/conversation-log";
 
 interface SessionHeaderProps {
   sessionId: string;
@@ -83,7 +82,6 @@ export const SessionHeader = memo(function SessionHeader({
   const [editingName, setEditingName] = useState(false);
   const [editName, setEditName] = useState(sessionName);
   const [nameSaving, setNameSaving] = useState(false);
-  const [showConversationLog, setShowConversationLog] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -284,13 +282,13 @@ export const SessionHeader = memo(function SessionHeader({
               <Sparkles className="h-3 w-3" />
             </button>
             {/* Conversation Log button */}
-            <button
-              onClick={() => setShowConversationLog(true)}
+            <Link
+              href={`/conversations?sessionId=${sessionId}`}
               className="rounded p-1 text-text-muted transition-colors hover:bg-bg-raised hover:text-accent"
               title="Conversation log"
             >
               <MessageSquare className="h-3.5 w-3.5" />
-            </button>
+            </Link>
             {/* Narrator Style button */}
             <NarratorStyleInline sessionId={sessionId} />
             <ChatExport sessionId={sessionId} />
@@ -323,13 +321,6 @@ export const SessionHeader = memo(function SessionHeader({
         </div>
       </div>
       <ChatSearch sessionId={sessionId} />
-
-      {showConversationLog && (
-        <ConversationLog
-          sessionId={sessionId}
-          onClose={() => setShowConversationLog(false)}
-        />
-      )}
     </div>
   );
 });
