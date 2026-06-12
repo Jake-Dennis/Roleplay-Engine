@@ -13,6 +13,7 @@ import {
   Sparkles,
   ChevronDown,
   BrainCircuit,
+  BookOpen,
 } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
 import RecentChangesWidget from "@/components/wiki/recent-changes-widget";
@@ -82,6 +83,7 @@ function StatCard({ label, value }: { label: string; value: number }) {
 function AIManagementPanel({ universeId }: { universeId: string | null }) {
   const [data, setData] = useState<AIMetricsData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [aiTab, setAiTab] = useState<"metrics" | "docs">("metrics");
 
   useEffect(() => {
     if (!universeId) return;
@@ -105,22 +107,40 @@ function AIManagementPanel({ universeId }: { universeId: string | null }) {
 
   if (!universeId) {
     return (
-      <p className="text-xs text-text-muted py-8 text-center">Select a universe to view AI metrics.</p>
+      <div>
+        <TabBar aiTab={aiTab} setAiTab={setAiTab} />
+        <p className="text-xs text-text-muted py-8 text-center">Select a universe to view AI metrics.</p>
+      </div>
     );
   }
 
   if (loading && !data) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Sparkles className="h-5 w-5 text-text-muted animate-pulse" />
-        <span className="ml-2 text-xs text-text-muted">Loading metrics...</span>
+      <div>
+        <TabBar aiTab={aiTab} setAiTab={setAiTab} />
+        <div className="flex items-center justify-center py-12">
+          <Sparkles className="h-5 w-5 text-text-muted animate-pulse" />
+          <span className="ml-2 text-xs text-text-muted">Loading metrics...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (aiTab === "docs") {
+    return (
+      <div>
+        <TabBar aiTab={aiTab} setAiTab={setAiTab} />
+        <HowItWorksDocs />
       </div>
     );
   }
 
   if (!data) {
     return (
-      <p className="text-xs text-text-muted py-8 text-center">Failed to load AI metrics.</p>
+      <div>
+        <TabBar aiTab={aiTab} setAiTab={setAiTab} />
+        <p className="text-xs text-text-muted py-8 text-center">Failed to load AI metrics.</p>
+      </div>
     );
   }
 
@@ -131,6 +151,7 @@ function AIManagementPanel({ universeId }: { universeId: string | null }) {
 
   return (
     <div className="space-y-4">
+      <TabBar aiTab={aiTab} setAiTab={setAiTab} />
       {/* Summary bar */}
       <div className="flex items-center gap-4 flex-wrap">
         <div className="flex items-center gap-2">
@@ -238,6 +259,159 @@ function AIManagementPanel({ universeId }: { universeId: string | null }) {
         <StatCard label="Messages" value={stats.totalMessages} />
       </div>
     </div>
+  );
+}
+
+function TabBar({ aiTab, setAiTab }: { aiTab: "metrics" | "docs"; setAiTab: (t: "metrics" | "docs") => void }) {
+  return (
+    <div className="flex gap-1 rounded-lg border border-border-default bg-bg-raised p-0.5 w-fit mb-4">
+      <button
+        onClick={() => setAiTab("metrics")}
+        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md transition-colors ${
+          aiTab === "metrics"
+            ? "bg-accent text-white"
+            : "text-text-muted hover:text-text-default"
+        }`}
+      >
+        <BrainCircuit className="h-3.5 w-3.5" />
+        Metrics
+      </button>
+      <button
+        onClick={() => setAiTab("docs")}
+        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md transition-colors ${
+          aiTab === "docs"
+            ? "bg-accent text-white"
+            : "text-text-muted hover:text-text-default"
+        }`}
+      >
+        <BookOpen className="h-3.5 w-3.5" />
+        How It Works
+      </button>
+    </div>
+  );
+}
+
+function HowItWorksDocs() {
+  return (
+    <div className="space-y-6">
+      {/* Pipeline Flow */}
+      <div className="rounded-lg border border-border-default bg-bg-raised p-4">
+        <h3 className="text-sm font-semibold text-text-primary mb-3">Pipeline Flow</h3>
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-full max-w-md rounded-lg border border-border-default bg-bg-elevated p-2.5 text-center">
+            <p className="text-xs font-medium text-text-primary">User sends message</p>
+            <p className="text-xxs text-text-muted mt-0.5">Classify intent, build context</p>
+          </div>
+          <ArrowDownIcon />
+          <div className="w-full max-w-lg rounded-lg border border-blue-500/30 bg-blue-500/5 p-2.5 text-center">
+            <p className="text-xs font-medium text-text-primary">getRetrievedContext()</p>
+            <p className="text-xxs text-text-muted mt-0.5">Gather lore, memories, messages, threads</p>
+          </div>
+          <ArrowDownIcon />
+          <div className="w-full max-w-lg rounded-lg border border-green-500/30 bg-green-500/5 p-2.5 text-center">
+            <p className="text-xs font-medium text-text-primary">applyContextBudget()</p>
+            <p className="text-xxs text-text-muted mt-0.5">Dynamic allocation — non-message sections first</p>
+          </div>
+          <ArrowDownIcon />
+          <div className="w-full max-w-lg rounded-lg border border-purple-500/30 bg-purple-500/5 p-3">
+            <div className="space-y-1 text-xxs">
+              <p className="text-xs font-medium text-text-primary text-center mb-2">assemblePrompt()</p>
+              {[
+                "[SYSTEM]        System instructions + personality",
+                "[MEMORIES]      Important narrative memories",
+                "[KNOWN WORLD]   Wiki entries (locations, NPCs, etc.)",
+                "[RELATIONSHIPS] Emotional state between characters",
+                "[RELEVANT PAST] Old messages relevant to now (RAG)",
+                "[RECENT HISTORY] Last N messages (auto-sized)",
+              ].map((line) => (
+                <div key={line} className="rounded bg-bg-elevated px-2 py-1 text-text-muted font-mono">
+                  {line}
+                </div>
+              ))}
+            </div>
+          </div>
+          <ArrowDownIcon />
+          <div className="w-full max-w-md rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5 text-center">
+            <p className="text-xs font-medium text-text-primary">Ollama generates response</p>
+            <p className="text-xxs text-text-muted mt-0.5">Fits in context window ✓</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Dynamic Budget */}
+      <div className="rounded-lg border border-border-default bg-bg-raised p-4">
+        <h3 className="text-sm font-semibold text-text-primary mb-2">Dynamic Context Budget</h3>
+        <p className="text-xxs text-text-muted mb-3">
+          Instead of fixed percentage allocations, the system measures non-message sections first and gives messages whatever fits.
+        </p>
+        <div className="grid md:grid-cols-2 gap-3">
+          <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-3">
+            <p className="text-xxs font-medium text-red-400 uppercase tracking-wider mb-2">Before (broken)</p>
+            <div className="space-y-1">
+              <div className="h-4 rounded bg-blue-500/30 flex items-center px-2 text-[9px] text-white/70">Messages (100%)</div>
+              <div className="h-4 rounded bg-green-500/30 flex items-center px-2 text-[9px] text-white/70">Lore (100%)</div>
+              <div className="h-4 rounded bg-purple-500/30 flex items-center px-2 text-[9px] text-white/70">Memories (100%)</div>
+            </div>
+            <p className="text-xxs text-text-muted mt-2">Each section independently claims the full window → Ollama silently truncates the middle</p>
+          </div>
+          <div className="rounded-lg border border-green-500/30 bg-green-500/5 p-3">
+            <p className="text-xxs font-medium text-green-400 uppercase tracking-wider mb-2">After (fixed)</p>
+            <div className="space-y-1">
+              <div className="h-4 rounded bg-green-500/30 flex items-center px-2 text-[9px] text-white/70">Lore (actual)</div>
+              <div className="h-4 rounded bg-purple-500/30 flex items-center px-2 text-[9px] text-white/70">Memories (actual)</div>
+              <div className="h-4 rounded bg-blue-500/30 flex items-center px-2 text-[9px] text-white/70">Messages (remainder)</div>
+            </div>
+            <p className="text-xxs text-text-muted mt-2">Non-message sections measured first, messages get remainder → everything fits</p>
+          </div>
+        </div>
+      </div>
+
+      {/* RAG for History */}
+      <div className="rounded-lg border border-border-default bg-bg-raised p-4">
+        <h3 className="text-sm font-semibold text-text-primary mb-2">RAG for Message History</h3>
+        <p className="text-xxs text-text-muted mb-3">
+          When messages get trimmed to fit the context window, relevant older messages aren't lost — they're retrieved via vector search.
+        </p>
+        <div className="flex flex-col items-center gap-1.5 mb-3">
+          <div className="rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs text-text-primary">Your message</div>
+          <ArrowDownIcon small />
+          <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/5 px-3 py-1.5 text-xs text-text-primary">
+            generateEmbedding() → vec_messages MATCH
+          </div>
+          <ArrowDownIcon small />
+          <div className="rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs text-text-primary">
+            Top 10 relevant past messages → [RELEVANT PAST]
+          </div>
+        </div>
+        <p className="text-xxs text-text-muted">
+          Messages are embedded when sent (via <code className="text-accent">generate_embeddings</code> job). The <code className="text-accent">vec_messages</code> sqlite-vec table stores 1024-dimension vectors, queried by cosine distance on every generation.
+        </p>
+      </div>
+
+      {/* Key Concepts */}
+      <div className="grid md:grid-cols-2 gap-3">
+        {[
+          { title: "Context Window", desc: "The model's working memory, set per-model in Server Settings. Determines how many tokens the AI can 'see' at once." },
+          { title: "Dynamic Budget", desc: "Non-message sections (lore, memories, relationships) are measured first. Messages automatically shrink to fit whatever space remains." },
+          { title: "Token Estimation", desc: "Token counts use a chars/4 approximation. Actual tokenization may vary by model. The budget bar is an estimate, not a precise count." },
+          { title: "Message Limit", desc: "Configurable cap on how many recent messages are fetched from the database. Default 30, adjustable in Server Settings." },
+        ].map(({ title, desc }) => (
+          <div key={title} className="rounded-lg border border-border-default bg-bg-raised p-3">
+            <p className="text-xs font-medium text-text-primary mb-1">{title}</p>
+            <p className="text-xxs text-text-muted">{desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ArrowDownIcon({ small }: { small?: boolean }) {
+  const cls = small ? "h-3.5 w-3.5" : "h-4 w-4";
+  return (
+    <svg className={`${cls} text-text-muted`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+    </svg>
   );
 }
 
