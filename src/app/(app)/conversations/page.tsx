@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { MessageSquare, ChevronDown, ChevronUp, ArrowRight, MessageCircle } from "lucide-react";
+import { useApp } from "@/contexts/app-context";
 
 interface Exchange {
   speaker: string;
@@ -23,8 +23,8 @@ interface SessionConv {
 }
 
 export default function ConversationsPage() {
-  const searchParams = useSearchParams();
-  const filterSessionId = searchParams.get("sessionId");
+  const { activeSession } = useApp();
+  const filterSessionId = activeSession?.id || null;
 
   const [sessionConvs, setSessionConvs] = useState<SessionConv[]>([]);
   const [loading, setLoading] = useState(true);

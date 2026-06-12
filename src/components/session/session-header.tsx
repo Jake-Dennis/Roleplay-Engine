@@ -283,7 +283,7 @@ export const SessionHeader = memo(function SessionHeader({
             </button>
             {/* Conversation Log button */}
             <Link
-              href={`/conversations?sessionId=${sessionId}`}
+              href={`/conversations`}
               className="rounded p-1 text-text-muted transition-colors hover:bg-bg-raised hover:text-accent"
               title="Conversation log"
             >
