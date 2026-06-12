@@ -542,36 +542,10 @@ function main() {
     CREATE INDEX IF NOT EXISTS idx_jobs_user_status_type ON job_queue(user_id, status, type, priority);
   `);
 
-  // Create sqlite-vec virtual tables for vector search
-  // These are created separately since they require the vec extension
-  try {
-    db.exec(`
-      -- Vector search tables (sqlite-vec)
-      -- bge-m3 produces 1024-dimensional embeddings
-      CREATE VIRTUAL TABLE IF NOT EXISTS vec_messages USING vec0(
-        embedding float[1024],
-        metadata TEXT
-      );
-
-      CREATE VIRTUAL TABLE IF NOT EXISTS vec_npcs USING vec0(
-        embedding float[1024],
-        metadata TEXT
-      );
-
-      CREATE VIRTUAL TABLE IF NOT EXISTS vec_memories USING vec0(
-        embedding float[1024],
-        metadata TEXT
-      );
-
-      CREATE VIRTUAL TABLE IF NOT EXISTS vec_lore USING vec0(
-        embedding float[1024],
-        metadata TEXT
-      );
-    `);
-    console.log("sqlite-vec virtual tables created");
-  } catch (e) {
-    console.log("sqlite-vec not available, skipping vector tables:", (e as Error).message);
-  }
+  // Vector storage uses the embedding_index + embedding_vectors tables
+  // (created above). No vec0 virtual tables needed — brute-force cosine
+  // similarity over JSON vectors is sufficient for local roleplay scale.
+  console.log("Vector storage: embedding_index + embedding_vectors");
 
   console.log("Database schema created successfully at:", dbPath);
   db.close();

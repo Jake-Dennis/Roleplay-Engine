@@ -832,11 +832,9 @@ export function getRecentMessages(
 
 /**
  * Fetch semantically relevant past messages for the current user input.
- * Uses vector search across vec_messages (populated by generate_embeddings jobs).
- * The vec_messages table stores one row per message embedding with metadata
- * containing the entity_id (message UUID). Results are deduplicated against
- * an optional set of already-included message IDs.
- * Gracefully degrades to empty array if sqlite-vec is unavailable.
+ * Uses brute-force cosine similarity over embedding_vectors (JSON TEXT storage).
+ * Works with any embedding model/dimension — no vec0 tables needed.
+ * Gracefully returns empty array if no embeddings exist or on error.
  */
 export async function getRelevantMessages(
   sessionId: string,
@@ -849,69 +847,84 @@ export async function getRelevantMessages(
   const db = getDb();
 
   try {
-    // Check if vec_messages virtual table exists
-    const tableCheck = db.prepare(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name='vec_messages'"
-    ).get() as { name: string } | undefined;
-    if (!tableCheck) return [];
-
     // Generate embedding for the user's query message
-    const embedding = await generateEmbedding(userMessage.trim());
-    if (!embedding || embedding.length === 0) return [];
+    const queryVec = await generateEmbedding(userMessage.trim());
+    if (!queryVec || queryVec.length === 0) return [];
 
-    // Convert embedding to JSON float64 array string for vec0 MATCH
-    const embeddingStr = "[" + embedding.join(",") + "]";
-
-    // Query vec_messages for similar messages using sqlite-vec's MATCH operator
-    // We fetch 2× topK to allow for filtering (exclusions, missing messages, etc.)
+    // Fetch all message embeddings for this session
     const rows = db.prepare(`
-      SELECT v.rowid, v.distance, v.metadata
-      FROM vec_messages v
-      WHERE v.embedding MATCH ?
-        AND v.k = ?
-    `).all(embeddingStr, topK * 2) as { rowid: string; distance: number; metadata: string }[];
+      SELECT ei.entity_id, ev.vector_data
+      FROM embedding_index ei
+      JOIN embedding_vectors ev ON ei.id = ev.embedding_id
+      WHERE ei.entity_type = 'message'
+        AND ei.entity_id IN (
+          SELECT id FROM messages WHERE session_id = ? AND is_deleted = 0
+        )
+    `).all(sessionId) as { entity_id: string; vector_data: string }[];
 
     if (!rows || rows.length === 0) return [];
 
-    // Parse metadata and join to messages table to get full content
+    // Compute cosine similarity for each row
+    const queryNorm = Math.sqrt(queryVec.reduce((sum, v) => sum + v * v, 0));
+    if (queryNorm === 0) return [];
+
+    interface ScoredResult {
+      entityId: string;
+      similarity: number;
+    }
+
+    const scored: ScoredResult[] = [];
+
+    for (const row of rows) {
+      // Skip excluded IDs (messages already in recent history)
+      if (excludeIds?.has(row.entity_id)) continue;
+
+      try {
+        const vec = JSON.parse(row.vector_data) as number[];
+        if (!Array.isArray(vec) || vec.length === 0) continue;
+
+        // Cosine similarity
+        let dot = 0;
+        let vecNorm = 0;
+        const len = Math.min(queryVec.length, vec.length);
+        for (let i = 0; i < len; i++) {
+          dot += queryVec[i] * vec[i];
+          vecNorm += vec[i] * vec[i];
+        }
+        vecNorm = Math.sqrt(vecNorm);
+        if (vecNorm === 0) continue;
+
+        const similarity = dot / (queryNorm * vecNorm);
+        scored.push({ entityId: row.entity_id, similarity });
+      } catch {
+        // Skip rows with malformed JSON
+        continue;
+      }
+    }
+
+    // Sort by similarity (highest first), take topK
+    scored.sort((a, b) => b.similarity - a.similarity);
+    const top = scored.slice(0, topK);
+
+    // Fetch message content for top results
     const results: { content: string; senderId: string | null; timestamp: string }[] = [];
     const seen = new Set<string>();
 
-    for (const row of rows) {
-      try {
-        const meta = JSON.parse(row.metadata) as {
-          entity_type?: string;
-          entity_id?: string;
-          user_id?: string;
-        };
-        const entityId = meta.entity_id;
-        if (!entityId) continue;
+    for (const { entityId } of top) {
+      if (seen.has(entityId)) continue;
+      seen.add(entityId);
 
-        // Skip excluded IDs (messages already in recent history)
-        if (excludeIds?.has(entityId)) continue;
-        // Skip duplicates
-        if (seen.has(entityId)) continue;
-        seen.add(entityId);
+      const msg = db.prepare(
+        "SELECT content, sender_id, timestamp FROM messages WHERE id = ? AND is_deleted = 0"
+      ).get(entityId) as { content: string; sender_id: string | null; timestamp: string } | undefined;
 
-        // Fetch message content from the messages table
-        const msg = db.prepare(
-          "SELECT content, sender_id, timestamp FROM messages WHERE id = ? AND is_deleted = 0"
-        ).get(entityId) as { content: string; sender_id: string | null; timestamp: string } | undefined;
-
-        if (msg && msg.content) {
-          results.push({
-            content: msg.content,
-            senderId: msg.sender_id,
-            timestamp: msg.timestamp,
-          });
-        }
-      } catch {
-        // Skip malformed metadata rows
-        continue;
+      if (msg && msg.content) {
+        results.push({
+          content: msg.content,
+          senderId: msg.sender_id,
+          timestamp: msg.timestamp,
+        });
       }
-
-      // Stop once we have enough (after filtering)
-      if (results.length >= topK) break;
     }
 
     return results;

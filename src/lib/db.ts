@@ -4,7 +4,6 @@ import fs from "fs";
 import { APP_CONFIG } from "./config";
 
 let db: Database.Database | null = null;
-let vecLoaded = false;
 
 export function getDb(): Database.Database {
   if (db) return db;
@@ -24,41 +23,7 @@ export function getDb(): Database.Database {
   db.pragma("cache_size = -64000"); // 64MB cache
   db.pragma("busy_timeout = 5000"); // Wait 5s for WAL lock contention
 
-  // Load sqlite-vec extension
-  try {
-    loadVecExtension(db);
-    vecLoaded = true;
-  } catch {
-    vecLoaded = false;
-    // sqlite-vec not available — vector search will fall back to keyword-only
-  }
-
   return db;
-}
-
-function loadVecExtension(database: Database.Database) {
-  // Try to find vec0.dll from sqlite-vec-windows-x64 package
-  const nodeModules = path.join(process.cwd(), "node_modules");
-  const candidates = [
-    path.join(nodeModules, "sqlite-vec-windows-x64", "vec0.dll"),
-    path.join(nodeModules, "sqlite-vec-darwin-x64", "vec0.dylib"),
-    path.join(nodeModules, "sqlite-vec-darwin-arm64", "vec0.dylib"),
-    path.join(nodeModules, "sqlite-vec-linux-x64", "vec0.so"),
-    path.join(nodeModules, "sqlite-vec-linux-arm64", "vec0.so"),
-  ];
-
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) {
-      database.loadExtension(candidate);
-      return;
-    }
-  }
-
-  throw new Error("sqlite-vec extension not available");
-}
-
-export function isVecAvailable(): boolean {
-  return vecLoaded;
 }
 
 export function checkpointDb(): void {
@@ -72,6 +37,5 @@ export function closeDb(): void {
     checkpointDb();
     db.close();
     db = null;
-    vecLoaded = false;
   }
 }

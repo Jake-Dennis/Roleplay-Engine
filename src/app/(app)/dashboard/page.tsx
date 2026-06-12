@@ -375,7 +375,7 @@ function HowItWorksDocs() {
           <div className="rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs text-text-primary">Your message</div>
           <ArrowDownIcon small />
           <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/5 px-3 py-1.5 text-xs text-text-primary">
-            generateEmbedding() → vec_messages MATCH
+            generateEmbedding() → cosine similarity search
           </div>
           <ArrowDownIcon small />
           <div className="rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs text-text-primary">
@@ -383,7 +383,7 @@ function HowItWorksDocs() {
           </div>
         </div>
         <p className="text-xxs text-text-muted">
-          Messages are embedded when sent (via <code className="text-accent">generate_embeddings</code> job). The <code className="text-accent">vec_messages</code> sqlite-vec table stores 1024-dimension vectors, queried by cosine distance on every generation.
+          Messages are embedded when sent (via <code className="text-accent">generate_embeddings</code> job). Stored as JSON arrays in <code className="text-accent">embedding_vectors</code> — works with any embedding model, no hardcoded dimension.
         </p>
       </div>
 

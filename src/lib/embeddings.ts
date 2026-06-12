@@ -13,7 +13,7 @@
  * - narrative_memories: For memory retrieval
  */
 
-import { getDb, isVecAvailable } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { generateEmbedding } from "@/lib/ollama";
 import { safeParseWarn } from "@/lib/safe-json";
 import type { DbDatabase } from '@/lib/types';
@@ -94,15 +94,6 @@ export async function processEmbeddings(
     INSERT OR REPLACE INTO embedding_vectors (embedding_id, vector_data)
     VALUES (?, ?)
   `).run(embeddingId, JSON.stringify(vector));
-
-  // Also store in sqlite-vec virtual table if available
-  if (isVecAvailable()) {
-    storeInVecTable(db, entityType, embeddingId, vector, JSON.stringify({
-      entity_type: entityType,
-      entity_id: entityId,
-      user_id: userId,
-    }));
-  }
 
   return { embeddingId, vector };
 }
@@ -244,46 +235,6 @@ export function deleteEmbedding(entityType: string, entityId: string): void {
   db.prepare(
     "DELETE FROM embedding_index WHERE entity_type = ? AND entity_id = ?"
   ).run(entityType, entityId);
-}
-
-/**
- * Store embedding vector in sqlite-vec virtual table
- */
-function storeInVecTable(db: DbDatabase, entityType: string, embeddingId: string, vector: number[], metadata: string): void {
-  const vecTable = getVecTableName(entityType);
-  if (!vecTable) return;
-
-  try {
-    // Convert vector to the format sqlite-vec expects (packed float32)
-    const packedVector = packVector(vector);
-    db.prepare(`
-      INSERT INTO ${vecTable} (rowid, embedding, metadata)
-      VALUES (?, ?, ?)
-    `).run(embeddingId, packedVector, metadata);
-  } catch {
-    // vec table may not exist or have different schema — skip silently
-  }
-}
-
-/**
- * Get the vec0 table name for an entity type
- */
-function getVecTableName(entityType: string): string | null {
-  switch (entityType) {
-    case "message": return "vec_messages";
-    case "location": return "vec_lore";
-    case "npc": return "vec_npcs";
-    case "narrative_memory": return "vec_memories";
-    default: return null;
-  }
-}
-
-/**
- * Pack a number array into a Float32Array buffer for sqlite-vec
- */
-function packVector(vector: number[]): Buffer {
-  const float32 = new Float32Array(vector);
-  return Buffer.from(float32.buffer);
 }
 
 
