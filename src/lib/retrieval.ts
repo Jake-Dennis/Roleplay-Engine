@@ -876,7 +876,6 @@ export function getConversationPairMessages(
       AND ai.speaking_as IS NOT NULL
       AND ai.speaking_as != ''
     ORDER BY ai.timestamp DESC
-    LIMIT 50
   `).all(sessionId) as {
     ai_msg_id: string;
     ai_content: string;
@@ -903,38 +902,38 @@ export function getConversationPairMessages(
     
     const personaId = row.user_persona_id || row.user_sender_id;
     const personaName = row.user_persona_name || "Player";
-    const npcName = row.speaking_as;
-    const key = `${personaId || ''}||${npcName}`;
     
-    if (!pairMap.has(key)) {
-      pairMap.set(key, {
-        personaId: personaId || null,
-        personaName: personaName || null,
-        npcName,
-        exchanges: [],
-      });
-    }
+    // Handle comma-separated NPCs (multiple NPCs speaking in one response)
+    const npcNames = row.speaking_as.split(",").map(n => n.trim()).filter(Boolean);
     
-    const pair = pairMap.get(key)!;
-    
-    // Add user message first (chronological order — we're iterating DESC)
-    if (row.user_content) {
-      pair.exchanges.unshift({
-        speaker: personaName,
-        content: row.user_content,
-      });
-    }
-    // Add AI response
-    if (row.ai_content) {
-      pair.exchanges.unshift({
-        speaker: npcName,
-        content: row.ai_content,
-      });
-    }
-    
-    // Limit to last 10 exchanges per pair
-    if (pair.exchanges.length > 20) { // 20 = 10 exchanges × 2 (user + AI)
-      pair.exchanges = pair.exchanges.slice(-20);
+    for (const npcName of npcNames) {
+      const key = `${personaId || ''}||${npcName}`;
+      
+      if (!pairMap.has(key)) {
+        pairMap.set(key, {
+          personaId: personaId || null,
+          personaName: personaName || null,
+          npcName,
+          exchanges: [],
+        });
+      }
+      
+      const pair = pairMap.get(key)!;
+      
+      // Add user message first (chronological order — we're iterating DESC)
+      if (row.user_content) {
+        pair.exchanges.unshift({
+          speaker: personaName,
+          content: row.user_content,
+        });
+      }
+      // Add AI response
+      if (row.ai_content) {
+        pair.exchanges.unshift({
+          speaker: npcName,
+          content: row.ai_content,
+        });
+      }
     }
   }
   

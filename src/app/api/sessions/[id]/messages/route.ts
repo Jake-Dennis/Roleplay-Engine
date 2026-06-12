@@ -51,7 +51,7 @@ export async function GET(
     // Cursor-based pagination
     const limitParam = searchParams.get("limit");
     const cursor = searchParams.get("cursor");
-    const limit = limitParam ? Math.min(parseInt(limitParam, 10), 500) : 100;
+    const limit = limitParam ? Math.min(parseInt(limitParam, 10), 100000) : 100;
 
     let query = `
       SELECT m.*, u.username as sender_name, p.name as persona_name, p.avatar_url as persona_avatar

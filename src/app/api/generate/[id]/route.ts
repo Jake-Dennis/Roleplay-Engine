@@ -14,62 +14,44 @@ import { validateLength } from '@/lib/validation';
 import { markOllamaBusy, markOllamaIdle } from '@/lib/ollama-busy';
 
 /**
- * Detect which NPC the AI is roleplaying as from the generated response.
- * Scans the first ~200 characters for known NPC names from the scene context.
- * Returns null if no specific NPC is detected (narrator is speaking).
+ * Detect which NPC(s) the AI is roleplaying as from the generated response.
+ * Scans the full response for known NPC names with speaking indicators.
+ * Returns comma-separated NPC names or null if no NPC is detected.
  */
 function detectSpeakingAs(response: string, activeNpcs: string[]): string | null {
   if (!response || activeNpcs.length === 0) return null;
 
-  const firstPart = response.slice(0, 200).toLowerCase();
-
-  // Score each NPC by how prominently they appear in the opening
-  let bestNpc: string | null = null;
-  let bestScore = 0;
+  const body = response.toLowerCase();
+  const found: string[] = [];
 
   for (const npc of activeNpcs) {
     if (!npc) continue;
     const npcLower = npc.toLowerCase();
-    const nameWords = npcLower.split(/\s+/);
 
     // Check if NPC name appears at the very start (strongest signal)
-    // e.g., "Elrond strokes his beard..." — clearly speaking as Elrond
-    if (firstPart.startsWith(npcLower)) {
-      const score = 10;
-      if (score > bestScore) { bestScore = score; bestNpc = npc; }
+    if (body.startsWith(npcLower)) {
+      if (!found.includes(npc)) found.push(npc);
       continue;
     }
 
-    // Check if NPC name appears with dialogue attribution
-    // e.g., "said Elrond", "Elrond said", "Elrond replied"
+    // Check for dialogue attribution patterns
     const dialoguePatterns = [
       `${npcLower} said`, `${npcLower} replied`, `${npcLower} answered`,
       `${npcLower} asked`, `${npcLower} murmured`, `${npcLower} whispered`,
       `${npcLower} called`, `${npcLower} shouted`, `${npcLower} growled`,
       `${npcLower} spoke`, `${npcLower} began`, `${npcLower} continued`,
+      `${npcLower} nodded`, `${npcLower} stepped`, `${npcLower} turned`,
+      `${npcLower} smiled`, `${npcLower} frowned`, `${npcLower} laughed`,
     ];
     for (const pattern of dialoguePatterns) {
-      if (firstPart.includes(pattern)) {
-        const score = 8;
-        if (score > bestScore) { bestScore = score; bestNpc = npc; }
+      if (body.includes(pattern)) {
+        if (!found.includes(npc)) found.push(npc);
         break;
-      }
-    }
-
-    // Check if the NPC name appears in first 100 chars (likely subject of action)
-    const first100 = firstPart.slice(0, 100);
-    if (first100.includes(npcLower)) {
-      // Need to check it's not inside a quote
-      const beforeMatch = first100.substring(0, first100.indexOf(npcLower));
-      const quoteCount = (beforeMatch.match(/["""]/g) || []).length;
-      if (quoteCount % 2 === 0) { // Not inside a quote
-        const score = nameWords.length > 1 ? 5 : 3; // Full name > just first name
-        if (score > bestScore) { bestScore = score; bestNpc = npc; }
       }
     }
   }
 
-  return bestNpc;
+  return found.length > 0 ? found.join(", ") : null;
 }
 
 /**

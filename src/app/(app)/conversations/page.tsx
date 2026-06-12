@@ -46,7 +46,7 @@ export default function ConversationsPage() {
         const results: SessionConv[] = [];
 
         for (const session of targetSessions) {
-          const msgRes = await fetch(`/api/sessions/${session.id}/messages?limit=500`);
+          const msgRes = await fetch(`/api/sessions/${session.id}/messages?limit=10000`);
           if (!msgRes.ok) continue;
           const msgData = await msgRes.json();
           const messages = msgData.messages || [];
