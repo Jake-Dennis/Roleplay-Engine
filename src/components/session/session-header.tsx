@@ -16,18 +16,25 @@ import {
   Lock,
   Heart,
   Sparkles,
+  ScrollText,
   User,
   Loader2,
   ChevronDown,
   ChevronUp,
+  Edit2,
+  Check,
+  X,
 } from "lucide-react";
 import { ChatSearch } from "@/components/chat/chat-search";
 import { ChatExport } from "@/components/chat/chat-export";
+import { NarratorStyleInline } from "@/components/session/narrator-style-inline";
 
 interface SessionHeaderProps {
   sessionId: string;
   sessionName: string;
   messageCount: number;
+  contextTokens?: number;
+  contextWindow?: number;
   isGroup: boolean;
   personas: { id: string; name: string }[];
   personasLoading: boolean;
@@ -51,6 +58,8 @@ export const SessionHeader = memo(function SessionHeader({
   sessionId,
   sessionName,
   messageCount,
+  contextTokens,
+  contextWindow,
   isGroup,
   personas,
   personasLoading,
@@ -69,6 +78,39 @@ export const SessionHeader = memo(function SessionHeader({
   onToggleRelationshipTimeline,
   onToggleRecapPanel,
 }: SessionHeaderProps) {
+  const [editingName, setEditingName] = useState(false);
+  const [editName, setEditName] = useState(sessionName);
+  const [nameSaving, setNameSaving] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editingName && nameInputRef.current) {
+      nameInputRef.current.focus();
+      nameInputRef.current.select();
+    }
+  }, [editingName]);
+
+  useEffect(() => { setEditName(sessionName); }, [sessionName]);
+
+  const handleSaveName = async () => {
+    if (!editName.trim() || editName === sessionName) { setEditingName(false); return; }
+    setNameSaving(true);
+    try {
+      await fetch(`/api/sessions/${sessionId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName.trim() }),
+      });
+    } catch { /* ignore */ }
+    setNameSaving(false);
+    setEditingName(false);
+  };
+
+  const handleCancelName = () => {
+    setEditName(sessionName);
+    setEditingName(false);
+  };
+
   const [showPersonaSelector, setShowPersonaSelector] = useState(false);
   const personaDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -96,9 +138,37 @@ export const SessionHeader = memo(function SessionHeader({
         </Link>
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-sm font-semibold text-text-primary">
-              {sessionName}
-            </h1>
+            {editingName ? (
+              <div className="flex items-center gap-1">
+                <input
+                  ref={nameInputRef}
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleSaveName(); if (e.key === "Escape") handleCancelName(); }}
+                  className="rounded border border-border-default bg-bg-raised px-2 py-0.5 text-sm text-text-primary w-48 focus:outline-none focus:border-accent"
+                />
+                <button onClick={handleSaveName} disabled={nameSaving} className="p-1 text-text-muted hover:text-text-primary">
+                  {nameSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                </button>
+                <button onClick={handleCancelName} className="p-1 text-text-muted hover:text-text-primary">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <h1 className="text-sm font-semibold text-text-primary">
+                  {sessionName}
+                </h1>
+                <button
+                  onClick={() => setEditingName(true)}
+                  className="p-1 text-text-muted hover:text-text-primary transition-colors"
+                  title="Rename session"
+                >
+                  <Edit2 className="h-3 w-3" />
+                </button>
+              </>
+            )}
             {/* Persona selector */}
             <div ref={personaDropdownRef} className="relative">
               <button
@@ -210,12 +280,35 @@ export const SessionHeader = memo(function SessionHeader({
             >
               <Sparkles className="h-3 w-3" />
             </button>
+            {/* Narrator Style button */}
+            <NarratorStyleInline sessionId={sessionId} />
             <ChatExport sessionId={sessionId} />
           </div>
-          <p className="text-xxs text-text-muted">
-            {messageCount} message{messageCount !== 1 ? "s" : ""}
-            {activeLocationId && ` · ${activeLocationId}`}
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-xxs text-text-muted">
+              {messageCount} message{messageCount !== 1 ? "s" : ""}
+            </p>
+            {contextTokens !== undefined && contextWindow && (
+              <>
+                <div className="h-3 w-px bg-border-default" />
+                <div className="flex items-center gap-1.5">
+                  <div className="h-1 w-16 rounded-full bg-bg-raised overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${
+                        (contextTokens / contextWindow) > 0.9 ? "bg-status-error"
+                        : (contextTokens / contextWindow) > 0.7 ? "bg-warning"
+                        : "bg-accent"
+                      }`}
+                      style={{ width: `${Math.min(100, Math.round((contextTokens / contextWindow) * 100))}%` }}
+                    />
+                  </div>
+                  <span className="text-xxs text-text-muted tabular-nums">
+                    ~{(contextTokens / 1000).toFixed(0)}K / {contextWindow >= 1000000 ? `${(contextWindow / 1000000).toFixed(0)}M` : `${(contextWindow / 1000).toFixed(0)}K`}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
       <ChatSearch sessionId={sessionId} />

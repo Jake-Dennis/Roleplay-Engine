@@ -1,6 +1,6 @@
 "use client";
 
-import { Server, User, Users, MessageSquare, Gauge } from "lucide-react";
+import { Server, User, Users, Gauge } from "lucide-react";
 import Link from "next/link";
 
 const categories = [
@@ -21,12 +21,6 @@ const categories = [
     icon: Users,
     title: "Group Settings",
     description: "Manage groups, names, descriptions, and membership",
-  },
-  {
-    href: "/settings/sessions",
-    icon: MessageSquare,
-    title: "Session Settings",
-    description: "Narrative tension, pacing, phase, and turn configuration",
   },
   {
     href: "/settings/benchmark",
