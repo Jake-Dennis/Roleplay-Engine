@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/Button";
 interface BenchmarkPoint {
   contextSize: number;
   tokPerSec: number;
-  qualityScore: number;
-  memoryScore: number;
   success: boolean;
   durationMs: number;
 }
@@ -123,18 +121,16 @@ export default function BenchmarkPage() {
   }).length;
 
   // Find best size: highest context size with good speed (>10 tok/s) and quality (>60%)
-  // Find best size: highest context size with good speed (>10 tok/s) and quality (>60%)
+  // Find best size: highest context size with usable speed
   const bestSize = (() => {
     let best: { size: number; score: number } | null = null;
     for (const ctx of testSizes) {
       const p = results.get(ctx);
       if (!p || !p.success) continue;
-      // Score combines speed and quality, weighted toward larger contexts
-      const speedScore = Math.min(p.tokPerSec / 30, 1); // 30+ tok/s = perfect
-      const qualityScore = p.qualityScore;
-      const memoryScore = p.memoryScore;
-      const sizeBonus = Math.log2(ctx / 4096) * 0.05; // small bonus for larger contexts
-      const total = (speedScore * 0.3 + qualityScore * 0.35 + memoryScore * 0.35) + sizeBonus;
+      // Score favors higher context size, but penalizes slow speeds
+      const speedScore = Math.min(p.tokPerSec / 20, 1); // 20+ tok/s = perfect
+      const sizeBonus = Math.log2(ctx / 4096) * 0.1;
+      const total = speedScore * 0.7 + sizeBonus * 0.3;
       if (!best || total > best.score) {
         best = { size: ctx, score: total };
       }
@@ -247,8 +243,7 @@ export default function BenchmarkPage() {
                 <th className="py-1 text-left font-medium pr-3">Context</th>
                 <th className="py-1 text-left font-medium pr-3">Speed</th>
                 <th className="py-1 text-left font-medium pr-3">Time</th>
-                <th className="py-1 text-left font-medium pr-3">Quality</th>
-                <th className="py-1 text-left font-medium">Memory</th>
+                <th className="py-1 text-left font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -266,22 +261,19 @@ export default function BenchmarkPage() {
                     <td className="py-1 pr-3 font-mono text-text-primary">
                       {(ctx / 1024).toFixed(0)}K
                       {isBest && <span className="ml-1.5 text-xxs text-status-success font-medium">★ best</span>}
+                      {ctx === modelMaxCtx && !isBest && <span className="ml-1.5 text-xxs text-text-muted">(max)</span>}
                     </td>
                     <td className="py-1 pr-3 font-mono text-text-muted">
-                      {p.success ? `${p.tokPerSec.toFixed(1)} tok/s` : "Failed"}
+                      {p.success ? `${p.tokPerSec.toFixed(1)} tok/s` : "-"}
                     </td>
                     <td className="py-1 pr-3 font-mono text-text-muted">
                       {p.success ? timeStr : "-"}
                     </td>
-                    <td className="py-1 pr-3 font-mono">
-                      <span className={p.qualityScore >= 0.6 ? "text-status-success" : "text-status-error"}>
-                        {p.success ? `${(p.qualityScore * 100).toFixed(0)}%` : "-"}
-                      </span>
-                    </td>
                     <td className="py-1 font-mono">
-                      <span className={p.memoryScore >= 0.6 ? "text-status-success" : "text-status-error"}>
-                        {p.success ? `${(p.memoryScore * 100).toFixed(0)}%` : "-"}
-                      </span>
+                      {p.success
+                        ? <span className="text-status-success">OK</span>
+                        : <span className="text-status-error">Failed</span>
+                      }
                     </td>
                   </tr>
                 );
@@ -299,9 +291,9 @@ export default function BenchmarkPage() {
                     Recommended: <span className="text-accent">{(bestSize.size / 1024).toFixed(0)}K</span> context window
                   </p>
                   <p className="text-xxs text-text-muted mt-1">
-                    Best balance of speed ({(results.get(bestSize.size)?.tokPerSec ?? 0).toFixed(1)} tok/s)
-                    and quality ({(results.get(bestSize.size)?.qualityScore ?? 0) * 100}%)
+                    Best balance of context size and speed ({(results.get(bestSize.size)?.tokPerSec ?? 0).toFixed(1)} tok/s)
                     for {model}. Set this as num_ctx in Server Settings → Model Defaults.
+                    Sizes above this may be slower or unstable.
                   </p>
                 </div>
               </div>
