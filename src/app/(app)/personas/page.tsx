@@ -34,7 +34,6 @@ export default function PersonasPage() {
   const [formPostHistory, setFormPostHistory] = useState("");
   const [formTags, setFormTags] = useState("");
   const [formWritingStyle, setFormWritingStyle] = useState("");
-  const [formLlmModel, setFormLlmModel] = useState("");
   const [formVoice, setFormVoice] = useState("");
   const [voices, setVoices] = useState<{ id: string; name: string; gender: string; language: string }[]>([]);
 
@@ -68,7 +67,6 @@ export default function PersonasPage() {
       case "postHistory": setFormPostHistory(value); break;
       case "tags": setFormTags(value); break;
       case "writingStyle": setFormWritingStyle(value); break;
-      case "llmModel": setFormLlmModel(value); break;
       case "voice": setFormVoice(value); break;
     }
   }
@@ -85,7 +83,6 @@ export default function PersonasPage() {
     setFormPostHistory("");
     setFormTags("");
     setFormWritingStyle("");
-    setFormLlmModel("");
     setFormVoice("");
     setCreating(true);
     setSelectedId(null);
@@ -106,7 +103,6 @@ export default function PersonasPage() {
     setFormPostHistory(p.post_history_instructions || "");
     setFormTags(p.tags ? (() => { const parsed = safeParse<string[]>(p.tags); return parsed ? parsed.join(", ") : p.tags; })() : "");
     setFormWritingStyle(p.writing_style || "");
-    setFormLlmModel(p.llm_model || "");
     setActiveTab("description");
 
     // Load voice assignment for this persona
@@ -139,7 +135,6 @@ export default function PersonasPage() {
         postHistoryInstructions: formPostHistory || null,
         tags,
         writingStyle: formWritingStyle || null,
-        llmModel: formLlmModel || null,
       };
 
       if (creating) {
@@ -278,7 +273,6 @@ export default function PersonasPage() {
             formSystemPrompt={formSystemPrompt}
             formPostHistory={formPostHistory}
             formCreatorNotes={formCreatorNotes}
-            formLlmModel={formLlmModel}
             formVoice={formVoice}
             voices={voices}
             onChange={handleFieldChange}

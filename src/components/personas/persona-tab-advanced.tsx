@@ -11,7 +11,6 @@ interface PersonaTabAdvancedProps {
   formSystemPrompt: string;
   formPostHistory: string;
   formCreatorNotes: string;
-  formLlmModel: string;
   formVoice: string;
   voices: Voice[];
   onChange: (field: string, value: string) => void;
@@ -21,7 +20,6 @@ export function PersonaTabAdvanced({
   formSystemPrompt,
   formPostHistory,
   formCreatorNotes,
-  formLlmModel,
   formVoice,
   voices,
   onChange,
@@ -59,16 +57,6 @@ export function PersonaTabAdvanced({
           placeholder="Based on a character from my D&D campaign. Remember to update the backstory after session 3."
           rows={3}
           className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:border-accent resize-none"
-        />
-      </div>
-      <div>
-        <label className="mb-1 block text-xs text-text-secondary">Preferred LLM Model</label>
-        <input
-          type="text"
-          value={formLlmModel}
-          onChange={(e) => onChange("llmModel", e.target.value)}
-          placeholder="e.g. qwen3.5:4b (leave empty for default)"
-          className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:border-accent"
         />
       </div>
       <div>
