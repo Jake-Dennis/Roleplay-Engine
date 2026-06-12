@@ -32,7 +32,7 @@ export function recordEvolution(
   const db = getDb();
   const id = crypto.randomUUID();
   db.prepare(
-    "INSERT INTO relationship_evolution (id, relationship_id, user_id, emotional_state, relationship_stage, trigger_event) VALUES (?, ?, ?, ?, ?, ?)"
+    "INSERT INTO relationship_evolution (id, relationship_id, user_id, emotional_state, relationship_stage, trigger_event, recorded_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))"
   ).run(id, relationshipId, userId, emotionalState, relationshipStage, triggerEvent);
 }
 
