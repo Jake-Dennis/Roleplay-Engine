@@ -289,6 +289,20 @@ export async function POST(
         fullResponse = fullResponse.replace(/(?<!\[)\[([A-Za-z0-9\s'\-]+?)\](?!\])/g, (match: string, content: string) => {
           return /[A-Z]/.test(content) ? `[[${content}]]` : match;
         });
+
+        // If the response is empty, delete the placeholder and bail out
+        if (!fullResponse || fullResponse.trim().length < 5) {
+          db.prepare("DELETE FROM messages WHERE id = ?").run(aiMessageId);
+          eventBus.emit(`${SessionEvents.GENERATION_DONE}:${sessionId}`, {
+            messageId: aiMessageId,
+            sessionId,
+            intent: ctx.intent,
+            contentLength: 0,
+          });
+          controller.close();
+          return;
+        }
+
         const speakingAs = detectSpeakingAs(fullResponse, ctx.scene.activeNpcs);
         db.prepare("UPDATE messages SET content = ?, speaking_as = ? WHERE id = ?").run(
           fullResponse,
