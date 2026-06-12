@@ -1,6 +1,6 @@
 "use client";
 
-import { Server, User, Users, Gauge } from "lucide-react";
+import { Server, User, Gauge } from "lucide-react";
 import Link from "next/link";
 
 const categories = [
@@ -15,12 +15,6 @@ const categories = [
     icon: User,
     title: "User Settings",
     description: "TTS playback preferences, password, and personal defaults",
-  },
-  {
-    href: "/settings/groups",
-    icon: Users,
-    title: "Group Settings",
-    description: "Manage groups, names, descriptions, and membership",
   },
   {
     href: "/settings/benchmark",
