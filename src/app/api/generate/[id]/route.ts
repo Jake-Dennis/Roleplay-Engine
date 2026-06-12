@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
-import { generateTextStream, getUserModels, getActivePersonaContext, buildPersonaPrompt, checkModelAvailable, type PersonaContext } from "@/lib/ollama";
+import { generateText, getUserModels, getActivePersonaContext, buildPersonaPrompt, checkModelAvailable, type PersonaContext } from "@/lib/ollama";
 import { buildSystemPrompt } from "@/lib/prompt-builder";
 import { getRetrievedContext, assemblePromptWithBudget, type RetrievedContext } from "@/lib/retrieval";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
@@ -246,36 +246,19 @@ export async function POST(
     ).run(ctx.intent, sessionId);
   }
 
-  // Stream the response
+  // Generate response
   const encoder = new TextEncoder();
   let fullResponse = "";
 
   const stream = new ReadableStream({
     async start(controller) {
       eventBus.registerController(controller);
-      // Mark Ollama busy so background jobs yield during generation
       markOllamaBusy();
       try {
-        // Use the model resolved during pre-flight check (persona > user > default)
         const resolvedModel = preflightModel;
 
-        let chunkCount = 0;
-        await generateTextStream(prompt, (chunk) => {
-          fullResponse += chunk;
-          chunkCount++;
-
-          // Buffer DB writes — write every 50 chunks
-          if (chunkCount % 50 === 0) {
-            const speakingAs = detectSpeakingAs(fullResponse, ctx.scene.activeNpcs);
-            db.prepare("UPDATE messages SET content = ?, speaking_as = ? WHERE id = ?").run(
-              fullResponse,
-              speakingAs,
-              aiMessageId
-            );
-          }
-
-          controller.enqueue(encoder.encode(JSON.stringify({ chunk }) + "\n"));
-        }, {
+        // Use non-streaming generateText (streaming via ollamaPostStream is unreliable)
+        const result = await generateText(prompt, {
           userId: userId,
           model: resolvedModel,
           temperature: undefined,
@@ -284,17 +267,18 @@ export async function POST(
           think: getServerConfig().ollama.thinkingMode ? undefined : false,
         });
 
-        // Final write after stream completes — ensures complete content is saved
-        // Fix single-bracket proper nouns that should be wikilinks: [Mountains] → [[Mountains]]
+        fullResponse = result;
+
+        logger.info("[generate] Full response", { length: fullResponse.length, preview: fullResponse.slice(0, 100) });
+
+        // Fix single-bracket proper nouns: [Mountains] -> [[Mountains]]
         fullResponse = fullResponse.replace(/(?<!\[)\[([A-Za-z0-9\s'\-]+?)\](?!\])/g, (match: string, content: string) => {
           return /[A-Z]/.test(content) ? `[[${content}]]` : match;
         });
 
-        logger.info("[generate] Stream complete", { length: fullResponse.length, preview: fullResponse.slice(0, 100) });
-
         // Send done signal to client stream
         controller.enqueue(
-          encoder.encode(JSON.stringify({ done: true, messageId: aiMessageId }) + "\n")
+          encoder.encode(JSON.stringify({ done: true, messageId: aiMessageId, contentLength: fullResponse.length }) + "\n")
         );
 
         // If the response is empty, delete the placeholder and bail out
