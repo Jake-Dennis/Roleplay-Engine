@@ -319,73 +319,16 @@ export default function JobsPage() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="mb-6 flex items-start justify-between shrink-0">
-        <div>
-          <div className="flex items-center gap-2">
-            <ListTodo className="h-5 w-5 text-text-accent" />
-            <h1 className="text-lg font-semibold text-text-primary">Job Queue</h1>
-          </div>
-          <p className="mt-0.5 text-xs text-text-muted">Manage background processing jobs</p>
+      <div className="mb-6 shrink-0">
+        <div className="flex items-center gap-2">
+          <ListTodo className="h-5 w-5 text-text-accent" />
+          <h1 className="text-lg font-semibold text-text-primary">Job Queue</h1>
         </div>
-        <div className="flex gap-2">
-            <button
-              onClick={() => loadJobs(statusFilter)}
-              className="flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-highlight"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              Refresh
-            </button>
-            <button
-              onClick={handleQueueIdle}
-              className="flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-highlight"
-            >
-              <Zap className="h-3.5 w-3.5" />
-              Queue Idle
-            </button>
-            <button
-              onClick={handleCurate}
-              className="flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-highlight"
-            >
-              <Tags className="h-3.5 w-3.5" />
-              Curate Pages
-            </button>
-            <button
-              onClick={handleProcessNext}
-              disabled={processing || stats.queued === 0}
-              className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {processing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-              Process Next
-            </button>
-            <button
-              onClick={handleProcessAll}
-              disabled={processing || stats.queued === 0}
-              className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {processing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
-              Process All
-            </button>
-            <button
-              onClick={() => setRetryAllConfirm(true)}
-              disabled={stats.failed === 0}
-              className="flex items-center gap-1.5 rounded-lg border border-warning/30 bg-bg-elevated px-3 py-1.5 text-xs text-warning transition-colors hover:bg-warning/10 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              Retry Failed
-            </button>
-            <button
-              onClick={() => setCancelAllConfirm(true)}
-              disabled={stats.queued === 0}
-              className="flex items-center gap-1.5 rounded-lg border border-error/30 bg-bg-elevated px-3 py-1.5 text-xs text-error transition-colors hover:bg-error/10 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Cancel All
-            </button>
-        </div>
+        <p className="mt-0.5 text-xs text-text-muted">Manage background processing jobs</p>
       </div>
 
       {/* Stats */}
-      <div className="mb-6 grid grid-cols-5 gap-3">
+      <div className="mb-4 grid grid-cols-5 gap-3 shrink-0">
         {statCards.map((s) => {
           const Icon = s.icon;
           return (
@@ -402,57 +345,100 @@ export default function JobsPage() {
         })}
       </div>
 
-      {/* Reindex Section */}
-      <div className="mb-6 rounded-xl border border-border-default bg-bg-elevated px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Database className="h-4 w-4 text-text-accent" />
-          <span className="text-xs font-medium text-text-primary">Reindex</span>
-        </div>
-        <div className="mt-2 flex items-center gap-3">
+      {/* Action Toolbar */}
+      <div className="mb-4 shrink-0 flex flex-wrap items-center gap-1.5">
+        <span className="text-xxs text-text-muted mr-1">Actions:</span>
+        <button
+          onClick={handleProcessNext}
+          disabled={processing || stats.queued === 0}
+          className="flex items-center gap-1 rounded-lg bg-accent px-2.5 py-1.5 text-xs text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {processing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
+          Process Next
+        </button>
+        <button
+          onClick={handleProcessAll}
+          disabled={processing || stats.queued === 0}
+          className="flex items-center gap-1 rounded-lg bg-accent px-2.5 py-1.5 text-xs text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {processing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
+          Process All
+        </button>
+        <div className="w-px h-5 bg-border-default mx-1" />
+        <button
+          onClick={handleQueueIdle}
+          className="flex items-center gap-1 rounded-lg border border-border-default bg-bg-raised px-2.5 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-elevated"
+        >
+          <RefreshCw className="h-3 w-3" />
+          Queue Idle
+        </button>
+        <button
+          onClick={handleCurate}
+          className="flex items-center gap-1 rounded-lg border border-border-default bg-bg-raised px-2.5 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-elevated"
+        >
+          <Tags className="h-3 w-3" />
+          Curate Pages
+        </button>
+        <div className="w-px h-5 bg-border-default mx-1" />
+        <button
+          onClick={() => setRetryAllConfirm(true)}
+          disabled={stats.failed === 0}
+          className="flex items-center gap-1 rounded-lg border border-warning/30 bg-bg-raised px-2.5 py-1.5 text-xs text-warning transition-colors hover:bg-warning/10 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <RotateCcw className="h-3 w-3" />
+          Retry Failed
+        </button>
+        <button
+          onClick={() => setCancelAllConfirm(true)}
+          disabled={stats.queued === 0}
+          className="flex items-center gap-1 rounded-lg border border-error/30 bg-bg-raised px-2.5 py-1.5 text-xs text-error transition-colors hover:bg-error/10 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Trash2 className="h-3 w-3" />
+          Cancel All
+        </button>
+        <div className="w-px h-5 bg-border-default mx-1" />
+        <div className="flex items-center gap-1 rounded-lg border border-border-default bg-bg-raised px-2.5 py-1.5 text-xs text-text-secondary">
+          <Database className="h-3 w-3 text-text-accent" />
+          <span className="text-xxs text-text-muted mr-1">Reindex:</span>
           <button
             onClick={() => handleReindex("wiki")}
             disabled={reindexing !== null}
-            className="flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-raised px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-highlight disabled:cursor-not-allowed disabled:opacity-50"
+            className="text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
           >
-            {reindexing === "wiki" ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="h-3.5 w-3.5" />
-            )}
-            Rebuild Wiki Index
+            Wiki
           </button>
+          <span className="text-text-muted">·</span>
           <button
             onClick={() => handleReindex("embeddings")}
             disabled={reindexing !== null}
-            className="flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-raised px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-highlight disabled:cursor-not-allowed disabled:opacity-50"
+            className="text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
           >
-            {reindexing === "embeddings" ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Database className="h-3.5 w-3.5" />
-            )}
-            Reindex All Embeddings
+            Embeddings
           </button>
+          <span className="text-text-muted">·</span>
           <button
             onClick={() => handleReindex("all")}
             disabled={reindexing !== null}
-            className="flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-raised px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-highlight disabled:cursor-not-allowed disabled:opacity-50"
+            className="text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
           >
-            {reindexing === "all" ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Loader2 className="h-3.5 w-3.5" />
-            )}
-            Reindex All
+            All
           </button>
-          {reindexResult && (
-            <span className="text-xxs text-text-muted">{reindexResult}</span>
-          )}
+          {reindexing && <Loader2 className="h-3 w-3 animate-spin ml-1" />}
         </div>
+        <button
+          onClick={() => loadJobs(statusFilter)}
+          className="flex items-center gap-1 rounded-lg border border-border-default bg-bg-raised px-2.5 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-elevated"
+          title="Refresh"
+        >
+          <RefreshCw className="h-3 w-3" />
+        </button>
+        {reindexResult && (
+          <span className="text-xxs text-text-muted ml-1">{reindexResult}</span>
+        )}
       </div>
 
       {/* Filters */}
-      <div className="mb-4 flex items-center gap-3">
+      <div className="mb-4 flex items-center gap-3 shrink-0">
         <Filter className="h-4 w-4 text-text-muted" />
         <div className="flex gap-1.5">
           {["all", "queued", "processing", "completed", "failed", "cancelled"].map((s) => (
