@@ -65,7 +65,11 @@ export async function discoverVoices(ttsUrl?: string): Promise<VoiceInfo[]> {
 
     if (response.ok) {
       const data = await response.json();
-      const voiceIds: string[] = data.voices || [];
+      // Kokoro returns objects [{id, name}, ...]; handle both formats
+      const rawVoices: unknown[] = data.voices || [];
+      const voiceIds: string[] = rawVoices.map((v: unknown) =>
+        typeof v === "string" ? v : (v as { id: string }).id || ""
+      ).filter(Boolean);
       availableVoices = voiceIds.map((id) => parseVoiceInfo(id));
       ttsAvailable = true;
       lastDiscovery = Date.now();
