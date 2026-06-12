@@ -841,7 +841,7 @@ export function getRecentMessages(
 export async function getRelevantMessages(
   sessionId: string,
   userMessage: string,
-  topK: number = 10,
+  topK: number = 10000,
   excludeIds?: Set<string>
 ): Promise<{ content: string; senderId: string | null; timestamp: string }[]> {
   if (!userMessage || !userMessage.trim()) return [];
@@ -1037,7 +1037,7 @@ export async function getRetrievedContext(
 
   // Fetch relevant past messages via vector search (Task C)
   const relevantMessages = userMessage
-    ? await getRelevantMessages(sessionId, userMessage, 10, recentMsgIds)
+    ? await getRelevantMessages(sessionId, userMessage, 10000, recentMsgIds)
     : [];
 
   // Active entities from entity_mentions (Task 25)

@@ -440,6 +440,20 @@ export function applyContextBudget(
     }
   }
 
+  // Measure relevant messages (RAG results)
+  let relMsgTokens = 0;
+  let truncatedRelevantMessages: RetrievedContext['relevantMessages'] = ctx.relevantMessages ? { messages: [] } : undefined;
+  if (ctx.relevantMessages?.messages) {
+    // Take most relevant first (they're sorted by similarity descending)
+    for (const msg of ctx.relevantMessages.messages) {
+      const t = estimateTokens(msg.content);
+      // Capped at a reasonable budget so they don't dominate
+      if (relMsgTokens + t > Math.floor(availableTokens * 0.3) && truncatedRelevantMessages!.messages.length > 0) break;
+      relMsgTokens += t;
+      truncatedRelevantMessages!.messages.push(msg);
+    }
+  }
+
   // Measure decision points
   let dpTokens = 0;
   const truncatedDecisionPoints: RetrievedContext['decisionPoints'] = ctx.decisionPoints ? [] : undefined;
@@ -452,7 +466,7 @@ export function applyContextBudget(
   }
 
   // Sum non-message tokens and clamp to 85% of available
-  const nonMessageTotal = loreTokens + memTokens + relTokens + threadTokens + dpTokens;
+  const nonMessageTotal = loreTokens + memTokens + relTokens + threadTokens + dpTokens + relMsgTokens;
   const maxNonMessage = Math.floor(availableTokens * 0.85);
   const nonMessageBudget = Math.min(nonMessageTotal, maxNonMessage);
 
@@ -485,6 +499,6 @@ export function applyContextBudget(
     relationshipEvolution: ctx.relationshipEvolution, // Pass through (small payload, no dedicated budget)
     decisionPoints: truncatedDecisionPoints,
     narrativeState: ctx.narrativeState, // Pass through (tiny payload, no dedicated budget needed)
-    relevantMessages: ctx.relevantMessages, // Pass through (already capped at topK=10, no budget trimming needed)
+    relevantMessages: truncatedRelevantMessages,
   };
 }
