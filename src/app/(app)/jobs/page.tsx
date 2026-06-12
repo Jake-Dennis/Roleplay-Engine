@@ -136,7 +136,9 @@ export default function JobsPage() {
       const res = await fetch(`/api/jobs?${params}`);
       const json = await res.json();
       setJobs(json.jobs || []);
-      setStats(json.stats || { queued: 0, processing: 0, completed: 0, failed: 0, cancelled: 0, total: 0 });
+      const s = json.stats || { queued: 0, processing: 0, completed: 0, failed: 0, cancelled: 0 };
+      s.total = s.queued + s.processing + s.completed + s.failed + s.cancelled;
+      setStats(s);
     } catch {
       // ignore
     } finally {
