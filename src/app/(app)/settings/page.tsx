@@ -1,6 +1,6 @@
 "use client";
 
-import { Server, User, Users, Globe, MessageSquare, Gauge } from "lucide-react";
+import { Server, User, Users, MessageSquare, Gauge } from "lucide-react";
 import Link from "next/link";
 
 const categories = [
@@ -23,12 +23,6 @@ const categories = [
     description: "Manage groups, names, descriptions, and membership",
   },
   {
-    href: "/settings/universes",
-    icon: Globe,
-    title: "Universe Settings",
-    description: "Canon mode, lore sources, tone, boundaries, and time period",
-  },
-  {
     href: "/settings/sessions",
     icon: MessageSquare,
     title: "Session Settings",
@@ -38,7 +32,7 @@ const categories = [
     href: "/settings/benchmark",
     icon: Gauge,
     title: "LLM Benchmark",
-    description: "Test hardware, context window, throughput, and memory retention",
+    description: "Find the best num_ctx and num_predict for roleplay at your desired response time",
   },
 ];
 
