@@ -278,7 +278,9 @@ function main() {
       emotional_tone TEXT,
       parent_message_id TEXT REFERENCES messages(id),
       is_deleted INTEGER DEFAULT 0,
-      deleted_at DATETIME
+      deleted_at DATETIME,
+      persona_id TEXT,
+      speaking_as TEXT
     );
 
     -- Full-text search for messages (FTS5)
@@ -541,6 +543,10 @@ function main() {
     CREATE INDEX IF NOT EXISTS idx_memories_user_created_importance ON narrative_memories(user_id, created_at, importance);
     CREATE INDEX IF NOT EXISTS idx_jobs_user_status_type ON job_queue(user_id, status, type, priority);
   `);
+
+  // Run migrations for existing databases that may be missing columns added later
+  try { db.exec("ALTER TABLE messages ADD COLUMN persona_id TEXT"); } catch { /* already exists */ }
+  try { db.exec("ALTER TABLE messages ADD COLUMN speaking_as TEXT"); } catch { /* already exists */ }
 
   // Vector storage uses the embedding_index + embedding_vectors tables
   // (created above). No vec0 virtual tables needed — brute-force cosine

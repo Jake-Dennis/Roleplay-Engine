@@ -71,6 +71,16 @@ export interface MessageContext {
   messages: { id: string; senderId: string | null; content: string; timestamp: string; senderName?: string | null; personaName?: string | null }[];
 }
 
+export interface ConversationContext {
+  /** Current conversation pairs active in the session */
+  pairs: {
+    personaId: string | null;
+    personaName: string | null;
+    npcName: string;
+    exchanges: { speaker: string; content: string }[];
+  }[];
+}
+
 export interface RetrievedContext {
   scene: SceneContext;
   lore: LoreContext;
@@ -135,6 +145,9 @@ export interface RetrievedContext {
     activeGoals: string | null;
     activeConflicts: string | null;
   };
+
+  /** Conversation pair tracking — groups messages by persona ↔ NPC (Task E) */
+  conversation?: ConversationContext;
 }
 
 /** Token cost and inclusion info for a single item in a budget section */
@@ -833,6 +846,102 @@ export function getRecentMessages(
 }
 
 /**
+ * Build conversation pair context for group sessions.
+ * Groups messages by (persona ↔ NPC) pairs using the speaking_as column.
+ * Returns the last ~10 exchanges per pair.
+ */
+export function getConversationPairMessages(
+  sessionId: string
+): ConversationContext {
+  const db = getDb();
+  
+  // Get the last 50 AI messages that have a speaking_as value,
+  // along with the user message that preceded each one
+  const rows = db.prepare(`
+    SELECT 
+      ai.id as ai_msg_id,
+      ai.content as ai_content,
+      ai.speaking_as,
+      user.id as user_msg_id,
+      user.content as user_content,
+      user.sender_id as user_sender_id,
+      user.persona_id as user_persona_id,
+      p.name as user_persona_name
+    FROM messages ai
+    LEFT JOIN messages user ON user.id = ai.parent_message_id
+    LEFT JOIN personas p ON p.id = user.persona_id
+    WHERE ai.session_id = ?
+      AND ai.is_deleted = 0
+      AND ai.sender_id IS NULL
+      AND ai.speaking_as IS NOT NULL
+      AND ai.speaking_as != ''
+    ORDER BY ai.timestamp DESC
+    LIMIT 50
+  `).all(sessionId) as {
+    ai_msg_id: string;
+    ai_content: string;
+    speaking_as: string | null;
+    user_msg_id: string | null;
+    user_content: string | null;
+    user_sender_id: string | null;
+    user_persona_id: string | null;
+    user_persona_name: string | null;
+  }[];
+  
+  if (!rows || rows.length === 0) return { pairs: [] };
+  
+  // Group by (personaId, personaName, npcName) tuple
+  const pairMap = new Map<string, {
+    personaId: string | null;
+    personaName: string | null;
+    npcName: string;
+    exchanges: { speaker: string; content: string }[];
+  }>();
+  
+  for (const row of rows) {
+    if (!row.speaking_as) continue;
+    
+    const personaId = row.user_persona_id || row.user_sender_id;
+    const personaName = row.user_persona_name || "Player";
+    const npcName = row.speaking_as;
+    const key = `${personaId || ''}||${npcName}`;
+    
+    if (!pairMap.has(key)) {
+      pairMap.set(key, {
+        personaId: personaId || null,
+        personaName: personaName || null,
+        npcName,
+        exchanges: [],
+      });
+    }
+    
+    const pair = pairMap.get(key)!;
+    
+    // Add user message first (chronological order — we're iterating DESC)
+    if (row.user_content) {
+      pair.exchanges.unshift({
+        speaker: personaName,
+        content: row.user_content,
+      });
+    }
+    // Add AI response
+    if (row.ai_content) {
+      pair.exchanges.unshift({
+        speaker: npcName,
+        content: row.ai_content,
+      });
+    }
+    
+    // Limit to last 10 exchanges per pair
+    if (pair.exchanges.length > 20) { // 20 = 10 exchanges × 2 (user + AI)
+      pair.exchanges = pair.exchanges.slice(-20);
+    }
+  }
+  
+  return { pairs: Array.from(pairMap.values()) };
+}
+
+/**
  * Fetch semantically relevant past messages for the current user input.
  * Uses brute-force cosine similarity over embedding_vectors (JSON TEXT storage).
  * Works with any embedding model/dimension — no vec0 tables needed.
@@ -1040,6 +1149,9 @@ export async function getRetrievedContext(
     ? await getRelevantMessages(sessionId, userMessage, 10000, recentMsgIds)
     : [];
 
+  // Conversation pair tracking — group messages by persona ↔ NPC (Task E)
+  const conversation = getConversationPairMessages(sessionId);
+
   // Active entities from entity_mentions (Task 25)
   let activeEntities: string[] | undefined;
   try {
@@ -1104,5 +1216,6 @@ export async function getRetrievedContext(
     relationshipAnchors: relationshipAnchors ?? undefined,
     decisionPoints: decisionPoints ?? undefined,
     narrativeState: narrativeState ?? undefined,
+    conversation: conversation.pairs.length > 0 ? conversation : undefined,
   };
 }

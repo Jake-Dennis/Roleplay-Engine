@@ -14,6 +14,65 @@ import { validateLength } from '@/lib/validation';
 import { markOllamaBusy, markOllamaIdle } from '@/lib/ollama-busy';
 
 /**
+ * Detect which NPC the AI is roleplaying as from the generated response.
+ * Scans the first ~200 characters for known NPC names from the scene context.
+ * Returns null if no specific NPC is detected (narrator is speaking).
+ */
+function detectSpeakingAs(response: string, activeNpcs: string[]): string | null {
+  if (!response || activeNpcs.length === 0) return null;
+
+  const firstPart = response.slice(0, 200).toLowerCase();
+
+  // Score each NPC by how prominently they appear in the opening
+  let bestNpc: string | null = null;
+  let bestScore = 0;
+
+  for (const npc of activeNpcs) {
+    if (!npc) continue;
+    const npcLower = npc.toLowerCase();
+    const nameWords = npcLower.split(/\s+/);
+
+    // Check if NPC name appears at the very start (strongest signal)
+    // e.g., "Elrond strokes his beard..." — clearly speaking as Elrond
+    if (firstPart.startsWith(npcLower)) {
+      const score = 10;
+      if (score > bestScore) { bestScore = score; bestNpc = npc; }
+      continue;
+    }
+
+    // Check if NPC name appears with dialogue attribution
+    // e.g., "said Elrond", "Elrond said", "Elrond replied"
+    const dialoguePatterns = [
+      `${npcLower} said`, `${npcLower} replied`, `${npcLower} answered`,
+      `${npcLower} asked`, `${npcLower} murmured`, `${npcLower} whispered`,
+      `${npcLower} called`, `${npcLower} shouted`, `${npcLower} growled`,
+      `${npcLower} spoke`, `${npcLower} began`, `${npcLower} continued`,
+    ];
+    for (const pattern of dialoguePatterns) {
+      if (firstPart.includes(pattern)) {
+        const score = 8;
+        if (score > bestScore) { bestScore = score; bestNpc = npc; }
+        break;
+      }
+    }
+
+    // Check if the NPC name appears in first 100 chars (likely subject of action)
+    const first100 = firstPart.slice(0, 100);
+    if (first100.includes(npcLower)) {
+      // Need to check it's not inside a quote
+      const beforeMatch = first100.substring(0, first100.indexOf(npcLower));
+      const quoteCount = (beforeMatch.match(/["""]/g) || []).length;
+      if (quoteCount % 2 === 0) { // Not inside a quote
+        const score = nameWords.length > 1 ? 5 : 3; // Full name > just first name
+        if (score > bestScore) { bestScore = score; bestNpc = npc; }
+      }
+    }
+  }
+
+  return bestNpc;
+}
+
+/**
  * POST /api/generate/[id]
  *
  * Generates an AI narrative response for the given session. This is the primary
@@ -182,7 +241,7 @@ export async function POST(
   // Create the AI message placeholder
   const aiMessageId = crypto.randomUUID();
   db.prepare(
-    "INSERT INTO messages (id, session_id, sender_id, content, parent_message_id) VALUES (?, ?, NULL, '', ?)"
+    "INSERT INTO messages (id, session_id, sender_id, content, parent_message_id, speaking_as) VALUES (?, ?, NULL, '', ?, NULL)"
   ).run(aiMessageId, sessionId, parentMessageId || null);
 
   // Emit generation started event
@@ -225,8 +284,10 @@ export async function POST(
 
           // Buffer DB writes — write every 50 chunks
           if (chunkCount % 50 === 0) {
-            db.prepare("UPDATE messages SET content = ? WHERE id = ?").run(
+            const speakingAs = detectSpeakingAs(fullResponse, ctx.scene.activeNpcs);
+            db.prepare("UPDATE messages SET content = ?, speaking_as = ? WHERE id = ?").run(
               fullResponse,
+              speakingAs,
               aiMessageId
             );
           }
@@ -246,8 +307,10 @@ export async function POST(
         fullResponse = fullResponse.replace(/(?<!\[)\[([A-Za-z0-9\s'\-]+?)\](?!\])/g, (match: string, content: string) => {
           return /[A-Z]/.test(content) ? `[[${content}]]` : match;
         });
-        db.prepare("UPDATE messages SET content = ? WHERE id = ?").run(
+        const speakingAs = detectSpeakingAs(fullResponse, ctx.scene.activeNpcs);
+        db.prepare("UPDATE messages SET content = ?, speaking_as = ? WHERE id = ?").run(
           fullResponse,
+          speakingAs,
           aiMessageId
         );
 

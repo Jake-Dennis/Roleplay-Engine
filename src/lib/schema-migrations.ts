@@ -475,4 +475,22 @@ export function runSchemaMigrations(): void {
   } catch {
     // Index already exists — safe to ignore
   }
+
+  // Migration: Add speaking_as to messages (Conversation Tracking)
+  try {
+    db.prepare(
+      "ALTER TABLE messages ADD COLUMN speaking_as TEXT"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: Add persona_id to messages if missing (some dbs created before group-migrations ran)
+  try {
+    db.prepare(
+      "ALTER TABLE messages ADD COLUMN persona_id TEXT"
+    ).run();
+  } catch {
+    // Column already exists — safe to ignore
+  }
 }

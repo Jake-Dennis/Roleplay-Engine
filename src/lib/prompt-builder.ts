@@ -309,6 +309,25 @@ export function assemblePrompt(
     parts.push(`[RELEVANT PAST]\n${wrapped || relevantParts.join("\n")}`);
   }
 
+  // Current conversation pairs — persona ↔ NPC exchanges
+  if (ctx.conversation?.pairs && ctx.conversation.pairs.length > 0) {
+    const convParts: string[] = [];
+    for (const pair of ctx.conversation.pairs) {
+      if (pair.exchanges.length === 0) continue;
+      const label = pair.personaName
+        ? `${pair.personaName} ↔ ${pair.npcName}`
+        : pair.npcName;
+      convParts.push(`--- ${label} ---`);
+      for (const ex of pair.exchanges) {
+        convParts.push(`${ex.speaker}: ${ex.content}`);
+      }
+    }
+    if (convParts.length > 0) {
+      const wrapped = wrapUserContent(convParts.join("\n"));
+      parts.push(`[CURRENT CONVERSATION]\n${wrapped || convParts.join("\n")}`);
+    }
+  }
+
   // Recent messages — the most contextually important (user-provided)
   const messageLines: string[] = [];
   for (const msg of ctx.recentMessages.messages) {
@@ -392,6 +411,7 @@ export function applyContextBudget(
         messages: ctx.recentMessages.messages.slice(-5),
       },
       relevantMessages: ctx.relevantMessages,
+      conversation: ctx.conversation,
     };
   }
 
@@ -500,5 +520,6 @@ export function applyContextBudget(
     decisionPoints: truncatedDecisionPoints,
     narrativeState: ctx.narrativeState, // Pass through (tiny payload, no dedicated budget needed)
     relevantMessages: truncatedRelevantMessages,
+    conversation: ctx.conversation, // Pass through (already limited to 10 exchanges per pair)
   };
 }
