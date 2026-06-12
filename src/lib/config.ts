@@ -187,18 +187,22 @@ export const JOB_CONFIG = {
 
 /**
  * Prompt token budget allocation.
- * Defines the token distribution across context sections for LLM prompt assembly.
+ *
+ * @deprecated prompt-builder.ts now uses remainder-based budget allocation (see
+ * applyContextBudget). This constant is preserved only for the debug/retrieval-context
+ * inspector endpoint (route.ts). Do NOT import for new code.
+ *
  * OVERHEAD is a fixed token reservation; all other values are fractional (0-1)
  * applied to the remaining tokens (maxTokens - OVERHEAD).
  * Total max context: 6000 tokens.
  */
 export const PROMPT_BUDGET = {
-  OVERHEAD: 500,         // System prompt + wikilink instruction + injection protection
-  MESSAGES: 0.33,        // Recent conversation history (33% of remaining 5500)
-  LORE: 0.25,            // Nearby wiki entries (25%)
-  MEMORIES: 0.15,        // Narrative memories (15%)
-  RELATIONSHIPS: 0.10,   // Character relationships (10%)
-  ACTIVE_THREADS: 0.10,  // Narrative threads (10%)
-  MESSAGE_SUMMARIES: 0.05, // Truncated message summaries (5%)
-  DECISION_POINTS: 0.02, // Recent narrative choices (2%)
+  OVERHEAD: 500,         // System prompt + instructions
+  MESSAGES: 1.0,         // Full context — no artificial limits
+  LORE: 1.0,             // "
+  MEMORIES: 1.0,         // "
+  RELATIONSHIPS: 1.0,    // "
+  ACTIVE_THREADS: 1.0,   // "
+  MESSAGE_SUMMARIES: 1.0,// "
+  DECISION_POINTS: 1.0,  // "
 } as const;

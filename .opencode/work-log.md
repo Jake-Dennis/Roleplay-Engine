@@ -844,3 +844,177 @@ These fire BEFORE any user-provided AbortSignal because undici checks its own ti
 - Budget fractions trimmed proportionally (MESSAGES donated 5% to LORE, sum stays 1.0)
 - buildUniverseContext capped at 1500 chars to protect extraction context window
 - ensureOverviewInResult runs after both re-ranking paths to protect from slice(0,10)
+
+---
+
+## 2026-06-09 — Cycle 15: Open-ended benchmark tests
+
+**Trigger:** User asked for benchmark to find the model's true limits without artificial caps.
+
+**What was done:**
+
+1. **predict-test.ts** — Replaced `DEFAULT_MAX_PREDICT = 32768` with dynamic growth from `GROWTH_START = 256`. Phase 1: doubles the test size until the model fails (OOM/timeout/empty response). Phase 2: binary searches the full ladder (skipping already-tested values). No hard upper bound — the model's real capacity is the only limit.
+
+2. **combination-test.ts** — Same open-ended pattern for `binarySearchPredictForContext()`. Removed `maxPredict` parameter from callers; uses `PREDICT_GROWTH_START = 256` and doubles until failure. Also fixed variable shadow: `low`/`high` → `searchLow`/`searchHigh` for clarity.
+
+3. **context-test.ts** — Removed `DEFAULT_MAX_CONTEXT_SIZE = 131072`. Upper bound is now `modelMeta.contextWindow * 1.1` (10% buffer above native window) when metadata reports it, or `Infinity` (failures stop the search) when no metadata. No more capped filtering — the size ladder grows freely up to the model's natural limit.
+
+4. **types.ts** — `maxPredictTokens` and `maxContextSize` marked `@deprecated` with doc comments explaining they're no longer used.
+
+**Files changed:**
+
+- `src/lib/benchmark/predict-test.ts` — open-ended growth + binary search
+- `src/lib/benchmark/combination-test.ts` — open-ended growth + binary search
+- `src/lib/benchmark/context-test.ts` — model metadata as upper bound (or unlimited)
+- `src/lib/benchmark/types.ts` — deprecated maxPredictTokens/maxContextSize
+
+**Verification:** All 4 files pass grep-based audit — no `DEFAULT_MAX_*` constants remain, each has appropriate open-ended comments.
+
+**Decisions:**
+- The model's own failure (OOM/timeout/empty) is the only acceptable upper bound
+- Native context window from model metadata is used as a hint (with 10% buffer), not a hard cap
+- All three test types follow the same pattern: power-of-2 growth → binary search
+- Already-tested values are skipped in the binary search phase (not re-tested)
+
+**Bugfix (same cycle):**
+`context-test.ts`: when `modelMeta.contextWindow` is 0 (no metadata), `maxContextLimit` was set to `Infinity`, causing `while (s <= Infinity)` to loop forever once `s` overflows to `Infinity` (`Infinity <= Infinity` is always true). Array grew until `RangeError: Invalid array length`. Fixed with overflow guard `if (next <= s) break;`.
+
+**Noticed (not a bug — future consideration):**
+In predict-test.ts and combination-test.ts, the binary search phase skips all values because they were already tested in the growth phase. The binary search is effectively dead code — the growth phase already found the last working value. A future cleanup could remove the binary search from these two tests, but it's harmless (just a few redundant iterations).
+
+---
+
+## 2026-06-09 — Cycle 16: Phase-based benchmark system + open-ended UI
+
+**Trigger:** User reported "Invalid array length" error, then requested phase-separate benchmark UI.
+
+**What was done:**
+
+1. **Bugfix — context-test.ts infinite loop** (lines 137-144):
+   - When `modelMeta.contextWindow` is 0 (no metadata), `maxContextLimit` was `Infinity`, causing `while (s <= Infinity)` to loop forever once `s` overflowed to `Infinity`. Array grew until `RangeError: Invalid array length`.
+   - Fix: overflow guard `if (next <= s) break;` — when doubling stops increasing the value (overflow), break.
+
+2. **Phase-based benchmark system** (major redesign):
+   - **`orchestrator.ts`**: Added `runBenchmarkPhases()` that runs only specified phases (context/predict/combination), accepts `previousResults` for dependency resolution. Each phase runner is a standalone function. Backward-compatible: `runBenchmark()` still runs all phases.
+   - **`job-store.ts`**: Added `phasesCompleted: BenchmarkPhase[]` and `phasesRunning: BenchmarkPhase | null` to `BenchmarkJob`. Jobs accumulate results across runs.
+   - **`api/benchmark/route.ts`**: POST now accepts `phases: ("context"|"predict"|"combination")[]` and optional `jobId` to resume an existing job. Dependencies validated server-side (combination needs context). Phases run sequentially, persisting after each. Auto-applies recommendations when all 3 phases done.
+
+3. **UI redesign — per-phase panels**:
+   - Replaced monolithic "Run Benchmark" button with three independent **PhasePanel** components:
+     - **Max Context** (no deps) — always enabled
+     - **Max Predict** (no deps) — always enabled
+     - **Combination Grid** (depends on context) — disabled until context test completes
+   - Each panel shows: running spinner + progress bar while active, ✓ Done badge + result summary when completed, disabled state with dependency reason
+   - Removed old `BenchmarkProgressDisplay` / `TestHistoryLog` / `STAGE_LABELS` components
+   - Removed `maxContextSize` state and dropdown (no longer needed — open-ended)
+   - Header/options/model section streamlined
+   - Added `extractPhaseResult()` helper for one-line result summaries
+   - `PHASE_CONFIG` defines per-phase metadata (label, icon, description, deps)
+   - Combined tests that pass `jobId` resume the same job across phases
+
+4. **Docs updated** — quick start reflects phase-based workflow.
+
+**Bugfix (same cycle):**
+- `deleteJob` in page.tsx now checks `res.ok` and shows error alerts on failure. Previously it silently ignored non-200 responses, so rate-limit or server errors would cause the UI to act like a delete succeeded while the job remained on disk.
+- `cancelCurrentJob` also fixed — clears polling state before attempting delete, for more reliable cancellation.
+
+**Bugfix: "Cannot read properties of undefined (reading 'progress')"**
+- Server-side crash in `runBenchmarkPhases()` when starting a benchmark phase.
+- Root cause: `runConnectivityAndMeta()` was called with `onPhaseProgress as any` — a 2-argument callback `(phaseName, progress)` passed to a function that expects a 1-argument callback `(progress)`. The `as any` cast silenced TypeScript but at runtime the callback was called with one argument, making `progress` undefined and crashing on `progress.progress`.
+- Fix: Replaced the `as any` cast with a proper wrapper that adapts 1-arg to 2-arg: `(progress) => onPhaseProgress?.("context", progress)`. Phase name is ignored by the progress handler anyway.
+
+**Bugfix: Infinity in test ladders (all 3 test files)**
+- `context-test.ts`: The ladder builder's overflow guard `if (next <= s)` didn't catch the case where `next` becomes `Infinity` (since `Infinity <= Number.MAX_VALUE` is `false`). Added `|| !isFinite(next)` to catch it.
+- `predict-test.ts` / `combination-test.ts`: Same issue in the growth loop. When `s` reaches `Number.MAX_VALUE`, `s *= 2` gives `Infinity`. The test succeeds because `JSON.stringify({num_predict: Infinity})` serializes as `null`, making Ollama use defaults. Then `Infinity * 2 = Infinity` creates an infinite loop. Added `if (!isFinite(s) || s > MAX_REASONABLE_PREDICT) break` after doubling.
+- **Root cause**: When `modelMeta.contextWindow` is 0 (metadata unavailable), `maxContextLimit` was `Infinity`, creating a 1000+ entry ladder of near-Number.MAX_VALUE sizes. These all "succeed" because Ollama silently caps `num_ctx` at the model's actual max. Fixed: replaced `Infinity` fallback with `MAX_REASONABLE_CONTEXT = 1_048_576` (2^20 = 1M). This keeps the ladder at ~15 entries.
+- Consequence: Previously `maxContextFound: Infinity` would be reported, which is meaningless and could crash downstream formatting.
+
+**Cleanup: deleted all old benchmark data + gitignore**
+- Removed `data/benchmarks/` directory (8 stale JSON files from buggy test runs with Infinity results).
+- Staged all 8 deletions from git tracking.
+- Added `data/benchmarks/` to `.gitignore` so future benchmark files aren't accidentally committed.
+
+**mainGpu/numGpuLayers support in per-model defaults**
+- Added `resolveMainGpu()` and `resolveNumGpuLayers()` in ollama.ts — reads from model_defaults, passes `main_gpu` and `num_gpu` to Ollama in every `generateText` and `generateTextStream` call
+- Added `mainGpu` and `numGpuLayers` fields to `ModelSettings` interface in server-config.ts
+- DB updated: qwen3.5:4b has `mainGpu: 1` (uses GPU 1 for its larger VRAM)
+- **numGpuLayers was removed from DB** — setting `num_gpu` to split layers caused 500 errors with real prompts. Full GPU layer allocation works reliably.
+
+**256K+ context now working on GPU 1**
+- Found: 256K failed because Ollama defaulted to CUDA0 (smaller GPU). With `main_gpu: 1`, the model uses GPU 1 which has enough VRAM.
+- Verified: 256K through 2M context all work with `main_gpu=1` and full GPU layers (no CPU offloading) on qwen3.5:4b.
+- The `num_gpu=4` hybrid GPU/CPU mode caused Ollama 500 errors during real prompts (only trivial echo prompts worked). Full GPU mode is reliable.
+
+**Phase panel uses cross-job completion data**
+- `depsMet` and `isCompleted` now check ALL history jobs for the selected model, not just `currentJob`. This lights up the Combination Grid button when context was completed in a different job.
+- `phaseResult` uses the merged `report` (which pulls sibling results) instead of `currentJob?.report`, so context/predict "Done" badges show correct results from any job.
+
+**Report merging: combined view from separate jobs**
+- When viewing a job in history, the UI now scans sibling jobs (same model) for missing test results. If a job only has context results but a sibling has predict results, the report is merged automatically with a "Combined view" badge.
+- Recommendation values are recomputed when both context + predict results become available through merging.
+- This lets users run context, predict, and combination as separate phases and still see a unified report.
+
+**Cross-job context merging for combination tests**
+- When combination is requested but the current job has no context results, the server now scans all user jobs for one with completed context test. If found, it merges the context results (report + phasesCompleted) into the current job so combination can proceed. Previously, running context and predict in separate jobs made combination impossible because dependencies were checked per-job only.
+
+**Phase-labeled progress messages**
+- Made `testInfo.message` override available in `makePhaseCallback` — when a test provides a custom `message` field, it's used instead of the generic `"Tested N/M — status"` format.
+- `context-test.ts`: Warmup → `"Warmup: 1,024 — OK"`, Binary search → `"Search: 131,072 — OK"`, Verification → `"Verify: 524,288 — OOM"`.
+- `predict-test.ts`: Growth → `"Growth: 256 — OK"`, Binary search → `"Search: 16,384 — OK"`.
+- `combination-test.ts`: Per-context result → `"Combination: 32K ctx × 8K pred — OK"`.
+
+**Live benchmark results while running**
+- Added `lastTestResult` field to `BenchmarkProgress` interface to pipe individual test results (size, success, error) from test functions through the progress callback.
+- Updated `makePhaseCallback` to include `lastTestResult` in each progress update, mapping `testInfo.size ?? testInfo.contextSize` for compatibility across context/predict/combination tests.
+- Added `latestTestResult` field to `BenchmarkJob` (job-store.ts) and both API response types (route.ts GET list + [jobId] GET/DELETE) so the client can receive it via polling.
+- PhasePanel accumulates results via `useRef` + `useState`, resetting when the phase transitions to idle. Renders a scrollable live table (Size | Result) with colored check/X icons as each test completes during the run. Table persists after completion for review.
+
+**Files changed:**
+- `src/lib/benchmark/context-test.ts` — overflow guard fix
+- `src/lib/benchmark/orchestrator.ts` — `runBenchmarkPhases()`, `runSinglePhase()`, `buildReport()`
+- `src/lib/benchmark/job-store.ts` — `phasesCompleted`, `phasesRunning` fields
+- `src/app/api/benchmark/route.ts` — phase-aware POST, job resume, dependency checks
+- `src/app/(app)/settings/benchmark/page.tsx` — PhasePanel UI, three independent phase buttons, removed maxContextSize
+- `.opencode/work-log.md` — this entry
+- `docs/llm-benchmark.md` — updated quick start for phase-based workflow
+
+## 2026-06-12 — Cycle: Dynamic Context Budget + RAG History + AI Management Page
+
+**Trigger:** User asked about context window behavior, requested dynamic budget and RAG for chat history, plus a Universe AI Management page with docs/diagrams.
+
+### Plan 001 — Dynamic Context Budget + RAG Message History
+
+**What changed:**
+1. **applyContextBudget()** — rewritten from fixed-percentage (each section got 100%, 5× overflow) to remainder-based (non-message sections measured first, messages get whatever's left, clamped to 85% max non-message). Guarantees lore/memories/relationships always fit.
+2. **getRelevantMessages()** — new function in `retrieval.ts` that vector-searches `vec_messages` (already populated by existing `generate_embeddings` jobs) for historically relevant messages. Graceful degradation (returns `[]` if sqlite-vec unavailable).
+3. **relevantMessages** — added to `RetrievedContext` interface, wired into `getRetrievedContext()`, builds exclude set from recent message IDs.
+4. **[RELEVANT PAST]** — new prompt section added in `assemblePrompt()` between decision points and recent history, populated by vector search results.
+5. **PROMPT_BUDGET** — deprecated in `config.ts`, removed broken import from `prompt-builder.ts`.
+
+### Plan 002 — Universe AI Management Page
+
+**New files:**
+- `src/app/api/universe/[id]/ai-metrics/route.ts` — GET endpoint returning model info, context budget breakdown (per-section token estimates), stats (messages, wiki pages, threads, relationships, memories).
+- `src/app/(app)/universe/[id]/manage/page.tsx` — server component route at `/universe/{id}/manage`.
+- `src/app/(app)/universe/[id]/manage/ai-management-client.tsx` — full client dashboard with two tabs:
+  - **Dashboard**: Model card, stacked context budget bar, section breakdown table, stat cards grid. Auto-polls every 10s.
+  - **How It Works**: Pipeline flow diagram, before/after budget comparison, RAG explanation, prompt structure visualization, key concepts cards. All pure Tailwind/CSS — no external deps.
+
+**Modified files:**
+- `src/app/(app)/universe/[id]/page.tsx` — added "AI Management" navigation link.
+
+**Decisions:**
+- Client-side fetch only (no server-side auth cookie issues).
+- All PROMPT_BUDGET values deprecated but kept for backward compat (debug inspector endpoint still imports them).
+- Non-message sections are never truncated unless total exceeds 85% of window. Messages are the only truncated section.
+- Minimum 10% message budget guaranteed even when non-message sections overflow.
+
+**Files changed:**
+- `src/lib/prompt-builder.ts` — dynamic budget, [RELEVANT PAST] section, removed PROMPT_BUDGET import
+- `src/lib/config.ts` — PROMPT_BUDGET deprecated
+- `src/lib/retrieval.ts` — getRelevantMessages(), relevantMessages in RetrievedContext, id in MessageContext
+- `src/app/api/universe/[id]/ai-metrics/route.ts` — NEW
+- `src/app/(app)/universe/[id]/manage/page.tsx` — NEW
+- `src/app/(app)/universe/[id]/manage/ai-management-client.tsx` — NEW
+- `src/app/(app)/universe/[id]/page.tsx` — AI Management nav link
+

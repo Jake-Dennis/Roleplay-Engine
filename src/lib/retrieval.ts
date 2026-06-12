@@ -25,6 +25,7 @@ import { classifyIntent, type Intent } from "@/lib/intent-analyzer";
 import { readWikiPage, listWikiPages } from "@/lib/wiki/file-io";
 import { parseWikiIndex, scoreWikiEntry, resolveWikiPagePath } from "@/lib/wiki/index-utils";
 import { safeParseWarn } from "@/lib/safe-json";
+import { getServerConfig } from "@/lib/server-config";
 import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import { generateEmbedding } from "@/lib/ollama";
 import { calculateImportance, type ImportanceScores } from "@/lib/importance";
@@ -67,7 +68,7 @@ export interface RelationshipContext {
 }
 
 export interface MessageContext {
-  messages: { senderId: string | null; content: string; timestamp: string }[];
+  messages: { id: string; senderId: string | null; content: string; timestamp: string }[];
 }
 
 export interface RetrievedContext {
@@ -92,6 +93,11 @@ export interface RetrievedContext {
   messageSummaries?: {
     summary: string; type: string;
   }[];
+
+  /** Relevant past messages from semantic vector search (RAG) */
+  relevantMessages?: {
+    messages: { content: string; senderId: string | null }[];
+  };
 
   /** Active entity names appearing in the narrative (Task 25) */
   activeEntities?: string[];
@@ -810,18 +816,110 @@ export function getDecisionPoints(
  */
 export function getRecentMessages(
   sessionId: string,
-  limit: number = 30
+  limit?: number
 ): MessageContext {
+  const effectiveLimit = limit ?? getServerConfig().ollama.messageHistoryLimit ?? 30;
   const db = getDb();
   const messages = db.prepare(
-    `SELECT sender_id as senderId, content, timestamp
+    `SELECT id, sender_id as senderId, content, timestamp
      FROM messages
      WHERE session_id = ? AND is_deleted = 0
      ORDER BY timestamp ASC
      LIMIT ?`
-  ).all(sessionId, limit) as { senderId: string | null; content: string; timestamp: string }[];
+  ).all(sessionId, effectiveLimit) as { id: string; senderId: string | null; content: string; timestamp: string }[];
 
   return { messages: messages || [] };
+}
+
+/**
+ * Fetch semantically relevant past messages for the current user input.
+ * Uses vector search across vec_messages (populated by generate_embeddings jobs).
+ * The vec_messages table stores one row per message embedding with metadata
+ * containing the entity_id (message UUID). Results are deduplicated against
+ * an optional set of already-included message IDs.
+ * Gracefully degrades to empty array if sqlite-vec is unavailable.
+ */
+export async function getRelevantMessages(
+  sessionId: string,
+  userMessage: string,
+  topK: number = 10,
+  excludeIds?: Set<string>
+): Promise<{ content: string; senderId: string | null; timestamp: string }[]> {
+  if (!userMessage || !userMessage.trim()) return [];
+
+  const db = getDb();
+
+  try {
+    // Check if vec_messages virtual table exists
+    const tableCheck = db.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='vec_messages'"
+    ).get() as { name: string } | undefined;
+    if (!tableCheck) return [];
+
+    // Generate embedding for the user's query message
+    const embedding = await generateEmbedding(userMessage.trim());
+    if (!embedding || embedding.length === 0) return [];
+
+    // Convert embedding to JSON float64 array string for vec0 MATCH
+    const embeddingStr = "[" + embedding.join(",") + "]";
+
+    // Query vec_messages for similar messages using sqlite-vec's MATCH operator
+    // We fetch 2× topK to allow for filtering (exclusions, missing messages, etc.)
+    const rows = db.prepare(`
+      SELECT v.rowid, v.distance, v.metadata
+      FROM vec_messages v
+      WHERE v.embedding MATCH ?
+        AND v.k = ?
+    `).all(embeddingStr, topK * 2) as { rowid: string; distance: number; metadata: string }[];
+
+    if (!rows || rows.length === 0) return [];
+
+    // Parse metadata and join to messages table to get full content
+    const results: { content: string; senderId: string | null; timestamp: string }[] = [];
+    const seen = new Set<string>();
+
+    for (const row of rows) {
+      try {
+        const meta = JSON.parse(row.metadata) as {
+          entity_type?: string;
+          entity_id?: string;
+          user_id?: string;
+        };
+        const entityId = meta.entity_id;
+        if (!entityId) continue;
+
+        // Skip excluded IDs (messages already in recent history)
+        if (excludeIds?.has(entityId)) continue;
+        // Skip duplicates
+        if (seen.has(entityId)) continue;
+        seen.add(entityId);
+
+        // Fetch message content from the messages table
+        const msg = db.prepare(
+          "SELECT content, sender_id, timestamp FROM messages WHERE id = ? AND is_deleted = 0"
+        ).get(entityId) as { content: string; sender_id: string | null; timestamp: string } | undefined;
+
+        if (msg && msg.content) {
+          results.push({
+            content: msg.content,
+            senderId: msg.sender_id,
+            timestamp: msg.timestamp,
+          });
+        }
+      } catch {
+        // Skip malformed metadata rows
+        continue;
+      }
+
+      // Stop once we have enough (after filtering)
+      if (results.length >= topK) break;
+    }
+
+    return results;
+  } catch {
+    // Graceful degradation — vector search is optional
+    return [];
+  }
 }
 
 /**
@@ -920,6 +1018,14 @@ export async function getRetrievedContext(
   const narrativeThreads = getActiveThreads(sessionId, universeId);
   const messageSummaries = getMessageSummaries(sessionId);
 
+  // Build exclude set from messages already in recent history
+  const recentMsgIds = new Set(recentMessages.messages.map(m => m.id));
+
+  // Fetch relevant past messages via vector search (Task C)
+  const relevantMessages = userMessage
+    ? await getRelevantMessages(sessionId, userMessage, 10, recentMsgIds)
+    : [];
+
   // Active entities from entity_mentions (Task 25)
   let activeEntities: string[] | undefined;
   try {
@@ -976,6 +1082,9 @@ export async function getRetrievedContext(
     memories: memories ?? undefined,
     narrativeThreads: narrativeThreads ?? undefined,
     messageSummaries: messageSummaries ?? undefined,
+    relevantMessages: relevantMessages.length > 0
+      ? { messages: relevantMessages }
+      : undefined,
     activeEntities: activeEntities ?? undefined,
     relationshipEvolution: relationshipEvolution ?? undefined,
     relationshipAnchors: relationshipAnchors ?? undefined,
