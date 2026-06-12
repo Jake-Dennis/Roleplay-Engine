@@ -9,7 +9,9 @@ export default function UserSettingsPage() {
   const [ttsSpeed, setTtsSpeed] = useState(1.0);
   const [ttsVolume, setTtsVolume] = useState(0.8);
   const [ttsFormat, setTtsFormat] = useState("mp3");
-  const [ttsAutoPlay, setTtsAutoPlay] = useState(true);
+  const [autoTtsNarrator, setAutoTtsNarrator] = useState(false);
+  const [autoTtsOtherPersonas, setAutoTtsOtherPersonas] = useState(false);
+  const [autoTtsYourPersona, setAutoTtsYourPersona] = useState(false);
   const [ttsSkipLong, setTtsSkipLong] = useState(true);
   const [ttsLongThreshold, setTtsLongThreshold] = useState(500);
   const [settingsLoading, setSettingsLoading] = useState(true);
@@ -39,7 +41,9 @@ export default function UserSettingsPage() {
           if (data.settings.ttsSpeed !== undefined) setTtsSpeed(data.settings.ttsSpeed);
           if (data.settings.ttsVolume !== undefined) setTtsVolume(data.settings.ttsVolume);
           if (data.settings.ttsFormat) setTtsFormat(data.settings.ttsFormat);
-          if (data.settings.ttsAutoPlay !== undefined) setTtsAutoPlay(data.settings.ttsAutoPlay);
+          if (data.settings.autoTtsNarrator !== undefined) setAutoTtsNarrator(data.settings.autoTtsNarrator);
+          if (data.settings.autoTtsOtherPersonas !== undefined) setAutoTtsOtherPersonas(data.settings.autoTtsOtherPersonas);
+          if (data.settings.autoTtsYourPersona !== undefined) setAutoTtsYourPersona(data.settings.autoTtsYourPersona);
           if (data.settings.ttsSkipLong !== undefined) setTtsSkipLong(data.settings.ttsSkipLong);
           if (data.settings.ttsLongThreshold !== undefined) setTtsLongThreshold(data.settings.ttsLongThreshold);
         }
@@ -57,7 +61,11 @@ export default function UserSettingsPage() {
       const res = await fetch("/api/user/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ttsSpeed, ttsVolume, ttsFormat, ttsAutoPlay, ttsSkipLong, ttsLongThreshold }),
+        body: JSON.stringify({
+          ttsSpeed, ttsVolume, ttsFormat,
+          autoTtsNarrator, autoTtsOtherPersonas, autoTtsYourPersona,
+          ttsSkipLong, ttsLongThreshold,
+        }),
       });
       if (res.ok) {
         setSettingsSaved(true);
@@ -192,19 +200,54 @@ export default function UserSettingsPage() {
             </select>
           </div>
 
-          {/* Auto-play toggle */}
-          <div className="flex items-center justify-between rounded-lg bg-bg-raised px-3 py-2.5">
-            <div>
-              <p className="text-xs text-text-primary">Auto-play TTS</p>
-              <p className="text-xxs text-text-muted">Automatically speak AI responses</p>
+          {/* Auto-Play TTS */}
+          <div>
+            <p className="text-xs font-medium text-text-primary mb-3">Auto-Play TTS</p>
+            <p className="text-xxs text-text-muted mb-3">Automatically play audio for each message type</p>
+            <div className="space-y-2">
+              {/* Narrator */}
+              <div className="flex items-center justify-between rounded-lg bg-bg-raised px-3 py-2.5">
+                <div>
+                  <p className="text-xs text-text-primary">Narrator</p>
+                  <p className="text-xxs text-text-muted">Auto-speak AI narration</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAutoTtsNarrator(!autoTtsNarrator)}
+                  className={`relative h-5 w-9 rounded-full transition-colors shrink-0 ${autoTtsNarrator ? "bg-accent" : "bg-bg-highlight"}`}
+                >
+                  <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${autoTtsNarrator ? "left-4" : "left-0.5"}`} />
+                </button>
+              </div>
+              {/* Your Persona */}
+              <div className="flex items-center justify-between rounded-lg bg-bg-raised px-3 py-2.5">
+                <div>
+                  <p className="text-xs text-text-primary">Your Persona</p>
+                  <p className="text-xxs text-text-muted">Auto-speak messages from your character</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAutoTtsYourPersona(!autoTtsYourPersona)}
+                  className={`relative h-5 w-9 rounded-full transition-colors shrink-0 ${autoTtsYourPersona ? "bg-accent" : "bg-bg-highlight"}`}
+                >
+                  <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${autoTtsYourPersona ? "left-4" : "left-0.5"}`} />
+                </button>
+              </div>
+              {/* Other Personas */}
+              <div className="flex items-center justify-between rounded-lg bg-bg-raised px-3 py-2.5">
+                <div>
+                  <p className="text-xs text-text-primary">Other Personas</p>
+                  <p className="text-xxs text-text-muted">Auto-speak other players&apos; characters</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAutoTtsOtherPersonas(!autoTtsOtherPersonas)}
+                  className={`relative h-5 w-9 rounded-full transition-colors shrink-0 ${autoTtsOtherPersonas ? "bg-accent" : "bg-bg-highlight"}`}
+                >
+                  <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${autoTtsOtherPersonas ? "left-4" : "left-0.5"}`} />
+                </button>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setTtsAutoPlay(!ttsAutoPlay)}
-              className={`relative h-5 w-9 rounded-full transition-colors ${ttsAutoPlay ? "bg-accent" : "bg-bg-highlight"}`}
-            >
-              <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${ttsAutoPlay ? "left-4" : "left-0.5"}`} />
-            </button>
           </div>
 
           {/* Skip long toggle */}

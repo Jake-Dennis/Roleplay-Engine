@@ -191,12 +191,21 @@ export async function POST(
       // Non-fatal — timeline entry creation should not block message sending
     }
 
+    // Look up persona name if personaId was provided
+    let personaName: string | null = null;
+    if (personaId) {
+      const persona = db.prepare("SELECT name FROM personas WHERE id = ?").get(personaId) as { name: string } | undefined;
+      personaName = persona?.name || null;
+    }
+
     // Emit message created event for SSE
     eventBus.emit(`${SessionEvents.MESSAGE_CREATED}:${sessionId}`, {
-      messageId,
+      id: messageId,
       sessionId,
       senderId: userId,
       content,
+      personaId: personaId || null,
+      personaName,
     });
 
     // Queue background jobs for async processing

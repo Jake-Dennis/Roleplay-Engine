@@ -147,6 +147,7 @@ export function useSessionChat(
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [ttsPlayingId, setTtsPlayingId] = useState<string | null>(null);
   const [defaultVoice, setDefaultVoice] = useState("af_heart");
+  const [autoTtsSettings, setAutoTtsSettings] = useState({ narrator: false, yourPersona: false, otherPersonas: false });
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [choices, setChoices] = useState<string[] | null>(null);
   const [isRegeneratingChoices, setIsRegeneratingChoices] = useState(false);
@@ -176,6 +177,13 @@ export function useSessionChat(
   const streamAccumulator = useRef("");
   const lastFlushTime = useRef(0);
   const shouldScrollRef = useRef(false);
+  const handleTtsPlayRef = useRef<(messageId: string, content: string) => Promise<void>>(async () => {});
+  const activePersonaIdRef = useRef<string | null>(null);
+  const autoTtsSettingsRef = useRef(autoTtsSettings);
+
+  // Keep refs in sync with state so SSE callbacks (which close over refs) always see latest values
+  autoTtsSettingsRef.current = autoTtsSettings;
+  activePersonaIdRef.current = activePersonaId;
 
   // ---- Derived ----
   const isGroup = state.session?.type === "group";
@@ -222,6 +230,22 @@ export function useSessionChat(
         }
       })
       .catch(() => { /* use fallback default */ });
+  }, []);
+
+  // Auto-TTS settings
+  useEffect(() => {
+    fetch("/api/user/settings")
+      .then(r => r.json())
+      .then(d => {
+        if (d.settings) {
+          setAutoTtsSettings({
+            narrator: d.settings.autoTtsNarrator ?? false,
+            yourPersona: d.settings.autoTtsYourPersona ?? false,
+            otherPersonas: d.settings.autoTtsOtherPersonas ?? false,
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // TTS cleanup on unmount
@@ -313,10 +337,41 @@ export function useSessionChat(
 
     evtSource.addEventListener("session:choices", handleChoicesEvent);
 
+    // Auto-play TTS on new messages
+    const handleMessageCreated = (event: MessageEvent) => {
+      try {
+        const msg = JSON.parse(event.data);
+        const msgId = msg.id || msg.messageId;
+        if (!msgId || !msg.content) return;
+
+        // Determine message type
+        const isNarrator = msg.senderId === null || msg.senderId === undefined;
+        const isYourPersona = !isNarrator && msg.personaName && activePersonaIdRef.current && msg.personaId === activePersonaIdRef.current;
+        const isOtherPersona = !isNarrator && msg.personaName && !isYourPersona;
+
+        let shouldPlay = false;
+        if (isNarrator && autoTtsSettingsRef.current.narrator) shouldPlay = true;
+        else if (isYourPersona && autoTtsSettingsRef.current.yourPersona) shouldPlay = true;
+        else if (isOtherPersona && autoTtsSettingsRef.current.otherPersonas) shouldPlay = true;
+
+        if (shouldPlay) {
+          // Small delay to let the message render
+          setTimeout(() => {
+            handleTtsPlayRef.current(msgId as string, msg.content as string);
+          }, 500);
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    };
+
+    evtSource.addEventListener("message:created", handleMessageCreated);
+
     return () => {
       cleanupFns.forEach((fn) => fn());
       evtSource.removeEventListener("wiki:page_created", handleWikiCreated);
       evtSource.removeEventListener("session:choices", handleChoicesEvent);
+      evtSource.removeEventListener("message:created", handleMessageCreated);
       evtSource.close();
     };
   }, [sessionId, refreshSession, showWikiToast, setChoices]);
@@ -430,7 +485,7 @@ export function useSessionChat(
       const decoder = new TextDecoder();
       let buffer = "";
 
-      // eslint-disable-next-line no-constant-condition
+       
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -562,10 +617,13 @@ export function useSessionChat(
 
     if (!res.ok) return;
 
+    const data = await res.json();
+    const newMessageId = data.message?.id || data.newMessage?.id || messageId;
+
     setEditingId(null);
     setEditContent("");
 
-    await triggerGeneration(editContent.trim(), messageId);
+    await triggerGeneration(editContent.trim(), newMessageId);
   }, [editContent, sessionId, triggerGeneration]);
 
   const handleDelete = useCallback(async (messageId: string) => {
@@ -622,7 +680,7 @@ export function useSessionChat(
           const reader = streamRes.body!.getReader();
 
           try {
-            // eslint-disable-next-line no-constant-condition
+             
             while (true) {
               const { done, value } = await reader.read();
               if (done) break;
@@ -693,6 +751,9 @@ export function useSessionChat(
       setTtsPlayingId(null);
     }
   }, [defaultVoice, ttsPlayingId]);
+
+  // Keep handleTtsPlayRef in sync with latest callback
+  handleTtsPlayRef.current = handleTtsPlay;
 
   // Scene state update
   const handleSceneSave = useCallback(async (sceneData: {

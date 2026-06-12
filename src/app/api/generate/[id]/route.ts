@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
 import { generateTextStream, getUserModels, getActivePersonaContext, buildPersonaPrompt, checkModelAvailable, type PersonaContext } from "@/lib/ollama";
+import { buildSystemPrompt } from "@/lib/prompt-builder";
 import { getRetrievedContext, assemblePromptWithBudget, type RetrievedContext } from "@/lib/retrieval";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { queueJob, processJobsByType, processUserJobs } from "@/lib/job-processor";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
 import { withAuth } from '@/lib/with-auth';
 import { logger } from '@/lib/logger';
+import { getServerConfig } from '@/lib/server-config';
 import { validateLength } from '@/lib/validation';
 import { markOllamaBusy, markOllamaIdle } from '@/lib/ollama-busy';
 
@@ -134,9 +136,6 @@ export async function POST(
     }
   }
 
-  const baseSystemPrompt = `You are the Narrator and world engine for a roleplay session. You control the setting, NPCs, and narrative events. The player controls their own character — you must NEVER write actions, dialogue, or internal thoughts for the player's character. Narrate the world's response to the player's actions, describe scenes, and roleplay NPCs. Write in a literary style with vivid description. Stay consistent with established lore. Keep responses to 2-4 paragraphs unless the situation demands more.`;
-  const systemPrompt = buildPersonaPrompt(persona, baseSystemPrompt);
-
   // Build context using retrieval pipeline
   const ctx: RetrievedContext = await getRetrievedContext(
     sessionId,
@@ -144,7 +143,41 @@ export async function POST(
     userMessage
   );
 
-  const prompt = assemblePromptWithBudget(ctx, systemPrompt, 6000);
+  // Extract universe info from the first lore entry (universe overview page)
+  let universeName: string | undefined;
+  let timePeriod: string | undefined;
+  try {
+    const loreEntries = ctx?.lore?.entries || [];
+    if (loreEntries.length > 0) {
+      const overview = loreEntries[0];
+      universeName = overview.name;
+      const tpMatch = overview.description?.match(/time[_-]?period:?\s*(.+)/i);
+      if (tpMatch) timePeriod = tpMatch[1].trim();
+    }
+  } catch { /* non-fatal */ }
+
+  // Read narrator options from session_config
+  let narratorOptions: import("@/lib/prompt-builder").NarratorOptions | undefined;
+  try {
+    const rows = db.prepare("SELECT key, value FROM session_config WHERE session_id = ?").all(sessionId) as { key: string; value: string }[];
+    if (rows.length > 0) {
+      narratorOptions = {};
+      for (const row of rows) {
+        if (row.key === "narrator_perspective") narratorOptions.perspective = row.value;
+        else if (row.key === "narrator_pacing") narratorOptions.pacing = row.value;
+        else if (row.key === "narrator_npc_voices") narratorOptions.npcVoices = row.value;
+        else if (row.key === "narrator_style") narratorOptions.style = row.value;
+      }
+    }
+  } catch { /* non-fatal */ }
+
+  const basePrompt = buildSystemPrompt(universeName, timePeriod, narratorOptions);
+  const systemPrompt = buildPersonaPrompt(persona, basePrompt);
+
+  // Use the full context window configured in server settings
+  const cfg = getServerConfig();
+  const numCtx = cfg.modelDefaults?.[preflightModel]?.numCtx || 131072;
+  const prompt = assemblePromptWithBudget(ctx, systemPrompt, numCtx);
 
   // Create the AI message placeholder
   const aiMessageId = crypto.randomUUID();
@@ -205,9 +238,14 @@ export async function POST(
           temperature: undefined,
           top_p: undefined,
           num_ctx: undefined,
+          think: getServerConfig().ollama.thinkingMode ? undefined : false,
         });
 
         // Final write after stream completes — ensures complete content is saved
+        // Fix single-bracket proper nouns that should be wikilinks: [Mountains] → [[Mountains]]
+        fullResponse = fullResponse.replace(/(?<!\[)\[([A-Za-z0-9\s'\-]+?)\](?!\])/g, (match: string, content: string) => {
+          return /[A-Z]/.test(content) ? `[[${content}]]` : match;
+        });
         db.prepare("UPDATE messages SET content = ? WHERE id = ?").run(
           fullResponse,
           aiMessageId
@@ -221,6 +259,16 @@ export async function POST(
           contentLength: fullResponse.length,
         });
 
+        // Emit message:created for auto-TTS (narrator messages)
+        eventBus.emit(`${SessionEvents.MESSAGE_CREATED}:${sessionId}`, {
+          id: aiMessageId,
+          sessionId,
+          senderId: null,
+          content: fullResponse,
+          personaId: null,
+          personaName: null,
+        });
+
         // Queue deferred extraction jobs — these run during idle processing
         // so they don't block the SSE stream from closing. The job handlers
         // emit SCENE_UPDATED / WIKI_PAGE_CREATED events on completion.
@@ -229,11 +277,10 @@ export async function POST(
           userId: userId,
         }, "low", session.universe_id || undefined);
 
-        queueJob(userId, "wiki_auto_extract", {
+        queueJob(userId, "extract_lore_comprehensive", {
           sessionId,
           userId: userId,
           universeId: session.universe_id || undefined,
-          content: fullResponse,
         }, "low", session.universe_id || undefined);
 
         // Queue background jobs for async processing
