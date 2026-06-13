@@ -342,7 +342,7 @@ function HowItWorksDocs() {
       <div className="rounded-lg border border-border-default bg-bg-raised p-4">
         <h3 className="text-sm font-semibold text-text-primary mb-2">Dynamic Context Budget</h3>
         <p className="text-xxs text-text-muted mb-3">
-          Instead of fixed percentage allocations, the system measures non-message sections first and gives messages whatever fits.
+          Non-message sections (lore, memories, relationships, threads, RAG) always get their full content. Messages automatically shrink to fit whatever space remains.
         </p>
         <div className="grid md:grid-cols-2 gap-3">
           <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-3">
@@ -357,11 +357,10 @@ function HowItWorksDocs() {
           <div className="rounded-lg border border-green-500/30 bg-green-500/5 p-3">
             <p className="text-xxs font-medium text-green-400 uppercase tracking-wider mb-2">After (fixed)</p>
             <div className="space-y-1">
-              <div className="h-4 rounded bg-green-500/30 flex items-center px-2 text-[9px] text-white/70">Lore (actual)</div>
-              <div className="h-4 rounded bg-purple-500/30 flex items-center px-2 text-[9px] text-white/70">Memories (actual)</div>
-              <div className="h-4 rounded bg-blue-500/30 flex items-center px-2 text-[9px] text-white/70">Messages (remainder)</div>
+              <div className="h-4 rounded bg-green-500/30 flex items-center px-2 text-[9px] text-white/70">Lore + Memories + RAG (full, no cap)</div>
+              <div className="h-4 rounded bg-blue-500/30 flex items-center px-2 text-[9px] text-white/70">Messages (remaining space)</div>
             </div>
-            <p className="text-xxs text-text-muted mt-2">Non-message sections measured first, messages get remainder → everything fits</p>
+            <p className="text-xxs text-text-muted mt-2">Non-message sections get their full content. Messages automatically compress. Everything fits.</p>
           </div>
         </div>
       </div>
@@ -450,7 +449,7 @@ function HowItWorksDocs() {
       <div className="grid md:grid-cols-2 gap-3">
         {[
           { title: "Context Window", desc: "The model's working memory, set per-model in Server Settings. Determines how many tokens the AI can 'see' at once." },
-          { title: "Dynamic Budget", desc: "Non-message sections (lore, memories, relationships) are measured first. Messages automatically shrink to fit whatever space remains." },
+          { title: "Dynamic Budget", desc: "Lore, memories, relationships, threads, and RAG always get their full content — no artificial caps. Messages automatically shrink to fit whatever space remains in the context window." },
           { title: "Conversation Tracking", desc: "AI responses are scanned for NPC names — detected NPCs stored in speaking_as. Creates separate persona↔NPC pairs for focused context in group sessions." },
           { title: "Entity Registry", desc: "All entities get typed IDs (persona:uuid, npc:uuid, location:uuid, event:uuid, faction:uuid). Aliases resolve different names to the same entity. Scene states, participants, and threads all use entity IDs." },
           { title: "RAG for History", desc: "All messages are embedded via generate_embeddings jobs. Relevant older messages are retrieved via cosine similarity and shown as [RELEVANT PAST] in the prompt." },
