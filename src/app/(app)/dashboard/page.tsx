@@ -87,15 +87,18 @@ function AIManagementPanel({ sessionId }: { sessionId: string | null }) {
   useEffect(() => {
     if (!sessionId) return;
     setLoading(true);
-    fetch(`/api/sessions/${sessionId}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => {
-        if (!d || !d.session) return;
+    Promise.all([
+      fetch(`/api/sessions/${sessionId}`).then(r => r.ok ? r.json() : null),
+      fetch(`/api/universes`).then(r => r.ok ? r.json() : { universes: [] }),
+    ]).then(([sessionData, universeData]) => {
+      if (!sessionData || !sessionData.session) return;
+      const d = sessionData;
+      const universeName = (universeData.universes || []).find((u: any) => u.id === d.session.universe_id)?.name || d.session.name || 'Unknown';
         // Build context metrics from session data
         const totalTokens = d.session.contextWindow || 131072;
         const msgTokens = (d.messages || []).reduce((s: number, m: any) => s + Math.round((m.content?.length || 0) / 4), 0);
         setData({
-          universe: { id: d.session.universe_id || '', name: d.session.name || '' },
+          universe: { id: d.session.universe_id || '', name: universeName },
           model: {
             name: d.session.model || 'unknown',
             contextWindow: totalTokens,
