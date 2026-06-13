@@ -416,15 +416,45 @@ function HowItWorksDocs() {
         </div>
       </div>
 
+      {/* Entity Tracking */}
+      <div className="rounded-lg border border-border-default bg-bg-raised p-4">
+        <h3 className="text-sm font-semibold text-text-primary mb-2">Entity Tracking</h3>
+        <p className="text-xxs text-text-muted mb-3">
+          Every character, location, and event has a unique typed ID (<code className="text-accent">persona:uuid</code>, <code className="text-accent">npc:uuid</code>) so there's no confusion between entities with the same name. Aliases let different names resolve to the same entity.
+        </p>
+        <div className="flex flex-col items-center gap-1.5 mb-3">
+          <div className="rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs text-text-primary">
+            entity_registry: {"{"} "Strider" → npc:abc, "Aragorn" → npc:abc {"}"}
+          </div>
+          <ArrowDownIcon small />
+          <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/5 px-3 py-1.5 text-xs text-text-primary">
+            Relationships, mentions, conversations all use entity IDs
+          </div>
+          <ArrowDownIcon small />
+          <div className="rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs text-text-primary">
+            Scene NPCs, session characters, thread entities — all linked
+          </div>
+          <ArrowDownIcon small />
+          <div className="rounded-lg border border-green-500/30 bg-green-500/5 px-3 py-1.5 text-xs text-text-primary">
+            AI sees entity descriptions in [CURRENT SCENE]
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xxs text-text-muted">
+          <span className="rounded bg-bg-raised px-2 py-1">Persona/NPC editors show entity ID + aliases</span>
+          <span className="rounded bg-bg-raised px-2 py-1">Merge duplicates via <span className="text-accent">Entities</span> sidebar page</span>
+          <span className="rounded bg-bg-raised px-2 py-1">Wiki pages linked by entity_id in frontmatter</span>
+        </div>
+      </div>
+
       {/* Key Concepts */}
       <div className="grid md:grid-cols-2 gap-3">
         {[
           { title: "Context Window", desc: "The model's working memory, set per-model in Server Settings. Determines how many tokens the AI can 'see' at once." },
           { title: "Dynamic Budget", desc: "Non-message sections (lore, memories, relationships) are measured first. Messages automatically shrink to fit whatever space remains." },
           { title: "Conversation Tracking", desc: "AI responses are scanned for NPC names — detected NPCs stored in speaking_as. Creates separate persona↔NPC pairs for focused context in group sessions." },
-          { title: "Auto-Sizing Messages", desc: "Messages automatically shrink to fit the context window. More lore/memories/relationships means fewer messages, and vice versa — no hard cap needed." },
+          { title: "Entity Registry", desc: "All entities get typed IDs (persona:uuid, npc:uuid, location:uuid, event:uuid, faction:uuid). Aliases resolve different names to the same entity. Scene states, participants, and threads all use entity IDs." },
           { title: "RAG for History", desc: "All messages are embedded via generate_embeddings jobs. Relevant older messages are retrieved via cosine similarity and shown as [RELEVANT PAST] in the prompt." },
-          { title: "Multi-NPC Detection", desc: "If the AI roleplays as multiple NPCs in one response (e.g., 'Elrond said... Aragorn replied...'), all are captured comma-separated and each gets its own conversation pair." },
+          { title: "Scene Context", desc: "Entity descriptions from the registry are injected into [CURRENT SCENE]. The AI sees not just NPC names but their descriptions, roles, and traits from the registry." },
         ].map(({ title, desc }) => (
           <div key={title} className="rounded-lg border border-border-default bg-bg-raised p-3">
             <p className="text-xs font-medium text-text-primary mb-1">{title}</p>
