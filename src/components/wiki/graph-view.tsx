@@ -437,11 +437,13 @@ export default function GraphView({ pages, basePath = '/wiki', isLoading, error,
             animate: true,
             animationDuration: 500,
             padding: 50,
-            idealEdgeLength: 180,
-            nodeRepulsion: 150000,
-            gravity: 0.05,
-            numIter: 1000,
-            nodeOverlap: 20,
+            idealEdgeLength: 300,
+            nodeRepulsion: 800000,
+            gravity: 0.01,
+            numIter: 2000,
+            initialTemp: 1000,
+            coolingFactor: 0.95,
+            minTemp: 1.0,
           }}
           style={{ width: '100%', height: '100%' }}
           cy={(cy) => {
