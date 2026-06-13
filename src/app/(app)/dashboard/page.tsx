@@ -87,19 +87,32 @@ function AIManagementPanel({ sessionId }: { sessionId: string | null }) {
   useEffect(() => {
     if (!sessionId) return;
     setLoading(true);
-    Promise.all([
-      fetch(`/api/sessions/${sessionId}`).then(r => r.ok ? r.json() : null),
-      fetch(`/api/universes`).then(r => r.ok ? r.json() : { universes: [] }),
-    ]).then(([sessionData, universeData]) => {
-      if (!sessionData || !sessionData.session) return;
-      const d = sessionData;
-      const universeId = d.session.universe_id || '';
-      const universeName = (universeData.universes || []).find((u: any) => u.id === universeId)?.name || d.session.name || 'Unknown';
-      
-      // Fetch universe-level metrics
-      fetch(`/api/universe/${universeId}/ai-metrics`).then(r => r.ok ? r.json() : null).catch(() => null).then((universeMetrics) => {
+    
+    const loadMetrics = async () => {
+      try {
+        // 1. Get session data to find universe_id
+        const sessionRes = await fetch(`/api/sessions/${sessionId}`);
+        if (!sessionRes.ok) { setLoading(false); return; }
+        const sessionData = await sessionRes.json();
+        if (!sessionData?.session) { setLoading(false); return; }
+        
+        const universeId = sessionData.session.universe_id || '';
+        
+        // 2. Fetch universe names
+        const uniRes = await fetch(`/api/universes`);
+        const uniData = uniRes.ok ? await uniRes.json() : { universes: [] };
+        const universeName = (uniData.universes || []).find((u: any) => u.id === universeId)?.name || sessionData.session.name || 'Unknown';
+        
+        // 3. Fetch universe-level metrics
+        let universeMetrics = null;
+        if (universeId) {
+          const metricsRes = await fetch(`/api/universe/${universeId}/ai-metrics`);
+          if (metricsRes.ok) universeMetrics = await metricsRes.json();
+        }
+        
         const totalTokens = universeMetrics?.model?.contextWindow || 131072;
-        const msgTokens = (d.messages || []).reduce((s: number, m: any) => s + Math.round((m.content?.length || 0) / 4), 0);
+        const msgTokens = (sessionData.messages || []).reduce((s: number, m: any) => s + Math.round((m.content?.length || 0) / 4), 0);
+        
         setData({
           universe: { id: universeId, name: universeName },
           model: {
@@ -114,7 +127,7 @@ function AIManagementPanel({ sessionId }: { sessionId: string | null }) {
             freeTokens: totalTokens - msgTokens - 500,
             sections: {
               overhead: { tokens: 500, label: "System Prompt + Instructions", count: null },
-              messages: { tokens: msgTokens, label: "Session Messages", count: (d.messages || []).length },
+              messages: { tokens: msgTokens, label: "Session Messages", count: (sessionData.messages || []).length },
               lore: { tokens: 0, label: "Known World / Lore", count: null },
               memories: { tokens: 0, label: "Narrative Memories", count: null },
               relationships: { tokens: 0, label: "Relationships", count: null },
@@ -122,7 +135,7 @@ function AIManagementPanel({ sessionId }: { sessionId: string | null }) {
             },
           },
           stats: universeMetrics?.stats || {
-            totalMessages: (d.messages || []).length,
+            totalMessages: (sessionData.messages || []).length,
             totalSessions: 1,
             totalWikiPages: 0,
             totalNarrativeThreads: 0,
@@ -130,9 +143,11 @@ function AIManagementPanel({ sessionId }: { sessionId: string | null }) {
             totalMemories: 0,
           },
         });
-        setLoading(false);
-      }).catch(() => { setLoading(false); });
-    }).catch(() => setLoading(false));
+      } catch { /* ignore */ }
+      setLoading(false);
+    };
+    
+    loadMetrics();
   }, [sessionId]);
 
   // Poll every 15s
