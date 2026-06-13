@@ -1,5 +1,5 @@
 'use client';
-import { BookOpen, Network } from 'lucide-react';
+import { BookOpen, Network, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import FileTree, { type FileTreePageItem, type ReorderChange } from '@/components/wiki/file-tree';
@@ -34,7 +34,6 @@ interface BacklinkInfo {
 }
 
 type EditMode = 'view' | 'edit' | 'preview';
-type RightPanel = 'backlinks' | 'history' | 'outline' | 'links';
 
 export default function WikiPageView() {
   const params = useParams();
@@ -66,9 +65,13 @@ export default function WikiPageView() {
   const [newFolderOpen, setNewFolderOpen] = useState(false);
   const [folderOrder, setFolderOrder] = useState<string[]>([]);
 
-  // Right panel state
-  const [rightPanel, setRightPanel] = useState<RightPanel>('backlinks');
+  // Sidebar collapse state
+  const [leftOpen, setLeftOpen] = useState(true);
+  const [rightOpen, setRightOpen] = useState(true);
 
+  // Embed data for transclusion
+
+  // Right panel state
   // Embed data for transclusion
   const [embeds, setEmbeds] = useState<Record<string, { content: string | null; frontmatter: Record<string, unknown> | null }>>({});
 
@@ -315,240 +318,252 @@ export default function WikiPageView() {
   return (
     <>
       <div className="flex h-[calc(100vh-4rem)]">
-        {/* Left sidebar */}
-        <div className="w-64 border-r border-border-default p-4 overflow-y-auto shrink-0">
-          <FileTree
-            pagesByFolder={pagesByFolder}
-            folderOrder={folderOrder}
-            currentPage={page.path}
-            orphanPaths={orphanPaths}
-            onCreatePage={() => setTemplateOpen(true)}
-            onCreateFolder={() => setNewFolderOpen(true)}
-            onReorder={handleReorder}
-          />
-        </div>
+        {/* Left sidebar — collapsible */}
+        {leftOpen && (
+          <div className="w-60 border-r border-border-default p-4 overflow-y-auto shrink-0">
+            <FileTree
+              pagesByFolder={pagesByFolder}
+              folderOrder={folderOrder}
+              currentPage={page.path}
+              orphanPaths={orphanPaths}
+              onCreatePage={() => setTemplateOpen(true)}
+              onCreateFolder={() => setNewFolderOpen(true)}
+              onReorder={handleReorder}
+            />
+          </div>
+        )}
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Browse/Graph tabs — persistent on all wiki pages */}
-          <div className="flex items-center gap-2 px-8 py-2 border-b border-border-default bg-bg-base shrink-0">
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          {/* Top bar: sidebar toggles + Browse/Graph + page actions */}
+          <div className="flex items-center gap-2 px-4 py-1.5 border-b border-border-default bg-bg-base shrink-0">
+            {/* Left sidebar toggle */}
+            <button
+              onClick={() => setLeftOpen(!leftOpen)}
+              className="p-1 rounded hover:bg-bg-raised text-text-muted hover:text-text-primary transition-colors"
+              title={leftOpen ? 'Close sidebar' : 'Open sidebar'}
+            >
+              {leftOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+            </button>
+
+            {/* Browse / Graph nav */}
             <div className="flex gap-1 rounded-lg bg-bg-raised p-0.5">
               <button
                 onClick={() => router.push('/wiki')}
-                className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors text-text-muted hover:text-text-primary"
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors text-text-muted hover:text-text-primary"
               >
                 <BookOpen className="h-3.5 w-3.5" />
                 Browse
               </button>
               <button
                 onClick={() => router.push('/wiki?view=graph')}
-                className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors text-text-muted hover:text-text-primary"
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors text-text-muted hover:text-text-primary"
               >
                 <Network className="h-3.5 w-3.5" />
                 Graph
               </button>
             </div>
-          </div>
 
-          {/* Page header with mode toggle */}
-          <div className="flex items-center justify-between px-8 py-3 border-b border-border-default bg-bg-elevated shrink-0">
-            <h1 className="text-sm font-medium text-text-primary">
-              {page.frontmatter?.title || page.path}
-            </h1>
-            <div className="flex items-center gap-2">
-              {mode === 'view' ? (
-                <>
+            {/* Spacer */}
+            <div className="flex-1" />
+
+            {/* Page actions (view mode) */}
+            {mode === 'view' ? (
+              <>
+                <button
+                  onClick={() => setPromptModalOpen(true)}
+                  className="px-2 py-1 rounded text-xs font-medium bg-gradient-to-r from-accent to-accent-hover text-text-primary hover:opacity-90 transition-opacity"
+                >
+                  AI Create
+                </button>
+                <span className="w-px h-4 bg-border-default" />
+                <button
+                  onClick={handleEditStart}
+                  className="px-2 py-1 rounded text-xs font-medium bg-accent text-text-primary hover:bg-accent-hover transition-colors"
+                >
+                  Edit
+                </button>
+                <WikiAiHeaderButtons
+                  pagePath={page.path}
+                  universeId={activeUniverse?.id}
+                />
+              </>
+            ) : (
+              <>
+                <div className="flex rounded border border-border-default overflow-hidden">
                   <button
-                    onClick={() => setRightPanel('backlinks')}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                      rightPanel === 'backlinks'
-                        ? 'bg-accent/20 text-accent border border-accent/30'
-                        : 'bg-bg-base text-text-secondary border border-border-default hover:text-text-primary'
+                    onClick={() => setMode('edit')}
+                    className={`px-2 py-1 text-xs font-medium transition-colors ${
+                      mode === 'edit'
+                        ? 'bg-accent text-text-primary'
+                        : 'bg-bg-base text-text-muted hover:text-text-primary'
                     }`}
-                  >
-                    Backlinks
-                  </button>
-                  <button
-                    onClick={() => setRightPanel('history')}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                      rightPanel === 'history'
-                        ? 'bg-accent/20 text-accent border border-accent/30'
-                        : 'bg-bg-base text-text-secondary border border-border-default hover:text-text-primary'
-                    }`}
-                  >
-                    History
-                  </button>
-                  <button
-                    onClick={() => setRightPanel('outline')}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                      rightPanel === 'outline'
-                        ? 'bg-accent/20 text-accent border border-accent/30'
-                        : 'bg-bg-base text-text-secondary border border-border-default hover:text-text-primary'
-                    }`}
-                  >
-                    Outline
-                  </button>
-                  <button
-                    onClick={() => setRightPanel('links')}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                      rightPanel === 'links'
-                        ? 'bg-accent/20 text-accent border border-accent/30'
-                        : 'bg-bg-base text-text-secondary border border-border-default hover:text-text-primary'
-                    }`}
-                  >
-                    Links
-                  </button>
-                  <button
-                    onClick={() => setPromptModalOpen(true)}
-                    className="px-3 py-1.5 rounded text-xs font-medium bg-gradient-to-r from-accent to-accent-hover text-text-primary hover:opacity-90 transition-opacity"
-                  >
-                    AI Create
-                  </button>
-                  <span className="w-px h-5 bg-border-default mx-1" />
-                  <button
-                    onClick={handleEditStart}
-                    className="px-3 py-1.5 rounded text-xs font-medium bg-accent text-text-primary hover:bg-accent-hover transition-colors"
                   >
                     Edit
                   </button>
-                  <WikiAiHeaderButtons
-                    pagePath={page.path}
-                    universeId={activeUniverse?.id}
-                  />
-                </>
-              ) : (
-                <>
-                  <div className="flex rounded border border-border-default overflow-hidden">
-                    <button
-                      onClick={() => setMode('edit')}
-                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                        mode === 'edit'
-                          ? 'bg-accent text-text-primary'
-                          : 'bg-bg-base text-text-muted hover:text-text-primary'
-                      }`}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => setMode('preview')}
-                      className={`px-3 py-1.5 text-xs font-medium transition-colors border-l border-border-default ${
-                        mode === 'preview'
-                          ? 'bg-accent text-text-primary'
-                          : 'bg-bg-base text-text-muted hover:text-text-primary'
-                      }`}
-                    >
-                      Preview
-                    </button>
-                  </div>
                   <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="px-3 py-1.5 rounded text-xs font-medium bg-accent text-text-primary hover:bg-accent-hover transition-colors disabled:opacity-50"
+                    onClick={() => setMode('preview')}
+                    className={`px-2 py-1 text-xs font-medium transition-colors border-l border-border-default ${
+                      mode === 'preview'
+                        ? 'bg-accent text-text-primary'
+                        : 'bg-bg-base text-text-muted hover:text-text-primary'
+                    }`}
                   >
-                    {saving ? 'Saving...' : 'Save'}
+                    Preview
                   </button>
-                  <button
-                    onClick={handleEditCancel}
-                    className="px-3 py-1.5 rounded text-xs font-medium bg-bg-base text-text-secondary border border-border-default hover:text-text-primary transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Content area */}
-          <div className="flex-1 overflow-y-auto p-8">
-            {mode === 'view' && (
-              <MarkdownRenderer content={page.content} frontmatter={page.frontmatter} existingPages={allPages?.map(p => p.path) || []} wikiRoute="/wiki" embeds={embeds} universeId={activeUniverse?.id} />
+                </div>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="px-2 py-1 rounded text-xs font-medium bg-accent text-text-primary hover:bg-accent-hover transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  onClick={handleEditCancel}
+                  className="px-2 py-1 rounded text-xs font-medium bg-bg-base text-text-secondary border border-border-default hover:text-text-primary transition-colors"
+                >
+                  Cancel
+                </button>
+              </>
             )}
 
-            {mode === 'edit' && (
-              <div className="flex flex-col h-full">
-                {saveError && (
-                  <div className="mb-4 p-3 rounded-lg bg-error/10 border border-error/20">
-                    <p className="text-error text-sm">{saveError}</p>
-                  </div>
-                )}
-                <FrontmatterPropertiesPanel
-                  frontmatter={editFrontmatter}
-                  onChange={setEditFrontmatter}
-                  readOnlyFields={['created', 'updated']}
-                />
-                <div className="flex-1 overflow-y-auto p-8 relative">
-                  <MarkdownEditor
-                    value={editBody}
-                    onChange={setEditBody}
-                    onSave={handleSave}
-                    existingPages={allPages?.map(p => p.path) || []}
-                    minRows={20}
-                    textareaRef={textareaRef}
+            {/* Right sidebar toggle */}
+            <button
+              onClick={() => setRightOpen(!rightOpen)}
+              className="p-1 rounded hover:bg-bg-raised text-text-muted hover:text-text-primary transition-colors"
+              title={rightOpen ? 'Close sidebar' : 'Open sidebar'}
+            >
+              {rightOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
+            </button>
+          </div>
+
+          {/* Page title bar */}
+          <div className="px-8 py-2 border-b border-border-default bg-bg-elevated shrink-0">
+            <h1 className="text-sm font-medium text-text-primary">
+              {page.frontmatter?.title || page.path}
+            </h1>
+          </div>
+
+          {/* Content + right sidebar */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* Content area */}
+            <div className="flex-1 overflow-y-auto p-8 min-w-0">
+              {mode === 'view' && (
+                <MarkdownRenderer content={page.content} frontmatter={page.frontmatter} existingPages={allPages?.map(p => p.path) || []} wikiRoute="/wiki" embeds={embeds} universeId={activeUniverse?.id} />
+              )}
+
+              {mode === 'edit' && (
+                <div className="flex flex-col h-full">
+                  {saveError && (
+                    <div className="mb-4 p-3 rounded-lg bg-error/10 border border-error/20">
+                      <p className="text-error text-sm">{saveError}</p>
+                    </div>
+                  )}
+                  <FrontmatterPropertiesPanel
+                    frontmatter={editFrontmatter}
+                    onChange={setEditFrontmatter}
+                    readOnlyFields={['created', 'updated']}
                   />
-                  <SelectionToolbar
-                    textareaRef={textareaRef}
-                    value={editBody}
-                    onChange={setEditBody}
+                  <div className="flex-1 overflow-y-auto p-8 relative">
+                    <MarkdownEditor
+                      value={editBody}
+                      onChange={setEditBody}
+                      onSave={handleSave}
+                      existingPages={allPages?.map(p => p.path) || []}
+                      minRows={20}
+                      textareaRef={textareaRef}
+                    />
+                    <SelectionToolbar
+                      textareaRef={textareaRef}
+                      value={editBody}
+                      onChange={setEditBody}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {mode === 'preview' && (
+                <div>
+                  {saveError && (
+                    <div className="mb-4 p-3 rounded-lg bg-error/10 border border-error/20">
+                      <p className="text-error text-sm">{saveError}</p>
+                    </div>
+                  )}
+                  <MarkdownRenderer
+                    content={editBody}
+                    frontmatter={editFrontmatter}
+                    existingPages={allPages?.map(p => p.path) || []}
+                    wikiRoute="/wiki"
+                    embeds={embeds}
+                    universeId={activeUniverse?.id}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Right sidebar — collapsible, stacked panels like Obsidian */}
+            {rightOpen && (
+              <div className="w-60 border-l border-border-default p-3 overflow-y-auto shrink-0 flex flex-col gap-4">
+                {/* Backlinks */}
+                <div>
+                  <h3 className="text-xxs text-text-muted uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
+                    <span className="w-0.5 h-3 rounded-full bg-accent" />
+                    Backlinks
+                  </h3>
+                  <BacklinkPanel backlinks={backlinks} />
+                </div>
+
+                {/* Outline */}
+                <div>
+                  <h3 className="text-xxs text-text-muted uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
+                    <span className="w-0.5 h-3 rounded-full bg-green-500" />
+                    Outline
+                  </h3>
+                  <OutlinePanel content={page.content} />
+                </div>
+
+                {/* Outgoing Links */}
+                <div>
+                  <h3 className="text-xxs text-text-muted uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
+                    <span className="w-0.5 h-3 rounded-full bg-amber-500" />
+                    Outgoing Links
+                  </h3>
+                  <OutgoingLinksPanel
+                    content={page.content}
+                    allPages={allPages}
+                    basePath="/wiki"
+                    universe={page.frontmatter?.universe}
+                  />
+                </div>
+
+                {/* History */}
+                <div>
+                  <h3 className="text-xxs text-text-muted uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
+                    <span className="w-0.5 h-3 rounded-full bg-purple-500" />
+                    Version History
+                  </h3>
+                  <VersionHistory
+                    slug={slug}
+                    onRestore={() => {
+                      const pagePath = slug.join('/');
+                      fetch(`/api/wiki/${pagePath}?universe_id=${activeUniverse?.id || ''}`)
+                        .then(res => res.ok ? res.json() : null)
+                        .then(data => {
+                          if (data) {
+                            setPage(data.page);
+                            setAllPages(data.allPages || []);
+                            setOrphanPaths(data.orphanPaths || []);
+                            setBacklinks(data.backlinks || []);
+                            setEmbeds(data.embeds || {});
+                          }
+                        });
+                    }}
                   />
                 </div>
               </div>
             )}
-
-            {mode === 'preview' && (
-              <div>
-                {saveError && (
-                  <div className="mb-4 p-3 rounded-lg bg-error/10 border border-error/20">
-                    <p className="text-error text-sm">{saveError}</p>
-                  </div>
-                )}
-                <MarkdownRenderer
-                  content={editBody}
-                  frontmatter={editFrontmatter}
-                  existingPages={allPages?.map(p => p.path) || []}
-                  wikiRoute="/wiki"
-                  embeds={embeds}
-                  universeId={activeUniverse?.id}
-                />
-              </div>
-            )}
           </div>
-        </div>
-
-        {/* Right sidebar */}
-        <div className="w-64 border-l border-border-default p-4 overflow-y-auto shrink-0">
-          {rightPanel === 'backlinks' && (
-            <BacklinkPanel backlinks={backlinks} />
-          )}
-          {rightPanel === 'history' && (
-            <VersionHistory
-              slug={slug}
-              onRestore={() => {
-                const pagePath = slug.join('/');
-                fetch(`/api/wiki/${pagePath}?universe_id=${activeUniverse?.id || ''}`)
-                  .then(res => res.ok ? res.json() : null)
-                  .then(data => {
-                    if (data) {
-                      setPage(data.page);
-                      setAllPages(data.allPages || []);
-                      setOrphanPaths(data.orphanPaths || []);
-                      setBacklinks(data.backlinks || []);
-                      setEmbeds(data.embeds || {});
-                    }
-                  });
-              }}
-            />
-          )}
-          {rightPanel === 'outline' && (
-            <OutlinePanel content={page.content} />
-          )}
-          {rightPanel === 'links' && (
-            <OutgoingLinksPanel
-              content={page.content}
-              allPages={allPages}
-              basePath="/wiki"
-              universe={page.frontmatter?.universe}
-            />
-          )}
         </div>
       </div>
       <WikiQuickSwitcher

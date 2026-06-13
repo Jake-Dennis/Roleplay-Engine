@@ -9,7 +9,7 @@ import TemplateSelector from '@/components/wiki/template-selector';
 import type { WikiTemplate } from '@/components/wiki/template-selector';
 import { LoreExtractionTrigger } from '@/components/wiki/lore-extraction-trigger';
 import { useApp } from '@/contexts/app-context';
-import { BookOpen, Network, Plus } from 'lucide-react';
+import { BookOpen, Network, Plus, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import type { WikiPage } from '@/lib/wiki/file-io';
 
 export default function WikiHomePage() {
@@ -25,6 +25,7 @@ export default function WikiHomePage() {
   const [creating, setCreating] = useState(false);
   const [newFolderOpen, setNewFolderOpen] = useState(false);
   const [folderOrder, setFolderOrder] = useState<string[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     Promise.all([
@@ -159,55 +160,67 @@ export default function WikiHomePage() {
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">
-      {/* Left sidebar */}
-      <div className="w-64 border-r border-border-default p-4 overflow-y-auto shrink-0">
-        {viewMode === 'browse' ? (
-          <>
-            <Search pages={pages} />
-            <div className="mt-4">
-              <FileTree
-                pagesByFolder={pagesByFolder}
-                folderOrder={folderOrder}
-                orphanPaths={orphanPaths}
-                onCreatePage={() => setTemplateOpen(true)}
-                onCreateFolder={() => setNewFolderOpen(true)}
-                onReorder={handleReorder}
-              />
-            </div>
-          </>
-        ) : null}
-      </div>
+      {/* Left sidebar — collapsible */}
+      {sidebarOpen && (
+        <div className="w-60 border-r border-border-default p-4 overflow-y-auto shrink-0">
+          {viewMode === 'browse' ? (
+            <>
+              <Search pages={pages} />
+              <div className="mt-4">
+                <FileTree
+                  pagesByFolder={pagesByFolder}
+                  folderOrder={folderOrder}
+                  orphanPaths={orphanPaths}
+                  onCreatePage={() => setTemplateOpen(true)}
+                  onCreateFolder={() => setNewFolderOpen(true)}
+                  onReorder={handleReorder}
+                />
+              </div>
+            </>
+          ) : null}
+        </div>
+      )}
 
       {/* Main content */}
-      <div className={`flex-1 ${viewMode === 'graph' ? 'flex flex-col overflow-hidden' : 'p-8 overflow-y-auto'}`}>
-        {/* Tab bar */}
-        <div className="flex gap-1 rounded-lg bg-bg-raised p-1 mb-6 w-fit">
+      <div className={`flex-1 min-w-0 ${viewMode === 'graph' ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}>
+        {/* Top bar */}
+        <div className="flex items-center gap-2 px-4 py-1.5 border-b border-border-default bg-bg-base shrink-0">
           <button
-            onClick={() => setViewMode('browse')}
-            className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5 ${
-              viewMode === 'browse'
-                ? 'bg-accent text-white'
-                : 'text-text-muted hover:text-text-primary'
-            }`}
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-1 rounded hover:bg-bg-raised text-text-muted hover:text-text-primary transition-colors"
+            title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
           >
-            <BookOpen className="h-3.5 w-3.5" />
-            Browse
+            {sidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
           </button>
-          <button
-            onClick={() => { setViewMode('graph'); router.push('/wiki?view=graph', { scroll: false }); }}
-            className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5 ${
-              viewMode === 'graph'
-                ? 'bg-accent text-white'
-                : 'text-text-muted hover:text-text-primary'
-            }`}
-          >
-            <Network className="h-3.5 w-3.5" />
-            Graph
-          </button>
+
+          <div className="flex gap-1 rounded-lg bg-bg-raised p-0.5">
+            <button
+              onClick={() => setViewMode('browse')}
+              className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                viewMode === 'browse'
+                  ? 'bg-accent text-white'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              Browse
+            </button>
+            <button
+              onClick={() => { setViewMode('graph'); router.push('/wiki?view=graph', { scroll: false }); }}
+              className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                viewMode === 'graph'
+                  ? 'bg-accent text-white'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <Network className="h-3.5 w-3.5" />
+              Graph
+            </button>
+          </div>
         </div>
 
         {viewMode === 'browse' ? (
-          <>
+          <div className="p-8 overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-2xl font-bold">Wiki</h1>
               <button
@@ -242,7 +255,6 @@ export default function WikiHomePage() {
               </div>
             </div>
 
-            {/* Context usage */}
             {pages.length > 0 && (() => {
               const totalChars = pages.reduce((s, p) => s + (p.content?.length || 0), 0);
               const estTokens = Math.round(totalChars / 4);
@@ -256,7 +268,7 @@ export default function WikiHomePage() {
                 </div>
               );
             })()}
-          </>
+          </div>
         ) : (
           <div className="flex-1 overflow-hidden">
             <GraphView pages={pages} isLoading={loading} error={error} onRetry={() => window.location.reload()} />
