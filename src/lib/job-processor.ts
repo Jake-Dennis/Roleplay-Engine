@@ -80,6 +80,7 @@ import { handleArchivalProcessing } from "./jobs/archival-handler";
 import { handleThreadAnalysis } from "./jobs/thread-analysis-handler";
 import { handleWikiSuggestRestructure } from "./jobs/wiki-restructure-suggestions";
 import { process as handleGenerateChoices } from "./jobs/choices-handler";
+import { process as handleEntityRefUpdate } from "./jobs/entity-ref-handler";
 
 // ---------------------------------------------------------------------------
 // Job Processing
@@ -136,6 +137,8 @@ export async function processJob(job: QueuedJob): Promise<JobResult> {
         return await handleSessionRecapJob(job.id, payload);
       case "generate_choices":
         return await handleGenerateChoices(job);
+      case "update_entity_references":
+        return await handleEntityRefUpdate(job);
       default:
         throw new Error(`Unknown job type: ${job.type}`);
     }

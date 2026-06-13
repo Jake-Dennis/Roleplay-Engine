@@ -29,7 +29,10 @@ export type JobType =
   | "universe_wiki_sync"
   | "npc_wiki_sync"
   | "wiki_suggest_restructure"
-  | "generate_choices";
+  | "wiki_create_entity"
+  | "wiki_curate_page"
+  | "generate_choices"
+  | "update_entity_references";
 
 export type JobPriority = "high" | "medium" | "low" | "idle";
 export type JobStatus = "queued" | "processing" | "completed" | "failed" | "cancelled";
@@ -109,6 +112,8 @@ export const JOB_TYPES = [
   "wiki_ingest",
   "generate_choices",
   "wiki_suggest_restructure",
+  "wiki_create_entity",
+  "wiki_curate_page",
 ] as const;
 
 export const JOB_TYPE_LABELS: Record<string, string> = {
@@ -133,7 +138,10 @@ export const JOB_TYPE_LABELS: Record<string, string> = {
   wiki_generate_rumors: "Wiki Generate Rumors",
   wiki_ingest: "Wiki Ingest",
   wiki_suggest_restructure: "Wiki Restructure Suggestions",
+  wiki_create_entity: "Wiki Create Entity",
+  wiki_curate_page: "Wiki Curate Page",
   generate_choices: "Generate Choices",
+  update_entity_references: "Update Entity References",
 };
 
 export const PRIORITY_COLORS: Record<string, string> = {

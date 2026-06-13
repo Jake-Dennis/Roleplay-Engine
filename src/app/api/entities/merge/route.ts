@@ -4,66 +4,7 @@ import { withAuth } from "@/lib/with-auth";
 import { getDb } from "@/lib/db";
 import { badRequestError, notFoundError, requireJson } from "@/lib/error-response";
 import { getEntity } from "@/lib/entity-registry";
-import fs from "fs";
-import path from "path";
-import { APP_CONFIG } from "@/lib/config";
-
-/**
- * Update entity_id in a wiki page's frontmatter by rewriting the file.
- */
-function updateWikiFrontmatter(filePath: string, oldId: string, newId: string): boolean {
-  try {
-    let content = fs.readFileSync(filePath, "utf-8");
-    const fmMatch = content.match(/^---\n([\s\S]*?)\n---\n/);
-    if (!fmMatch) return false;
-    
-    const fm = fmMatch[1];
-    if (!fm.includes(oldId)) return false;
-    
-    const updated = fm.replace(
-      new RegExp(`entity_id:\\s*${escapeRegex(oldId)}`, "g"),
-      `entity_id: ${newId}`
-    );
-    if (updated === fm) return false;
-    
-    content = content.replace(fmMatch[1], updated);
-    fs.writeFileSync(filePath, content, "utf-8");
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function escapeRegex(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/**
- * Find wiki files that reference a given entity_id by scanning frontmatter.
- * Uses the wiki index or walks the wiki directory.
- */
-function findWikiFilesWithEntityId(db: any, userId: string, entityId: string): string[] {
-  const results: string[] = [];
-  const wikiRoot = path.join(APP_CONFIG.dataDir, userId, "wiki");
-  if (!fs.existsSync(wikiRoot)) return results;
-
-  const walkDir = (dir: string) => {
-    try {
-      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        const fullPath = path.join(dir, entry.name);
-        if (entry.isDirectory()) walkDir(fullPath);
-        else if (entry.name.endsWith(".md")) {
-          try {
-            const content = fs.readFileSync(fullPath, "utf-8");
-            if (content.includes(entityId)) results.push(fullPath);
-          } catch { /* skip unreadable */ }
-        }
-      }
-    } catch { /* skip */ }
-  };
-  walkDir(wikiRoot);
-  return results;
-}
+import { queueJob } from "@/lib/job-processor";
 
 /**
  * PUT /api/entities/merge
@@ -109,7 +50,6 @@ export const PUT = withErrorHandler(async (request: NextRequest) => {
 
   // Perform the merge in a transaction
   let aliases: { id: string; alias: string; source: string }[] = [];
-  let wikiFilesUpdated = 0;
   let mentionsUpdated = 0;
   let embeddingsUpdated = 0;
 
@@ -153,15 +93,12 @@ export const PUT = withErrorHandler(async (request: NextRequest) => {
 
   transaction();
 
-  // 6. Update wiki page frontmatter (outside transaction — file I/O)
-  try {
-    const wikiFiles = findWikiFilesWithEntityId(db, userId, sourceId);
-    for (const filePath of wikiFiles) {
-      if (updateWikiFrontmatter(filePath, sourceId, targetId)) {
-        wikiFilesUpdated++;
-      }
-    }
-  } catch { /* non-fatal */ }
+  // Queue background job to update wiki frontmatter and supplementary records
+  queueJob(userId, "update_entity_references", {
+    sourceId,
+    targetId,
+    userId,
+  }, "low");
 
   return NextResponse.json({
     success: true,
@@ -171,7 +108,7 @@ export const PUT = withErrorHandler(async (request: NextRequest) => {
       relationshipsUpdated: true,
       mentionsUpdated,
       embeddingsUpdated,
-      wikiFilesUpdated,
+      wikiJobQueued: true,
     },
   });
 });
