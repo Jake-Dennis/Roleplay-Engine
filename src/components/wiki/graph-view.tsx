@@ -35,15 +35,7 @@ const TYPE_COLORS: Record<string, string> = {
   synthesis: '#a855f7',
 };
 
-// Node shapes by type (like Obsidian: circles, diamonds, squares, triangles)
-const NODE_SHAPES: Record<string, string> = {
-  entity: 'ellipse',
-  concept: 'diamond',
-  source: 'round-rectangle',
-  synthesis: 'triangle',
-};
-
-// Palette for community colors
+// Palette for community colors (Obsidian-like saturated palette)
 const COMMUNITY_COLORS = [
   '#3b82f6', '#22c55e', '#f97316', '#a855f7', '#ef4444',
   '#06b6d4', '#eab308', '#ec4899', '#14b8a6', '#f59e0b',
@@ -243,7 +235,7 @@ export default function GraphView({ pages, basePath = '/wiki', isLoading, error,
             degree,
             color: nodeColor,
             size,
-            shape: NODE_SHAPES[page.frontmatter.type || 'entity'] || 'ellipse',
+            shape: 'ellipse',
             isFocus: page.path === focusPage,
           },
         };
@@ -372,11 +364,7 @@ export default function GraphView({ pages, basePath = '/wiki', isLoading, error,
           {Object.entries(TYPE_COLORS).map(([type, color]) => (
             <label key={type} className="flex items-center gap-2 text-xs cursor-pointer py-0.5">
               <input type="checkbox" checked={filterTypes.has(type)} onChange={() => toggleType(type)} className="rounded border-border-default bg-bg-raised text-accent focus:ring-accent/30" />
-              <div className="h-2.5 w-2.5 shrink-0" style={{
-                backgroundColor: color,
-                borderRadius: type === 'entity' ? '50%' : type === 'concept' ? '2px' : type === 'source' ? '3px' : '0',
-                transform: type === 'concept' ? 'rotate(45deg)' : type === 'synthesis' ? 'scaleY(0.8)' : '',
-              }} />
+              <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
               <span className="text-text-primary capitalize flex-1">{type}</span>
               <span className="text-text-muted tabular-nums">{typeCounts[type] || 0}</span>
             </label>
