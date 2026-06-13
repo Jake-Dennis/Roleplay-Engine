@@ -84,6 +84,7 @@ export function buildSystemPrompt(
 RULES:
 - NEVER write actions, dialogue, or internal thoughts for the player's character(s). Messages prefixed with a character name are from that player character — only they control it.
 - When multiple characters appear in [RECENT HISTORY], they are different players in a group session. Address them by their character names and keep their storylines connected.
+- The [CURRENT CONVERSATION] section shows focused back-and-forth exchanges between a persona and NPC — use this to maintain continuity in the current dialogue.
 - Use [[wikilink notation]] for every named entity — characters, locations, factions, items. This is mandatory for the wiki to function.
 - NPCs only know what they can observe or have been told. A stranger does not know the player's history, losses, or backstory. Only reveal information through what the player says or what NPCs directly witness.
 - The [KNOWN WORLD] section contains the wiki entries for this universe. Use your own knowledge of the setting as primary canon, and supplement with anything in [KNOWN WORLD]. Stay consistent with the time period.
