@@ -639,6 +639,7 @@ describe("retrieval.ts", () => {
         tone: "Mysterious",
         currentIntent: "investigate",
         activeNpcs: ["Bartender", "Stranger"],
+        activeNpcIds: [],
         activeThreads: ["Map Mystery", "Bartender Secret"],
         sceneType: "social",
         sceneTension: 0.5,
@@ -655,6 +656,7 @@ describe("retrieval.ts", () => {
         tone: null,
         currentIntent: null,
         activeNpcs: [],
+        activeNpcIds: [],
         activeThreads: [],
       });
       // New fields should not be present in default return
