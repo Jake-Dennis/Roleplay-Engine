@@ -335,13 +335,13 @@ export default function WikiPageView() {
 
         {/* Main content */}
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-          {/* Top bar: sidebar toggles + Browse/Graph + page actions */}
-          <div className="flex items-center gap-2 px-4 py-1.5 border-b border-border-default bg-bg-base shrink-0">
+          {/* Top bar: sidebar toggles + Browse/Graph + page title + actions (like Obsidian's compact header) */}
+          <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border-default bg-bg-base shrink-0">
             {/* Left sidebar toggle */}
             <button
               onClick={() => setLeftOpen(!leftOpen)}
               className="p-1 rounded hover:bg-bg-raised text-text-muted hover:text-text-primary transition-colors"
-              title={leftOpen ? 'Close sidebar' : 'Open sidebar'}
+              title={leftOpen ? 'Collapse sidebar' : 'Expand sidebar'}
             >
               {leftOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
             </button>
@@ -364,12 +364,16 @@ export default function WikiPageView() {
               </button>
             </div>
 
-            {/* Spacer */}
-            <div className="flex-1" />
+            {/* Page title (centered in spacer, like Obsidian's tab shows the title) */}
+            <div className="flex-1 text-center min-w-0 px-4">
+              <span className="text-xs font-medium text-text-primary truncate block">
+                {page.frontmatter?.title || page.path}
+              </span>
+            </div>
 
             {/* Page actions (view mode) */}
             {mode === 'view' ? (
-              <>
+              <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => setPromptModalOpen(true)}
                   className="px-2 py-1 rounded text-xs font-medium bg-gradient-to-r from-accent to-accent-hover text-text-primary hover:opacity-90 transition-opacity"
@@ -387,9 +391,9 @@ export default function WikiPageView() {
                   pagePath={page.path}
                   universeId={activeUniverse?.id}
                 />
-              </>
+              </div>
             ) : (
-              <>
+              <div className="flex items-center gap-1.5">
                 <div className="flex rounded border border-border-default overflow-hidden">
                   <button
                     onClick={() => setMode('edit')}
@@ -425,24 +429,17 @@ export default function WikiPageView() {
                 >
                   Cancel
                 </button>
-              </>
+              </div>
             )}
 
             {/* Right sidebar toggle */}
             <button
               onClick={() => setRightOpen(!rightOpen)}
               className="p-1 rounded hover:bg-bg-raised text-text-muted hover:text-text-primary transition-colors"
-              title={rightOpen ? 'Close sidebar' : 'Open sidebar'}
+              title={rightOpen ? 'Collapse sidebar' : 'Expand sidebar'}
             >
               {rightOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
             </button>
-          </div>
-
-          {/* Page title bar */}
-          <div className="px-8 py-2 border-b border-border-default bg-bg-elevated shrink-0">
-            <h1 className="text-sm font-medium text-text-primary">
-              {page.frontmatter?.title || page.path}
-            </h1>
           </div>
 
           {/* Content + right sidebar */}

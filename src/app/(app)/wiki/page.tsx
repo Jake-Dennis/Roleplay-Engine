@@ -182,13 +182,13 @@ export default function WikiHomePage() {
       )}
 
       {/* Main content */}
-      <div className={`flex-1 min-w-0 ${viewMode === 'graph' ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}>
-        {/* Top bar */}
-        <div className="flex items-center gap-2 px-4 py-1.5 border-b border-border-default bg-bg-base shrink-0">
+      <div className={`flex-1 min-w-0 flex flex-col ${viewMode === 'graph' ? 'overflow-hidden' : ''}`}>
+        {/* Top bar — compact like Obsidian */}
+        <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border-default bg-bg-base shrink-0">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-1 rounded hover:bg-bg-raised text-text-muted hover:text-text-primary transition-colors"
-            title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+            title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
           >
             {sidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
           </button>
@@ -217,10 +217,12 @@ export default function WikiHomePage() {
               Graph
             </button>
           </div>
+
+          <div className="flex-1" />
         </div>
 
         {viewMode === 'browse' ? (
-          <div className="p-8 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto p-8">
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-2xl font-bold">Wiki</h1>
               <button
