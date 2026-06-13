@@ -204,7 +204,7 @@ export async function GET(
 
   const sections = {
     overhead: { tokens: overheadTokens, label: "System Prompt + Instructions", count: null },
-    messages: { tokens: msgTokens, label: "Recent History", count: recentMessages.length },
+    messages: { tokens: msgTokens, label: "Chat History", count: recentMessages.length },
     lore: { tokens: estimatedLoreTokens, label: "Known World / Lore", count: loreCount },
     memories: { tokens: memTokens, label: "Narrative Memories", count: memCount },
     relationships: { tokens: relTokens, label: "Relationships", count: rels.length },
