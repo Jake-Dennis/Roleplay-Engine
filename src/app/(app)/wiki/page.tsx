@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import GraphView from '@/components/wiki/graph-view';
 import FileTree, { type FileTreePageItem, type ReorderChange } from '@/components/wiki/file-tree';
 import NewFolderModal from '@/components/wiki/new-folder-modal';
@@ -14,12 +14,13 @@ import type { WikiPage } from '@/lib/wiki/file-io';
 
 export default function WikiHomePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { activeUniverse } = useApp();
   const [pages, setPages] = useState<WikiPage[]>([]);
   const [orphanPaths, setOrphanPaths] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'browse' | 'graph'>('browse');
+  const [viewMode, setViewMode] = useState<'browse' | 'graph'>(searchParams.get('view') === 'graph' ? 'graph' : 'browse');
   const [templateOpen, setTemplateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newFolderOpen, setNewFolderOpen] = useState(false);
@@ -236,6 +237,21 @@ export default function WikiHomePage() {
                 <p className="text-sm font-medium">{counts.synthesis} Synthesis</p>
               </div>
             </div>
+
+            {/* Context usage */}
+            {pages.length > 0 && (() => {
+              const totalChars = pages.reduce((s, p) => s + (p.content?.length || 0), 0);
+              const estTokens = Math.round(totalChars / 4);
+              return (
+                <div className="mt-4 p-3 bg-bg-raised rounded-lg border border-border-default">
+                  <p className="text-xs text-text-muted">
+                    Wiki pages: <span className="font-medium text-text-primary">{pages.length}</span>
+                    {' · '}~{estTokens.toLocaleString()} tokens total
+                    {' · '}retrieval picks relevant pages per turn
+                  </p>
+                </div>
+              );
+            })()}
           </>
         ) : (
           <GraphView pages={pages} isLoading={loading} error={error} onRetry={() => window.location.reload()} />

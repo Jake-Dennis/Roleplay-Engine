@@ -341,7 +341,7 @@ export default function WikiPageView() {
                 Browse
               </button>
               <button
-                onClick={() => router.push('/wiki')}
+                onClick={() => router.push('/wiki?view=graph')}
                 className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors text-text-muted hover:text-text-primary"
               >
                 <Network className="h-3.5 w-3.5" />
