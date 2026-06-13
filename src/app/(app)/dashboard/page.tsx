@@ -395,10 +395,15 @@ export default function DashboardPage() {
         if (!sessionData?.session) { setLoading(false); return; }
 
         const universeId = sessionData.session.universe_id || sessionData.session.universeId || '';
+        console.log('[dashboard] universeId from session:', universeId);
+        console.log('[dashboard] activeSession keys:', Object.keys(activeSession).join(', '));
+        console.log('[dashboard] activeSession universe:', (activeSession as any).universe_id, (activeSession as any).universeId);
+
         const uniData = uniRes.ok ? await uniRes.json() : { universes: [] };
         const universe = (uniData.universes || []).find((u: any) => u.id === universeId);
 
         const metrics = metricsRes.ok ? await metricsRes.json() : null;
+        console.log('[dashboard] metrics response:', metricsRes.status, metrics ? 'ok' : 'null');
 
         if (metrics) {
           // Use full metrics from server-side endpoint
