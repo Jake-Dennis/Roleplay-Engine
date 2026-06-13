@@ -445,6 +445,37 @@ function HowItWorksDocs() {
         </div>
       </div>
 
+      {/* Wiki System */}
+      <div className="rounded-lg border border-border-default bg-bg-raised p-4">
+        <h3 className="text-sm font-semibold text-text-primary mb-2">Wiki System</h3>
+        <p className="text-xxs text-text-muted mb-3">
+          The wiki is a markdown-first knowledge base stored on disk. Each page is a <code className="text-accent">.md</code> file with YAML frontmatter. No database — just files.
+        </p>
+        <div className="flex flex-col items-center gap-1.5 mb-3">
+          <div className="rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs text-text-primary">
+            Markdown files with YAML frontmatter
+          </div>
+          <ArrowDownIcon small />
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-1.5 text-xs text-text-primary">
+            YAML frontmatter: type, subtype, tags, entity_id, status
+          </div>
+          <ArrowDownIcon small />
+          <div className="rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs text-text-primary">
+            Three statuses: draft → reviewed → locked
+          </div>
+          <ArrowDownIcon small />
+          <div className="rounded-lg border border-green-500/30 bg-green-500/5 px-3 py-1.5 text-xs text-text-primary">
+            Auto-extracted from AI responses, curated by background jobs
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xxs text-text-muted">
+          <span className="rounded bg-bg-raised px-2 py-1"><span className="text-accent">[[wikilinks]]</span> auto-create page relationships</span>
+          <span className="rounded bg-bg-raised px-2 py-1">Pages linked to entities via <code className="text-accent">entity_id</code></span>
+          <span className="rounded bg-bg-raised px-2 py-1"><span className="text-accent">[KNOWN WORLD]</span> injected into AI prompt</span>
+          <span className="rounded bg-bg-raised px-2 py-1">Wikilink auto-fix on generation output</span>
+        </div>
+      </div>
+
       {/* Job System */}
       <div className="rounded-lg border border-border-default bg-bg-raised p-4">
         <h3 className="text-sm font-semibold text-text-primary mb-2">Background Jobs</h3>
