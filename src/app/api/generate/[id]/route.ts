@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
-import { generateText, getUserModels, getActivePersonaContext, buildPersonaPrompt, checkModelAvailable, type PersonaContext } from "@/lib/ollama";
+import { generateTextStream, getUserModels, getActivePersonaContext, buildPersonaPrompt, checkModelAvailable, type PersonaContext } from "@/lib/ollama";
 import { buildSystemPrompt } from "@/lib/prompt-builder";
 import { getRetrievedContext, assemblePromptWithBudget, type RetrievedContext } from "@/lib/retrieval";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
@@ -246,7 +246,7 @@ export async function POST(
     ).run(ctx.intent, sessionId);
   }
 
-  // Generate response
+  // Stream the response
   const encoder = new TextEncoder();
   let fullResponse = "";
 
@@ -257,8 +257,23 @@ export async function POST(
       try {
         const resolvedModel = preflightModel;
 
-        // Use non-streaming generateText (streaming via ollamaPostStream is unreliable)
-        const result = await generateText(prompt, {
+        let chunkCount = 0;
+        await generateTextStream(prompt, (chunk) => {
+          fullResponse += chunk;
+          chunkCount++;
+
+          // Buffer DB writes — write every 50 chunks
+          if (chunkCount % 50 === 0) {
+            const speakingAs = detectSpeakingAs(fullResponse, ctx.scene.activeNpcs);
+            db.prepare("UPDATE messages SET content = ?, speaking_as = ? WHERE id = ?").run(
+              fullResponse,
+              speakingAs,
+              aiMessageId
+            );
+          }
+
+          controller.enqueue(encoder.encode(JSON.stringify({ chunk }) + "\n"));
+        }, {
           userId: userId,
           model: resolvedModel,
           temperature: undefined,
@@ -267,9 +282,7 @@ export async function POST(
           think: getServerConfig().ollama.thinkingMode ? undefined : false,
         });
 
-        fullResponse = result;
-
-        logger.info("[generate] Full response", { length: fullResponse.length, preview: fullResponse.slice(0, 100) });
+        logger.info("[generate] Stream complete", { length: fullResponse.length, preview: fullResponse.slice(0, 100) });
 
         // Fix single-bracket proper nouns: [Mountains] -> [[Mountains]]
         fullResponse = fullResponse.replace(/(?<!\[)\[([A-Za-z0-9\s'\-]+?)\](?!\])/g, (match: string, content: string) => {

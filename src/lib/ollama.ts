@@ -30,7 +30,7 @@ function nodeToWeb<T extends Uint8Array>(nodeStream: NodeJS.ReadableStream): Rea
     start(controller) {
       nodeStream.on("data", (chunk: Buffer | string) => {
         controller.enqueue(
-          (typeof chunk === "string" ? Buffer.from(chunk) : chunk) as T
+          ((typeof chunk === "string" ? Buffer.from(chunk) : chunk) as unknown) as T
         );
       });
       nodeStream.on("end", () => controller.close());
@@ -67,7 +67,7 @@ async function ollamaFetch(
     : undefined;
   const effectiveTimeout = signalTimeout ?? OLLAMA_CONFIG.timeout;
 
-  const undiciOptions: Dispatcher.RequestOptions = {
+  const undiciOptions: Partial<Dispatcher.RequestOptions> = {
     method: (init?.method || "GET") as Dispatcher.HttpMethod,
     headers: init?.headers as Record<string, string>,
     body: init?.body,
@@ -230,6 +230,7 @@ export interface UserModels {
 }
 
 export interface PersonaContext {
+  entityId?: string | null;
   name: string;
   description: string | null;
   personality: string | null;
@@ -252,8 +253,9 @@ export function getActivePersonaContext(userId: string): PersonaContext | null {
   try {
     const db = getDb();
     const persona = db.prepare(
-      "SELECT name, description, personality, scenario, first_mes, mes_example, creator_notes, system_prompt, post_history_instructions, tags, writing_style, llm_model FROM personas WHERE user_id = ? AND is_active = 1"
+      "SELECT entity_id, name, description, personality, scenario, first_mes, mes_example, creator_notes, system_prompt, post_history_instructions, tags, writing_style, llm_model FROM personas WHERE user_id = ? AND is_active = 1"
     ).get(userId) as {
+      entity_id: string | null;
       name: string;
       description: string | null;
       personality: string | null;
@@ -276,6 +278,7 @@ export function getActivePersonaContext(userId: string): PersonaContext | null {
     }
 
     return {
+      entityId: persona.entity_id,
       name: persona.name,
       description: persona.description,
       personality: persona.personality,
@@ -410,7 +413,7 @@ export function isModelAvailable(model: string): boolean {
 export function isValidServiceUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    let hostname = parsed.hostname;
+    const hostname = parsed.hostname;
 
     // Strip brackets for IPv6 address processing (Bun's URL parser
     // returns bracketed IPv6 hostnames, e.g. "[::ffff:7f00:1]").
@@ -509,23 +512,12 @@ export function getUserTtsUrl(_userId?: string): string {
 
 
 export function getUserModels(userId: string): UserModels {
-  try {
-    const db = getDb();
-    const row = db.prepare("SELECT settings FROM users WHERE id = ?").get(userId) as { settings: string | null } | undefined;
-    if (row?.settings) {
-      const settings = safeParseWarn<Record<string, unknown>>(row.settings, "user settings");
-      if (!settings) throw new Error("Invalid user settings");
-      return {
-        llmModel: String(settings.llmModel || OLLAMA_CONFIG.model),
-        embeddingModel: String(settings.embeddingModel || OLLAMA_CONFIG.embeddingModel),
-      };
-    }
-  } catch {
-    // Fall through to defaults
-  }
+  const cfg = getServerConfig();
+  // Server config is the single source of truth for both LLM and embedding models.
+  // No hardcoded fallbacks — set the model in Server Settings.
   return {
-    llmModel: OLLAMA_CONFIG.model,
-    embeddingModel: OLLAMA_CONFIG.embeddingModel,
+    llmModel: cfg.ollama.model || "",
+    embeddingModel: cfg.ollama.embeddingModel || "",
   };
 }
 
@@ -540,6 +532,15 @@ export function getActiveJobModel(userId: string): string {
   const cfg = getServerConfig();
   if (cfg.ollama.useJobsModel && cfg.ollama.jobModel) {
     return cfg.ollama.jobModel;
+  }
+  return getUserModels(userId).llmModel;
+}
+
+/** Returns the choices model if configured, otherwise falls back to the chat model. */
+export function getChoicesModel(userId: string): string {
+  const cfg = getServerConfig();
+  if (cfg.ollama.choicesModel) {
+    return cfg.ollama.choicesModel;
   }
   return getUserModels(userId).llmModel;
 }
@@ -624,32 +625,12 @@ function resolveModelOptions(
   model: string,
   explicit: Partial<OllamaGenerateRequest["options"]> | undefined
 ): OllamaGenerateRequest["options"] {
-  const cfg = getServerConfig();
-  // When useCustomSampling is OFF, the per-model/user layer is skipped â€”
-  // we just compose: explicit (if any) over Ollama model defaults.
-  // When ON, we layer explicit > per-model > OLLAMA_CONFIG.
-  const perModel = cfg.ollama.useCustomSampling
-    ? (cfg.modelDefaults?.[model] ?? {})
-    : undefined;
-
-  return {
-    // Temperature: explicit > (per-model or OLLAMA_CONFIG) > undefined
-    temperature: explicit?.temperature
-      ?? perModel?.temperature
-      ?? OLLAMA_CONFIG.options.temperature,
-    // Top P: explicit > (per-model or OLLAMA_CONFIG) > undefined
-    top_p: explicit?.top_p
-      ?? perModel?.topP
-      ?? OLLAMA_CONFIG.options.top_p,
-    // Top K: explicit > (per-model or OLLAMA_CONFIG) > undefined
-    top_k: explicit?.top_k
-      ?? perModel?.topK
-      ?? OLLAMA_CONFIG.options.top_k,
-    // num_predict: explicit > (per-model or OLLAMA_CONFIG) > undefined
-    num_predict: explicit?.num_predict
-      ?? perModel?.numPredict
-      ?? OLLAMA_CONFIG.options.num_predict,
-  };
+  // Let each model use its own baked-in defaults.
+  // Only pass explicit overrides when the caller provides them.
+  if (explicit && Object.keys(explicit).length > 0) {
+    return explicit as OllamaGenerateRequest["options"];
+  }
+  return {};
 }
 
 /**
@@ -663,6 +644,26 @@ function resolveModelOptions(
  * Users can pin a specific num_ctx while still leaving sampling to the
  * model defaults, or vice versa.
  */
+/**
+ * Resolve main_gpu for a model from per-model defaults.
+ * Returns undefined (let Ollama decide) if not set.
+ */
+function resolveMainGpu(model: string): number | undefined {
+  const cfg = getServerConfig();
+  return cfg.modelDefaults?.[model]?.mainGpu;
+}
+
+/**
+ * Resolve num_gpu_layers for a model from per-model defaults.
+ * Controls how many layers run on GPU (rest on CPU/system RAM).
+ * Lower values free VRAM for larger KV cache at the cost of speed.
+ * undefined = let Ollama decide (typically all layers on GPU).
+ */
+function resolveNumGpuLayers(model: string): number | undefined {
+  const cfg = getServerConfig();
+  return cfg.modelDefaults?.[model]?.numGpuLayers;
+}
+
 function resolveNumCtx(
   model: string,
   explicit: number | undefined
@@ -682,18 +683,24 @@ export async function generateText(
 
   // Resolve num_ctx through the per-model chain (independent of useCustomSampling).
   const numCtx = resolveNumCtx(model, options?.num_ctx);
+  // Resolve main_gpu from per-model defaults (target the card with more VRAM).
+  const mainGpu = resolveMainGpu(model);
+  // Resolve num_gpu_layers to control GPU/CPU split (lower = more RAM, less VRAM pressure).
+  const numGpuLayers = resolveNumGpuLayers(model);
   // Resolve sampling options through the explicit > per-model > OLLAMA_CONFIG
-  // chain â€” returns {} when useCustomSampling is OFF.
+  // chain — returns {} when useCustomSampling is OFF.
   const resolvedOptions = resolveModelOptions(model, options);
 
   const requestBody: OllamaGenerateRequest = {
     model,
     prompt,
     stream: false,
-    ...(options?.think !== undefined ? { think: options.think } : {}),
+    think: options?.think !== undefined ? options.think : false,
     options: {
       ...resolvedOptions,
       ...(numCtx !== undefined ? { num_ctx: numCtx } : {}),
+      ...(mainGpu !== undefined ? { main_gpu: mainGpu } : {}),
+      ...(numGpuLayers !== undefined ? { num_gpu: numGpuLayers } : {}),
     },
   };
 
@@ -709,7 +716,11 @@ export async function generateText(
       );
 
       if (!response.ok) {
-        throw new Error(`Ollama responded with ${response.status}`);
+        // Try to read the error body from Ollama for a more informative message
+        let bodyText = "";
+        try { bodyText = await response.text(); } catch { /* ignore */ }
+        const detail = bodyText ? `: ${bodyText.substring(0, 200)}` : "";
+        throw new Error(`Ollama responded with ${response.status}${detail}`);
       }
 
       const data = await response.json();
@@ -743,6 +754,83 @@ export async function generateText(
   throw lastError || new Error("Ollama generation failed");
 }
 
+/**
+ * Generate text and return it alongside timing metrics from Ollama's response.
+ * Same as generateText() but also returns eval_count, eval_duration, and computed tok/s.
+ * Useful for benchmarking where you need generation speed measurements.
+ */
+export async function generateTextWithMetrics(
+  prompt: string,
+  options?: Partial<OllamaGenerateRequest["options"]> & { model?: string; userId?: string; think?: boolean; ollamaHost?: string },
+  timeoutMs?: number
+): Promise<{ text: string; evalCount: number; evalDurationNanos: number; tokPerSec: number; promptEvalCount: number }> {
+  const model = options?.model || (options?.userId ? getUserModels(options.userId).llmModel : OLLAMA_CONFIG.model);
+  const baseUrl = options?.ollamaHost || (options?.userId ? getUserOllamaUrl(options.userId) : OLLAMA_CONFIG.baseUrl);
+
+  // Resolve num_ctx through the per-model chain
+  const numCtx = resolveNumCtx(model, options?.num_ctx);
+  const mainGpu = resolveMainGpu(model);
+  const numGpuLayers = resolveNumGpuLayers(model);
+  const resolvedOptions = resolveModelOptions(model, options);
+
+  const requestBody: OllamaGenerateRequest = {
+    model,
+    prompt,
+    stream: false,
+    think: options?.think !== undefined ? options.think : false,
+    options: {
+      ...resolvedOptions,
+      ...(numCtx !== undefined ? { num_ctx: numCtx } : {}),
+      ...(mainGpu !== undefined ? { main_gpu: mainGpu } : {}),
+      ...(numGpuLayers !== undefined ? { num_gpu: numGpuLayers } : {}),
+    },
+  };
+
+  const requestTimeout = timeoutMs || OLLAMA_CONFIG.timeout;
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= OLLAMA_CONFIG.retryAttempts; attempt++) {
+    try {
+      const response = await ollamaPost(
+        `${baseUrl}/api/generate`,
+        JSON.stringify(requestBody),
+        AbortSignal.timeout(requestTimeout)
+      );
+
+      if (!response.ok) {
+        let bodyText = "";
+        try { bodyText = await response.text(); } catch { /* ignore */ }
+        const detail = bodyText ? `: ${bodyText.substring(0, 200)}` : "";
+        throw new Error(`Ollama responded with ${response.status}${detail}`);
+      }
+
+      const data = await response.json();
+      ollamaAvailable = true;
+
+      const text = validateLlmOutput(data.response || "");
+      const evalCount = data.eval_count ?? 0;
+      const evalDurationNanos = data.eval_duration ?? 1; // avoid div-by-zero
+      const promptEvalCount = data.prompt_eval_count ?? 0;
+      const tokPerSec = evalDurationNanos > 0
+        ? Math.round((evalCount / evalDurationNanos) * 1_000_000_000 * 100) / 100
+        : 0;
+
+      return { text, evalCount, evalDurationNanos, tokPerSec, promptEvalCount };
+    } catch (err: unknown) {
+      lastError = err as Error;
+      ollamaAvailable = false;
+
+      if (attempt < OLLAMA_CONFIG.retryAttempts) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, OLLAMA_CONFIG.retryDelay * attempt)
+        );
+      }
+    }
+  }
+
+  throw lastError || new Error("Ollama generation failed");
+}
+
 export async function generateTextStream(
   prompt: string,
   onChunk: (chunk: string) => void,
@@ -753,18 +841,24 @@ export async function generateTextStream(
 
   // Resolve num_ctx through the per-model chain (independent of useCustomSampling).
   const numCtx = resolveNumCtx(model, options?.num_ctx);
+  // Resolve main_gpu from per-model defaults.
+  const mainGpu = resolveMainGpu(model);
+  // Resolve num_gpu_layers to control GPU/CPU split.
+  const numGpuLayers = resolveNumGpuLayers(model);
   // Resolve sampling options through the explicit > per-model > OLLAMA_CONFIG
-  // chain â€” returns {} when useCustomSampling is OFF.
+  // chain — returns {} when useCustomSampling is OFF.
   const resolvedOptions = resolveModelOptions(model, options);
 
   const requestBody: OllamaGenerateRequest = {
     model,
     prompt,
     stream: true,
-    ...(options?.think !== undefined ? { think: options.think } : {}),
+    think: options?.think !== undefined ? options.think : false,
     options: {
       ...resolvedOptions,
       ...(numCtx !== undefined ? { num_ctx: numCtx } : {}),
+      ...(mainGpu !== undefined ? { main_gpu: mainGpu } : {}),
+      ...(numGpuLayers !== undefined ? { num_gpu: numGpuLayers } : {}),
     },
   };
 
@@ -778,7 +872,10 @@ export async function generateTextStream(
       );
 
       if (!response.ok) {
-        throw new Error(`Ollama responded with ${response.status}`);
+        let bodyText = "";
+        try { bodyText = await response.text(); } catch { /* ignore */ }
+        const detail = bodyText ? `: ${bodyText.substring(0, 200)}` : "";
+        throw new Error(`Ollama responded with ${response.status}${detail}`);
       }
 
       const reader = response.body?.getReader();
@@ -844,7 +941,10 @@ export async function generateEmbedding(
       );
 
       if (!response.ok) {
-        throw new Error(`Ollama embed responded with ${response.status}`);
+        let bodyText = "";
+        try { bodyText = await response.text(); } catch { /* ignore */ }
+        const detail = bodyText ? `: ${bodyText.substring(0, 200)}` : "";
+        throw new Error(`Ollama embed responded with ${response.status}${detail}`);
       }
 
       const data: OllamaEmbedResponse = await response.json();
