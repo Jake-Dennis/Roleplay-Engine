@@ -23,15 +23,12 @@ export async function GET(
   const db = getDb();
   const cfg = getServerConfig();
 
-  // Verify universe access (owner or session participant)
+  // Verify universe access (owner)
   const universe = db.prepare(
     `SELECT u.id, u.user_id, u.name
      FROM universes u
-     WHERE u.id = ?
-     AND (u.user_id = ? OR u.session_id IN (
-       SELECT session_id FROM session_participants WHERE user_id = ?
-     ))`
-  ).get(universeId, userId, userId) as { id: string; user_id: string; name: string } | undefined;
+     WHERE u.id = ? AND u.user_id = ?`
+  ).get(universeId, userId) as { id: string; user_id: string; name: string } | undefined;
 
   if (!universe) {
     return NextResponse.json({ error: "Universe not found" }, { status: 404 });
