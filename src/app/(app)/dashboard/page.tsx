@@ -445,6 +445,72 @@ function HowItWorksDocs() {
         </div>
       </div>
 
+      {/* Job System */}
+      <div className="rounded-lg border border-border-default bg-bg-raised p-4">
+        <h3 className="text-sm font-semibold text-text-primary mb-2">Background Jobs</h3>
+        <p className="text-xxs text-text-muted mb-3">
+          Work is processed asynchronously through a priority job queue. Jobs are deduplicated (same type + scope within 30s) and debounced for burst-prone types.
+        </p>
+
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs font-medium text-text-primary mb-1.5">Priority Levels</p>
+            <div className="grid grid-cols-4 gap-2 text-xxs">
+              <div className="rounded border border-border-default bg-bg-raised p-2 text-center"><span className="text-error font-medium">High</span><br/>Instant: messages, embeddings</div>
+              <div className="rounded border border-border-default bg-bg-raised p-2 text-center"><span className="text-warning font-medium">Medium</span><br/>Analysis: relationships, threads</div>
+              <div className="rounded border border-border-default bg-bg-raised p-2 text-center"><span className="text-text-muted font-medium">Low</span><br/>Enrichment: wiki, NPC evolution</div>
+              <div className="rounded border border-border-default bg-bg-raised p-2 text-center"><span className="text-text-muted/50 font-medium">Idle</span><br/>Maintenance: compression, decay</div>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-medium text-text-primary mb-1.5">Idle Processing Tiers</p>
+            <div className="space-y-1 text-xxs text-text-muted">
+              <div className="flex items-center gap-2"><span className="w-16 text-accent font-medium">5 min</span> Entity mentions, embeddings, relationship analysis, message summarization</div>
+              <div className="flex items-center gap-2"><span className="w-16 text-accent font-medium">10 min</span> Scene state extraction, lore extraction, thread analysis, wiki auto-extract</div>
+              <div className="flex items-center gap-2"><span className="w-16 text-accent font-medium">15 min</span> Wiki deepen/enrich, NPC evolution, wiki curation, memory compression</div>
+              <div className="flex items-center gap-2"><span className="w-16 text-accent font-medium">30 min</span> Relationship decay, archival processing, session recap, restructure suggestions</div>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-medium text-text-primary mb-1.5">Job Types by Category</p>
+            <div className="grid md:grid-cols-3 gap-2 text-xxs text-text-muted">
+              <div className="space-y-1">
+                <p className="text-xxs text-accent font-medium">Messages & Analysis</p>
+                <div className="rounded border border-border-default bg-bg-raised p-2">
+                  <div><span className="text-text-primary">summarize_messages</span> — Compress old messages</div>
+                  <div><span className="text-text-primary">generate_embeddings</span> — Vector embeddings</div>
+                  <div><span className="text-text-primary">analyze_relationships</span> — Update relationship states</div>
+                  <div><span className="text-text-primary">thread_analysis</span> — Detect story threads</div>
+                  <div><span className="text-text-primary">generate_choices</span> — Branching narrative options</div>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xxs text-accent font-medium">Wiki & Lore</p>
+                <div className="rounded border border-border-default bg-bg-raised p-2">
+                  <div><span className="text-text-primary">wiki_auto_extract</span> — Auto-create pages from responses</div>
+                  <div><span className="text-text-primary">wiki_deepen_page</span> — Expand existing pages</div>
+                  <div><span className="text-text-primary">wiki_enrich_entity</span> — Add details to entity pages</div>
+                  <div><span className="text-text-primary">wiki_curate_page</span> — Tag, cross-link, validate</div>
+                  <div><span className="text-text-primary">extract_lore_comprehensive</span> — Full lore extraction</div>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xxs text-accent font-medium">Maintenance</p>
+                <div className="rounded border border-border-default bg-bg-raised p-2">
+                  <div><span className="text-text-primary">npc_evolution</span> — NPC personality shifts</div>
+                  <div><span className="text-text-primary">decay_relationships</span> — Emotional decay over time</div>
+                  <div><span className="text-text-primary">compress_memories</span> — Archive old memories</div>
+                  <div><span className="text-text-primary">archival_processing</span> — Data retention cleanup</div>
+                  <div><span className="text-text-primary">update_entity_references</span> — Post-merge cleanup</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Key Concepts */}
       <div className="grid md:grid-cols-2 gap-3">
         {[
