@@ -152,7 +152,9 @@ function AIManagementPanel({ sessionId }: { sessionId: string | null }) {
             totalMemories: 0,
           },
         });
-      } catch { /* ignore */ }
+      } catch (e) {
+        console.warn('[dashboard] loadMetrics error:', e);
+      }
       setLoading(false);
     };
     
