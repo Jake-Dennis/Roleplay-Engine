@@ -375,6 +375,16 @@ export default function WikiPageView() {
             {mode === 'view' ? (
               <div className="flex items-center gap-1.5">
                 <button
+                  onClick={() => {
+                    const pagePath = slug.join('/');
+                    router.push(`/wiki?view=graph&focus=${encodeURIComponent(pagePath)}`);
+                  }}
+                  className="px-2 py-1 rounded text-xs font-medium bg-bg-raised border border-border-default text-text-muted hover:text-text-primary hover:border-text-muted transition-colors flex items-center gap-1"
+                >
+                  <Network className="h-3 w-3" />
+                  Graph
+                </button>
+                <button
                   onClick={() => setPromptModalOpen(true)}
                   className="px-2 py-1 rounded text-xs font-medium bg-gradient-to-r from-accent to-accent-hover text-text-primary hover:opacity-90 transition-opacity"
                 >

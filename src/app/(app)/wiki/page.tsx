@@ -273,7 +273,7 @@ export default function WikiHomePage() {
           </div>
         ) : (
           <div className="flex-1 overflow-hidden">
-            <GraphView pages={pages} isLoading={loading} error={error} onRetry={() => window.location.reload()} />
+            <GraphView pages={pages} isLoading={loading} error={error} onRetry={() => window.location.reload()} focusPage={searchParams.get('focus')} />
           </div>
         )}
       </div>
