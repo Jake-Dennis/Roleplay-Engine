@@ -683,6 +683,16 @@ export default function DashboardPage() {
         const relCount = allRels.filter((r: any) => !r.universe_id || r.universe_id === universeId).length;
         const threadCount = allThreads.filter((t: any) => !t.universe_id || t.universe_id === universeId).length;
 
+        // Fetch wiki pages and memories in parallel (don't block on counts)
+        const [wikiRes, memRes] = await Promise.all([
+          fetch(`/api/wiki?universe_id=${encodeURIComponent(universeId)}`),
+          fetch(`/api/narrative-memories?limit=500`),
+        ]);
+        const wikiData = wikiRes.ok ? await wikiRes.json() : { pages: [] };
+        const memData = memRes.ok ? await memRes.json() : { memories: [] };
+        const wikiCount = (wikiData.pages || []).length;
+        const memCount = (memData.memories || []).length;
+
         setData({
           universe: { id: universeId, name: universeName },
           model: { name: model, contextWindow, choicesModel: settingsData?.ollama?.choicesModel || null, embeddingModel: settingsData?.ollama?.embeddingModel || null, availableModels: [] },
@@ -701,10 +711,10 @@ export default function DashboardPage() {
           stats: {
             totalMessages: msgCount,
             totalSessions: 1,
-            totalWikiPages: 0,
+            totalWikiPages: wikiCount,
             totalNarrativeThreads: threadCount,
             totalRelationships: relCount,
-            totalMemories: 0,
+            totalMemories: memCount,
           },
         });
       } catch {}
