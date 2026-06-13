@@ -4,16 +4,6 @@ import { useEffect, useState } from "react";
 import { Sparkles, BrainCircuit, BookOpen } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
 
-interface Session {
-  id: string;
-  name: string;
-  universe_id: string | null;
-  status: string;
-  created_at: string;
-  updated_at: string | null;
-  owner_name: string;
-}
-
 interface Universe {
   id: string;
   name: string;
@@ -61,271 +51,6 @@ function StatCard({ label, value }: { label: string; value: number }) {
     <div className="rounded-xl border border-border-default bg-bg-elevated p-4">
       <p className="text-xs text-text-muted mb-1">{label}</p>
       <p className="text-2xl font-bold text-text-primary tabular-nums">{value.toLocaleString()}</p>
-    </div>
-  );
-}
-
-function AIManagementPanel({ sessionId }: { sessionId: string | null }) {
-  const [data, setData] = useState<AIMetricsData | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [aiTab, setAiTab] = useState<"metrics" | "docs">("metrics");
-
-  useEffect(() => {
-    if (!sessionId) return;
-    setLoading(true);
-    
-    const loadMetrics = async () => {
-      try {
-        // 1. Get session data to find universe_id
-        const sessionRes = await fetch(`/api/sessions/${sessionId}`);
-        if (!sessionRes.ok) { setLoading(false); return; }
-        const sessionData = await sessionRes.json();
-        if (!sessionData?.session) { setLoading(false); return; }
-        
-        const universeId = sessionData.session.universe_id || '';
-        
-        // 2. Fetch universe names
-        const uniRes = await fetch(`/api/universes`);
-        const uniData = uniRes.ok ? await uniRes.json() : { universes: [] };
-        const universeName = (uniData.universes || []).find((u: any) => u.id === universeId)?.name || sessionData.session.name || 'Unknown';
-        
-        // 3. Fetch universe-level metrics
-        let universeMetrics = null;
-        if (universeId) {
-          try {
-            const metricsRes = await fetch(`/api/universe/${universeId}/ai-metrics`);
-            if (metricsRes.ok) {
-              universeMetrics = await metricsRes.json();
-              console.log('[dashboard] Universe metrics loaded:', universeMetrics?.stats?.totalWikiPages, 'wiki pages');
-            } else {
-              console.warn('[dashboard] Universe metrics API returned', metricsRes.status);
-            }
-          } catch (e) {
-            console.warn('[dashboard] Universe metrics fetch failed:', e);
-          }
-        }
-        
-        const totalTokens = universeMetrics?.model?.contextWindow || 131072;
-        const msgTokens = (sessionData.messages || []).reduce((s: number, m: any) => s + Math.round((m.content?.length || 0) / 4), 0);
-        
-        setData({
-          universe: { id: universeId, name: universeName },
-          model: {
-            name: universeMetrics?.model?.name || 'unknown',
-            contextWindow: totalTokens,
-            choicesModel: universeMetrics?.model?.choicesModel || null,
-            embeddingModel: universeMetrics?.model?.embeddingModel || null,
-            availableModels: universeMetrics?.model?.availableModels || [],
-          },
-          context: universeMetrics?.context || {
-            totalPrompt: msgTokens + 500,
-            freeTokens: totalTokens - msgTokens - 500,
-            sections: {
-              overhead: { tokens: 500, label: "System Prompt + Instructions", count: null },
-              messages: { tokens: msgTokens, label: "Session Messages", count: (sessionData.messages || []).length },
-              lore: { tokens: 0, label: "Known World / Lore", count: null },
-              memories: { tokens: 0, label: "Narrative Memories", count: null },
-              relationships: { tokens: 0, label: "Relationships", count: null },
-              threads: { tokens: 0, label: "Narrative Threads", count: null },
-            },
-          },
-          stats: universeMetrics?.stats || {
-            totalMessages: (sessionData.messages || []).length,
-            totalSessions: 1,
-            totalWikiPages: 0,
-            totalNarrativeThreads: 0,
-            totalRelationships: 0,
-            totalMemories: 0,
-          },
-        });
-      } catch (e) {
-        console.warn('[dashboard] loadMetrics error:', e);
-      }
-      setLoading(false);
-    };
-    
-    loadMetrics();
-  }, [sessionId]);
-
-  // Poll every 15s
-  useEffect(() => {
-    if (!sessionId) return;
-    const interval = setInterval(() => {
-      fetch(`/api/sessions/${sessionId}`)
-        .then(r => r.ok ? r.json() : null)
-        .then(d => {
-          if (!d || !d.session) return;
-          setData(prev => prev ? {
-            ...prev,
-            context: {
-              ...prev.context,
-              totalPrompt: 500 + (d.messages || []).reduce((s: number, m: any) => s + Math.round((m.content?.length || 0) / 4), 0),
-              sections: {
-                ...prev.context.sections,
-                messages: { ...prev.context.sections.messages, tokens: (d.messages || []).reduce((s: number, m: any) => s + Math.round((m.content?.length || 0) / 4), 0), count: (d.messages || []).length },
-              },
-            },
-            stats: { ...prev.stats, totalMessages: (d.messages || []).length },
-          } : prev);
-        })
-        .catch(() => {});
-    }, 15000);
-    return () => clearInterval(interval);
-  }, [sessionId]);
-
-  if (!sessionId) {
-    return (
-      <div>
-        <TabBar aiTab={aiTab} setAiTab={setAiTab} />
-        <p className="text-xs text-text-muted py-8 text-center">Select a session to view AI metrics.</p>
-      </div>
-    );
-  }
-
-  if (loading && !data) {
-    return (
-      <div>
-        <TabBar aiTab={aiTab} setAiTab={setAiTab} />
-        <div className="flex items-center justify-center py-12">
-          <Sparkles className="h-5 w-5 text-text-muted animate-pulse" />
-          <span className="ml-2 text-xs text-text-muted">Loading metrics...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (aiTab === "docs") {
-    return (
-      <div>
-        <TabBar aiTab={aiTab} setAiTab={setAiTab} />
-        <HowItWorksDocs />
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div>
-        <TabBar aiTab={aiTab} setAiTab={setAiTab} />
-        <p className="text-xs text-text-muted py-8 text-center">Failed to load AI metrics.</p>
-      </div>
-    );
-  }
-
-  const totalTokens = data.model.contextWindow;
-  const { context, model, stats } = data;
-  const sections = context.sections;
-  const usedPct = totalTokens > 0 ? ((context.totalPrompt / totalTokens) * 100).toFixed(1) : "0";
-
-  return (
-    <div className="space-y-4">
-      <TabBar aiTab={aiTab} setAiTab={setAiTab} />
-      {/* Summary bar */}
-      <div className="flex items-center gap-4 flex-wrap">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-text-muted">Model:</span>
-          <span className="text-sm font-medium text-text-primary">{model.name}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-text-muted">Used:</span>
-          <span className="text-sm tabular-nums text-text-primary">{usedPct}%</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-text-muted">Window:</span>
-          <span className="text-sm tabular-nums text-text-primary">
-            {totalTokens >= 100000 ? `${(totalTokens / 1000).toFixed(0)}K` : totalTokens.toLocaleString()} tokens
-          </span>
-        </div>
-      </div>
-
-      {/* Context Budget Bar */}
-      <div className="h-6 w-full rounded-lg overflow-hidden flex bg-bg-raised">
-        {Object.entries(sections).map(([key, section]) => {
-          const pct = totalTokens > 0 ? (section.tokens / totalTokens) * 100 : 0;
-          if (pct < 0.5) return null;
-          return (
-            <div
-              key={key}
-              className="h-full flex items-center justify-center text-[9px] font-medium text-white/80"
-              style={{ width: `${pct}%`, backgroundColor: sectionColor(key) }}
-              title={`${section.label}: ${section.tokens.toLocaleString()} tokens (${pct.toFixed(1)}%)`}
-            />
-          );
-        })}
-        {context.freeTokens > 0 && (
-          <div
-            className="h-full"
-            style={{
-              width: `${(context.freeTokens / totalTokens) * 100}%`,
-            }}
-          />
-        )}
-      </div>
-
-      {/* Legend */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1">
-        {Object.entries(sections).filter(([, s]) => s.tokens > 0).map(([key, section]) => (
-          <div key={key} className="flex items-center gap-1.5 text-xxs text-text-muted">
-            <div className="h-2 w-2 rounded-sm shrink-0" style={{ backgroundColor: sectionColor(key) }} />
-            <span>{section.label}</span>
-            <span className="tabular-nums">({section.tokens.toLocaleString()})</span>
-          </div>
-        ))}
-        <div className="flex items-center gap-1.5 text-xxs text-text-muted">
-          <div className="h-2 w-2 rounded-sm border border-border-default shrink-0" />
-          <span>Free ({context.freeTokens.toLocaleString()})</span>
-        </div>
-      </div>
-
-      {/* Section breakdown */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="border-b border-border-default text-xxs text-text-muted uppercase tracking-wider">
-              <th className="text-left py-1.5 pr-3 font-medium">Section</th>
-              <th className="text-right py-1.5 px-3 font-medium">Tokens</th>
-              <th className="text-right py-1.5 px-3 font-medium">%</th>
-              <th className="text-right py-1.5 pl-3 font-medium">Items</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.entries(sections).map(([key, section]) => {
-              const pct = totalTokens > 0 ? ((section.tokens / totalTokens) * 100).toFixed(1) : "0.0";
-              return (
-                <tr key={key} className="border-b border-border-default/50">
-                  <td className="py-1.5 pr-3">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-1.5 w-1.5 rounded-sm shrink-0" style={{ backgroundColor: sectionColor(key) }} />
-                      <span className="text-text-primary">{section.label}</span>
-                    </div>
-                  </td>
-                  <td className="text-right py-1.5 px-3 text-text-primary tabular-nums">{section.tokens.toLocaleString()}</td>
-                  <td className="text-right py-1.5 px-3 text-text-muted tabular-nums">{pct}%</td>
-                  <td className="text-right py-1.5 pl-3 text-text-muted tabular-nums">{section.count ?? "—"}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-          <tfoot>
-            <tr className="font-medium">
-              <td className="py-1.5 pr-3 text-text-primary">Total Used</td>
-              <td className="text-right py-1.5 px-3 text-text-primary tabular-nums">{context.totalPrompt.toLocaleString()}</td>
-              <td className="text-right py-1.5 px-3 text-text-muted tabular-nums">{usedPct}%</td>
-              <td className="text-right py-1.5 pl-3" />
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-
-      {/* Stats grid */}
-      <div className="grid grid-cols-3 gap-2">
-        <StatCard label="Wiki Pages" value={stats.totalWikiPages} />
-        <StatCard label="Sessions" value={stats.totalSessions} />
-        <StatCard label="Threads" value={stats.totalNarrativeThreads} />
-        <StatCard label="Relationships" value={stats.totalRelationships} />
-        <StatCard label="Memories" value={stats.totalMemories} />
-        <StatCard label="Messages" value={stats.totalMessages} />
-      </div>
     </div>
   );
 }
@@ -641,8 +366,7 @@ function ArrowDownIcon({ small }: { small?: boolean }) {
 }
 
 export default function DashboardPage() {
-  const { activeSession, activeGroup } = useApp();
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const { activeSession } = useApp();
   const [aiTab, setAiTab] = useState<"metrics" | "docs">("metrics");
   const [data, setData] = useState<AIMetricsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -654,75 +378,87 @@ export default function DashboardPage() {
 
     const loadMetrics = async () => {
       try {
-        const [sessionRes, uniRes, settingsRes, relRes, threadRes] = await Promise.all([
+        const [sessionRes, uniRes, metricsRes] = await Promise.all([
           fetch(`/api/sessions/${activeSession.id}`),
           fetch(`/api/universes`),
-          fetch(`/api/settings`),
-          fetch(`/api/relationships`),
-          fetch(`/api/narrative-threads`),
+          fetch(`/api/universe/${activeSession.universe_id}/ai-metrics`),
         ]);
 
         const sessionData = sessionRes.ok ? await sessionRes.json() : null;
         if (!sessionData?.session) { setLoading(false); return; }
 
-        const uniData = uniRes.ok ? await uniRes.json() : { universes: [] };
-        const settingsData = settingsRes.ok ? await settingsRes.json() : {};
-        const allRels: any[] = relRes.ok ? (await relRes.json()).relationships || [] : [];
-        const allThreads: any[] = threadRes.ok ? (await threadRes.json()).threads || [] : [];
-
         const universeId = sessionData.session.universe_id || '';
+        const uniData = uniRes.ok ? await uniRes.json() : { universes: [] };
         const universe = (uniData.universes || []).find((u: any) => u.id === universeId);
-        const universeName = universe?.name || sessionData.session.name || 'Unknown';
 
-        const model = settingsData?.ollama?.model || 'unknown';
-        const contextWindow = settingsData?.modelDefaults?.[model]?.numCtx || 131072;
+        const metrics = metricsRes.ok ? await metricsRes.json() : null;
 
-        const msgTokens = (sessionData.messages || []).reduce((s: number, m: any) => s + Math.round((m.content?.length || 0) / 4), 0);
-        const msgCount = (sessionData.messages || []).length;
-        // Filter relationships and threads to this universe
-        const relCount = allRels.filter((r: any) => !r.universe_id || r.universe_id === universeId).length;
-        const threadCount = allThreads.filter((t: any) => !t.universe_id || t.universe_id === universeId).length;
-
-        // Fetch wiki pages and memories in parallel (don't block on counts)
-        const [wikiRes, memRes] = await Promise.all([
-          fetch(`/api/wiki?universe_id=${encodeURIComponent(universeId)}`),
-          fetch(`/api/narrative-memories?limit=500`),
-        ]);
-        const wikiData = wikiRes.ok ? await wikiRes.json() : { pages: [] };
-        const memData = memRes.ok ? await memRes.json() : { memories: [] };
-        const wikiCount = (wikiData.pages || []).length;
-        const memCount = (memData.memories || []).length;
-
-        setData({
-          universe: { id: universeId, name: universeName },
-          model: { name: model, contextWindow, choicesModel: settingsData?.ollama?.choicesModel || null, embeddingModel: settingsData?.ollama?.embeddingModel || null, availableModels: [] },
-          context: {
-            totalPrompt: msgTokens + 500,
-            freeTokens: contextWindow - msgTokens - 500,
-            sections: {
-              overhead: { tokens: 500, label: "System Prompt + Instructions", count: null },
-              messages: { tokens: msgTokens, label: "Session Messages", count: msgCount },
-              lore: { tokens: 0, label: "Known World / Lore", count: null },
-              memories: { tokens: 0, label: "Narrative Memories", count: null },
-              relationships: { tokens: 0, label: "Relationships", count: null },
-              threads: { tokens: 0, label: "Narrative Threads", count: null },
+        if (metrics) {
+          // Use full metrics from server-side endpoint
+          setData({
+            universe: {
+              id: metrics.universe.id,
+              name: universe?.name || metrics.universe.name,
             },
-          },
-          stats: {
-            totalMessages: msgCount,
-            totalSessions: 1,
-            totalWikiPages: wikiCount,
-            totalNarrativeThreads: threadCount,
-            totalRelationships: relCount,
-            totalMemories: memCount,
-          },
-        });
+            model: metrics.model,
+            context: metrics.context,
+            stats: metrics.stats,
+          });
+        } else {
+          // Fallback: just session data
+          const settingsRes = await fetch(`/api/settings`);
+          const settingsData = settingsRes.ok ? await settingsRes.json() : {};
+          const model = settingsData?.ollama?.model || 'unknown';
+          const contextWindow = settingsData?.modelDefaults?.[model]?.numCtx || 131072;
+          const msgTokens = (sessionData.messages || []).reduce((s: number, m: any) => s + Math.round((m.content?.length || 0) / 4), 0);
+
+          setData({
+            universe: { id: universeId, name: universe?.name || sessionData.session.name || 'Unknown' },
+            model: { name: model, contextWindow, choicesModel: settingsData?.ollama?.choicesModel || null, embeddingModel: settingsData?.ollama?.embeddingModel || null, availableModels: [] },
+            context: {
+              totalPrompt: msgTokens + 500,
+              freeTokens: contextWindow - msgTokens - 500,
+              sections: {
+                overhead: { tokens: 500, label: "System Prompt + Instructions", count: null },
+                messages: { tokens: msgTokens, label: "Session Messages", count: (sessionData.messages || []).length },
+                lore: { tokens: 0, label: "Known World / Lore", count: null },
+                memories: { tokens: 0, label: "Narrative Memories", count: null },
+                relationships: { tokens: 0, label: "Relationships", count: null },
+                threads: { tokens: 0, label: "Narrative Threads", count: null },
+              },
+            },
+            stats: {
+              totalMessages: (sessionData.messages || []).length,
+              totalSessions: 1,
+              totalWikiPages: 0,
+              totalNarrativeThreads: 0,
+              totalRelationships: 0,
+              totalMemories: 0,
+            },
+          });
+        }
       } catch {}
       setLoading(false);
     };
 
     loadMetrics();
   }, [activeSession]);
+
+  // Poll every 15s to refresh message count
+  useEffect(() => {
+    if (!activeSession?.universe_id) return;
+    const interval = setInterval(() => {
+      fetch(`/api/universe/${activeSession.universe_id}/ai-metrics`)
+        .then(r => r.ok ? r.json() : null)
+        .then(metrics => {
+          if (metrics) {
+            setData(prev => prev ? { ...prev, context: metrics.context, stats: metrics.stats } : prev);
+          }
+        })
+        .catch(() => {});
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [activeSession?.universe_id]);
 
   const data_sections = data?.context?.sections || {};
   const totalTokens = data?.model?.contextWindow || 131072;
@@ -750,69 +486,110 @@ export default function DashboardPage() {
 
       {aiTab === "metrics" ? (
         <>
-          {/* Model + Stats bar */}
-          <div className="rounded-xl border border-border-default bg-bg-elevated p-4">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-4">
-                <div>
-                  <p className="text-xxs text-text-muted">Model</p>
-                  <p className="text-sm font-medium text-text-primary">{data?.model?.name || '...'}</p>
-                </div>
-                <div className="w-px h-8 bg-border-default" />
-                <div>
-                  <p className="text-xxs text-text-muted">Context Window</p>
-                  <p className="text-sm font-medium text-text-primary tabular-nums">{totalTokens >= 100000 ? `${(totalTokens / 1000).toFixed(0)}K` : totalTokens.toLocaleString()} tokens</p>
-                </div>
-                <div className="w-px h-8 bg-border-default" />
-                <div>
-                  <p className="text-xxs text-text-muted">Session</p>
-                  <p className="text-sm font-medium text-text-primary">{activeSession?.name || '...'}</p>
-                </div>
-              </div>
-              <div className="flex gap-4 text-xs text-text-muted">
-                <span>{data?.stats?.totalMessages || 0} msgs</span>
-                <span>{data?.stats?.totalWikiPages || 0} wiki pages</span>
-                <span>{data?.stats?.totalRelationships || 0} relationships</span>
-                <span>{data?.stats?.totalNarrativeThreads || 0} threads</span>
-              </div>
+          {/* Summary bar */}
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-text-muted">Model:</span>
+              <span className="text-sm font-medium text-text-primary">{data?.model?.name || '...'}</span>
             </div>
-            {/* Budget bar */}
-            <div className="mt-3 h-5 w-full rounded-lg overflow-hidden flex bg-bg-raised">
-              {Object.entries(data_sections).filter(([, s]) => s.tokens > 0).map(([key, section]) => {
-                const pct = totalTokens > 0 ? (section.tokens / totalTokens) * 100 : 0;
-                if (pct < 1) return null;
-                return <div key={key} className="h-full" style={{ width: `${pct}%`, backgroundColor: sectionColor(key) }} title={`${section.label}: ${section.tokens.toLocaleString()} tokens`} />;
-              })}
-              {data && totalTokens > (data.context.totalPrompt) && (
-                <div className="h-full" style={{ width: `${((totalTokens - data.context.totalPrompt) / totalTokens) * 100}%` }} />
-              )}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-text-muted">Used:</span>
+              <span className="text-sm tabular-nums text-text-primary">
+                {totalTokens > 0 ? `${((data?.context?.totalPrompt || 0) / totalTokens * 100).toFixed(1)}%` : '...'}
+              </span>
             </div>
-            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5">
-              {Object.entries(data_sections).filter(([, s]) => s.tokens > 0).map(([key, section]) => (
-                <div key={key} className="flex items-center gap-1 text-xxs text-text-muted">
-                  <div className="h-2 w-2 rounded-sm shrink-0" style={{ backgroundColor: sectionColor(key) }} />
-                  <span>{section.label} ({section.tokens.toLocaleString()})</span>
-                </div>
-              ))}
-              <div className="flex items-center gap-1 text-xxs text-text-muted">
-                <div className="h-2 w-2 rounded-sm border border-border-default shrink-0" />
-                <span>Free ({Math.max(0, totalTokens - (data?.context.totalPrompt || 0)).toLocaleString()})</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-text-muted">Window:</span>
+              <span className="text-sm tabular-nums text-text-primary">
+                {totalTokens >= 100000 ? `${(totalTokens / 1000).toFixed(0)}K` : totalTokens.toLocaleString()} tokens
+              </span>
+            </div>
+          </div>
+
+          {/* Context Budget Bar */}
+          <div className="h-6 w-full rounded-lg overflow-hidden flex bg-bg-raised">
+            {Object.entries(data_sections).filter(([, s]) => s.tokens > 0).map(([key, section]) => {
+              const pct = totalTokens > 0 ? (section.tokens / totalTokens) * 100 : 0;
+              if (pct < 0.5) return null;
+              return (
+                <div
+                  key={key}
+                  className="h-full flex items-center justify-center text-[9px] font-medium text-white/80"
+                  style={{ width: `${pct}%`, backgroundColor: sectionColor(key) }}
+                  title={`${section.label}: ${section.tokens.toLocaleString()} tokens (${pct.toFixed(1)}%)`}
+                />
+              );
+            })}
+            {data && totalTokens > (data.context.totalPrompt) && (
+              <div className="h-full" style={{ width: `${((totalTokens - data.context.totalPrompt) / totalTokens) * 100}%` }} />
+            )}
+          </div>
+
+          {/* Legend */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            {Object.entries(data_sections).filter(([, s]) => s.tokens > 0).map(([key, section]) => (
+              <div key={key} className="flex items-center gap-1.5 text-xxs text-text-muted">
+                <div className="h-2 w-2 rounded-sm shrink-0" style={{ backgroundColor: sectionColor(key) }} />
+                <span>{section.label}</span>
+                <span className="tabular-nums">({section.tokens.toLocaleString()})</span>
               </div>
+            ))}
+            <div className="flex items-center gap-1.5 text-xxs text-text-muted">
+              <div className="h-2 w-2 rounded-sm border border-border-default shrink-0" />
+              <span>Free ({data ? Math.max(0, totalTokens - data.context.totalPrompt).toLocaleString() : '...'})</span>
             </div>
+          </div>
+
+          {/* Section breakdown */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-border-default text-xxs text-text-muted uppercase tracking-wider">
+                  <th className="text-left py-1.5 pr-3 font-medium">Section</th>
+                  <th className="text-right py-1.5 px-3 font-medium">Tokens</th>
+                  <th className="text-right py-1.5 px-3 font-medium">%</th>
+                  <th className="text-right py-1.5 pl-3 font-medium">Items</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(data_sections).map(([key, section]) => {
+                  const pct = totalTokens > 0 ? ((section.tokens / totalTokens) * 100).toFixed(1) : "0.0";
+                  return (
+                    <tr key={key} className="border-b border-border-default/50">
+                      <td className="py-1.5 pr-3">
+                        <div className="flex items-center gap-1.5">
+                          <div className="h-1.5 w-1.5 rounded-sm shrink-0" style={{ backgroundColor: sectionColor(key) }} />
+                          <span className="text-text-primary">{section.label}</span>
+                        </div>
+                      </td>
+                      <td className="text-right py-1.5 px-3 text-text-primary tabular-nums">{section.tokens.toLocaleString()}</td>
+                      <td className="text-right py-1.5 px-3 text-text-muted tabular-nums">{pct}%</td>
+                      <td className="text-right py-1.5 pl-3 text-text-muted tabular-nums">{section.count ?? "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="font-medium">
+                  <td className="py-1.5 pr-3 text-text-primary">Total Used</td>
+                  <td className="text-right py-1.5 px-3 text-text-primary tabular-nums">{(data?.context?.totalPrompt || 0).toLocaleString()}</td>
+                  <td className="text-right py-1.5 px-3 text-text-muted tabular-nums">{totalTokens > 0 ? `${((data?.context?.totalPrompt || 0) / totalTokens * 100).toFixed(1)}%` : '0.0%'}</td>
+                  <td className="text-right py-1.5 pl-3" />
+                </tr>
+              </tfoot>
+            </table>
           </div>
 
           {/* Stats grid */}
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             <StatCard label="Wiki Pages" value={data?.stats?.totalWikiPages || 0} />
             <StatCard label="Sessions" value={data?.stats?.totalSessions || 0} />
-            <StatCard label="Messages" value={data?.stats?.totalMessages || 0} />
-            <StatCard label="Relationships" value={data?.stats?.totalRelationships || 0} />
             <StatCard label="Threads" value={data?.stats?.totalNarrativeThreads || 0} />
+            <StatCard label="Relationships" value={data?.stats?.totalRelationships || 0} />
             <StatCard label="Memories" value={data?.stats?.totalMemories || 0} />
+            <StatCard label="Messages" value={data?.stats?.totalMessages || 0} />
           </div>
-
-          {/* Recent Wiki Changes */}
-                  </>
+        </>
       ) : (
         <HowItWorksDocs />
       )}
