@@ -667,8 +667,8 @@ export default function DashboardPage() {
 
         const uniData = uniRes.ok ? await uniRes.json() : { universes: [] };
         const settingsData = settingsRes.ok ? await settingsRes.json() : {};
-        const relData = relRes.ok ? await relRes.json() : { relationships: [] };
-        const threadData = threadRes.ok ? await threadRes.json() : { threads: [] };
+        const allRels: any[] = relRes.ok ? (await relRes.json()).relationships || [] : [];
+        const allThreads: any[] = threadRes.ok ? (await threadRes.json()).threads || [] : [];
 
         const universeId = sessionData.session.universe_id || '';
         const universe = (uniData.universes || []).find((u: any) => u.id === universeId);
@@ -676,17 +676,16 @@ export default function DashboardPage() {
 
         const model = settingsData?.ollama?.model || 'unknown';
         const contextWindow = settingsData?.modelDefaults?.[model]?.numCtx || 131072;
-        const choicesModel = settingsData?.ollama?.choicesModel || null;
-        const embeddingModel = settingsData?.ollama?.embeddingModel || null;
 
         const msgTokens = (sessionData.messages || []).reduce((s: number, m: any) => s + Math.round((m.content?.length || 0) / 4), 0);
         const msgCount = (sessionData.messages || []).length;
-        const relCount = (relData.relationships || []).length;
-        const threadCount = (threadData.threads || []).length;
+        // Filter relationships and threads to this universe
+        const relCount = allRels.filter((r: any) => !r.universe_id || r.universe_id === universeId).length;
+        const threadCount = allThreads.filter((t: any) => !t.universe_id || t.universe_id === universeId).length;
 
         setData({
           universe: { id: universeId, name: universeName },
-          model: { name: model, contextWindow, choicesModel, embeddingModel, availableModels: [] },
+          model: { name: model, contextWindow, choicesModel: settingsData?.ollama?.choicesModel || null, embeddingModel: settingsData?.ollama?.embeddingModel || null, availableModels: [] },
           context: {
             totalPrompt: msgTokens + 500,
             freeTokens: contextWindow - msgTokens - 500,
