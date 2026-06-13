@@ -228,7 +228,7 @@ export default function GraphView({ pages, basePath = '/wiki', isLoading, error,
     return [
       ...pagesWithDegrees.map(page => {
         const degree = nodeDegrees.get(page.path) || 0;
-        const size = 15 + (degree / maxDegree) * 25; // 15-40px based on connections
+        const size = 18 + (degree / maxDegree) * 16; // 18-34px based on connections
         const communityIdx = communities.get(page.path) ?? 0;
         const nodeColor = showCommunityColors
           ? COMMUNITY_COLORS[communityIdx % COMMUNITY_COLORS.length]
@@ -408,11 +408,12 @@ export default function GraphView({ pages, basePath = '/wiki', isLoading, error,
             name: 'cose',
             animate: true,
             animationDuration: 500,
-            padding: 30,
-            idealEdgeLength: 120,
-            nodeRepulsion: 8000,
-            gravity: 0.25,
+            padding: 50,
+            idealEdgeLength: 250,
+            nodeRepulsion: 200000,
+            gravity: 0.08,
             numIter: 1000,
+            nodeOverlap: 20,
           }}
           style={{ width: '100%', height: '100%' }}
           cy={(cy) => { cyRef.current = cy; cy.fit(cy.nodes(), 30); }}
