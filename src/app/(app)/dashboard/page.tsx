@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Sparkles, BrainCircuit, BookOpen } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
-import RecentChangesWidget from "@/components/wiki/recent-changes-widget";
 
 interface Session {
   id: string;
@@ -644,38 +643,18 @@ function ArrowDownIcon({ small }: { small?: boolean }) {
 export default function DashboardPage() {
   const { activeSession, activeGroup } = useApp();
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [aiTab, setAiTab] = useState<"metrics" | "docs">("metrics");
   const [data, setData] = useState<AIMetricsData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Load metrics for active session
   useEffect(() => {
-    const url = activeGroup ? `/api/sessions?group_id=${activeGroup.id}` : "/api/sessions?scope=personal";
-    fetch(url)
-      .then((res) => res.json())
-      .then((d) => {
-        setSessions(d.sessions || []);
-      })
-      .catch(() => {});
-  }, [activeGroup]);
-
-  // Default to active session, then first session
-  useEffect(() => {
-    if (activeSession) {
-      setSelectedSessionId(activeSession.id);
-    } else if (sessions.length > 0) {
-      setSelectedSessionId(sessions[0].id);
-    }
-  }, [activeSession, sessions]);
-
-  // Load metrics for selected session
-  useEffect(() => {
-    if (!selectedSessionId) return;
+    if (!activeSession) return;
     setLoading(true);
 
     const loadMetrics = async () => {
       try {
-        const sessionRes = await fetch(`/api/sessions/${selectedSessionId}`);
+        const sessionRes = await fetch(`/api/sessions/${activeSession.id}`);
         if (!sessionRes.ok) { setLoading(false); return; }
         const sessionData = await sessionRes.json();
         if (!sessionData?.session) { setLoading(false); return; }
@@ -732,7 +711,7 @@ export default function DashboardPage() {
     };
 
     loadMetrics();
-  }, [selectedSessionId]);
+  }, [activeSession]);
 
   const data_sections = data?.context?.sections || {};
   const totalTokens = data?.model?.contextWindow || 131072;
@@ -751,24 +730,10 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Session selector */}
-        <div className="flex items-center gap-3">
-          <label className="text-xxs text-text-muted">Session:</label>
-          <select
-            value={selectedSessionId ?? ""}
-            onChange={(e) => setSelectedSessionId(e.target.value || null)}
-            className="rounded-lg border border-border-default bg-bg-raised px-2.5 py-1.5 text-xs text-text-primary max-w-[200px]"
-          >
-            {sessions.length === 0 && <option value="">No sessions</option>}
-            {sessions.map((s) => (
-              <option key={s.id} value={s.id}>{s.name || s.id.slice(0, 8)}</option>
-            ))}
-          </select>
-          {/* Tab toggle */}
-          <div className="flex gap-0.5 rounded-lg border border-border-default bg-bg-raised p-0.5">
-            <button onClick={() => setAiTab("metrics")} className={`px-2.5 py-1 text-xxs rounded-md transition-colors ${aiTab === "metrics" ? "bg-accent text-white" : "text-text-muted hover:text-text-default"}`}>Metrics</button>
-            <button onClick={() => setAiTab("docs")} className={`px-2.5 py-1 text-xxs rounded-md transition-colors ${aiTab === "docs" ? "bg-accent text-white" : "text-text-muted hover:text-text-default"}`}>How It Works</button>
-          </div>
+        {/* Tab toggle */}
+        <div className="flex gap-0.5 rounded-lg border border-border-default bg-bg-raised p-0.5">
+          <button onClick={() => setAiTab("metrics")} className={`px-2.5 py-1 text-xxs rounded-md transition-colors ${aiTab === "metrics" ? "bg-accent text-white" : "text-text-muted hover:text-text-default"}`}>Metrics</button>
+          <button onClick={() => setAiTab("docs")} className={`px-2.5 py-1 text-xxs rounded-md transition-colors ${aiTab === "docs" ? "bg-accent text-white" : "text-text-muted hover:text-text-default"}`}>How It Works</button>
         </div>
       </div>
 
@@ -790,7 +755,7 @@ export default function DashboardPage() {
                 <div className="w-px h-8 bg-border-default" />
                 <div>
                   <p className="text-xxs text-text-muted">Session</p>
-                  <p className="text-sm font-medium text-text-primary">{sessions.find(s => s.id === selectedSessionId)?.name || '...'}</p>
+                  <p className="text-sm font-medium text-text-primary">{activeSession?.name || '...'}</p>
                 </div>
               </div>
               <div className="flex gap-4 text-xs text-text-muted">
@@ -836,8 +801,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Recent Wiki Changes */}
-          <RecentChangesWidget />
-        </>
+                  </>
       ) : (
         <HowItWorksDocs />
       )}
