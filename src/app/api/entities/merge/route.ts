@@ -139,7 +139,15 @@ export const PUT = withErrorHandler(async (request: NextRequest) => {
     const embedResult = db.prepare("UPDATE embedding_index SET entity_id = ? WHERE entity_id = ?").run(targetId, sourceId);
     embeddingsUpdated = embedResult.changes;
 
-    // 5. Delete source entity (cascades to entity_aliases via FK)
+    // 5. Update supplementary table entity_id references (personas / npcs)
+    const sourceType = sourceId.split(":")[0];
+    if (sourceType === "persona") {
+      db.prepare("UPDATE personas SET entity_id = ? WHERE entity_id = ?").run(targetId, sourceId);
+    } else if (sourceType === "npc") {
+      db.prepare("UPDATE npcs SET entity_id = ? WHERE entity_id = ?").run(targetId, sourceId);
+    }
+
+    // 6. Delete source entity (cascades to entity_aliases via FK)
     db.prepare("DELETE FROM entity_registry WHERE id = ?").run(sourceId);
   });
 

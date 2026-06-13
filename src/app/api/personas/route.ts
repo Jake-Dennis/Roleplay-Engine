@@ -77,6 +77,18 @@ db.prepare(
    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 ).run(id, userId, name, description || null, personality || null, scenario || null, firstMes || null, mesExample || null, creatorNotes || null, systemPrompt || null, postHistoryInstructions || null, tags ? JSON.stringify(tags) : null, writingStyle || null, avatarUrl || null, llmModel || null, ttsVoice || null, isActive);
 
+// Register in entity registry
+const entityId = `persona:${id}`;
+try {
+  db.prepare(
+    "INSERT OR IGNORE INTO entity_registry (id, entity_type, display_name, user_id) VALUES (?, 'persona', ?, ?)"
+  ).run(entityId, name, userId);
+  db.prepare(
+    "INSERT OR IGNORE INTO entity_aliases (id, entity_id, alias, source) VALUES (?, ?, ?, 'user_defined')"
+  ).run(crypto.randomUUID(), entityId, name);
+  db.prepare("UPDATE personas SET entity_id = ? WHERE id = ?").run(entityId, id);
+} catch { /* non-fatal */ }
+
 const persona = db.prepare("SELECT * FROM personas WHERE id = ?").get(id);
 
 // Auto-create NPC record if persona is associated with a universe

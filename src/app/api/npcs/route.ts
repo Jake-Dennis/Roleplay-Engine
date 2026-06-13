@@ -87,6 +87,18 @@ db.prepare(
    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 ).run(id, userId, universeId, name, description || null, personalityTraits || null, behaviorPatterns || null, voiceId || null, isCanonValue);
 
+// Register in entity registry
+const entityId = `npc:${id}`;
+try {
+  db.prepare(
+    "INSERT OR IGNORE INTO entity_registry (id, entity_type, display_name, user_id, universe_id) VALUES (?, 'npc', ?, ?, ?)"
+  ).run(entityId, name, userId, universeId || null);
+  db.prepare(
+    "INSERT OR IGNORE INTO entity_aliases (id, entity_id, alias, source) VALUES (?, ?, ?, 'user_defined')"
+  ).run(crypto.randomUUID(), entityId, name);
+  db.prepare("UPDATE npcs SET entity_id = ? WHERE id = ?").run(entityId, id);
+} catch { /* non-fatal */ }
+
 const npc = db.prepare("SELECT * FROM npcs WHERE id = ?").get(id);
 
 return NextResponse.json({ npc: camelizeKeys(npc) }, { status: 201 }); });

@@ -124,6 +124,23 @@ db.prepare(
   writingStyle, avatarUrl, llmModel, ttsVoice, id
 );
 
+// Sync name change to entity registry
+if (body.name) {
+  try {
+    const regId = `persona:${id}`;
+    const existingReg = db.prepare("SELECT display_name FROM entity_registry WHERE id = ?").get(regId) as { display_name: string } | undefined;
+    if (existingReg) {
+      // Add old name as alias before updating display name
+      db.prepare(
+        "INSERT OR IGNORE INTO entity_aliases (id, entity_id, alias, source) VALUES (?, ?, ?, 'user_defined')"
+      ).run(crypto.randomUUID(), regId, existingReg.display_name);
+      db.prepare(
+        "UPDATE entity_registry SET display_name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+      ).run(body.name, regId);
+    }
+  } catch { /* non-fatal */ }
+}
+
 const persona = db.prepare("SELECT * FROM personas WHERE id = ?").get(id);
 
 return NextResponse.json({ persona: camelizeKeys(persona) }); });

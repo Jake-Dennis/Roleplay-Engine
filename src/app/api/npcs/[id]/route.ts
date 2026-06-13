@@ -115,6 +115,23 @@ db.prepare(
   voiceId, isCanon !== undefined ? (isCanon ? 1 : 0) : undefined, id
 );
 
+// Sync name change to entity registry
+if (body.name) {
+  try {
+    const regId = `npc:${id}`;
+    const existingReg = db.prepare("SELECT display_name FROM entity_registry WHERE id = ?").get(regId) as { display_name: string } | undefined;
+    if (existingReg) {
+      // Add old name as alias before updating display name
+      db.prepare(
+        "INSERT OR IGNORE INTO entity_aliases (id, entity_id, alias, source) VALUES (?, ?, ?, 'user_defined')"
+      ).run(crypto.randomUUID(), regId, existingReg.display_name);
+      db.prepare(
+        "UPDATE entity_registry SET display_name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+      ).run(body.name, regId);
+    }
+  } catch { /* non-fatal */ }
+}
+
 const npc = db.prepare("SELECT * FROM npcs WHERE id = ?").get(id);
 
 // Queue wiki sync to update the corresponding entity page
