@@ -93,20 +93,23 @@ function AIManagementPanel({ sessionId }: { sessionId: string | null }) {
     ]).then(([sessionData, universeData]) => {
       if (!sessionData || !sessionData.session) return;
       const d = sessionData;
-      const universeName = (universeData.universes || []).find((u: any) => u.id === d.session.universe_id)?.name || d.session.name || 'Unknown';
-        // Build context metrics from session data
-        const totalTokens = d.session.contextWindow || 131072;
+      const universeId = d.session.universe_id || '';
+      const universeName = (universeData.universes || []).find((u: any) => u.id === universeId)?.name || d.session.name || 'Unknown';
+      
+      // Fetch universe-level metrics
+      fetch(`/api/universe/${universeId}/ai-metrics`).then(r => r.ok ? r.json() : null).catch(() => null).then((universeMetrics) => {
+        const totalTokens = universeMetrics?.model?.contextWindow || 131072;
         const msgTokens = (d.messages || []).reduce((s: number, m: any) => s + Math.round((m.content?.length || 0) / 4), 0);
         setData({
-          universe: { id: d.session.universe_id || '', name: universeName },
+          universe: { id: universeId, name: universeName },
           model: {
-            name: d.session.model || 'unknown',
+            name: universeMetrics?.model?.name || 'unknown',
             contextWindow: totalTokens,
-            choicesModel: null,
-            embeddingModel: null,
-            availableModels: [],
+            choicesModel: universeMetrics?.model?.choicesModel || null,
+            embeddingModel: universeMetrics?.model?.embeddingModel || null,
+            availableModels: universeMetrics?.model?.availableModels || [],
           },
-          context: {
+          context: universeMetrics?.context || {
             totalPrompt: msgTokens + 500,
             freeTokens: totalTokens - msgTokens - 500,
             sections: {
@@ -118,7 +121,7 @@ function AIManagementPanel({ sessionId }: { sessionId: string | null }) {
               threads: { tokens: 0, label: "Narrative Threads", count: null },
             },
           },
-          stats: {
+          stats: universeMetrics?.stats || {
             totalMessages: (d.messages || []).length,
             totalSessions: 1,
             totalWikiPages: 0,
@@ -128,8 +131,8 @@ function AIManagementPanel({ sessionId }: { sessionId: string | null }) {
           },
         });
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      }).catch(() => { setLoading(false); });
+    }).catch(() => setLoading(false));
   }, [sessionId]);
 
   // Poll every 15s
