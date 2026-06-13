@@ -552,8 +552,9 @@ export function useSessionChat(
     });
 
     if (!msgRes.ok) return;
+    const msgData = await msgRes.json();
 
-    await triggerGeneration(content);
+    await triggerGeneration(content, msgData.message?.id || msgData.id);
   }, [input, streaming, sessionId, activePersonaId, triggerGeneration]);
 
   // Select a narrative choice

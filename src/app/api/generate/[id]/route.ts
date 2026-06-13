@@ -21,29 +21,35 @@ import { markOllamaBusy, markOllamaIdle } from '@/lib/ollama-busy';
 function detectSpeakingAs(response: string, activeNpcs: string[]): string | null {
   if (!response || activeNpcs.length === 0) return null;
 
-  const body = response.toLowerCase();
+  // Strip wikilink brackets for matching: [[Name]] → Name
+  const body = response.toLowerCase().replace(/\[\[|\]\]/g, '');
   const found: string[] = [];
 
   for (const npc of activeNpcs) {
     if (!npc) continue;
     const npcLower = npc.toLowerCase();
 
-    // Check if NPC name appears at the very start (strongest signal)
+    // Check if NPC name appears at the very start (with or without wikilinks)
+    // e.g., "Barliman Butterbur gives..." or "[[Barliman Butterbur]] gives..."
     if (body.startsWith(npcLower)) {
       if (!found.includes(npc)) found.push(npc);
       continue;
     }
 
-    // Check for dialogue attribution patterns
-    const dialoguePatterns = [
+    // Check for narrative action + dialogue patterns
+    const patterns = [
       `${npcLower} said`, `${npcLower} replied`, `${npcLower} answered`,
       `${npcLower} asked`, `${npcLower} murmured`, `${npcLower} whispered`,
       `${npcLower} called`, `${npcLower} shouted`, `${npcLower} growled`,
       `${npcLower} spoke`, `${npcLower} began`, `${npcLower} continued`,
       `${npcLower} nodded`, `${npcLower} stepped`, `${npcLower} turned`,
       `${npcLower} smiled`, `${npcLower} frowned`, `${npcLower} laughed`,
+      `${npcLower} gives`, `${npcLower} looks`, `${npcLower} gestures`,
+      `${npcLower} leans`, `${npcLower} strokes`, `${npcLower} sighs`,
+      `${npcLower} shrugs`, `${npcLower} chuckles`, `${npcLower} grins`,
+      `${npcLower} pauses`, `${npcLower} glances`, `${npcLower} reaches`,
     ];
-    for (const pattern of dialoguePatterns) {
+    for (const pattern of patterns) {
       if (body.includes(pattern)) {
         if (!found.includes(npc)) found.push(npc);
         break;
