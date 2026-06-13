@@ -45,12 +45,16 @@ export interface SceneContext {
   tone: string | null;
   currentIntent: string | null;
   activeNpcs: string[];
+  activeNpcIds?: string[];
   activeThreads: string[];
   /** New narrative state fields (Task 31) */
   sceneType?: string | null;
   sceneTension?: number | null;
   conflictType?: string | null;
   stakes?: string | null;
+
+  /** Entity descriptions from the entity_registry for active NPCs (injected after retrieval) */
+  activeNpcDetails?: { name: string; description: string | null }[];
 }
 
 export interface LoreContext {
@@ -247,7 +251,7 @@ function cosineSimilarity(a: number[], b: number[]): number {
 export function getSceneContext(sessionId: string): SceneContext {
   const db = getDb();
   const result = db.prepare(
-    `SELECT active_location_id, current_goal, emotional_tone, current_intent, active_npcs, active_threads,
+    `SELECT active_location_id, current_goal, emotional_tone, current_intent, active_npcs, active_npc_ids, active_threads,
             scene_type, scene_tension, conflict_type, stakes
      FROM scene_states
      WHERE session_id = ?
@@ -258,6 +262,7 @@ export function getSceneContext(sessionId: string): SceneContext {
     emotional_tone: string | null;
     current_intent: string | null;
     active_npcs: string | null;
+    active_npc_ids: string | null;
     active_threads: string | null;
     scene_type: string | null;
     scene_tension: number | null;
@@ -266,7 +271,7 @@ export function getSceneContext(sessionId: string): SceneContext {
   } | undefined;
 
   if (!result) {
-    return { location: null, goal: null, tone: null, currentIntent: null, activeNpcs: [], activeThreads: [] };
+    return { location: null, goal: null, tone: null, currentIntent: null, activeNpcs: [], activeNpcIds: [], activeThreads: [] };
   }
 
   return {
@@ -275,6 +280,7 @@ export function getSceneContext(sessionId: string): SceneContext {
     tone: result.emotional_tone,
     currentIntent: result.current_intent,
     activeNpcs: parseJsonOrSplit(result.active_npcs),
+    activeNpcIds: safeParseWarn<string[]>(result.active_npc_ids, "scene active_npc_ids", []) ?? [],
     activeThreads: parseJsonOrSplit(result.active_threads),
     sceneType: result.scene_type ?? null,
     sceneTension: result.scene_tension ?? null,
@@ -1154,6 +1160,24 @@ export async function getRetrievedContext(
     "SELECT owner_id, narrative_tension, pacing, narrative_phase, active_goals, active_conflicts FROM sessions WHERE id = ?"
   ).get(sessionId) as { owner_id: string; narrative_tension: number | null; pacing: number | null; narrative_phase: string | null; active_goals: string | null; active_conflicts: string | null; } | undefined;
   const userId = session?.owner_id || "";
+
+  // Enrich active NPCs with entity descriptions from the entity_registry
+  if (scene.activeNpcs.length > 0 && userId) {
+    try {
+      const details = scene.activeNpcs.map(name => {
+        const entity = db.prepare(`
+          SELECT er.description FROM entity_registry er
+          WHERE er.display_name = ? AND er.user_id = ?
+          AND er.entity_type = 'npc'
+          LIMIT 1
+        `).get(name, userId) as { description: string | null } | undefined;
+        return { name, description: entity?.description ?? null };
+      }).filter(d => d.description !== null) as { name: string; description: string }[];
+      if (details.length > 0) {
+        scene.activeNpcDetails = details;
+      }
+    } catch { /* non-blocking — entity descriptions are optional context */ }
+  }
 
   const lore = userId
     ? await getWikiContext(userId, universeId, scene)

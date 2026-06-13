@@ -23,6 +23,7 @@ interface SceneState {
   current_goal: string | null;
   emotional_tone: string | null;
   active_npcs: string | null;
+  active_npc_ids: string | null;
   active_threads: string | null;
   scene_summary: string | null;
 }

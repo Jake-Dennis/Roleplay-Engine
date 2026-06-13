@@ -81,7 +81,7 @@ export const PUT = withErrorHandler(async (request: NextRequest) => {
 
   requireJson(request);
   const body = await request.json();
-  const { displayName, aliases } = body;
+  const { displayName, aliases, description } = body;
 
   // ── Update display name ───────────────────────────────────────────────
   if (displayName !== undefined) {
@@ -91,6 +91,19 @@ export const PUT = withErrorHandler(async (request: NextRequest) => {
     db.prepare(
       "UPDATE entity_registry SET display_name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
     ).run(displayName.trim(), id);
+  }
+
+  // ── Update description ────────────────────────────────────────────────
+  if (description !== undefined) {
+    if (typeof description !== "string") {
+      return badRequestError("description must be a string");
+    }
+    const descErr = validateLength(description, 5000, "description");
+    if (descErr) return badRequestError(descErr);
+
+    db.prepare(
+      "UPDATE entity_registry SET description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+    ).run(description.trim(), id);
   }
 
   // ── Add aliases ───────────────────────────────────────────────────────

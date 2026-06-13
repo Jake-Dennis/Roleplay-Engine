@@ -27,7 +27,7 @@ import crypto from "crypto";
 // ===========================================================================
 
 let mockDb: Database;
-let tempDataDir = "";
+const tempDataDir = "";
 
 /** Controls what withAuth() returns — reassign per test. */
 let _mockWithAuthResult: unknown = { auth: { userId: "test-user-id", decoded: { sub: "test-user-id", jti: "mock-jti", exp: 9999999999, iat: 1000000000, username: "testuser", pwd_changed_at: null } } };

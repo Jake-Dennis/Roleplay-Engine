@@ -275,6 +275,7 @@ function setupTestData(): void {
       user_id TEXT NOT NULL,
       role TEXT DEFAULT 'player',
       character_name TEXT,
+      entity_id TEXT REFERENCES entity_registry(id),
       joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (session_id, user_id)
     );
@@ -286,7 +287,9 @@ function setupTestData(): void {
       content TEXT NOT NULL,
       is_deleted INTEGER DEFAULT 0,
       parent_message_id TEXT,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      persona_id TEXT,
+      speaking_as TEXT
     );
 
     CREATE TABLE scene_states (

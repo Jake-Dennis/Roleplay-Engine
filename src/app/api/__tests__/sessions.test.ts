@@ -193,6 +193,7 @@ function createSessionsDb(): Database {
       user_id TEXT NOT NULL REFERENCES users(id),
       role TEXT DEFAULT 'player',
       character_name TEXT,
+      entity_id TEXT REFERENCES entity_registry(id),
       joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (session_id, user_id)
     );
@@ -204,6 +205,7 @@ function createSessionsDb(): Database {
       current_goal TEXT,
       emotional_tone TEXT,
       active_npcs TEXT,
+      active_npc_ids TEXT,
       active_threads TEXT,
       scene_summary TEXT,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -216,7 +218,9 @@ function createSessionsDb(): Database {
       content TEXT NOT NULL,
       is_deleted INTEGER DEFAULT 0,
       parent_message_id TEXT,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      persona_id TEXT,
+      speaking_as TEXT
     );
 
     CREATE TABLE session_config (

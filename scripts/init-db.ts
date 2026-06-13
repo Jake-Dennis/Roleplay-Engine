@@ -58,6 +58,7 @@ function main() {
       user_id TEXT REFERENCES users(id),
       role TEXT DEFAULT 'participant',
       character_name TEXT,
+      entity_id TEXT REFERENCES entity_registry(id),
       private_state TEXT,
       joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (session_id, user_id)
@@ -70,6 +71,30 @@ function main() {
       value TEXT,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (session_id, key)
+    );
+
+    -- Personas
+    CREATE TABLE IF NOT EXISTS personas (
+      id TEXT PRIMARY KEY,
+      entity_id TEXT REFERENCES entity_registry(id),
+      user_id TEXT NOT NULL REFERENCES users(id),
+      name TEXT NOT NULL,
+      description TEXT,
+      personality TEXT,
+      writing_style TEXT,
+      scenario TEXT,
+      first_mes TEXT,
+      mes_example TEXT,
+      creator_notes TEXT,
+      system_prompt TEXT,
+      post_history_instructions TEXT,
+      tags TEXT,
+      tts_voice TEXT,
+      avatar_url TEXT,
+      llm_model TEXT,
+      is_active INTEGER DEFAULT 0,
+      universe_id TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
     -- Universes
@@ -140,6 +165,7 @@ function main() {
       emotional_tone TEXT,
       current_intent TEXT,
       active_npcs TEXT,
+      active_npc_ids TEXT,
       active_threads TEXT,
       scene_summary TEXT,
       scene_type TEXT,
@@ -202,11 +228,12 @@ function main() {
       UNIQUE(user_id, entity_name, source_table, source_id)
     );
 
-    -- Entity registry — universal ID tracking for personas, NPCs, users, locations, events
+    -- Entity registry — universal ID tracking for personas, NPCs, users, locations, events, factions
     CREATE TABLE IF NOT EXISTS entity_registry (
       id TEXT PRIMARY KEY,
-      entity_type TEXT NOT NULL CHECK(entity_type IN ('persona', 'npc', 'user', 'location', 'event')),
+      entity_type TEXT NOT NULL CHECK(entity_type IN ('persona', 'npc', 'user', 'location', 'event', 'faction')),
       display_name TEXT NOT NULL,
+      description TEXT,
       user_id TEXT NOT NULL REFERENCES users(id),
       universe_id TEXT REFERENCES universes(id),
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -245,6 +272,7 @@ function main() {
     -- NPCs
     CREATE TABLE IF NOT EXISTS npcs (
       id TEXT PRIMARY KEY,
+      entity_id TEXT REFERENCES entity_registry(id),
       user_id TEXT NOT NULL REFERENCES users(id),
       universe_id TEXT REFERENCES universes(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
@@ -354,6 +382,7 @@ function main() {
       name TEXT,
       summary TEXT,
       key_entities TEXT,
+      entity_ids TEXT,
       unresolved_items TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME,

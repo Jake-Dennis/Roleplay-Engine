@@ -56,6 +56,7 @@ export function createTestDb(): Database.Database {
 
     CREATE TABLE IF NOT EXISTS npcs (
       id TEXT PRIMARY KEY,
+      entity_id TEXT REFERENCES entity_registry(id),
       user_id TEXT NOT NULL REFERENCES users(id),
       universe_id TEXT REFERENCES universes(id),
       name TEXT NOT NULL,
@@ -68,6 +69,7 @@ export function createTestDb(): Database.Database {
 
     CREATE TABLE IF NOT EXISTS personas (
       id TEXT PRIMARY KEY,
+      entity_id TEXT REFERENCES entity_registry(id),
       user_id TEXT NOT NULL REFERENCES users(id),
       name TEXT NOT NULL,
       description TEXT,
@@ -127,6 +129,7 @@ export function createTestDb(): Database.Database {
       status TEXT DEFAULT 'active',
       summary TEXT,
       key_entities TEXT,
+      entity_ids TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -161,9 +164,25 @@ export function createTestDb(): Database.Database {
       result TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS session_participants (
+      session_id TEXT REFERENCES sessions(id),
+      user_id TEXT REFERENCES users(id),
+      role TEXT DEFAULT 'participant',
+      character_name TEXT,
+      entity_id TEXT REFERENCES entity_registry(id),
+      private_state TEXT,
+      joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (session_id, user_id)
+    );
+
     CREATE TABLE IF NOT EXISTS scene_states (
       id TEXT PRIMARY KEY,
-      session_id TEXT NOT NULL REFERENCES sessions(id)
+      session_id TEXT NOT NULL REFERENCES sessions(id),
+      active_npcs TEXT,
+      active_npc_ids TEXT,
+      active_threads TEXT,
+      scene_summary TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS timeline_entries (

@@ -247,7 +247,9 @@ function setupSchema(db: ReturnType<typeof createBunCompatDb>): void {
       sender_id TEXT,
       content TEXT NOT NULL,
       is_deleted INTEGER DEFAULT 0,
-      timestamp TEXT DEFAULT (datetime('now'))
+      timestamp TEXT DEFAULT (datetime('now')),
+      persona_id TEXT,
+      speaking_as TEXT
     );
 
     CREATE TABLE IF NOT EXISTS scene_states (
@@ -258,6 +260,7 @@ function setupSchema(db: ReturnType<typeof createBunCompatDb>): void {
       emotional_tone TEXT,
       current_intent TEXT,
       active_npcs TEXT,
+      active_npc_ids TEXT,
       active_threads TEXT,
       scene_type TEXT,
       scene_tension REAL,

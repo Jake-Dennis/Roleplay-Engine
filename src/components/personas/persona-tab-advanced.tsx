@@ -1,4 +1,4 @@
-import { Volume2 } from "lucide-react";
+import { UserCheck, Volume2 } from "lucide-react";
 
 interface Voice {
   id: string;
@@ -14,6 +14,11 @@ interface PersonaTabAdvancedProps {
   formVoice: string;
   voices: Voice[];
   onChange: (field: string, value: string) => void;
+  entityId: string | null;
+  aliases: string[];
+  newAlias: string;
+  onNewAliasChange: (v: string) => void;
+  onAddAlias: () => void;
 }
 
 export function PersonaTabAdvanced({
@@ -23,9 +28,48 @@ export function PersonaTabAdvanced({
   formVoice,
   voices,
   onChange,
+  entityId,
+  aliases,
+  newAlias,
+  onNewAliasChange,
+  onAddAlias,
 }: PersonaTabAdvancedProps) {
   return (
     <div className="space-y-4">
+      {entityId && (
+        <div className="rounded-lg border border-border-default bg-bg-raised p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <UserCheck className="h-3.5 w-3.5 text-text-muted" />
+              <label className="text-xs text-text-secondary">Entity Registry</label>
+            </div>
+            <span className="text-xxs text-text-muted font-mono">{entityId}</span>
+          </div>
+          {aliases.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {aliases.map(a => (
+                <span key={a} className="rounded bg-bg-raised px-1.5 py-0.5 text-xxs text-text-muted border border-border-default">{a}</span>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-1">
+            <input
+              type="text"
+              value={newAlias}
+              onChange={(e) => onNewAliasChange(e.target.value)}
+              placeholder="Add alias..."
+              className="flex-1 rounded border border-border-default bg-bg-raised px-2 py-1 text-xxs text-text-primary placeholder:text-text-muted"
+            />
+            <button
+              onClick={onAddAlias}
+              disabled={!newAlias.trim()}
+              className="rounded bg-accent px-2 py-1 text-xxs text-white disabled:opacity-50"
+            >
+              Add
+            </button>
+          </div>
+        </div>
+      )}
       <div>
         <label className="mb-1 block text-xs text-text-secondary">System Prompt Override</label>
         <p className="text-[10px] text-text-muted mb-1">Custom system prompt for this character. Overrides the default.</p>

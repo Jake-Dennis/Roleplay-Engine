@@ -7,6 +7,7 @@ import { logger } from "@/lib/logger";
 
 interface Npc {
   id: string;
+  entityId?: string | null;
   name: string;
   description: string | null;
   personalityTraits: string | null;
@@ -40,6 +41,9 @@ export default function NpcsPage() {
   const [formVoiceId, setFormVoiceId] = useState("");
   const [formIsCanon, setFormIsCanon] = useState(false);
   const [formUniverseId, setFormUniverseId] = useState("");
+  const [entityId, setEntityId] = useState<string | null>(null);
+  const [aliases, setAliases] = useState<string[]>([]);
+  const [newAlias, setNewAlias] = useState("");
 
   const loadNpcs = useCallback(async () => {
     try {
@@ -75,6 +79,9 @@ export default function NpcsPage() {
     setFormVoiceId("");
     setFormIsCanon(false);
     setFormUniverseId(universeFilter || "");
+    setEntityId(null);
+    setAliases([]);
+    setNewAlias("");
     setCreating(true);
     setSelectedId(null);
   }
@@ -89,11 +96,28 @@ export default function NpcsPage() {
     setFormVoiceId(npc.voiceId || "");
     setFormIsCanon(npc.isCanon === 1);
     setFormUniverseId(npc.universeId || "");
+
+    // Load entity registry info
+    setEntityId(null);
+    setAliases([]);
+    setNewAlias("");
+    fetch(`/api/entities?ids=npc:${npc.id}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.entities?.[0]) {
+          setEntityId(d.entities[0].id);
+          setAliases(d.entities[0].aliases || []);
+        }
+      })
+      .catch(() => {});
   }
 
   function cancelEdit() {
     setCreating(false);
     setSelectedId(null);
+    setEntityId(null);
+    setAliases([]);
+    setNewAlias("");
   }
 
   async function handleSave() {
@@ -144,6 +168,17 @@ export default function NpcsPage() {
     if (selectedId === id) setSelectedId(null);
   }
 
+  async function handleAddAlias() {
+    if (!entityId || !newAlias.trim()) return;
+    await fetch(`/api/entities/${entityId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ aliases: [newAlias.trim()] }),
+    });
+    setAliases(prev => [...prev, newAlias.trim()]);
+    setNewAlias("");
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20 text-text-muted">
@@ -178,6 +213,11 @@ export default function NpcsPage() {
         formUniverseId={formUniverseId}
         universes={universes}
         saving={saving}
+        entityId={entityId}
+        aliases={aliases}
+        newAlias={newAlias}
+        onNewAliasChange={setNewAlias}
+        onAddAlias={handleAddAlias}
         onNameChange={setFormName}
         onDescriptionChange={setFormDescription}
         onPersonalityTraitsChange={setFormPersonalityTraits}

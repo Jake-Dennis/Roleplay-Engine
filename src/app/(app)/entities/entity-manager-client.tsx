@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   User,
   Ghost,
   MapPin,
   Calendar,
+  Flag,
   Plus,
   Link2,
   Copy,
@@ -16,6 +18,9 @@ import {
   Sparkles,
   AlertTriangle,
   Loader2,
+  Pencil,
+  FileText,
+  ExternalLink,
 } from "lucide-react";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
@@ -27,6 +32,7 @@ interface Entity {
   id: string;
   entityType: string;
   displayName: string;
+  description: string | null;
   aliases: string[];
   userId: string;
   universeId: string | null;
@@ -43,11 +49,12 @@ const TYPE_META: Record<string, { icon: typeof User; color: string; bgColor: str
   npc: { icon: Ghost, color: "text-purple-400", bgColor: "bg-purple-500/10", label: "NPC" },
   location: { icon: MapPin, color: "text-green-400", bgColor: "bg-green-500/10", label: "Location" },
   event: { icon: Calendar, color: "text-amber-400", bgColor: "bg-amber-500/10", label: "Event" },
+  faction: { icon: Flag, color: "text-rose-400", bgColor: "bg-rose-500/10", label: "Faction" },
 };
 
-const TYPE_ORDER = ["persona", "npc", "location", "event"] as const;
+const TYPE_ORDER = ["persona", "npc", "location", "event", "faction"] as const;
 
-type FilterType = "all" | "persona" | "npc" | "location" | "event";
+type FilterType = "all" | "persona" | "npc" | "location" | "event" | "faction";
 
 const FILTER_TABS: { key: FilterType; label: string }[] = [
   { key: "all", label: "All" },
@@ -55,6 +62,7 @@ const FILTER_TABS: { key: FilterType; label: string }[] = [
   { key: "npc", label: "NPCs" },
   { key: "location", label: "Locations" },
   { key: "event", label: "Events" },
+  { key: "faction", label: "Factions" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -75,6 +83,7 @@ function truncateId(id: string): string {
 // ---------------------------------------------------------------------------
 
 export function EntityManagerClient() {
+  const router = useRouter();
   const [entities, setEntities] = useState<Entity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -101,6 +110,16 @@ export function EntityManagerClient() {
   // Delete
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Description editing
+  const [editingDescFor, setEditingDescFor] = useState<string | null>(null);
+  const [descriptionText, setDescriptionText] = useState("");
+  const [savingDescription, setSavingDescription] = useState(false);
+
+  // Wiki page tracking
+  const [wikiEntityMap, setWikiEntityMap] = useState<Record<string, string>>({});
+  const [creatingWiki, setCreatingWiki] = useState<string | null>(null);
+  const [wikiError, setWikiError] = useState<string | null>(null);
 
   // -----------------------------------------------------------------------
   // Data fetching
@@ -131,6 +150,118 @@ export function EntityManagerClient() {
   useEffect(() => {
     queueMicrotask(() => loadEntities());
   }, [loadEntities]);
+
+  // -----------------------------------------------------------------------
+  // Wiki page existence check
+  // -----------------------------------------------------------------------
+
+  const loadWikiEntityMap = useCallback(async () => {
+    try {
+      const res = await fetch("/api/wiki");
+      if (!res.ok) return;
+      const json = await res.json();
+      const pages = json.pages || [];
+      const map: Record<string, string> = {};
+      for (const page of pages) {
+        if (page.frontmatter?.entity_id) {
+          map[page.frontmatter.entity_id] = page.path.replace(/\.md$/, "");
+        }
+      }
+      setWikiEntityMap(map);
+    } catch {
+      // Non-critical — wiki check is a best-effort enhancement
+    }
+  }, []);
+
+  useEffect(() => {
+    queueMicrotask(() => loadWikiEntityMap());
+  }, [loadWikiEntityMap]);
+
+  // -----------------------------------------------------------------------
+  // Description save
+  // -----------------------------------------------------------------------
+
+  async function handleSaveDescription(entityId: string) {
+    if (!descriptionText.trim()) return;
+    setSavingDescription(true);
+    try {
+      const res = await fetch(`/api/entities/${entityId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: descriptionText.trim() }),
+      });
+
+      if (res.ok) {
+        setEntities((prev) =>
+          prev.map((e) =>
+            e.id === entityId ? { ...e, description: descriptionText.trim() } : e
+          )
+        );
+        setEditingDescFor(null);
+        setDescriptionText("");
+      } else {
+        const json = await res.json();
+        setError(json.error || "Failed to save description");
+      }
+    } catch {
+      setError("Failed to save description");
+    } finally {
+      setSavingDescription(false);
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // Wiki page creation
+  // -----------------------------------------------------------------------
+
+  async function handleCreateWiki(entity: Entity) {
+    setCreatingWiki(entity.id);
+    setWikiError(null);
+    try {
+      const slug = entity.displayName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      const pagePath = `entities/${slug}.md`;
+
+      const content = entity.description
+        ? `# ${entity.displayName}\n\n${entity.description}\n`
+        : `# ${entity.displayName}\n`;
+
+      const frontmatter = {
+        title: entity.displayName,
+        type: "entity",
+        status: "draft",
+        entity_id: entity.id,
+        tags: [entity.entityType],
+        created: new Date().toISOString(),
+      };
+
+      const res = await fetch("/api/wiki", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          path: pagePath,
+          content,
+          frontmatter,
+        }),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        const wikiPath = json.path.replace(/\.md$/, "");
+        setWikiEntityMap((prev) => ({ ...prev, [entity.id]: wikiPath }));
+        router.push(`/wiki/${wikiPath}`);
+      } else {
+        const json = await res.json();
+        setWikiError(json.error || "Failed to create wiki page");
+      }
+    } catch {
+      setWikiError("Failed to create wiki page");
+    } finally {
+      setCreatingWiki(null);
+    }
+  }
 
   // -----------------------------------------------------------------------
   // Filtered entities
@@ -379,6 +510,83 @@ export function EntityManagerClient() {
             <span className="text-xxs text-text-muted font-mono">{truncateId(entity.id)}</span>
           </div>
 
+          {/* Description */}
+          {editingDescFor === entity.id ? (
+            <div className="mt-2 space-y-1.5">
+              <textarea
+                value={descriptionText}
+                onChange={(e) => setDescriptionText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape" && !e.shiftKey) {
+                    setEditingDescFor(null);
+                    setDescriptionText("");
+                  }
+                  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                    handleSaveDescription(entity.id);
+                  }
+                }}
+                placeholder="Add a description..."
+                rows={3}
+                className="w-full rounded-lg border border-border-default bg-bg-raised px-2.5 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none resize-none focus:border-accent"
+                autoFocus
+                disabled={savingDescription}
+              />
+              <div className="flex items-center gap-1.5 justify-end">
+                <button
+                  onClick={() => { setEditingDescFor(null); setDescriptionText(""); }}
+                  className="rounded px-2 py-1 text-xxs text-text-muted hover:text-text-primary transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleSaveDescription(entity.id)}
+                  disabled={savingDescription || !descriptionText.trim()}
+                  className="flex items-center gap-1 rounded-lg bg-accent px-2 py-1 text-xxs font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+                >
+                  {savingDescription ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Check className="h-3 w-3" />
+                  )}
+                  Save
+                </button>
+              </div>
+            </div>
+          ) : entity.description ? (
+            <div className="mt-2 group/desc relative">
+              <p className="text-xxs text-text-secondary leading-relaxed line-clamp-3">
+                {entity.description}
+              </p>
+              {!mergeMode && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDescriptionText(entity.description || "");
+                    setEditingDescFor(entity.id);
+                  }}
+                  className="absolute -right-1 -top-1 rounded p-1 text-text-muted opacity-0 group-hover/desc:opacity-100 hover:text-text-accent transition-all"
+                  title="Edit description"
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          ) : (
+            !mergeMode && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDescriptionText("");
+                  setEditingDescFor(entity.id);
+                }}
+                className="mt-2 flex items-center gap-1 text-xxs text-text-muted hover:text-text-accent transition-colors"
+              >
+                <Pencil className="h-3 w-3" />
+                Add description
+              </button>
+            )
+          )}
+
           {/* Aliases */}
           {entity.aliases.length > 0 && (
             <div className="mt-2 flex flex-wrap items-center gap-1">
@@ -390,6 +598,39 @@ export function EntityManagerClient() {
                   {alias}
                 </span>
               ))}
+            </div>
+          )}
+
+          {/* Wiki page indicator */}
+          {!mergeMode && !isAdding && (
+            <div className="mt-2">
+              {wikiEntityMap[entity.id] ? (
+                <a
+                  href={`/wiki/${wikiEntityMap[entity.id]}`}
+                  onClick={(e) => { e.stopPropagation(); }}
+                  className="inline-flex items-center gap-1 text-xxs text-text-accent hover:text-accent transition-colors"
+                >
+                  <FileText className="h-3 w-3" />
+                  View Wiki Page
+                  <ExternalLink className="h-2.5 w-2.5" />
+                </a>
+              ) : (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCreateWiki(entity);
+                  }}
+                  disabled={creatingWiki === entity.id}
+                  className="inline-flex items-center gap-1 text-xxs text-text-muted hover:text-text-accent transition-colors disabled:opacity-50"
+                >
+                  {creatingWiki === entity.id ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <FileText className="h-3 w-3" />
+                  )}
+                  {creatingWiki === entity.id ? "Creating..." : "Create Wiki Page"}
+                </button>
+              )}
             </div>
           )}
 
@@ -472,9 +713,9 @@ export function EntityManagerClient() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-base font-semibold text-text-primary">Entity Registry</h1>
-          <p className="mt-1 text-xs text-text-muted">
-            Manage all registered entities — personas, NPCs, locations, and events
-          </p>
+            <p className="mt-1 text-xs text-text-muted">
+              Manage all registered entities — personas, NPCs, locations, events, and factions
+            </p>
         </div>
 
         {mergeMode && (
@@ -495,6 +736,17 @@ export function EntityManagerClient() {
           <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
           <span className="flex-1">{error}</span>
           <button onClick={() => setError(null)} className="rounded p-0.5 hover:bg-error/10">
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+
+      {/* Wiki error banner */}
+      {wikiError && (
+        <div className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
+          <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className="flex-1">{wikiError}</span>
+          <button onClick={() => setWikiError(null)} className="rounded p-0.5 hover:bg-warning/10">
             <X className="h-3 w-3" />
           </button>
         </div>

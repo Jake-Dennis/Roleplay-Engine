@@ -158,6 +158,13 @@ export function assemblePrompt(
     if (ctx.scene.activeNpcs.length > 0)
       sceneParts.push(`Present: ${ctx.scene.activeNpcs.join(", ")}`);
 
+    // Entity descriptions from registry (enriched in retrieval pipeline)
+    if (ctx.scene.activeNpcDetails && ctx.scene.activeNpcDetails.length > 0) {
+      for (const npc of ctx.scene.activeNpcDetails) {
+        sceneParts.push(`${npc.name}: ${npc.description}`);
+      }
+    }
+
     // Scene-level narrative fields (Task 35)
     if (ctx.scene.sceneType) sceneParts.push(`Scene Type: ${ctx.scene.sceneType}`);
     if (ctx.scene.sceneTension != null) sceneParts.push(`Tension: ${ctx.scene.sceneTension}/1.0`);

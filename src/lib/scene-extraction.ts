@@ -1,8 +1,26 @@
+import crypto from "crypto";
 import { generateText, getActiveJobModel } from "@/lib/ollama";
 import { getDb } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { CONTENT_LIMITS } from "@/lib/config";
 import { safeParseWarn } from "@/lib/safe-json";
+
+/**
+ * Resolve a list of NPC name strings to entity_registry IDs.
+ * Falls back to the name itself if no matching entity is found.
+ */
+function resolveNpcNamesToIds(db: ReturnType<typeof getDb>, userId: string, names: string[]): string[] {
+  const ids: string[] = [];
+  for (const name of names) {
+    const trimmed = name.trim();
+    if (!trimmed) continue;
+    const found = db.prepare(
+      "SELECT id FROM entity_registry WHERE display_name = ? AND user_id = ? AND entity_type = 'npc' LIMIT 1"
+    ).get(trimmed, userId) as { id: string } | undefined;
+    ids.push(found?.id || trimmed);
+  }
+  return ids;
+}
 
 // ---------------------------------------------------------------------------
 // Decision Point Detection (Task 34)
@@ -317,6 +335,10 @@ Return ONLY valid JSON, no markdown, no explanation.`;
       "SELECT id FROM scene_states WHERE session_id = ?"
     ).get(sessionId);
 
+    // Resolve NPC names to entity IDs
+    const npcNames = extracted.active_npcs || [];
+    const npcIds = resolveNpcNamesToIds(db, userId, npcNames);
+
     if (existing) {
       db.prepare(
         `UPDATE scene_states
@@ -324,6 +346,7 @@ Return ONLY valid JSON, no markdown, no explanation.`;
              current_goal = ?,
              emotional_tone = ?,
              active_npcs = ?,
+             active_npc_ids = ?,
              active_threads = ?,
              scene_summary = ?,
              scene_type = ?,
@@ -336,7 +359,8 @@ Return ONLY valid JSON, no markdown, no explanation.`;
         extracted.location || null,
         extracted.goal || null,
         extracted.emotional_tone || null,
-        JSON.stringify(extracted.active_npcs || []),
+        JSON.stringify(npcNames),
+        JSON.stringify(npcIds),
         JSON.stringify(extracted.active_threads || []),
         extracted.scene_summary || null,
         extracted.scene_type || null,
@@ -347,15 +371,16 @@ Return ONLY valid JSON, no markdown, no explanation.`;
       );
     } else {
       db.prepare(
-        `INSERT INTO scene_states (id, session_id, active_location_id, current_goal, emotional_tone, active_npcs, active_threads, scene_summary, scene_type, scene_tension, conflict_type, stakes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO scene_states (id, session_id, active_location_id, current_goal, emotional_tone, active_npcs, active_npc_ids, active_threads, scene_summary, scene_type, scene_tension, conflict_type, stakes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         crypto.randomUUID(),
         sessionId,
         extracted.location || null,
         extracted.goal || null,
         extracted.emotional_tone || null,
-        JSON.stringify(extracted.active_npcs || []),
+        JSON.stringify(npcNames),
+        JSON.stringify(npcIds),
         JSON.stringify(extracted.active_threads || []),
         extracted.scene_summary || null,
         extracted.scene_type || null,

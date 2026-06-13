@@ -17,6 +17,23 @@ import { markJobCompleted } from "./queue";
 import type { JobPayload, JobResult } from "./types";
 
 /**
+ * Resolve entity names to entity_registry IDs.
+ * Tries exact display_name match first, falls back to the name itself.
+ */
+function resolveEntityNamesToIds(db: ReturnType<typeof getDb>, userId: string, names: string[]): string[] {
+  const ids: string[] = [];
+  for (const name of names) {
+    const trimmed = typeof name === 'string' ? name.trim() : '';
+    if (!trimmed) continue;
+    const found = db.prepare(
+      "SELECT id FROM entity_registry WHERE display_name = ? AND user_id = ? LIMIT 1"
+    ).get(trimmed, userId) as { id: string } | undefined;
+    ids.push(found?.id || trimmed);
+  }
+  return ids;
+}
+
+/**
  * Handle thread analysis — examines session messages to identify
  * narrative threads and persists them to the database.
  */
@@ -57,7 +74,7 @@ export async function handleThreadAnalysis(jobId: string, payload: JobPayload): 
 
   let threadsFound = 0;
   try {
-    const response = await generateText(prompt, { temperature: 0.3, num_predict: 1024, userId: userId as string, model: getActiveJobModel(userId as string) });
+    const response = await generateText(prompt, { temperature: 0.3, userId: userId as string, model: getActiveJobModel(userId as string) });
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = safeParseWarn<Record<string, unknown>>(jsonMatch[0], "LLM thread analysis");
@@ -86,20 +103,24 @@ export async function handleThreadAnalysis(jobId: string, payload: JobPayload): 
 
             // Update existing thread record
             const newEntities = Array.isArray(thread.keyEntities) ? thread.keyEntities : [];
+            const newEntityIds = resolveEntityNamesToIds(db, userId as string, newEntities);
             db.prepare(`
-              UPDATE narrative_threads SET status = ?, summary = ?, key_entities = ? WHERE id = ?
+              UPDATE narrative_threads SET status = ?, summary = ?, key_entities = ?, entity_ids = ? WHERE id = ?
             `).run(
               threadStatus,
               typeof thread.summary === 'string' ? thread.summary : "",
               JSON.stringify(newEntities),
+              JSON.stringify(newEntityIds),
               existing.id
             );
           } else {
             // New thread — insert
             const threadId = crypto.randomUUID();
+            const newEntities = Array.isArray(thread.keyEntities) ? thread.keyEntities : [];
+            const newEntityIds = resolveEntityNamesToIds(db, userId as string, newEntities);
             db.prepare(`
-              INSERT INTO narrative_threads (id, user_id, session_id, name, status, summary, key_entities)
-              VALUES (?, ?, ?, ?, ?, ?, ?)
+              INSERT INTO narrative_threads (id, user_id, session_id, name, status, summary, key_entities, entity_ids)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             `).run(
               threadId,
               userId,
@@ -107,7 +128,8 @@ export async function handleThreadAnalysis(jobId: string, payload: JobPayload): 
               threadName,
               threadStatus,
               typeof thread.summary === 'string' ? thread.summary : "",
-              JSON.stringify(Array.isArray(thread.keyEntities) ? thread.keyEntities : [])
+              JSON.stringify(newEntities),
+              JSON.stringify(newEntityIds)
             );
           }
           threadsFound++;

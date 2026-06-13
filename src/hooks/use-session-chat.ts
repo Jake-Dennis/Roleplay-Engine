@@ -764,6 +764,7 @@ export function useSessionChat(
     activeThreads: string[] | null;
     sceneSummary: string | null;
   }) => {
+    // The server will resolve activeNpcIds from activeNpcs if not provided
     await fetch(`/api/sessions/${sessionId}/scene`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },

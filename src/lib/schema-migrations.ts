@@ -512,8 +512,9 @@ export function runSchemaMigrations(): void {
   try {
     db.exec(`CREATE TABLE IF NOT EXISTS entity_registry (
       id TEXT PRIMARY KEY,
-      entity_type TEXT NOT NULL CHECK(entity_type IN ('persona', 'npc', 'user', 'location', 'event')),
+      entity_type TEXT NOT NULL CHECK(entity_type IN ('persona', 'npc', 'user', 'location', 'event', 'faction')),
       display_name TEXT NOT NULL,
+      description TEXT,
       user_id TEXT NOT NULL REFERENCES users(id),
       universe_id TEXT REFERENCES universes(id),
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -539,4 +540,9 @@ export function runSchemaMigrations(): void {
   ]) {
     try { db.exec(idx); } catch { /* already exists */ }
   }
+
+  // Migration: Add description column to entity_registry
+  try {
+    db.exec("ALTER TABLE entity_registry ADD COLUMN description TEXT");
+  } catch { /* already exists */ }
 }

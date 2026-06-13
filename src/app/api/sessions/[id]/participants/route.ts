@@ -42,7 +42,7 @@ if (!session) {
 
 // Get all participants + owner
 const participants = db.prepare(`
-  SELECT u.id, u.username, sp.role, sp.character_name, sp.joined_at
+  SELECT u.id, u.username, sp.role, sp.character_name, sp.entity_id, sp.joined_at
   FROM session_participants sp
   JOIN users u ON sp.user_id = u.id
   WHERE sp.session_id = ?

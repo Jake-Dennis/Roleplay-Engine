@@ -17,6 +17,7 @@ export interface EntityRow {
   id: string;
   entity_type: string;
   display_name: string;
+  description: string | null;
   user_id: string;
   universe_id: string | null;
   created_at: string;
@@ -27,6 +28,7 @@ export interface Entity {
   id: string;
   entityType: string;
   displayName: string;
+  description: string | null;
   userId: string;
   universeId: string | null;
   aliases: string[];
@@ -45,7 +47,7 @@ export interface EntityFilters {
 // Constants
 // ---------------------------------------------------------------------------
 
-export const VALID_ENTITY_TYPES = ["persona", "npc", "user", "location", "event"] as const;
+export const VALID_ENTITY_TYPES = ["persona", "npc", "user", "location", "event", "faction"] as const;
 
 export type EntityType = (typeof VALID_ENTITY_TYPES)[number];
 
@@ -97,6 +99,7 @@ function rowToEntity(db: Database, row: EntityRow): Entity {
     id: row.id,
     entityType: row.entity_type,
     displayName: row.display_name,
+    description: row.description ?? null,
     userId: row.user_id,
     universeId: row.universe_id ?? null,
     aliases: getAliasesForEntity(db, row.id),

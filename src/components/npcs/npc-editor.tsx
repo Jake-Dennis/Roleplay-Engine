@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, Save, Trash2, X, Shield, Sparkles } from "lucide-react";
+import { UserCheck, Users, Save, Trash2, X, Shield, Sparkles } from "lucide-react";
 
 interface Universe {
   id: string;
@@ -30,6 +30,11 @@ interface NpcEditorProps {
   onSave: () => void;
   onDelete: (id: string) => void;
   onCancel: () => void;
+  entityId: string | null;
+  aliases: string[];
+  newAlias: string;
+  onNewAliasChange: (v: string) => void;
+  onAddAlias: () => void;
 }
 
 export function NpcEditor({
@@ -54,6 +59,11 @@ export function NpcEditor({
   onSave,
   onDelete,
   onCancel,
+  entityId,
+  aliases,
+  newAlias,
+  onNewAliasChange,
+  onAddAlias,
 }: NpcEditorProps) {
   const [userId, setUserId] = useState<string | null>(null);
   const [showEvolutionQueued, setShowEvolutionQueued] = useState(false);
@@ -173,6 +183,42 @@ export function NpcEditor({
             className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:border-accent"
           />
         </div>
+
+        {/* Entity Registry */}
+        {entityId && (
+          <div className="rounded-lg border border-border-default bg-bg-raised p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <UserCheck className="h-3.5 w-3.5 text-text-muted" />
+                <label className="text-xs text-text-secondary">Entity Registry</label>
+              </div>
+              <span className="text-xxs text-text-muted font-mono">{entityId}</span>
+            </div>
+            {aliases.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {aliases.map(a => (
+                  <span key={a} className="rounded bg-bg-raised px-1.5 py-0.5 text-xxs text-text-muted border border-border-default">{a}</span>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-1">
+              <input
+                type="text"
+                value={newAlias}
+                onChange={(e) => onNewAliasChange(e.target.value)}
+                placeholder="Add alias..."
+                className="flex-1 rounded border border-border-default bg-bg-raised px-2 py-1 text-xxs text-text-primary placeholder:text-text-muted"
+              />
+              <button
+                onClick={onAddAlias}
+                disabled={!newAlias.trim()}
+                className="rounded bg-accent px-2 py-1 text-xxs text-white disabled:opacity-50"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Universe selector */}
         <div>

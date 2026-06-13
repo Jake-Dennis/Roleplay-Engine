@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
@@ -5,12 +6,42 @@ import type { DbDatabase } from "@/lib/types";
 import { withAuth } from '@/lib/with-auth';
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
 
-// Ensure character_name column exists
+// Ensure character_name and entity_id columns exist
 function ensureColumn(db: DbDatabase) {
   try {
     db.exec("ALTER TABLE session_participants ADD COLUMN character_name TEXT");
   } catch {
     // Column already exists
+  }
+  try {
+    db.exec("ALTER TABLE session_participants ADD COLUMN entity_id TEXT REFERENCES entity_registry(id)");
+  } catch {
+    // Column already exists
+  }
+}
+
+/**
+ * Look up an existing entity in entity_registry or create one for the given character name.
+ * Returns the entity ID or null if character_name is empty.
+ */
+function resolveOrCreateEntityId(db: ReturnType<typeof getDb>, userId: string, characterName: string | null): string | null {
+  if (!characterName) return null;
+  
+  // Try to find existing entity
+  const existing = db.prepare(
+    "SELECT id FROM entity_registry WHERE display_name = ? AND user_id = ? AND entity_type = 'npc' LIMIT 1"
+  ).get(characterName, userId) as { id: string } | undefined;
+  if (existing) return existing.id;
+  
+  // Create new entity
+  const id = `npc:${crypto.randomUUID()}`;
+  try {
+    db.prepare(
+      "INSERT INTO entity_registry (id, entity_type, display_name, user_id) VALUES (?, 'npc', ?, ?)"
+    ).run(id, characterName, userId);
+    return id;
+  } catch {
+    return null;
   }
 }
 
@@ -91,10 +122,13 @@ export async function POST(
     }
   }
 
+  // Resolve or create entity_id for the character name
+  const entityId = resolveOrCreateEntityId(db, userId, characterName);
+
   // Add as participant
   db.prepare(
-    "INSERT INTO session_participants (session_id, user_id, role, character_name) VALUES (?, ?, 'participant', ?)"
-  ).run(sessionId, userId, characterName);
+    "INSERT INTO session_participants (session_id, user_id, role, character_name, entity_id) VALUES (?, ?, 'participant', ?, ?)"
+  ).run(sessionId, userId, characterName, entityId);
 
   // Get username for event
   const user = db.prepare("SELECT username FROM users WHERE id = ?").get(userId) as { username: string } | undefined;

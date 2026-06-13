@@ -79,7 +79,7 @@ export async function GET(
 
   // Get participants
   const participants = db.prepare(`
-    SELECT u.id, u.username, sp.role, sp.character_name, sp.joined_at
+    SELECT u.id, u.username, sp.role, sp.character_name, sp.entity_id, sp.joined_at
     FROM session_participants sp
     JOIN users u ON sp.user_id = u.id
     WHERE sp.session_id = ?
@@ -95,6 +95,7 @@ export async function GET(
       ss.current_goal,
       ss.emotional_tone,
       ss.active_npcs,
+      ss.active_npc_ids,
       ss.active_threads,
       ss.scene_summary,
       ss.updated_at as ss_updated_at,
@@ -118,6 +119,7 @@ export async function GET(
         current_goal: (combined as Record<string, unknown>).current_goal,
         emotional_tone: (combined as Record<string, unknown>).emotional_tone,
         active_npcs: (combined as Record<string, unknown>).active_npcs,
+        active_npc_ids: (combined as Record<string, unknown>).active_npc_ids,
         active_threads: (combined as Record<string, unknown>).active_threads,
         scene_summary: (combined as Record<string, unknown>).scene_summary,
         updated_at: (combined as Record<string, unknown>).ss_updated_at,

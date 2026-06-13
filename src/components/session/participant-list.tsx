@@ -29,6 +29,7 @@ interface Participant {
   username: string;
   role: string;
   character_name: string | null;
+  entity_id: string | null;
   joined_at: string;
 }
 
