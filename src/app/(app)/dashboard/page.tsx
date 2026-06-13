@@ -42,13 +42,6 @@ const sectionColors: Record<string, string> = {
   threads: "#eab308",
 };
 
-// Helper to get universe_id from activeSession (API returns camelCase universeId)
-function getUniverseId(session: unknown): string | null {
-  if (!session || typeof session !== 'object') return null;
-  const s = session as Record<string, unknown>;
-  return (s.universe_id as string) ?? (s.universeId as string) ?? null;
-}
-
 function sectionColor(key: string): string {
   return sectionColors[key] || "#6b7280";
 }
@@ -385,25 +378,29 @@ export default function DashboardPage() {
 
     const loadMetrics = async () => {
       try {
-        const [sessionRes, uniRes, metricsRes] = await Promise.all([
-          fetch(`/api/sessions/${activeSession.id}`),
-          fetch(`/api/universes`),
-          fetch(`/api/universe/${getUniverseId(activeSession)}/ai-metrics`),
-        ]);
-
+        // First get session data to get the universe_id (API returns camelCase universeId)
+        const sessionRes = await fetch(`/api/sessions/${activeSession.id}`);
         const sessionData = sessionRes.ok ? await sessionRes.json() : null;
         if (!sessionData?.session) { setLoading(false); return; }
 
+        // Use universe_id from session API response (handles both snake_case and camelCase)
         const universeId = sessionData.session.universe_id || sessionData.session.universeId || '';
         console.log('[dashboard] universeId from session:', universeId);
         console.log('[dashboard] activeSession keys:', Object.keys(activeSession).join(', '));
         console.log('[dashboard] activeSession universe:', (activeSession as any).universe_id, (activeSession as any).universeId);
 
+        // Now fetch universe-level metrics + universe names in parallel
+        const [uniRes, metricsRes] = await Promise.all([
+          fetch(`/api/universes`),
+          universeId ? fetch(`/api/universe/${universeId}/ai-metrics`) : Promise.resolve(null),
+        ]);
+
         const uniData = uniRes.ok ? await uniRes.json() : { universes: [] };
         const universe = (uniData.universes || []).find((u: any) => u.id === universeId);
 
-        const metrics = metricsRes.ok ? await metricsRes.json() : null;
-        console.log('[dashboard] metrics response:', metricsRes.status, metrics ? 'ok' : 'null');
+        const metricsResponse = metricsRes;
+        const metrics = metricsResponse && (metricsResponse as Response).ok ? await (metricsResponse as Response).json() : null;
+        console.log('[dashboard] metrics response:', metrics ? 'ok' : 'null');
 
         if (metrics) {
           // Use full metrics from server-side endpoint
@@ -458,7 +455,8 @@ export default function DashboardPage() {
 
   // Poll every 15s to refresh message count
   useEffect(() => {
-    const uniId = getUniverseId(activeSession);
+    if (!activeSession) return;
+    const uniId = (activeSession as any).universe_id || (activeSession as any).universeId || null;
     if (!uniId) return;
     const interval = setInterval(() => {
       fetch(`/api/universe/${uniId}/ai-metrics`)
