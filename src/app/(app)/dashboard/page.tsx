@@ -27,6 +27,7 @@ interface AIMetricsData {
     totalMessages: number;
     totalSessions: number;
     totalWikiPages: number;
+    totalEmbeddedMessages: number;
     totalNarrativeThreads: number;
     totalRelationships: number;
     totalMemories: number;
@@ -440,6 +441,7 @@ export default function DashboardPage() {
               totalMessages: (sessionData.messages || []).length,
               totalSessions: 1,
               totalWikiPages: 0,
+              totalEmbeddedMessages: 0,
               totalNarrativeThreads: 0,
               totalRelationships: 0,
               totalMemories: 0,
@@ -594,10 +596,10 @@ export default function DashboardPage() {
           {/* Stats grid */}
           <div className="grid grid-cols-3 gap-2">
             <StatCard label="Wiki Pages" value={data?.stats?.totalWikiPages || 0} />
-            <StatCard label="Sessions" value={data?.stats?.totalSessions || 0} />
-            <StatCard label="Threads" value={data?.stats?.totalNarrativeThreads || 0} />
             <StatCard label="Relationships" value={data?.stats?.totalRelationships || 0} />
+            <StatCard label="Threads" value={data?.stats?.totalNarrativeThreads || 0} />
             <StatCard label="Memories" value={data?.stats?.totalMemories || 0} />
+            <StatCard label="Embedded Msgs" value={data?.stats?.totalEmbeddedMessages || 0} />
             <StatCard label="Messages" value={data?.stats?.totalMessages || 0} />
           </div>
         </>

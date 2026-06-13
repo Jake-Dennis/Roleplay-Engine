@@ -92,6 +92,12 @@ export async function GET(
     ).get(universeId, ownerId) as { count: number }
   ).count;
 
+  const totalEmbeddedMessages = (
+    db.prepare(
+      "SELECT COUNT(DISTINCT entity_id) as count FROM embedding_index WHERE universe_id = ? AND user_id = ? AND entity_type = 'message'"
+    ).get(universeId, ownerId) as { count: number }
+  ).count;
+
   // ── Wiki page count (count .md files in data/{ownerId}/wiki/) ────────
 
   let totalWikiPages = 0;
@@ -232,6 +238,7 @@ export async function GET(
       totalMessages,
       totalSessions,
       totalWikiPages,
+      totalEmbeddedMessages,
       totalNarrativeThreads: totalThreads,
       totalRelationships,
       totalMemories,
