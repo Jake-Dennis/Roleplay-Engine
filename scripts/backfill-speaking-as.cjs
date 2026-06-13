@@ -40,6 +40,8 @@ var patterns = [
   " whispered", " called", " shouted", " growled", " spoke",
   " began", " continued", " nodded", " stepped", " turned",
   " smiled", " frowned", " laughed",
+  " gives", " looks", " gestures", " leans", " strokes", " sighs",
+  " shrugs", " chuckles", " grins", " pauses", " glances", " reaches",
 ];
 
 var updateStmt = db.prepare("UPDATE messages SET speaking_as = ? WHERE id = ?");
@@ -50,11 +52,12 @@ for (var m = 0; m < messages.length; m++) {
   var userNpcs = npcByUser[msg.user_id] || [];
   if (userNpcs.length === 0) continue;
 
-  var body = msg.content.toLowerCase();
+  var body = msg.content.toLowerCase().replace(/\[\[|\]\]/g, '');
   var found = [];
 
   for (var n = 0; n < userNpcs.length; n++) {
     var npc = userNpcs[n];
+    // Check if NPC name starts the response (with or without wikilinks)
     if (body.indexOf(npc.lower) === 0) {
       if (found.indexOf(npc.original) === -1) found.push(npc.original);
       continue;
