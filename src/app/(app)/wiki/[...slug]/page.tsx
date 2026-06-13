@@ -1,4 +1,5 @@
 'use client';
+import { BookOpen, Network } from 'lucide-react';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import FileTree, { type FileTreePageItem, type ReorderChange } from '@/components/wiki/file-tree';
@@ -329,6 +330,26 @@ export default function WikiPageView() {
 
         {/* Main content */}
         <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Browse/Graph tabs — persistent on all wiki pages */}
+          <div className="flex items-center gap-2 px-8 py-2 border-b border-border-default bg-bg-base shrink-0">
+            <div className="flex gap-1 rounded-lg bg-bg-raised p-0.5">
+              <button
+                onClick={() => router.push('/wiki')}
+                className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors text-text-muted hover:text-text-primary"
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+                Browse
+              </button>
+              <button
+                onClick={() => router.push('/wiki')}
+                className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors text-text-muted hover:text-text-primary"
+              >
+                <Network className="h-3.5 w-3.5" />
+                Graph
+              </button>
+            </div>
+          </div>
+
           {/* Page header with mode toggle */}
           <div className="flex items-center justify-between px-8 py-3 border-b border-border-default bg-bg-elevated shrink-0">
             <h1 className="text-sm font-medium text-text-primary">
