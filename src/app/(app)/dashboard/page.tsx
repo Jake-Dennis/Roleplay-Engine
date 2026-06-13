@@ -106,8 +106,17 @@ function AIManagementPanel({ sessionId }: { sessionId: string | null }) {
         // 3. Fetch universe-level metrics
         let universeMetrics = null;
         if (universeId) {
-          const metricsRes = await fetch(`/api/universe/${universeId}/ai-metrics`);
-          if (metricsRes.ok) universeMetrics = await metricsRes.json();
+          try {
+            const metricsRes = await fetch(`/api/universe/${universeId}/ai-metrics`);
+            if (metricsRes.ok) {
+              universeMetrics = await metricsRes.json();
+              console.log('[dashboard] Universe metrics loaded:', universeMetrics?.stats?.totalWikiPages, 'wiki pages');
+            } else {
+              console.warn('[dashboard] Universe metrics API returned', metricsRes.status);
+            }
+          } catch (e) {
+            console.warn('[dashboard] Universe metrics fetch failed:', e);
+          }
         }
         
         const totalTokens = universeMetrics?.model?.contextWindow || 131072;
