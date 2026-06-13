@@ -654,55 +654,57 @@ export default function DashboardPage() {
 
     const loadMetrics = async () => {
       try {
-        const sessionRes = await fetch(`/api/sessions/${activeSession.id}`);
-        if (!sessionRes.ok) { setLoading(false); return; }
-        const sessionData = await sessionRes.json();
+        const [sessionRes, uniRes, settingsRes, relRes, threadRes] = await Promise.all([
+          fetch(`/api/sessions/${activeSession.id}`),
+          fetch(`/api/universes`),
+          fetch(`/api/settings`),
+          fetch(`/api/relationships`),
+          fetch(`/api/narrative-threads`),
+        ]);
+
+        const sessionData = sessionRes.ok ? await sessionRes.json() : null;
         if (!sessionData?.session) { setLoading(false); return; }
 
-        const universeId = sessionData.session.universe_id || '';
-
-        const uniRes = await fetch(`/api/universes`);
         const uniData = uniRes.ok ? await uniRes.json() : { universes: [] };
-        const universeName = (uniData.universes || []).find((u: any) => u.id === universeId)?.name || sessionData.session.name || 'Unknown';
+        const settingsData = settingsRes.ok ? await settingsRes.json() : {};
+        const relData = relRes.ok ? await relRes.json() : { relationships: [] };
+        const threadData = threadRes.ok ? await threadRes.json() : { threads: [] };
 
-        let universeMetrics = null;
-        if (universeId) {
-          try {
-            const metricsRes = await fetch(`/api/universe/${universeId}/ai-metrics`);
-            if (metricsRes.ok) universeMetrics = await metricsRes.json();
-          } catch {}
-        }
+        const universeId = sessionData.session.universe_id || '';
+        const universe = (uniData.universes || []).find((u: any) => u.id === universeId);
+        const universeName = universe?.name || sessionData.session.name || 'Unknown';
 
-        const totalTokens = universeMetrics?.model?.contextWindow || 131072;
+        const model = settingsData?.ollama?.model || 'unknown';
+        const contextWindow = settingsData?.modelDefaults?.[model]?.numCtx || 131072;
+        const choicesModel = settingsData?.ollama?.choicesModel || null;
+        const embeddingModel = settingsData?.ollama?.embeddingModel || null;
+
         const msgTokens = (sessionData.messages || []).reduce((s: number, m: any) => s + Math.round((m.content?.length || 0) / 4), 0);
+        const msgCount = (sessionData.messages || []).length;
+        const relCount = (relData.relationships || []).length;
+        const threadCount = (threadData.threads || []).length;
 
         setData({
           universe: { id: universeId, name: universeName },
-          model: {
-            name: universeMetrics?.model?.name || 'unknown',
-            contextWindow: totalTokens,
-            choicesModel: universeMetrics?.model?.choicesModel || null,
-            embeddingModel: universeMetrics?.model?.embeddingModel || null,
-            availableModels: universeMetrics?.model?.availableModels || [],
-          },
-          context: universeMetrics?.context || {
+          model: { name: model, contextWindow, choicesModel, embeddingModel, availableModels: [] },
+          context: {
             totalPrompt: msgTokens + 500,
-            freeTokens: totalTokens - msgTokens - 500,
+            freeTokens: contextWindow - msgTokens - 500,
             sections: {
               overhead: { tokens: 500, label: "System Prompt + Instructions", count: null },
-              messages: { tokens: msgTokens, label: "Session Messages", count: (sessionData.messages || []).length },
+              messages: { tokens: msgTokens, label: "Session Messages", count: msgCount },
               lore: { tokens: 0, label: "Known World / Lore", count: null },
               memories: { tokens: 0, label: "Narrative Memories", count: null },
               relationships: { tokens: 0, label: "Relationships", count: null },
               threads: { tokens: 0, label: "Narrative Threads", count: null },
             },
           },
-          stats: universeMetrics?.stats || {
-            totalMessages: (sessionData.messages || []).length,
+          stats: {
+            totalMessages: msgCount,
             totalSessions: 1,
             totalWikiPages: 0,
-            totalNarrativeThreads: 0,
-            totalRelationships: 0,
+            totalNarrativeThreads: threadCount,
+            totalRelationships: relCount,
             totalMemories: 0,
           },
         });
