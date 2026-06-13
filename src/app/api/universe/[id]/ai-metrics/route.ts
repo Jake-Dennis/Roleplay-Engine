@@ -23,16 +23,24 @@ export async function GET(
   const db = getDb();
   const cfg = getServerConfig();
 
-  // Verify universe access (owner)
+  // Verify universe access (owner or session participant)
   const universe = db.prepare(
     `SELECT u.id, u.user_id, u.name
      FROM universes u
-     WHERE u.id = ? AND u.user_id = ?`
-  ).get(universeId, userId) as { id: string; user_id: string; name: string } | undefined;
+     WHERE u.id = ?
+     AND (u.user_id = ? OR EXISTS (
+       SELECT 1 FROM sessions s
+       JOIN session_participants sp ON sp.session_id = s.id
+       WHERE s.universe_id = u.id AND sp.user_id = ?
+     ))`
+  ).get(universeId, userId, userId) as { id: string; user_id: string; name: string } | undefined;
 
   if (!universe) {
     return NextResponse.json({ error: "Universe not found" }, { status: 404 });
   }
+
+  // Use universe owner for all data queries (participants may not own the data)
+  const ownerId = universe.user_id;
 
   // ── Model info ──────────────────────────────────────────────────────
 
@@ -54,7 +62,7 @@ export async function GET(
   const totalSessions = (
     db.prepare(
       "SELECT COUNT(*) as count FROM sessions WHERE universe_id = ? AND owner_id = ?"
-    ).get(universeId, userId) as { count: number }
+    ).get(universeId, ownerId) as { count: number }
   ).count;
 
   const totalMessages = (
@@ -63,32 +71,32 @@ export async function GET(
        FROM messages m
        JOIN sessions s ON s.id = m.session_id
        WHERE s.universe_id = ? AND s.owner_id = ? AND m.is_deleted = 0`
-    ).get(universeId, userId) as { count: number }
+    ).get(universeId, ownerId) as { count: number }
   ).count;
 
   const totalThreads = (
     db.prepare(
       "SELECT COUNT(*) as count FROM narrative_threads WHERE universe_id = ? AND user_id = ?"
-    ).get(universeId, userId) as { count: number }
+    ).get(universeId, ownerId) as { count: number }
   ).count;
 
   const totalRelationships = (
     db.prepare(
       "SELECT COUNT(*) as count FROM relationships WHERE universe_id = ? AND user_id = ?"
-    ).get(universeId, userId) as { count: number }
+    ).get(universeId, ownerId) as { count: number }
   ).count;
 
   const totalMemories = (
     db.prepare(
       "SELECT COUNT(*) as count FROM narrative_memories WHERE universe_id = ? AND user_id = ?"
-    ).get(universeId, userId) as { count: number }
+    ).get(universeId, ownerId) as { count: number }
   ).count;
 
-  // ── Wiki page count (count .md files in data/{userId}/wiki/) ────────
+  // ── Wiki page count (count .md files in data/{ownerId}/wiki/) ────────
 
   let totalWikiPages = 0;
   try {
-    const wikiRoot = path.join(process.cwd(), "data", userId, "wiki");
+    const wikiRoot = path.join(process.cwd(), "data", ownerId, "wiki");
     if (fs.existsSync(wikiRoot)) {
       const walkDir = (dir: string): void => {
         const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -117,7 +125,7 @@ export async function GET(
      JOIN sessions s ON s.id = m.session_id
      WHERE s.universe_id = ? AND s.owner_id = ? AND m.is_deleted = 0
      ORDER BY m.timestamp DESC`
-  ).all(universeId, userId) as { content: string }[];
+  ).all(universeId, ownerId) as { content: string }[];
 
   let msgTokens = 0;
   for (const msg of recentMessages) {
@@ -128,7 +136,7 @@ export async function GET(
   let loreTokens = 0;
   let loreCount = 0;
   try {
-    const wikiRoot = path.join(process.cwd(), "data", userId, "wiki");
+    const wikiRoot = path.join(process.cwd(), "data", ownerId, "wiki");
     if (fs.existsSync(wikiRoot)) {
       const walkDir = (dir: string): void => {
         const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -158,7 +166,7 @@ export async function GET(
   // Narrative memories (importance-ranked, capped)
   const memories = db.prepare(
     "SELECT content FROM narrative_memories WHERE universe_id = ? AND user_id = ? ORDER BY created_at DESC"
-  ).all(universeId, userId) as { content: string }[];
+  ).all(universeId, ownerId) as { content: string }[];
 
   let memTokens = 0;
   let memCount = 0;
@@ -172,7 +180,7 @@ export async function GET(
   // Relationships
   const rels = db.prepare(
     "SELECT source_entity, target_entity, emotional_state FROM relationships WHERE universe_id = ? AND user_id = ?"
-  ).all(universeId, userId) as { source_entity: string; target_entity: string; emotional_state: string | null }[];
+  ).all(universeId, ownerId) as { source_entity: string; target_entity: string; emotional_state: string | null }[];
 
   let relTokens = 0;
   for (const rel of rels) {
@@ -182,7 +190,7 @@ export async function GET(
   // Narrative threads
   const threads = db.prepare(
     "SELECT title, description FROM narrative_threads WHERE universe_id = ? AND user_id = ?"
-  ).all(universeId, userId) as { title: string; description: string | null }[];
+  ).all(universeId, ownerId) as { title: string; description: string | null }[];
 
   let threadTokens = 0;
   for (const thread of threads) {
