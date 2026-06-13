@@ -1,20 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  Plus,
-  MessageSquare,
-  Globe,
-  Users,
-  Clock,
-  ArrowRight,
-  Sparkles,
-  ChevronDown,
-  BrainCircuit,
-  BookOpen,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Sparkles, BrainCircuit, BookOpen } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
 import RecentChangesWidget from "@/components/wiki/recent-changes-widget";
 
@@ -655,25 +642,24 @@ function ArrowDownIcon({ small }: { small?: boolean }) {
 }
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const { activeGroup, activeSession } = useApp();
+  const { activeSession, activeGroup } = useApp();
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
-  const [showAiManagement, setShowAiManagement] = useState(false);
+  const [aiTab, setAiTab] = useState<"metrics" | "docs">("metrics");
+  const [data, setData] = useState<AIMetricsData | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const url = activeGroup ? `/api/sessions?group_id=${activeGroup.id}` : "/api/sessions?scope=personal";
     fetch(url)
       .then((res) => res.json())
-      .then((data) => {
-        setSessions(data.sessions || []);
-        setLoading(false);
+      .then((d) => {
+        setSessions(d.sessions || []);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {});
   }, [activeGroup]);
 
-  // Default session filter to active session from sidebar, then first session
+  // Default to active session, then first session
   useEffect(() => {
     if (activeSession) {
       setSelectedSessionId(activeSession.id);
@@ -682,163 +668,180 @@ export default function DashboardPage() {
     }
   }, [activeSession, sessions]);
 
-  const recentSessions = sessions.slice(0, 5);
+  // Load metrics for selected session
+  useEffect(() => {
+    if (!selectedSessionId) return;
+    setLoading(true);
+
+    const loadMetrics = async () => {
+      try {
+        const sessionRes = await fetch(`/api/sessions/${selectedSessionId}`);
+        if (!sessionRes.ok) { setLoading(false); return; }
+        const sessionData = await sessionRes.json();
+        if (!sessionData?.session) { setLoading(false); return; }
+
+        const universeId = sessionData.session.universe_id || '';
+
+        const uniRes = await fetch(`/api/universes`);
+        const uniData = uniRes.ok ? await uniRes.json() : { universes: [] };
+        const universeName = (uniData.universes || []).find((u: any) => u.id === universeId)?.name || sessionData.session.name || 'Unknown';
+
+        let universeMetrics = null;
+        if (universeId) {
+          try {
+            const metricsRes = await fetch(`/api/universe/${universeId}/ai-metrics`);
+            if (metricsRes.ok) universeMetrics = await metricsRes.json();
+          } catch {}
+        }
+
+        const totalTokens = universeMetrics?.model?.contextWindow || 131072;
+        const msgTokens = (sessionData.messages || []).reduce((s: number, m: any) => s + Math.round((m.content?.length || 0) / 4), 0);
+
+        setData({
+          universe: { id: universeId, name: universeName },
+          model: {
+            name: universeMetrics?.model?.name || 'unknown',
+            contextWindow: totalTokens,
+            choicesModel: universeMetrics?.model?.choicesModel || null,
+            embeddingModel: universeMetrics?.model?.embeddingModel || null,
+            availableModels: universeMetrics?.model?.availableModels || [],
+          },
+          context: universeMetrics?.context || {
+            totalPrompt: msgTokens + 500,
+            freeTokens: totalTokens - msgTokens - 500,
+            sections: {
+              overhead: { tokens: 500, label: "System Prompt + Instructions", count: null },
+              messages: { tokens: msgTokens, label: "Session Messages", count: (sessionData.messages || []).length },
+              lore: { tokens: 0, label: "Known World / Lore", count: null },
+              memories: { tokens: 0, label: "Narrative Memories", count: null },
+              relationships: { tokens: 0, label: "Relationships", count: null },
+              threads: { tokens: 0, label: "Narrative Threads", count: null },
+            },
+          },
+          stats: universeMetrics?.stats || {
+            totalMessages: (sessionData.messages || []).length,
+            totalSessions: 1,
+            totalWikiPages: 0,
+            totalNarrativeThreads: 0,
+            totalRelationships: 0,
+            totalMemories: 0,
+          },
+        });
+      } catch {}
+      setLoading(false);
+    };
+
+    loadMetrics();
+  }, [selectedSessionId]);
+
+  const data_sections = data?.context?.sections || {};
+  const totalTokens = data?.model?.contextWindow || 131072;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-base font-semibold text-text-primary">Dashboard</h1>
-          <p className="mt-1 text-xs text-text-muted">Overview of your roleplaying worlds</p>
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+            <Sparkles className="h-4 w-4 text-accent" />
+          </div>
+          <div>
+            <h1 className="text-base font-semibold text-text-primary">Dashboard</h1>
+            <p className="text-xs text-text-muted">{data?.universe?.name || 'Loading...'}</p>
+          </div>
         </div>
-        <Link
-          href="/session/new"
-          className="flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          New Session
-        </Link>
-      </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-border-default bg-bg-elevated p-4">
-          <div className="flex items-center gap-2.5 text-text-muted">
-            <MessageSquare className="h-4 w-4" />
-            <span className="text-xs">Sessions</span>
-          </div>
-          <p className="mt-2 text-lg font-semibold text-text-primary">
-            {loading ? "..." : sessions.length}
-          </p>
-        </div>
-        <div className="rounded-xl border border-border-default bg-bg-elevated p-4">
-          <div className="flex items-center gap-2.5 text-text-muted">
-            <Globe className="h-4 w-4" />
-            <span className="text-xs">Sessions</span>
-          </div>
-          <p className="mt-2 text-lg font-semibold text-text-primary">{sessions.length}</p>
-        </div>
-        <div className="rounded-xl border border-border-default bg-bg-elevated p-4">
-          <div className="flex items-center gap-2.5 text-text-muted">
-            <Users className="h-4 w-4" />
-            <span className="text-xs">Characters</span>
-          </div>
-          <p className="mt-2 text-lg font-semibold text-text-primary">&mdash;</p>
-        </div>
-      </div>
-
-      {/* AI Management Section */}
-      <div className="rounded-xl border border-border-default bg-bg-elevated overflow-hidden">
-        <button
-          onClick={() => setShowAiManagement(!showAiManagement)}
-          className="flex w-full items-center justify-between px-5 py-3.5 transition-colors hover:bg-bg-raised"
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/10">
-              <BrainCircuit className="h-4 w-4 text-accent" />
-            </div>
-            <div className="text-left">
-              <p className="text-sm font-medium text-text-primary">AI Management</p>
-              <p className="text-xxs text-text-muted">Context budget, model info, and universe stats</p>
-            </div>
-          </div>
-          <ChevronDown
-            className={`h-4 w-4 text-text-muted transition-transform ${showAiManagement ? "rotate-180" : ""}`}
-          />
-        </button>
-
-        {showAiManagement && (
-          <div className="border-t border-border-default px-5 py-4 space-y-4">
-            {/* Session filter */}
-            <div className="flex items-center gap-3">
-              <label className="text-xs text-text-muted whitespace-nowrap">Session:</label>
-              <select
-                value={selectedSessionId ?? ""}
-                onChange={(e) => setSelectedSessionId(e.target.value || null)}
-                className="flex-1 max-w-xs rounded-lg border border-border-default bg-bg-raised px-3 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent"
-              >
-                {sessions.length === 0 && <option value="">No sessions available</option>}
-                {sessions.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name || s.id.slice(0, 8)}</option>
-                ))}
-              </select>
-            </div>
-
-            <AIManagementPanel sessionId={selectedSessionId} />
-          </div>
-        )}
-      </div>
-
-      {/* Recent Sessions */}
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-medium text-text-primary">Recent Sessions</h2>
-          <Link
-            href="/session"
-            className="text-xs text-text-muted transition-colors hover:text-text-secondary"
+        {/* Session selector */}
+        <div className="flex items-center gap-3">
+          <label className="text-xxs text-text-muted">Session:</label>
+          <select
+            value={selectedSessionId ?? ""}
+            onChange={(e) => setSelectedSessionId(e.target.value || null)}
+            className="rounded-lg border border-border-default bg-bg-raised px-2.5 py-1.5 text-xs text-text-primary max-w-[200px]"
           >
-            View all
-          </Link>
-        </div>
-
-        {loading ? (
-          <div className="flex items-center gap-2 rounded-xl border border-border-default bg-bg-elevated px-4 py-8 text-text-muted">
-            <Sparkles className="h-4 w-4 animate-pulse" />
-            <span className="text-xs">Loading sessions...</span>
-          </div>
-        ) : recentSessions.length === 0 ? (
-          <div className="rounded-xl border border-border-default bg-bg-elevated px-6 py-10 text-center">
-            <MessageSquare className="mx-auto h-8 w-8 text-text-muted" />
-            <h3 className="mt-3 text-sm font-medium text-text-primary">No sessions yet</h3>
-            <p className="mt-1 text-xs text-text-muted">
-              Create your first session to start roleplaying
-            </p>
-            <Link
-              href="/session/new"
-              className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Create Session
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-1.5">
-            {recentSessions.map((session) => (
-              <button
-                key={session.id}
-                onClick={() => router.push(`/session/${session.id}`)}
-                className="flex w-full items-center justify-between rounded-lg border border-border-default bg-bg-elevated px-4 py-3 text-left transition-colors hover:bg-bg-raised"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
-                    <MessageSquare className="h-4 w-4 text-text-accent" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-text-primary">
-                      {session.name}
-                    </p>
-                    <div className="mt-0.5 flex items-center gap-2 text-xxs text-text-muted">
-                      <span>{session.status}</span>
-                      {session.updated_at && (
-                        <>
-                          <span>·</span>
-                          <Clock className="h-3 w-3" />
-                          <span>{new Date(session.updated_at).toLocaleDateString()}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <ArrowRight className="h-4 w-4 text-text-muted" />
-              </button>
+            {sessions.length === 0 && <option value="">No sessions</option>}
+            {sessions.map((s) => (
+              <option key={s.id} value={s.id}>{s.name || s.id.slice(0, 8)}</option>
             ))}
+          </select>
+          {/* Tab toggle */}
+          <div className="flex gap-0.5 rounded-lg border border-border-default bg-bg-raised p-0.5">
+            <button onClick={() => setAiTab("metrics")} className={`px-2.5 py-1 text-xxs rounded-md transition-colors ${aiTab === "metrics" ? "bg-accent text-white" : "text-text-muted hover:text-text-default"}`}>Metrics</button>
+            <button onClick={() => setAiTab("docs")} className={`px-2.5 py-1 text-xxs rounded-md transition-colors ${aiTab === "docs" ? "bg-accent text-white" : "text-text-muted hover:text-text-default"}`}>How It Works</button>
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Recent Wiki Changes */}
-      <RecentChangesWidget />
+      {aiTab === "metrics" ? (
+        <>
+          {/* Model + Stats bar */}
+          <div className="rounded-xl border border-border-default bg-bg-elevated p-4">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-4">
+                <div>
+                  <p className="text-xxs text-text-muted">Model</p>
+                  <p className="text-sm font-medium text-text-primary">{data?.model?.name || '...'}</p>
+                </div>
+                <div className="w-px h-8 bg-border-default" />
+                <div>
+                  <p className="text-xxs text-text-muted">Context Window</p>
+                  <p className="text-sm font-medium text-text-primary tabular-nums">{totalTokens >= 100000 ? `${(totalTokens / 1000).toFixed(0)}K` : totalTokens.toLocaleString()} tokens</p>
+                </div>
+                <div className="w-px h-8 bg-border-default" />
+                <div>
+                  <p className="text-xxs text-text-muted">Session</p>
+                  <p className="text-sm font-medium text-text-primary">{sessions.find(s => s.id === selectedSessionId)?.name || '...'}</p>
+                </div>
+              </div>
+              <div className="flex gap-4 text-xs text-text-muted">
+                <span>{data?.stats?.totalMessages || 0} msgs</span>
+                <span>{data?.stats?.totalWikiPages || 0} wiki pages</span>
+                <span>{data?.stats?.totalRelationships || 0} relationships</span>
+                <span>{data?.stats?.totalNarrativeThreads || 0} threads</span>
+              </div>
+            </div>
+            {/* Budget bar */}
+            <div className="mt-3 h-5 w-full rounded-lg overflow-hidden flex bg-bg-raised">
+              {Object.entries(data_sections).filter(([, s]) => s.tokens > 0).map(([key, section]) => {
+                const pct = totalTokens > 0 ? (section.tokens / totalTokens) * 100 : 0;
+                if (pct < 1) return null;
+                return <div key={key} className="h-full" style={{ width: `${pct}%`, backgroundColor: sectionColor(key) }} title={`${section.label}: ${section.tokens.toLocaleString()} tokens`} />;
+              })}
+              {data && totalTokens > (data.context.totalPrompt) && (
+                <div className="h-full" style={{ width: `${((totalTokens - data.context.totalPrompt) / totalTokens) * 100}%` }} />
+              )}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5">
+              {Object.entries(data_sections).filter(([, s]) => s.tokens > 0).map(([key, section]) => (
+                <div key={key} className="flex items-center gap-1 text-xxs text-text-muted">
+                  <div className="h-2 w-2 rounded-sm shrink-0" style={{ backgroundColor: sectionColor(key) }} />
+                  <span>{section.label} ({section.tokens.toLocaleString()})</span>
+                </div>
+              ))}
+              <div className="flex items-center gap-1 text-xxs text-text-muted">
+                <div className="h-2 w-2 rounded-sm border border-border-default shrink-0" />
+                <span>Free ({Math.max(0, totalTokens - (data?.context.totalPrompt || 0)).toLocaleString()})</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats grid */}
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+            <StatCard label="Wiki Pages" value={data?.stats?.totalWikiPages || 0} />
+            <StatCard label="Sessions" value={data?.stats?.totalSessions || 0} />
+            <StatCard label="Messages" value={data?.stats?.totalMessages || 0} />
+            <StatCard label="Relationships" value={data?.stats?.totalRelationships || 0} />
+            <StatCard label="Threads" value={data?.stats?.totalNarrativeThreads || 0} />
+            <StatCard label="Memories" value={data?.stats?.totalMemories || 0} />
+          </div>
+
+          {/* Recent Wiki Changes */}
+          <RecentChangesWidget />
+        </>
+      ) : (
+        <HowItWorksDocs />
+      )}
     </div>
   );
 }
+
