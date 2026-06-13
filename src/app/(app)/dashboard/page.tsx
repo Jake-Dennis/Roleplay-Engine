@@ -42,6 +42,13 @@ const sectionColors: Record<string, string> = {
   threads: "#eab308",
 };
 
+// Helper to get universe_id from activeSession (API returns camelCase universeId)
+function getUniverseId(session: unknown): string | null {
+  if (!session || typeof session !== 'object') return null;
+  const s = session as Record<string, unknown>;
+  return (s.universe_id as string) ?? (s.universeId as string) ?? null;
+}
+
 function sectionColor(key: string): string {
   return sectionColors[key] || "#6b7280";
 }
@@ -381,13 +388,13 @@ export default function DashboardPage() {
         const [sessionRes, uniRes, metricsRes] = await Promise.all([
           fetch(`/api/sessions/${activeSession.id}`),
           fetch(`/api/universes`),
-          fetch(`/api/universe/${activeSession.universe_id}/ai-metrics`),
+          fetch(`/api/universe/${getUniverseId(activeSession)}/ai-metrics`),
         ]);
 
         const sessionData = sessionRes.ok ? await sessionRes.json() : null;
         if (!sessionData?.session) { setLoading(false); return; }
 
-        const universeId = sessionData.session.universe_id || '';
+        const universeId = sessionData.session.universe_id || sessionData.session.universeId || '';
         const uniData = uniRes.ok ? await uniRes.json() : { universes: [] };
         const universe = (uniData.universes || []).find((u: any) => u.id === universeId);
 
@@ -446,9 +453,10 @@ export default function DashboardPage() {
 
   // Poll every 15s to refresh message count
   useEffect(() => {
-    if (!activeSession?.universe_id) return;
+    const uniId = getUniverseId(activeSession);
+    if (!uniId) return;
     const interval = setInterval(() => {
-      fetch(`/api/universe/${activeSession.universe_id}/ai-metrics`)
+      fetch(`/api/universe/${uniId}/ai-metrics`)
         .then(r => r.ok ? r.json() : null)
         .then(metrics => {
           if (metrics) {
@@ -458,7 +466,7 @@ export default function DashboardPage() {
         .catch(() => {});
     }, 15000);
     return () => clearInterval(interval);
-  }, [activeSession?.universe_id]);
+  }, [activeSession]);
 
   const data_sections = data?.context?.sections || {};
   const totalTokens = data?.model?.contextWindow || 131072;
