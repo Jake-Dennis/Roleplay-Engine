@@ -161,21 +161,25 @@ export default function WikiHomePage() {
     <div className="flex h-[calc(100vh-4rem)]">
       {/* Left sidebar */}
       <div className="w-64 border-r border-border-default p-4 overflow-y-auto shrink-0">
-        <Search pages={pages} />
-        <div className="mt-4">
-          <FileTree
-            pagesByFolder={pagesByFolder}
-            folderOrder={folderOrder}
-            orphanPaths={orphanPaths}
-            onCreatePage={() => setTemplateOpen(true)}
-            onCreateFolder={() => setNewFolderOpen(true)}
-            onReorder={handleReorder}
-          />
-        </div>
+        {viewMode === 'browse' ? (
+          <>
+            <Search pages={pages} />
+            <div className="mt-4">
+              <FileTree
+                pagesByFolder={pagesByFolder}
+                folderOrder={folderOrder}
+                orphanPaths={orphanPaths}
+                onCreatePage={() => setTemplateOpen(true)}
+                onCreateFolder={() => setNewFolderOpen(true)}
+                onReorder={handleReorder}
+              />
+            </div>
+          </>
+        ) : null}
       </div>
 
       {/* Main content */}
-      <div className="flex-1 p-8 overflow-y-auto">
+      <div className={`flex-1 ${viewMode === 'graph' ? 'flex flex-col overflow-hidden' : 'p-8 overflow-y-auto'}`}>
         {/* Tab bar */}
         <div className="flex gap-1 rounded-lg bg-bg-raised p-1 mb-6 w-fit">
           <button
@@ -190,7 +194,7 @@ export default function WikiHomePage() {
             Browse
           </button>
           <button
-            onClick={() => setViewMode('graph')}
+            onClick={() => { setViewMode('graph'); router.push('/wiki?view=graph', { scroll: false }); }}
             className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5 ${
               viewMode === 'graph'
                 ? 'bg-accent text-white'
@@ -254,7 +258,9 @@ export default function WikiHomePage() {
             })()}
           </>
         ) : (
-          <GraphView pages={pages} isLoading={loading} error={error} onRetry={() => window.location.reload()} />
+          <div className="flex-1 overflow-hidden">
+            <GraphView pages={pages} isLoading={loading} error={error} onRetry={() => window.location.reload()} />
+          </div>
         )}
       </div>
 

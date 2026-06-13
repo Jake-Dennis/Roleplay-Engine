@@ -113,6 +113,66 @@ function ErrorState({ error, onRetry }: { error: string; onRetry?: () => void })
 export default function GraphView({ pages, basePath = '/wiki', isLoading, error, onRetry }: GraphViewProps) {
   const cyRef = useRef<cytoscape.Core | null>(null);
   const router = useRouter();
+  const [filterText, setFilterText] = useState('');
+  const [showLabels, setShowLabels] = useState(true);
+  const [filterTypes, setFilterTypes] = useState<Set<string>>(new Set(['entity', 'concept', 'source', 'synthesis']));
+  const [typeCounts, setTypeCounts] = useState<Record<string, number>>({});
+
+  // Compute type counts
+  useEffect(() => {
+    const counts: Record<string, number> = {};
+    for (const page of pages) {
+      const t = page.frontmatter.type || 'entity';
+      counts[t] = (counts[t] || 0) + 1;
+    }
+    setTypeCounts(counts);
+  }, [pages]);
+
+  // Apply filters to cytoscape
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+
+    // Apply type filter
+    cy.nodes().forEach((node) => {
+      const nodeType = node.data('type');
+      const matchesType = filterTypes.has(nodeType);
+      const matchesText = !filterText || (node.data('label') || '').toLowerCase().includes(filterText.toLowerCase());
+      const visible = matchesType && matchesText;
+
+      if (visible) {
+        node.style('opacity', 1);
+        node.style('display', 'element');
+      } else {
+        node.style('opacity', 0.15);
+        node.style('display', 'element');
+      }
+    });
+
+    // Show edges only when both endpoints are visible
+    cy.edges().forEach((edge) => {
+      const srcVisible = edge.source().style('opacity') >= 1;
+      const tgtVisible = edge.target().style('opacity') >= 1;
+      edge.style('opacity', srcVisible && tgtVisible ? 1 : 0.1);
+    });
+
+    // Toggle labels
+    cy.nodes().forEach((node) => {
+      node.style('label', showLabels ? 'data(label)' : '');
+    });
+  }, [filterTypes, filterText, showLabels]);
+
+  const toggleType = (type: string) => {
+    setFilterTypes(prev => {
+      const next = new Set(prev);
+      if (next.has(type)) {
+        next.delete(type);
+      } else {
+        next.add(type);
+      }
+      return next;
+    });
+  };
 
   if (isLoading) {
     return <LoadingState />;
@@ -162,8 +222,68 @@ export default function GraphView({ pages, basePath = '/wiki', isLoading, error,
   };
 
   return (
-    <div className="w-full h-[500px] border border-border-default rounded-lg overflow-hidden">
-      <CytoscapeComponent
+    <div className="flex h-full">
+      {/* Graph sidebar */}
+      <div className="w-56 border-r border-border-default p-3 overflow-y-auto shrink-0 flex flex-col gap-3">
+        {/* Search */}
+        <div>
+          <input
+            type="text"
+            placeholder="Filter nodes..."
+            value={filterText}
+            onChange={(e) => setFilterText(e.target.value)}
+            className="w-full px-2.5 py-1.5 text-xs rounded-md border border-border-default bg-bg-base text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent"
+          />
+        </div>
+
+        {/* Show Labels toggle */}
+        <label className="flex items-center gap-2 text-xs text-text-muted cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showLabels}
+            onChange={(e) => setShowLabels(e.target.checked)}
+            className="rounded border-border-default bg-bg-raised text-accent focus:ring-accent/30"
+          />
+          Show labels
+        </label>
+
+        {/* Node type legend */}
+        <div className="space-y-1">
+          <p className="text-xxs text-text-muted uppercase tracking-wider font-medium">Node Types</p>
+          {Object.entries(NODE_COLORS).map(([type, color]) => (
+            <label key={type} className="flex items-center gap-2 text-xs cursor-pointer py-0.5">
+              <input
+                type="checkbox"
+                checked={filterTypes.has(type)}
+                onChange={() => toggleType(type)}
+                className="rounded border-border-default bg-bg-raised text-accent focus:ring-accent/30"
+              />
+              <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+              <span className="text-text-primary capitalize flex-1">{type}</span>
+              <span className="text-text-muted tabular-nums">{typeCounts[type] || 0}</span>
+            </label>
+          ))}
+        </div>
+
+        {/* Controls */}
+        <div className="mt-auto pt-3 border-t border-border-default">
+          <button
+            onClick={() => {
+              const cy = cyRef.current;
+              if (cy) {
+                cy.fit(cy.nodes(), 30);
+              }
+            }}
+            className="w-full px-2.5 py-1.5 text-xs rounded-md bg-bg-raised border border-border-default text-text-muted hover:text-text-primary hover:border-text-muted transition-colors"
+          >
+            Reset view
+          </button>
+        </div>
+      </div>
+
+      {/* Graph canvas */}
+      <div className="flex-1 relative">
+        <CytoscapeComponent
         elements={elements}
         layout={{ name: 'cose', animate: true, padding: 20 }}
         style={{ width: '100%', height: '100%' }}
@@ -195,6 +315,7 @@ export default function GraphView({ pages, basePath = '/wiki', isLoading, error,
         ]}
         tap={handleTap}
       />
+      </div>
     </div>
   );
 }
