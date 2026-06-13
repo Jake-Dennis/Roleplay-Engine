@@ -205,13 +205,29 @@ export async function GET(
 
   // ── Build response ──────────────────────────────────────────────────
 
-  const totalUsed = overheadTokens + msgTokens + estimatedLoreTokens + memTokens + relTokens + threadTokens;
+  // RAG: estimate tokens from embedded message content (only a subset retrieved per query)
+  let ragTokens = 0;
+  const embeddedMessages = db.prepare(
+    `SELECT m.content FROM embedding_index ei
+     JOIN messages m ON m.id = ei.entity_id AND m.is_deleted = 0
+     WHERE ei.universe_id = ? AND ei.user_id = ? AND ei.entity_type = 'message'
+     LIMIT 50`
+  ).all(universeId, ownerId) as { content: string }[];
+
+  let embeddedContentLen = 0;
+  for (const msg of embeddedMessages) {
+    embeddedContentLen += msg.content.length;
+  }
+  ragTokens = Math.round((embeddedContentLen / 4) * 0.3); // ~30% of embedded content retrieved per query
+
+  const totalUsed = overheadTokens + msgTokens + estimatedLoreTokens + memTokens + relTokens + threadTokens + ragTokens;
   const freeTokens = Math.max(0, contextWindow - totalUsed);
 
   const sections = {
     overhead: { tokens: overheadTokens, label: "System Prompt + Instructions", count: null },
     messages: { tokens: msgTokens, label: "Chat History", count: recentMessages.length },
     lore: { tokens: estimatedLoreTokens, label: "Known World / Lore", count: loreCount },
+    rag: { tokens: ragTokens, label: "Relevant Past (RAG)", count: totalEmbeddedMessages },
     memories: { tokens: memTokens, label: "Narrative Memories", count: memCount },
     relationships: { tokens: relTokens, label: "Relationships", count: rels.length },
     threads: { tokens: threadTokens, label: "Narrative Threads", count: threads.length },

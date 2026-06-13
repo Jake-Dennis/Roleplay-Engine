@@ -38,6 +38,7 @@ const sectionColors: Record<string, string> = {
   overhead: "#6b7280",
   messages: "#3b82f6",
   lore: "#22c55e",
+  rag: "#06b6d4",
   memories: "#a855f7",
   relationships: "#f97316",
   threads: "#eab308",
@@ -386,9 +387,6 @@ export default function DashboardPage() {
 
         // Use universe_id from session API response (handles both snake_case and camelCase)
         const universeId = sessionData.session.universe_id || sessionData.session.universeId || '';
-        console.log('[dashboard] universeId from session:', universeId);
-        console.log('[dashboard] activeSession keys:', Object.keys(activeSession).join(', '));
-        console.log('[dashboard] activeSession universe:', (activeSession as any).universe_id, (activeSession as any).universeId);
 
         // Now fetch universe-level metrics + universe names in parallel
         const [uniRes, metricsRes] = await Promise.all([
@@ -401,7 +399,6 @@ export default function DashboardPage() {
 
         const metricsResponse = metricsRes;
         const metrics = metricsResponse && (metricsResponse as Response).ok ? await (metricsResponse as Response).json() : null;
-        console.log('[dashboard] metrics response:', metrics ? 'ok' : 'null');
 
         if (metrics) {
           // Use full metrics from server-side endpoint
@@ -594,13 +591,14 @@ export default function DashboardPage() {
           </div>
 
           {/* Stats grid */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <StatCard label="Wiki Pages" value={data?.stats?.totalWikiPages || 0} />
             <StatCard label="Relationships" value={data?.stats?.totalRelationships || 0} />
             <StatCard label="Threads" value={data?.stats?.totalNarrativeThreads || 0} />
-            <StatCard label="Memories" value={data?.stats?.totalMemories || 0} />
-            <StatCard label="Embedded Msgs" value={data?.stats?.totalEmbeddedMessages || 0} />
-            <StatCard label="Messages" value={data?.stats?.totalMessages || 0} />
+            <StatCard label="Narrative Memories" value={data?.stats?.totalMemories || 0} />
+            <StatCard label="Total Messages" value={data?.stats?.totalMessages || 0} />
+            <StatCard label="RAG Indexed" value={data?.stats?.totalEmbeddedMessages || 0} />
+            <StatCard label="Sessions" value={data?.stats?.totalSessions || 0} />
           </div>
         </>
       ) : (
