@@ -79,36 +79,87 @@ function StatCard({ label, value }: { label: string; value: number }) {
   );
 }
 
-function AIManagementPanel({ universeId }: { universeId: string | null }) {
+function AIManagementPanel({ sessionId }: { sessionId: string | null }) {
   const [data, setData] = useState<AIMetricsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [aiTab, setAiTab] = useState<"metrics" | "docs">("metrics");
 
   useEffect(() => {
-    if (!universeId) return;
+    if (!sessionId) return;
     setLoading(true);
-    fetch(`/api/universe/${universeId}/ai-metrics`)
+    fetch(`/api/sessions/${sessionId}`)
       .then(r => r.ok ? r.json() : null)
-      .then(d => { setData(d); setLoading(false); })
+      .then(d => {
+        if (!d || !d.session) return;
+        // Build context metrics from session data
+        const totalTokens = d.session.contextWindow || 131072;
+        const msgTokens = (d.messages || []).reduce((s: number, m: any) => s + Math.round((m.content?.length || 0) / 4), 0);
+        setData({
+          universe: { id: d.session.universe_id || '', name: d.session.name || '' },
+          model: {
+            name: d.session.model || 'unknown',
+            contextWindow: totalTokens,
+            choicesModel: null,
+            embeddingModel: null,
+            availableModels: [],
+          },
+          context: {
+            totalPrompt: msgTokens + 500,
+            freeTokens: totalTokens - msgTokens - 500,
+            sections: {
+              overhead: { tokens: 500, label: "System Prompt + Instructions", count: null },
+              messages: { tokens: msgTokens, label: "Session Messages", count: (d.messages || []).length },
+              lore: { tokens: 0, label: "Known World / Lore", count: null },
+              memories: { tokens: 0, label: "Narrative Memories", count: null },
+              relationships: { tokens: 0, label: "Relationships", count: null },
+              threads: { tokens: 0, label: "Narrative Threads", count: null },
+            },
+          },
+          stats: {
+            totalMessages: (d.messages || []).length,
+            totalSessions: 1,
+            totalWikiPages: 0,
+            totalNarrativeThreads: 0,
+            totalRelationships: 0,
+            totalMemories: 0,
+          },
+        });
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
-  }, [universeId]);
+  }, [sessionId]);
 
-  // Poll every 15s when panel is open
+  // Poll every 15s
   useEffect(() => {
-    if (!universeId) return;
+    if (!sessionId) return;
     const interval = setInterval(() => {
-      fetch(`/api/universe/${universeId}/ai-metrics`)
+      fetch(`/api/sessions/${sessionId}`)
         .then(r => r.ok ? r.json() : null)
-        .then(d => setData(d));
+        .then(d => {
+          if (!d || !d.session) return;
+          setData(prev => prev ? {
+            ...prev,
+            context: {
+              ...prev.context,
+              totalPrompt: 500 + (d.messages || []).reduce((s: number, m: any) => s + Math.round((m.content?.length || 0) / 4), 0),
+              sections: {
+                ...prev.context.sections,
+                messages: { ...prev.context.sections.messages, tokens: (d.messages || []).reduce((s: number, m: any) => s + Math.round((m.content?.length || 0) / 4), 0), count: (d.messages || []).length },
+              },
+            },
+            stats: { ...prev.stats, totalMessages: (d.messages || []).length },
+          } : prev);
+        })
+        .catch(() => {});
     }, 15000);
     return () => clearInterval(interval);
-  }, [universeId]);
+  }, [sessionId]);
 
-  if (!universeId) {
+  if (!sessionId) {
     return (
       <div>
         <TabBar aiTab={aiTab} setAiTab={setAiTab} />
-        <p className="text-xs text-text-muted py-8 text-center">Select a universe to view AI metrics.</p>
+        <p className="text-xs text-text-muted py-8 text-center">Select a session to view AI metrics.</p>
       </div>
     );
   }
@@ -573,10 +624,10 @@ function ArrowDownIcon({ small }: { small?: boolean }) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { activeGroup, activeUniverse, universes } = useApp();
+  const { activeGroup, activeSession } = useApp();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedUniverseId, setSelectedUniverseId] = useState<string | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [showAiManagement, setShowAiManagement] = useState(false);
 
   useEffect(() => {
@@ -590,14 +641,14 @@ export default function DashboardPage() {
       .catch(() => setLoading(false));
   }, [activeGroup]);
 
-  // Default universe filter to active universe, then first universe
+  // Default session filter to active session from sidebar, then first session
   useEffect(() => {
-    if (activeUniverse) {
-      setSelectedUniverseId(activeUniverse.id);
-    } else if (universes.length > 0) {
-      setSelectedUniverseId(universes[0].id);
+    if (activeSession) {
+      setSelectedSessionId(activeSession.id);
+    } else if (sessions.length > 0) {
+      setSelectedSessionId(sessions[0].id);
     }
-  }, [activeUniverse, universes]);
+  }, [activeSession, sessions]);
 
   const recentSessions = sessions.slice(0, 5);
 
@@ -632,9 +683,9 @@ export default function DashboardPage() {
         <div className="rounded-xl border border-border-default bg-bg-elevated p-4">
           <div className="flex items-center gap-2.5 text-text-muted">
             <Globe className="h-4 w-4" />
-            <span className="text-xs">Universes</span>
+            <span className="text-xs">Sessions</span>
           </div>
-          <p className="mt-2 text-lg font-semibold text-text-primary">{universes.length}</p>
+          <p className="mt-2 text-lg font-semibold text-text-primary">{sessions.length}</p>
         </div>
         <div className="rounded-xl border border-border-default bg-bg-elevated p-4">
           <div className="flex items-center gap-2.5 text-text-muted">
@@ -667,22 +718,22 @@ export default function DashboardPage() {
 
         {showAiManagement && (
           <div className="border-t border-border-default px-5 py-4 space-y-4">
-            {/* Universe filter */}
+            {/* Session filter */}
             <div className="flex items-center gap-3">
-              <label className="text-xs text-text-muted whitespace-nowrap">Universe:</label>
+              <label className="text-xs text-text-muted whitespace-nowrap">Session:</label>
               <select
-                value={selectedUniverseId ?? ""}
-                onChange={(e) => setSelectedUniverseId(e.target.value || null)}
+                value={selectedSessionId ?? ""}
+                onChange={(e) => setSelectedSessionId(e.target.value || null)}
                 className="flex-1 max-w-xs rounded-lg border border-border-default bg-bg-raised px-3 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent"
               >
-                {universes.length === 0 && <option value="">No universes available</option>}
-                {universes.map((u) => (
-                  <option key={u.id} value={u.id}>{u.name}</option>
+                {sessions.length === 0 && <option value="">No sessions available</option>}
+                {sessions.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name || s.id.slice(0, 8)}</option>
                 ))}
               </select>
             </div>
 
-            <AIManagementPanel universeId={selectedUniverseId} />
+            <AIManagementPanel sessionId={selectedSessionId} />
           </div>
         )}
       </div>
