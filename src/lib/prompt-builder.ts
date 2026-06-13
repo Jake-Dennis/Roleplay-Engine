@@ -384,7 +384,11 @@ export function assemblePromptWithBudget(
   maxTokens: number = 6000,
   characterInstructions?: string | null
 ): string {
-  const budgetedCtx = applyContextBudget(ctx, maxTokens);
+  // Compute actual overhead: system prompt + character instructions + section headers
+  const overheadTokens = estimateTokens(systemPrompt)
+    + (characterInstructions ? estimateTokens(characterInstructions) + 50 : 0)
+    + 200; // buffer for scene state, intent, section headers, separators
+  const budgetedCtx = applyContextBudget(ctx, maxTokens, overheadTokens);
   return assemblePrompt(budgetedCtx, systemPrompt, characterInstructions);
 }
 
@@ -404,9 +408,9 @@ export function estimateTokens(text: string): number {
  */
 export function applyContextBudget(
   ctx: RetrievedContext,
-  maxTokens: number = 6000
+  maxTokens: number = 6000,
+  overheadTokens: number = 500
 ): RetrievedContext {
-  const overheadTokens = 500; // fixed overhead for system prompt + instructions
   const availableTokens = maxTokens - overheadTokens;
 
   if (availableTokens <= 0) {
@@ -468,15 +472,12 @@ export function applyContextBudget(
     }
   }
 
-  // Measure relevant messages (RAG results)
+  // Measure relevant messages (RAG results) — no cap, budget handles overflow
   let relMsgTokens = 0;
   let truncatedRelevantMessages: RetrievedContext['relevantMessages'] = ctx.relevantMessages ? { messages: [] } : undefined;
   if (ctx.relevantMessages?.messages) {
-    // Take most relevant first (they're sorted by similarity descending)
     for (const msg of ctx.relevantMessages.messages) {
       const t = estimateTokens(msg.content);
-      // Capped at a reasonable budget so they don't dominate
-      if (relMsgTokens + t > Math.floor(availableTokens * 0.3) && truncatedRelevantMessages!.messages.length > 0) break;
       relMsgTokens += t;
       truncatedRelevantMessages!.messages.push(msg);
     }
@@ -493,25 +494,19 @@ export function applyContextBudget(
     }
   }
 
-  // Sum non-message tokens and clamp to 85% of available
+  // Non-message sections get their full content — no artificial cap
   const nonMessageTotal = loreTokens + memTokens + relTokens + threadTokens + dpTokens + relMsgTokens;
-  const maxNonMessage = Math.floor(availableTokens * 0.85);
-  const nonMessageBudget = Math.min(nonMessageTotal, maxNonMessage);
 
-  // Messages get whatever's left
-  const msgBudget = availableTokens - nonMessageBudget;
+  // Messages get whatever's left (could be 0 — that's fine, [CURRENT CONVERSATION] covers it)
+  const msgBudget = availableTokens - nonMessageTotal;
 
-  // If message budget is too small, enforce a minimum 10% floor for messages
-  const minMsgBudget = Math.floor(availableTokens * 0.1);
-  const finalMsgBudget = Math.max(msgBudget, minMsgBudget);
-
-  // Truncate messages (keep most recent, fit in finalMsgBudget)
+  // Truncate messages (keep most recent, fit in msgBudget)
   let msgTokens = 0;
   const truncatedMessages = [];
   const reversed = [...ctx.recentMessages.messages].reverse();
   for (const msg of reversed) {
     const t = estimateTokens(msg.content);
-    if (msgTokens + t > finalMsgBudget && truncatedMessages.length > 0) break;
+    if (msgTokens + t > msgBudget && truncatedMessages.length > 0) break;
     msgTokens += t;
     truncatedMessages.unshift(msg);
   }
