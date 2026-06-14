@@ -110,9 +110,18 @@ export function inferLinkType(name: string, context: string, entityType?: string
  */
 export function resolveWikilinkFromDB(
   userId: string,
-  name: string
+  name: string,
+  universeId: string | null = null
 ): { entityType: string | null; entityId: string | null } {
   const db = getDb();
+
+  // Check for persona entity first (scoped to universe)
+  if (universeId) {
+    const persona = db.prepare(
+      "SELECT id FROM entity_registry WHERE LOWER(display_name) = LOWER(?) AND entity_type = 'persona' AND universe_id = ? LIMIT 1"
+    ).get(name, universeId) as { id: string } | undefined;
+    if (persona) return { entityType: "persona", entityId: persona.id };
+  }
 
   // Search locations
   const location = db.prepare(
@@ -150,12 +159,13 @@ export function resolveWikilinkFromDB(
  */
 export function parseAndResolveLinks(
   userId: string,
-  content: string
+  content: string,
+  universeId: string | null = null
 ): ResolvedLink[] {
   const wikilinks = parseWikilinksFromContent(content);
 
   return wikilinks.map((link) => {
-    const resolved = resolveWikilinkFromDB(userId, link.name);
+    const resolved = resolveWikilinkFromDB(userId, link.name, universeId);
     const linkType = inferLinkType(link.name, link.context, resolved.entityType || undefined);
 
     return {
@@ -176,10 +186,11 @@ export function storeBacklinks(
   sourceType: string,
   sourceId: string,
   sourceName: string,
-  content: string
+  content: string,
+  universeId: string | null = null
 ): number {
   const db = getDb();
-  const links = parseAndResolveLinks(userId, content);
+  const links = parseAndResolveLinks(userId, content, universeId);
   let stored = 0;
 
   // Delete existing backlinks from this source
