@@ -9,13 +9,19 @@ import { eventBus, SessionEvents } from "@/lib/event-bus";
 
 /**
  * Resolve a list of NPC name strings to entity_registry IDs.
- * Falls back to the name itself if no matching entity is found.
+ * Checks for persona entities first (scoped to universe), falls back to name.
  */
-function resolveNpcNamesToIds(db: ReturnType<typeof getDb>, userId: string, names: string[]): string[] {
+function resolveNpcNamesToIds(db: ReturnType<typeof getDb>, userId: string, universeId: string | null, names: string[]): string[] {
   const ids: string[] = [];
   for (const name of names) {
     const trimmed = name.trim();
     if (!trimmed) continue;
+    if (universeId) {
+      const persona = db.prepare(
+        "SELECT id FROM entity_registry WHERE LOWER(display_name) = LOWER(?) AND entity_type = 'persona' AND universe_id = ? LIMIT 1"
+      ).get(trimmed, universeId) as { id: string } | undefined;
+      if (persona) { ids.push(persona.id); continue; }
+    }
     const found = db.prepare(
       "SELECT id FROM entity_registry WHERE display_name = ? AND user_id = ? AND entity_type = 'npc' LIMIT 1"
     ).get(trimmed, userId) as { id: string } | undefined;
@@ -109,8 +115,8 @@ const db = getDb();
 
 // Verify session access
 const session = db.prepare(
-  "SELECT id FROM sessions WHERE id = ? AND owner_id = ?"
-).get(sessionId, userId);
+  "SELECT id, universe_id FROM sessions WHERE id = ? AND owner_id = ?"
+).get(sessionId, userId) as { id: string; universe_id: string | null } | undefined;
 
 if (!session) {
   return NextResponse.json({ error: "Session not found" }, { status: 404 });
@@ -121,7 +127,7 @@ if (!session) {
 const { location, goal, tone, activeNpcs, activeThreads, sceneSummary, activeNpcIds } = body;
 
 // Resolve NPC names to entity IDs if activeNpcs provided but activeNpcIds not
-const resolvedNpcIds = activeNpcIds ?? (activeNpcs ? resolveNpcNamesToIds(db, userId, activeNpcs) : null);
+const resolvedNpcIds = activeNpcIds ?? (activeNpcs ? resolveNpcNamesToIds(db, userId, session.universe_id, activeNpcs) : null);
 
 // Check if scene state already exists
 const existing = db.prepare(

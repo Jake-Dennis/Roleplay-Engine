@@ -24,8 +24,16 @@ function ensureColumn(db: DbDatabase) {
  * Look up an existing entity in entity_registry or create one for the given character name.
  * Returns the entity ID or null if character_name is empty.
  */
-function resolveOrCreateEntityId(db: ReturnType<typeof getDb>, userId: string, characterName: string | null): string | null {
+function resolveOrCreateEntityId(db: ReturnType<typeof getDb>, userId: string, universeId: string | null, characterName: string | null): string | null {
   if (!characterName) return null;
+  
+  // Try to find existing persona entity first (scoped to universe)
+  if (universeId) {
+    const persona = db.prepare(
+      "SELECT id FROM entity_registry WHERE LOWER(display_name) = LOWER(?) AND entity_type = 'persona' AND universe_id = ? LIMIT 1"
+    ).get(characterName, universeId) as { id: string } | undefined;
+    if (persona) return persona.id;
+  }
   
   // Try to find existing entity
   const existing = db.prepare(
@@ -79,8 +87,8 @@ export async function POST(
 
   // Check session exists
   const session = db.prepare(
-    "SELECT id, owner_id FROM sessions WHERE id = ? AND status = 'active'"
-  ).get(sessionId) as { id: string; owner_id: string } | undefined;
+    "SELECT id, owner_id, universe_id FROM sessions WHERE id = ? AND status = 'active'"
+  ).get(sessionId) as { id: string; owner_id: string; universe_id: string | null } | undefined;
 
   if (!session) {
     return NextResponse.json({ error: "Session not found or not active" }, { status: 404 });
@@ -123,7 +131,7 @@ export async function POST(
   }
 
   // Resolve or create entity_id for the character name
-  const entityId = resolveOrCreateEntityId(db, userId, characterName);
+  const entityId = resolveOrCreateEntityId(db, userId, session.universe_id, characterName);
 
   // Add as participant
   db.prepare(
