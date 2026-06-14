@@ -323,9 +323,10 @@ export async function DELETE(
       const wikiRoot = getWikiRoot(userId, universeId);
       if (fs.existsSync(wikiRoot)) {
         const allPages = listWikiPages(wikiRoot);
-        const sessionTag = `source:session-${id}`;
+        const sessionTags = [`source:session-${id}`, `session:${id}`];
         for (const page of allPages) {
-          if (page.frontmatter.tags?.includes(sessionTag)) {
+          const tags = page.frontmatter.tags;
+          if (tags?.includes(sessionTags[0]) || tags?.includes(sessionTags[1])) {
             try {
               // Clean up entity registry if this auto-extracted page had a linked entity
               const entityId = page.frontmatter.entity_id;

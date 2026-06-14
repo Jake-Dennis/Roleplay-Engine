@@ -76,8 +76,9 @@ interface LoreExtractionResult {
  * create draft wiki pages from extracted lore.
  */
 export async function handleLoreExtractionJob(jobId: string, payload: JobPayload): Promise<JobResult> {
-  const { userId, universeId } = payload;
+  const { userId, universeId, sessionId } = payload;
   if (!userId || !universeId) throw new Error("Missing userId or universeId");
+  const sessionTag = sessionId ? `source:session-${sessionId}` : null;
 
   updateJobProgress(jobId, 10, "Fetching messages...");
 
@@ -185,7 +186,7 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
               subtype: ENTITY_TYPE_TO_SUBTYPE[entity.entityType] as WikiFrontmatter["subtype"] | undefined,
               status: "draft",
               universe: universeId as string,
-              tags: ["extracted", `type:${entity.entityType || "unknown"}`],
+              tags: ["extracted", `type:${entity.entityType || "unknown"}`, ...(sessionTag ? [sessionTag] : [])],
               created: new Date().toISOString(),
             };
 
@@ -232,7 +233,7 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
             subtype: "event",
             status: "draft",
             universe: universeId as string,
-            tags: ["event", "extracted", `importance:${event.importance || "medium"}`],
+            tags: ["event", "extracted", `importance:${event.importance || "medium"}`, ...(sessionTag ? [sessionTag] : [])],
             created: new Date().toISOString(),
           };
 
@@ -300,7 +301,7 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
               type: "concept",
               status: "draft",
               universe: universeId as string,
-              tags: ["relationship", "extracted", `nature:${rel.nature || "unknown"}`],
+              tags: ["relationship", "extracted", `nature:${rel.nature || "unknown"}`, ...(sessionTag ? [sessionTag] : [])],
               created: new Date().toISOString(),
             };
             writeWikiPage(pagePath, body, relFrontmatter);

@@ -539,7 +539,7 @@ async function handleWikiExtractEvent(jobId: string, payload: JobPayload): Promi
             type: "concept",
             status: "draft",
             universe: universeId || undefined,
-            tags: ["event", `type:${event.eventType || "other"}`, `importance:${event.importance || "medium"}`, `session:${sessionId}`],
+            tags: ["event", `type:${event.eventType || "other"}`, `importance:${event.importance || "medium"}`, `source:session-${sessionId}`],
             created: new Date().toISOString(),
           };
 
