@@ -156,7 +156,7 @@ export function EntityManagerClient() {
           frontmatter: {
             title: name,
             type: "entity",
-            subtype: createType,
+            subtype: createType === "persona" ? "character" : createType,
             status: "draft",
             universe: activeUniverse?.id || undefined,
             entity_id: entityId,
