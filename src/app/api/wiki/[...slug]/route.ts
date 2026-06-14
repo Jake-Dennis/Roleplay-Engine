@@ -472,9 +472,16 @@ export async function PUT(
         const db = getDb();
         const existing = getEntity(db, entityId);
         if (!existing) {
-          const subtype = mergedFrontmatter.subtype || "character";
+          const subtype = mergedFrontmatter.subtype || "";
           const displayName = mergedFrontmatter.title || resolvedSlug;
-          registerEntity(db, userId, subtype, displayName, mergedFrontmatter.universe || undefined);
+          // Map wiki subtypes to valid entity_registry types
+          const SUBTYPE_TO_ENTITY_TYPE: Record<string, string> = {
+            character: "npc", persona: "persona", npc: "npc",
+            location: "location", event: "event", faction: "faction",
+            item: "item", organization: "faction", object: "item",
+          };
+          const entityType = SUBTYPE_TO_ENTITY_TYPE[subtype] || "npc";
+          registerEntity(db, userId, entityType, displayName, mergedFrontmatter.universe || undefined);
         }
       }
     } catch { /* non-fatal — entity registration should not block wiki save */ }

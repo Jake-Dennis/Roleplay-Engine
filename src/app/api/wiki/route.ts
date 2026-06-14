@@ -122,9 +122,16 @@ try {
     const existing = getEntity(db, entityId);
     if (!existing) {
       const fm = frontmatter as Record<string, unknown>;
-      const subtype = (fm.subtype as string) || "character";
+      const subtype = (fm.subtype as string) || "";
       const displayName = (fm.title as string) || path.basename(pagePath, ".md");
-      registerEntity(db, userId, subtype, displayName, universeId || undefined);
+      // Map wiki subtypes to valid entity_registry types
+      const SUBTYPE_TO_ENTITY_TYPE: Record<string, string> = {
+        character: "npc", persona: "persona", npc: "npc",
+        location: "location", event: "event", faction: "faction",
+        item: "item", organization: "faction", object: "item",
+      };
+      const entityType = SUBTYPE_TO_ENTITY_TYPE[subtype] || "npc";
+      registerEntity(db, userId, entityType, displayName, universeId || undefined);
     }
   }
 } catch { /* non-fatal — entity registration should not block wiki save */ }
