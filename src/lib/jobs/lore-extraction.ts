@@ -91,9 +91,9 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
   updateJobProgress(jobId, 10, "Fetching messages...");
 
   // Fetch all messages for universe via sessions join
-  // Use persona name instead of username when a persona is set
+  // Carry persona_id through so extracted characters link directly to entity IDs
   const messages = getDb().prepare(`
-    SELECT m.content, m.timestamp, m.sender_id,
+    SELECT m.content, m.timestamp, m.sender_id, m.persona_id,
       COALESCE(er.display_name, u.username) as sender
     FROM messages m
     JOIN sessions s ON m.session_id = s.id
@@ -101,7 +101,7 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
     LEFT JOIN entity_registry er ON m.persona_id = er.id
     WHERE s.universe_id = ? AND m.is_deleted = 0
     ORDER BY m.timestamp ASC
-  `).all(universeId) as { content: string; timestamp: string; sender_id: string | null; sender: string | null }[];
+  `).all(universeId) as { content: string; timestamp: string; sender_id: string | null; persona_id: string | null; sender: string | null }[];
 
   if (messages.length === 0) {
     markJobCompleted(jobId);
@@ -114,6 +114,15 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
   const batchSize = 20;
   let pagesCreated = 0;
   const existingPages = new Set<string>(); // Track created pages to avoid duplicates
+
+  // Build sender name → persona_id map from messages
+  // This is the source of truth for linking extracted characters to entity IDs
+  const senderPersonaMap = new Map<string, string>();
+  for (const m of messages) {
+    if (m.sender && m.persona_id && !senderPersonaMap.has(m.sender.toLowerCase())) {
+      senderPersonaMap.set(m.sender.toLowerCase(), m.persona_id);
+    }
+  }
 
   // writeWikiPage creates parent directories automatically
   for (let i = 0; i < messages.length; i += batchSize) {
@@ -177,19 +186,18 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
                 updated: new Date().toISOString(),
               };
 
-              // Auto-register entity if this existing page doesn't have one yet
-              // Link to existing persona if one exists, otherwise create new
+              // Link entity to persona_id from message, or create new
               if (!updatedFrontmatter.entity_id) {
                 try {
                   const db = getDb();
                   const entityType = SUBTYPE_TO_ENTITY_TYPE[entity.entityType] || "npc";
-                  const existing = db.prepare(
-                    "SELECT id FROM entity_registry WHERE LOWER(display_name) = LOWER(?) AND entity_type = 'persona' AND universe_id = ?"
-                  ).get(entityName, universeId) as { id: string } | undefined;
-                  const regEntity = existing
-                    ? { id: existing.id }
-                    : registerEntity(db, userId, entityType, entityName, universeId);
-                  (updatedFrontmatter as Record<string, unknown>).entity_id = regEntity.id;
+                  const personaId = senderPersonaMap.get(entityName.toLowerCase());
+                  if (personaId) {
+                    (updatedFrontmatter as Record<string, unknown>).entity_id = personaId;
+                  } else {
+                    const regEntity = registerEntity(db, userId, entityType, entityName, universeId);
+                    (updatedFrontmatter as Record<string, unknown>).entity_id = regEntity.id;
+                  }
                 } catch { /* non-fatal */ }
               }
 
@@ -218,19 +226,20 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
               created: new Date().toISOString(),
             };
 
-            // Auto-register entity in entity_registry
-            // If a persona with this name exists in the universe, link to it
-            // (don't create a duplicate NPC entry for the same character)
+            // Link entity to persona_id from the message, or create new entity
             try {
               const db = getDb();
               const entityType = SUBTYPE_TO_ENTITY_TYPE[entity.entityType] || "npc";
-              const existing = db.prepare(
-                "SELECT id FROM entity_registry WHERE LOWER(display_name) = LOWER(?) AND entity_type = 'persona' AND universe_id = ?"
-              ).get(entityName, universeId) as { id: string } | undefined;
-              const regEntity = existing
-                ? { id: existing.id }
-                : registerEntity(db, userId, entityType, entityName, universeId);
-              (frontmatter as Record<string, unknown>).entity_id = regEntity.id;
+              // Check if this character was sent with a persona — use that ID directly
+              const personaId = senderPersonaMap.get(entityName.toLowerCase());
+              if (personaId) {
+                // Link directly to the persona's entity_registry entry
+                (frontmatter as Record<string, unknown>).entity_id = personaId;
+              } else {
+                // No persona — create a new entity with its own ID
+                const regEntity = registerEntity(db, userId, entityType, entityName, universeId);
+                (frontmatter as Record<string, unknown>).entity_id = regEntity.id;
+              }
             } catch { /* non-fatal */ }
 
             writeWikiPage(pagePath, body, frontmatter);
