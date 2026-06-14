@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { CONTENT_LIMITS } from "@/lib/config";
-import { Clock, Sparkles, Trash2, Plus, ArrowUp, ArrowDown } from "lucide-react";
+import { Clock, Sparkles, Trash2, Plus, ArrowUp, ArrowDown, Globe } from "lucide-react";
 import Link from "next/link";
 import { ENTRY_TYPE_LABELS, IMPORTANCE_COLORS } from "@/lib/entity-constants";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
@@ -109,6 +109,12 @@ export default function TimelinePage() {
         <div>
           <h1 className="text-base font-semibold text-text-primary">Timeline</h1>
           <p className="mt-1 text-xs text-text-muted">Chronological record of story events</p>
+          {activeUniverse && (
+            <p className="text-xs text-text-muted flex items-center gap-1 mt-0.5">
+              <Globe className="h-3 w-3" />
+              {activeUniverse.name}
+            </p>
+          )}
         </div>
         <button
           onClick={() => setShowCreate(!showCreate)}

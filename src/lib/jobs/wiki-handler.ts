@@ -554,9 +554,9 @@ async function handleWikiExtractEvent(jobId: string, payload: JobPayload): Promi
           try {
             const entryId = crypto.randomUUID();
             db.prepare(`
-              INSERT INTO timeline_entries (id, user_id, session_id, thread_id, title, description, occurred_at, entry_type, importance)
-              VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'wiki_event', ?)
-            `).run(entryId, userId, sessionId, null, `Event: ${evTitle}`, evOutcome, evImportance);
+              INSERT INTO timeline_entries (id, user_id, universe_id, session_id, thread_id, title, description, occurred_at, entry_type, importance)
+              VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'wiki_event', ?)
+            `).run(entryId, userId, universeId, sessionId, null, `Event: ${evTitle}`, evOutcome, evImportance);
           } catch {
             // Non-fatal — timeline entry should not block wiki page creation
           }

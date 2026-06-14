@@ -583,4 +583,19 @@ export function runSchemaMigrations(): void {
       }
     }
   } catch { /* non-fatal */ }
+
+  // Migration: Add universe_id to timeline_entries
+  try {
+    const colCheck = db.prepare("PRAGMA table_info(timeline_entries)").all() as { name: string }[];
+    if (!colCheck.some(c => c.name === "universe_id")) {
+      db.prepare("ALTER TABLE timeline_entries ADD COLUMN universe_id TEXT REFERENCES universes(id)").run();
+
+      // Backfill universe_id from linked sessions for existing entries
+      db.prepare(`
+        UPDATE timeline_entries
+        SET universe_id = (SELECT universe_id FROM sessions WHERE sessions.id = timeline_entries.session_id)
+        WHERE session_id IS NOT NULL
+      `).run();
+    }
+  } catch { /* non-fatal */ }
 }

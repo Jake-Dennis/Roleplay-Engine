@@ -13,6 +13,8 @@ import { findOrphans, getOrphanSuggestions } from "@/lib/wiki/orphans";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import { badRequestError, requireJson } from "@/lib/error-response";
 import { validateLength } from '@/lib/validation';
+import { getDb } from "@/lib/db";
+import { getEntity, registerEntity } from "@/lib/entity-registry";
 import path from "path";
 import fs from "fs";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate-limiter';
@@ -111,6 +113,21 @@ if (!isPathWithinRoot(fullPath, wikiRoot)) {
 }
 
 writeWikiPage(fullPath, content, frontmatter as WikiFrontmatter);
+
+// Auto-register entity if frontmatter has entity_id but no registry entry exists
+try {
+  const entityId = (frontmatter as Record<string, unknown>).entity_id as string | undefined;
+  if (entityId) {
+    const db = getDb();
+    const existing = getEntity(db, entityId);
+    if (!existing) {
+      const fm = frontmatter as Record<string, unknown>;
+      const subtype = (fm.subtype as string) || "character";
+      const displayName = (fm.title as string) || path.basename(pagePath, ".md");
+      registerEntity(db, userId, subtype, displayName, universeId || undefined);
+    }
+  }
+} catch { /* non-fatal — entity registration should not block wiki save */ }
 
 // Regenerate index
 generateIndex(wikiRoot);

@@ -221,9 +221,9 @@ export async function PUT(
       const entryId = crypto.randomUUID();
       const sessionName = (updated as Record<string, unknown>).name as string;
       db.prepare(`
-        INSERT INTO timeline_entries (id, user_id, session_id, thread_id, title, description, occurred_at, entry_type, importance)
-        VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'session_end', 'medium')
-      `).run(entryId, userId, id, null, `Session ${status}: ${sessionName}`, null);
+        INSERT INTO timeline_entries (id, user_id, universe_id, session_id, thread_id, title, description, occurred_at, entry_type, importance)
+        VALUES (?, ?, (SELECT universe_id FROM sessions WHERE id = ?), ?, ?, ?, ?, CURRENT_TIMESTAMP, 'session_end', 'medium')
+      `).run(entryId, userId, id, id, null, `Session ${status}: ${sessionName}`, null);
     } catch {
       // Non-fatal — timeline entry should not block session update
     }

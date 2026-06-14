@@ -93,9 +93,9 @@ export async function handleThreadAnalysis(jobId: string, payload: JobPayload): 
                 const entryId = crypto.randomUUID();
                 const tsDesc = typeof thread.summary === 'string' ? thread.summary : null;
                 db.prepare(`
-                  INSERT INTO timeline_entries (id, user_id, session_id, thread_id, title, description, occurred_at, entry_type, importance)
-                  VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'thread_resolved', 'medium')
-                `).run(entryId, userId, sessionId, existing.id, `Thread Resolved: ${threadName}`, tsDesc);
+                  INSERT INTO timeline_entries (id, user_id, universe_id, session_id, thread_id, title, description, occurred_at, entry_type, importance)
+                  VALUES (?, ?, (SELECT universe_id FROM sessions WHERE id = ?), ?, ?, ?, ?, CURRENT_TIMESTAMP, 'thread_resolved', 'medium')
+                `).run(entryId, userId, sessionId, sessionId, existing.id, `Thread Resolved: ${threadName}`, tsDesc);
               } catch {
                 // Non-fatal
               }

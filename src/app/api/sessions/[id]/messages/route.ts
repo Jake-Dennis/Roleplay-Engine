@@ -183,9 +183,9 @@ export async function POST(
       if (msgCount && msgCount.count === 1) {
         const entryId = crypto.randomUUID();
         db.prepare(`
-          INSERT INTO timeline_entries (id, user_id, session_id, thread_id, title, description, occurred_at, entry_type, importance)
-          VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'session_start', 'medium')
-        `).run(entryId, userId, sessionId, null, session.name || "Session started", null);
+          INSERT INTO timeline_entries (id, user_id, universe_id, session_id, thread_id, title, description, occurred_at, entry_type, importance)
+          VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'session_start', 'medium')
+        `).run(entryId, userId, session.universe_id, sessionId, null, session.name || "Session started", null);
       }
     } catch {
       // Non-fatal — timeline entry creation should not block message sending

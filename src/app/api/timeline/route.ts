@@ -34,6 +34,7 @@ const { searchParams } = new URL(request.url);
 const id = searchParams.get("id");
 const sessionId = searchParams.get("sessionId");
 const threadId = searchParams.get("threadId");
+const universeId = searchParams.get("universe_id");
 const era = searchParams.get("era");
 const entryType = searchParams.get("entryType");
 const sortOrder = searchParams.get("sort") || "desc"; // "asc" or "desc"
@@ -71,6 +72,10 @@ if (era) {
 if (entryType) {
   query += " AND entry_type = ?";
   params.push(entryType);
+}
+if (universeId) {
+  query += " AND universe_id = ?";
+  params.push(universeId);
 }
 
 // Cursor-based pagination
@@ -127,7 +132,7 @@ if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   requireJson(request);
   const body = await request.json();
-const { title, description, sessionId, threadId, occurredAt, era, entryType, importance } = body;
+const { title, description, sessionId, threadId, universe_id, occurredAt, era, entryType, importance } = body;
 
 if (!title || title.trim().length === 0) {
   return NextResponse.json({ error: "title is required" }, { status: 400 });
@@ -152,11 +157,12 @@ const db = getDb();
 const id = crypto.randomUUID();
 
 db.prepare(
-  `INSERT INTO timeline_entries (id, user_id, session_id, thread_id, title, description, occurred_at, era, entry_type, importance)
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  `INSERT INTO timeline_entries (id, user_id, universe_id, session_id, thread_id, title, description, occurred_at, era, entry_type, importance)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 ).run(
   id,
   userId,
+  universe_id || null,
   sessionId || null,
   threadId || null,
   title.trim(),

@@ -187,6 +187,7 @@ export function createTestDb(): Database.Database {
     CREATE TABLE IF NOT EXISTS timeline_entries (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),
+      universe_id TEXT REFERENCES universes(id),
       session_id TEXT REFERENCES sessions(id) ON DELETE CASCADE,
       thread_id TEXT REFERENCES narrative_threads(id),
       title TEXT NOT NULL,

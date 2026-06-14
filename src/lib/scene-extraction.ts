@@ -419,10 +419,10 @@ Return ONLY valid JSON, no markdown, no explanation.`;
       try {
         const entryId = crypto.randomUUID();
         db.prepare(`
-          INSERT INTO timeline_entries (id, user_id, session_id, thread_id, title, description, occurred_at, entry_type, importance)
-          VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'phase_change', 'low')
+          INSERT INTO timeline_entries (id, user_id, universe_id, session_id, thread_id, title, description, occurred_at, entry_type, importance)
+          VALUES (?, ?, (SELECT universe_id FROM sessions WHERE id = ?), ?, ?, ?, ?, CURRENT_TIMESTAMP, 'phase_change', 'low')
         `).run(
-          entryId, userId, sessionId, null,
+          entryId, userId, sessionId, sessionId, null,
           `Phase Change: ${oldPhase || "none"} → ${newPhase}`,
           `Narrative phase transitioned from ${oldPhase || "none"} to ${newPhase}`
         );

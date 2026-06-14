@@ -13,6 +13,8 @@ import {
 import { saveRevision } from "@/lib/wiki/revisions";
 import { recordVersion, createSnapshotFile, getNextVersionNumber } from "@/lib/wiki/history";
 import { generateIndex } from "@/lib/wiki/index-generator";
+import { getDb } from "@/lib/db";
+import { getEntity, registerEntity } from "@/lib/entity-registry";
 import { findOrphans } from "@/lib/wiki/orphans";
 import { parseWikilinks, resolveWikilink } from "@/lib/wiki/wikilinks";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
@@ -462,6 +464,20 @@ export async function PUT(
 
     // Regenerate index
     generateIndex(wikiRoot);
+
+    // Auto-register entity if frontmatter has entity_id but no registry entry exists
+    try {
+      const entityId = mergedFrontmatter.entity_id;
+      if (entityId) {
+        const db = getDb();
+        const existing = getEntity(db, entityId);
+        if (!existing) {
+          const subtype = mergedFrontmatter.subtype || "character";
+          const displayName = mergedFrontmatter.title || resolvedSlug;
+          registerEntity(db, userId, subtype, displayName, mergedFrontmatter.universe || undefined);
+        }
+      }
+    } catch { /* non-fatal — entity registration should not block wiki save */ }
 
     // Sync description/personality to linked personas
     try {
