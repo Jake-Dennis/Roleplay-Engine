@@ -129,7 +129,8 @@ export async function POST(
   const sessionPersonaId = (session as Record<string, unknown>).persona_id as string | undefined;
   if (sessionPersonaId) {
     try {
-      const wikiRoot = getWikiRoot(userId);
+      const universeId = (session as Record<string, unknown>).universe_id as string | undefined;
+      const wikiRoot = getWikiRoot(userId, universeId);
       const allPages = listWikiPages(wikiRoot);
       const page = allPages.find(p =>
         p.frontmatter.type === 'entity' &&
