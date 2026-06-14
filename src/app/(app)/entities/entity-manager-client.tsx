@@ -137,11 +137,13 @@ export function EntityManagerClient() {
         body: JSON.stringify({
           path: pagePath,
           content: `# ${name.trim()}\n`,
+          universeId: activeUniverse?.id,
           frontmatter: {
             title: name.trim(),
             type: "entity",
             subtype: type,
             status: "draft",
+            universe: activeUniverse?.id || undefined,
             entity_id: entityId,
             tags: [type],
           },
