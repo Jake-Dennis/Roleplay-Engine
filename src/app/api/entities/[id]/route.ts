@@ -13,6 +13,9 @@ import {
   addAlias,
   findAliasConflict,
 } from "@/lib/entity-registry";
+import { getWikiRoot } from "@/lib/wiki/wiki-root";
+import { listWikiPages, deleteWikiPage } from "@/lib/wiki/file-io";
+import { generateIndex } from "@/lib/wiki/index-generator";
 
 /**
  * GET /api/entities/[id]
@@ -155,6 +158,19 @@ export const DELETE = withErrorHandler(async (request: NextRequest) => {
   }
 
   db.prepare("DELETE FROM entity_registry WHERE id = ?").run(id);
+
+  // Also delete the associated wiki page if one exists
+  try {
+    const wikiRoot = getWikiRoot(userId, existing.universeId || undefined);
+    const allPages = listWikiPages(wikiRoot);
+    const wikiPage = allPages.find(p => (p.frontmatter.entity_id as string) === id);
+    if (wikiPage) {
+      deleteWikiPage(wikiPage.path);
+      generateIndex(wikiRoot);
+    }
+  } catch {
+    // Non-fatal — wiki cleanup should not block entity deletion
+  }
 
   return NextResponse.json({ success: true });
 });
