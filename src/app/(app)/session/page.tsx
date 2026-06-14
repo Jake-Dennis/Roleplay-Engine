@@ -19,7 +19,7 @@ interface Session {
   created_at: string;
   updated_at: string | null;
   owner_name: string;
-  universe_id?: string | null;
+  universeId?: string | null;
 }
 
 interface Invitation {
@@ -49,7 +49,7 @@ export default function SessionListPage() {
       const invData = await invRes.json();
       let filtered = sessData.sessions || [];
       if (activeUniverse) {
-        filtered = filtered.filter((s: Session) => s.universe_id === activeUniverse.id);
+        filtered = filtered.filter((s: Session) => s.universeId === activeUniverse.id);
       }
       setSessions(filtered);
       setInvitations(invData.invitations || []);
