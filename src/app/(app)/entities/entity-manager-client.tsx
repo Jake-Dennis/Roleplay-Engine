@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
-  User, Ghost, MapPin, Calendar, Flag, Package, Plus, Search, Loader2, ExternalLink, BookOpen, Merge, X
+  User, Ghost, MapPin, Calendar, Flag, Package, Plus, Search, Loader2, ExternalLink, BookOpen, Merge, X, Globe
 } from "lucide-react";
+import { useApp } from "@/contexts/app-context";
 
 interface Entity {
   id: string;
@@ -49,6 +50,7 @@ const ENTITY_FOLDER: Record<string, string> = {
 
 export function EntityManagerClient() {
   const router = useRouter();
+  const { activeUniverse } = useApp();
   const [entities, setEntities] = useState<Entity[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<FilterType>("all");
@@ -69,6 +71,7 @@ export function EntityManagerClient() {
       const params = new URLSearchParams();
       if (filterType !== "all") params.set("type", filterType);
       if (searchQuery.trim()) params.set("search", searchQuery.trim());
+      if (activeUniverse) params.set("universe_id", activeUniverse.id);
       const res = await fetch(`/api/entities${params.toString() ? "?" + params.toString() : ""}`);
       if (res.ok) {
         const json = await res.json();
@@ -79,7 +82,7 @@ export function EntityManagerClient() {
     } finally {
       setLoading(false);
     }
-  }, [filterType, searchQuery]);
+  }, [filterType, searchQuery, activeUniverse]);
 
   useEffect(() => {
     loadEntities();
@@ -114,6 +117,7 @@ export function EntityManagerClient() {
         body: JSON.stringify({
           entityType: type,
           displayName: name.trim(),
+          universeId: activeUniverse?.id || undefined,
         }),
       });
       if (!regRes.ok) {
@@ -164,6 +168,12 @@ export function EntityManagerClient() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-text-primary">Entities</h1>
+          {activeUniverse && (
+            <p className="text-xs text-text-muted flex items-center gap-1 mt-0.5">
+              <Globe className="h-3 w-3" />
+              {activeUniverse.name}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           <button

@@ -1018,6 +1018,17 @@ In predict-test.ts and combination-test.ts, the binary search phase skips all va
 - `src/app/(app)/universe/[id]/manage/ai-management-client.tsx` — NEW
 - `src/app/(app)/universe/[id]/page.tsx` — AI Management nav link
 
+## 2026-06-15 — Cycle: Filter entities page by active universe
+
+**Trigger:** User requested the Entities page filter by the active universe, like sessions do.
+
+**Changes:**
+1. `src/app/(app)/entities/entity-manager-client.tsx` — Added `useApp()` import and `activeUniverse` context. The entity list API call now passes `?universe_id=` when a universe is active. New entity creation (`POST /api/entities`) now includes `universeId` from the active universe. Header shows the active universe name below "Entities" title.
+
+**Note:** The API already supported `?universe_id=` filtering — the frontend just wasn't using it.
+
+---
+
 ## 2026-06-15 — Cycle: Simplify session creation (remove universe dropdown)
 
 **Trigger:** User requested reworking the "New Session" flow — instead of picking a universe from a dropdown during creation, auto-link to the active universe from the sidebar.
