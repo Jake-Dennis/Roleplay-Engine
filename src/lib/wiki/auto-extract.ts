@@ -205,9 +205,16 @@ export async function extractAndCreateWikiEntities(
         if (registryEntityType) {
           try {
             const db = getDb();
-            const existing = db.prepare(
-              "SELECT id FROM entity_registry WHERE display_name = ? AND user_id = ?"
-            ).get(entity.name, userId) as { id: string } | undefined;
+            // Check for existing persona entity first
+            const persona = universeId ? db.prepare(
+              "SELECT id FROM entity_registry WHERE LOWER(display_name) = LOWER(?) AND entity_type = 'persona' AND universe_id = ?"
+            ).get(entity.name, universeId) as { id: string } | undefined : null;
+            if (persona) {
+              // Link to persona — no duplicate needed
+            } else {
+              const existing = db.prepare(
+                "SELECT id FROM entity_registry WHERE display_name = ? AND user_id = ?"
+              ).get(entity.name, userId) as { id: string } | undefined;
             if (!existing) {
               const entityId = `${registryEntityType}:${crypto.randomUUID()}`;
               db.prepare(
@@ -217,7 +224,8 @@ export async function extractAndCreateWikiEntities(
                 "INSERT OR IGNORE INTO entity_aliases (id, entity_id, alias, source) VALUES (?, ?, ?, 'wiki_sync')"
               ).run(crypto.randomUUID(), entityId, entity.name);
             }
-          } catch {
+          }
+        } catch {
             // non-fatal — registry is auxiliary
           }
         }

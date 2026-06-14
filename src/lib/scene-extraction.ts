@@ -9,11 +9,18 @@ import { safeParseWarn } from "@/lib/safe-json";
  * Resolve a list of NPC name strings to entity_registry IDs.
  * Falls back to the name itself if no matching entity is found.
  */
-function resolveNpcNamesToIds(db: ReturnType<typeof getDb>, userId: string, names: string[]): string[] {
+function resolveNpcNamesToIds(db: ReturnType<typeof getDb>, userId: string, universeId: string | null, names: string[]): string[] {
   const ids: string[] = [];
   for (const name of names) {
     const trimmed = name.trim();
     if (!trimmed) continue;
+    // Check for persona entity first (scoped to universe)
+    if (universeId) {
+      const persona = db.prepare(
+        "SELECT id FROM entity_registry WHERE LOWER(display_name) = LOWER(?) AND entity_type = 'persona' AND universe_id = ? LIMIT 1"
+      ).get(trimmed, universeId) as { id: string } | undefined;
+      if (persona) { ids.push(persona.id); continue; }
+    }
     const found = db.prepare(
       "SELECT id FROM entity_registry WHERE display_name = ? AND user_id = ? AND entity_type = 'npc' LIMIT 1"
     ).get(trimmed, userId) as { id: string } | undefined;
@@ -240,6 +247,10 @@ export async function extractAndApplySceneState(
 ): Promise<void> {
   try {
     const db = getDb();
+    const sessionRow = db.prepare(
+      "SELECT universe_id FROM sessions WHERE id = ?"
+    ).get(sessionId) as { universe_id: string | null } | undefined;
+    const universeId = sessionRow?.universe_id || null;
 
     // Fetch last 15 messages (most recent first)
     const messages = db.prepare(
@@ -337,7 +348,7 @@ Return ONLY valid JSON, no markdown, no explanation.`;
 
     // Resolve NPC names to entity IDs
     const npcNames = extracted.active_npcs || [];
-    const npcIds = resolveNpcNamesToIds(db, userId, npcNames);
+    const npcIds = resolveNpcNamesToIds(db, userId, universeId, npcNames);
 
     if (existing) {
       db.prepare(

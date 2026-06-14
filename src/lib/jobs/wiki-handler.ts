@@ -770,19 +770,27 @@ async function handleWikiCreateEntity(jobId: string, payload: JobPayload): Promi
     if (registryEntityType) {
       try {
         const db = getDb();
-        const existing = db.prepare(
-          "SELECT id FROM entity_registry WHERE display_name = ? AND user_id = ?"
-        ).get(name, userId) as { id: string } | undefined;
-        if (existing) {
-          entityId = existing.id;
+        // Check for existing persona entity first (use ID, not name)
+        const persona = db.prepare(
+          "SELECT id FROM entity_registry WHERE LOWER(display_name) = LOWER(?) AND entity_type = 'persona' AND universe_id = ?"
+        ).get(name, universeId) as { id: string } | undefined;
+        if (persona) {
+          entityId = persona.id;
         } else {
-          entityId = `${registryEntityType}:${crypto.randomUUID()}`;
-          db.prepare(
-            "INSERT INTO entity_registry (id, entity_type, display_name, user_id, universe_id) VALUES (?, ?, ?, ?, ?)"
-          ).run(entityId, registryEntityType, name, userId, universeId || null);
-          db.prepare(
-            "INSERT OR IGNORE INTO entity_aliases (id, entity_id, alias, source) VALUES (?, ?, ?, 'wiki_sync')"
-          ).run(crypto.randomUUID(), entityId, name);
+          const existing = db.prepare(
+            "SELECT id FROM entity_registry WHERE display_name = ? AND user_id = ? AND universe_id = ?"
+          ).get(name, userId, universeId) as { id: string } | undefined;
+          if (existing) {
+            entityId = existing.id;
+          } else {
+            entityId = `${registryEntityType}:${crypto.randomUUID()}`;
+            db.prepare(
+              "INSERT INTO entity_registry (id, entity_type, display_name, user_id, universe_id) VALUES (?, ?, ?, ?, ?)"
+            ).run(entityId, registryEntityType, name, userId, universeId || null);
+            db.prepare(
+              "INSERT OR IGNORE INTO entity_aliases (id, entity_id, alias, source) VALUES (?, ?, ?, 'wiki_sync')"
+            ).run(crypto.randomUUID(), entityId, name);
+          }
         }
       } catch {
         // non-fatal — registry is auxiliary
@@ -829,15 +837,21 @@ async function handleWikiCreateEntity(jobId: string, payload: JobPayload): Promi
     // Auto-create NPC record for character-type entities
     if (entityType === "character") {
       try {
-        const existing = getDb().prepare(
-          "SELECT id FROM entity_registry WHERE user_id = ? AND universe_id = ? AND LOWER(display_name) = LOWER(?)"
-        ).get(userId, universeId, name) as { id: string } | undefined;
-        if (!existing) {
-          const newId = `npc:${crypto.randomUUID()}`;
-          getDb().prepare(
-            `INSERT INTO entity_registry (id, entity_type, display_name, description, user_id, universe_id)
-             VALUES (?, 'npc', ?, ?, ?, ?)`
-          ).run(newId, name, description || null, userId, universeId);
+        // Check for existing persona first — link to it instead of creating duplicate NPC
+        const persona = getDb().prepare(
+          "SELECT id FROM entity_registry WHERE LOWER(display_name) = LOWER(?) AND entity_type = 'persona' AND universe_id = ?"
+        ).get(name, universeId) as { id: string } | undefined;
+        if (!persona) {
+          const existing = getDb().prepare(
+            "SELECT id FROM entity_registry WHERE user_id = ? AND universe_id = ? AND LOWER(display_name) = LOWER(?)"
+          ).get(userId, universeId, name) as { id: string } | undefined;
+          if (!existing) {
+            const newId = `npc:${crypto.randomUUID()}`;
+            getDb().prepare(
+              `INSERT INTO entity_registry (id, entity_type, display_name, description, user_id, universe_id)
+               VALUES (?, 'npc', ?, ?, ?, ?)`
+            ).run(newId, name, description || null, userId, universeId);
+          }
         }
       } catch {
         // Non-fatal

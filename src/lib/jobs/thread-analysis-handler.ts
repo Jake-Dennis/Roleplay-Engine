@@ -18,13 +18,20 @@ import type { JobPayload, JobResult } from "./types";
 
 /**
  * Resolve entity names to entity_registry IDs.
- * Tries exact display_name match first, falls back to the name itself.
+ * Checks for persona entities first (scoped to universe), falls back to name.
  */
-function resolveEntityNamesToIds(db: ReturnType<typeof getDb>, userId: string, names: string[]): string[] {
+function resolveEntityNamesToIds(db: ReturnType<typeof getDb>, userId: string, universeId: string | null, names: string[]): string[] {
   const ids: string[] = [];
   for (const name of names) {
     const trimmed = typeof name === 'string' ? name.trim() : '';
     if (!trimmed) continue;
+    // Check for persona entity first (scoped to universe)
+    if (universeId) {
+      const persona = db.prepare(
+        "SELECT id FROM entity_registry WHERE LOWER(display_name) = LOWER(?) AND entity_type = 'persona' AND universe_id = ? LIMIT 1"
+      ).get(trimmed, universeId) as { id: string } | undefined;
+      if (persona) { ids.push(persona.id); continue; }
+    }
     const found = db.prepare(
       "SELECT id FROM entity_registry WHERE display_name = ? AND user_id = ? LIMIT 1"
     ).get(trimmed, userId) as { id: string } | undefined;
@@ -56,6 +63,12 @@ export async function handleThreadAnalysis(jobId: string, payload: JobPayload): 
     markJobCompleted(jobId);
     return { success: true, jobId, type: "thread_analysis", data: { threadsFound: 0 } };
   }
+
+  // Get session's universe for persona-scoped entity lookups
+  const sessionRow = db.prepare(
+    "SELECT universe_id FROM sessions WHERE id = ?"
+  ).get(sessionId) as { universe_id: string | null } | undefined;
+  const universeId = sessionRow?.universe_id || null;
 
   // Fetch existing threads for status-diff detection
   const existingThreads = db.prepare(`
@@ -103,7 +116,7 @@ export async function handleThreadAnalysis(jobId: string, payload: JobPayload): 
 
             // Update existing thread record
             const newEntities = Array.isArray(thread.keyEntities) ? thread.keyEntities : [];
-            const newEntityIds = resolveEntityNamesToIds(db, userId as string, newEntities);
+            const newEntityIds = resolveEntityNamesToIds(db, userId as string, universeId, newEntities);
             db.prepare(`
               UPDATE narrative_threads SET status = ?, summary = ?, key_entities = ?, entity_ids = ? WHERE id = ?
             `).run(
@@ -117,7 +130,7 @@ export async function handleThreadAnalysis(jobId: string, payload: JobPayload): 
             // New thread — insert
             const threadId = crypto.randomUUID();
             const newEntities = Array.isArray(thread.keyEntities) ? thread.keyEntities : [];
-            const newEntityIds = resolveEntityNamesToIds(db, userId as string, newEntities);
+            const newEntityIds = resolveEntityNamesToIds(db, userId as string, universeId, newEntities);
             db.prepare(`
               INSERT INTO narrative_threads (id, user_id, session_id, name, status, summary, key_entities, entity_ids)
               VALUES (?, ?, ?, ?, ?, ?, ?, ?)
