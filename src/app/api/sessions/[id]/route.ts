@@ -68,12 +68,14 @@ export async function GET(
   // Get messages (A1: include has_siblings for branch indicator)
   const messages = db.prepare(`
     SELECT m.*, COALESCE(sp.character_name, u.username) as sender_name,
+      er.display_name as persona_name,
       (SELECT COUNT(*) > 0 FROM messages m2
        WHERE m2.parent_message_id = m.parent_message_id
        AND m2.id != m.id AND m2.is_deleted = 0) as has_siblings
     FROM messages m
     LEFT JOIN users u ON m.sender_id = u.id
     LEFT JOIN session_participants sp ON m.session_id = sp.session_id AND m.sender_id = sp.user_id
+    LEFT JOIN entity_registry er ON m.persona_id = er.id
     WHERE m.session_id = ? AND m.is_deleted = 0
     ORDER BY m.rowid ASC
   `).all(id);
