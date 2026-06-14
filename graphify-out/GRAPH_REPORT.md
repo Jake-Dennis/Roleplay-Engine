@@ -1,16 +1,16 @@
 # Graph Report - Roleplay-Engine  (2026-06-14)
 
 ## Corpus Check
-- 636 files · ~602,498 words
+- 634 files · ~601,143 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2849 nodes · 8307 edges · 154 communities (135 shown, 19 thin omitted)
+- 2849 nodes · 8300 edges · 160 communities (143 shown, 17 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 6 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8e2f115a`
+- Built from commit: `1fe81d8b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -100,6 +100,7 @@
 - [[_COMMUNITY_package.json  name  private|package.json / name / private]]
 - [[_COMMUNITY_graph-view.tsx  COMMUNITY_COLORS  computeDegrees()|graph-view.tsx / COMMUNITY_COLORS / computeDegrees()]]
 - [[_COMMUNITY_context-test.ts  attemptGeneration()  ContextTestProgressC|context-test.ts / attemptGeneration() / ContextTestProgressC]]
+- [[_COMMUNITY_Community 85|Community 85]]
 - [[_COMMUNITY_server-config.ts  emptyRow()  FALLBACK_OLLAMA_PORT|server-config.ts / emptyRow() / FALLBACK_OLLAMA_PORT]]
 - [[_COMMUNITY_react-dom  hover-preview.tsx  clampPosition()|react-dom / hover-preview.tsx / clampPosition()]]
 - [[_COMMUNITY_benchmark-wiki.ts  benchmark()  cleanupWikiRoot()|benchmark-wiki.ts / benchmark() / cleanupWikiRoot()]]
@@ -107,6 +108,7 @@
 - [[_COMMUNITY_migrate-universe-scope.ts  DATA_DIR  dbPath|migrate-universe-scope.ts / DATA_DIR / dbPath]]
 - [[_COMMUNITY_test-phase2.js  apiRoutes  protectedPages|test-phase2.js / apiRoutes / protectedPages]]
 - [[_COMMUNITY_wiki-quick-switcher.tsx  charactersAppearInOrder()  FOOTER|wiki-quick-switcher.tsx / charactersAppearInOrder() / FOOTER]]
+- [[_COMMUNITY_Community 93|Community 93]]
 - [[_COMMUNITY_NewSessionPage()  Universe  session-creator.tsx|NewSessionPage() / Universe / session-creator.tsx]]
 - [[_COMMUNITY_error-boundary.tsx  ErrorBoundary  .componentDidCatch()|error-boundary.tsx / ErrorBoundary / .componentDidCatch()]]
 - [[_COMMUNITY_config.ts  addFolderToConfig()  DEFAULT_FOLDER_ORDER|config.ts / addFolderToConfig() / DEFAULT_FOLDER_ORDER]]
@@ -130,8 +132,11 @@
 - [[_COMMUNITY_test-phase7.js  main()  req()|test-phase7.js / main() / req()]]
 - [[_COMMUNITY_cytoscape  react-cytoscapejs.d.ts  CytoscapeComponent|cytoscape / react-cytoscapejs.d.ts / CytoscapeComponent]]
 - [[_COMMUNITY_entity-ref-handler.ts  escapeRegex()  findWikiFilesWithEnt|entity-ref-handler.ts / escapeRegex() / findWikiFilesWithEnt]]
+- [[_COMMUNITY_Community 117|Community 117]]
+- [[_COMMUNITY_Community 118|Community 118]]
 - [[_COMMUNITY_test-phase1.js  assert()  fetchJSON()|test-phase1.js / assert() / fetchJSON()]]
 - [[_COMMUNITY_jobs-header.tsx  JobsHeader()  JobsHeaderProps|jobs-header.tsx / JobsHeader() / JobsHeaderProps]]
+- [[_COMMUNITY_Community 121|Community 121]]
 - [[_COMMUNITY_run-benchmark.mjs  fetchJSON()  main()|run-benchmark.mjs / fetchJSON() / main()]]
 - [[_COMMUNITY_run-benchmark-local.mjs  fetchJSON()  main()|run-benchmark-local.mjs / fetchJSON() / main()]]
 - [[_COMMUNITY_session-list.tsx  Session  SessionList()|session-list.tsx / Session / SessionList()]]
@@ -154,6 +159,7 @@
 - [[_COMMUNITY_Community 151|Community 151]]
 - [[_COMMUNITY_Community 152|Community 152]]
 - [[_COMMUNITY_Community 153|Community 153]]
+- [[_COMMUNITY_Community 154|Community 154]]
 - [[_COMMUNITY_Community 155|Community 155]]
 - [[_COMMUNITY_Community 156|Community 156]]
 - [[_COMMUNITY_Community 157|Community 157]]
@@ -173,9 +179,9 @@
 10. `withErrorHandler()` - 73 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `main()` --calls--> `generateText()`  [INFERRED]
-  .opencode/force-thread.js → src/lib/ollama.ts
 - `main()` --calls--> `getActiveJobModel()`  [INFERRED]
+  .opencode/force-thread.js → src/lib/ollama.ts
+- `main()` --calls--> `generateText()`  [INFERRED]
   .opencode/force-thread.js → src/lib/ollama.ts
 - `main()` ----> `sanitizeWikiFilename()`  [EXTRACTED]
   docs/historical-evidence/omo/archived-scripts/migrate-events-to-wiki.ts → src/lib/wiki/file-io.ts
@@ -187,59 +193,59 @@
 ## Import Cycles
 - None detected.
 
-## Communities (154 total, 19 thin omitted)
+## Communities (160 total, 17 thin omitted)
 
 ### Community 0 - "route.ts / DELETE() / GET()"
 Cohesion: 0.11
-Nodes (48): DELETE(), GET(), POST(), DELETE(), formatBytes(), GET(), POST(), POST() (+40 more)
+Nodes (38): DELETE(), POST(), PUT(), ExportMessage, formatAsJson(), formatAsMarkdown(), formatAsText(), GET() (+30 more)
 
 ### Community 1 - "route.ts / PUT / route.ts"
-Cohesion: 0.06
-Nodes (46): POST, POST, GET, PUT, POST, GET, POST, POST (+38 more)
+Cohesion: 0.05
+Nodes (57): PUT, GET, PUT, POST, GET, POST, DELETE, GET (+49 more)
 
 ### Community 2 - "wiki-tasks.ts / wikiArchive() / wikiCompressSummaries()"
 Cohesion: 0.08
-Nodes (68): main(), process(), findWikiFilesWithEntityId(), process(), handleLoreExtractionJob(), markJobCompleted(), updateJobProgress(), handleCompressMemories() (+60 more)
+Nodes (68): main(), wikiArchive(), wikiCompressSummaries(), wikiDecayRelationships(), wikiDeepenPages(), wikiEnrichEntities(), wikiGenerateRumors(), wikiRefineRelationships() (+60 more)
 
 ### Community 3 - "route.ts / PUT / route.ts"
-Cohesion: 0.10
-Nodes (28): POST, POST(), POST(), POST(), findAliasConflict(), requireJson(), markOllamaBusy(), markOllamaIdle() (+20 more)
+Cohesion: 0.09
+Nodes (45): POST, POST, POST, POST(), POST(), GET(), GET(), POST() (+37 more)
 
 ### Community 4 - "app-layout-shell.tsx / AppLayoutShell() / GroupSelector"
 Cohesion: 0.04
-Nodes (50): AppLayoutShell(), GroupSelector, NavItem, navItems, SessionSelector, UniverseSelector, useActiveUniverse(), ActiveState (+42 more)
+Nodes (46): AppLayoutShell(), useActiveUniverse(), ActiveState, AppContext, AppContextType, AppProvider(), AppUser, Group (+38 more)
 
 ### Community 5 - "error.tsx / ErrorPage() / loading.tsx"
-Cohesion: 0.03
-Nodes (34): CanonLayerSelectorProps, ARC_TYPE_LABELS, ESCALATION_COLORS, NarrativeThread, Session, STATUS_COLORS, Universe, CANON_MIGRATION_MAP (+26 more)
+Cohesion: 0.04
+Nodes (21): ARC_TYPE_LABELS, ESCALATION_COLORS, NarrativeThread, Session, STATUS_COLORS, Universe, JobsHeaderProps, ReindexSectionProps (+13 more)
 
 ### Community 6 - "npc-wiki-sync.ts / buildTraitsSection() / handleNpcWikiSync("
-Cohesion: 0.25
-Nodes (16): POST(), path, Path, PUT(), createSnapshotFile(), getNextVersionNumber(), getPageVersions(), recordVersion() (+8 more)
+Cohesion: 0.15
+Nodes (29): POST(), DELETE(), extractBlock(), extractSection(), findPageByName(), GET(), PUT(), resolveSlugPath() (+21 more)
 
 ### Community 7 - "route.ts / checkDb() / checkKokoro()"
-Cohesion: 0.06
-Nodes (50): c_users_jakep_documents_github_roleplay_engine_src_lib_auth_token_ts, checkDb(), checkKokoro(), checkOllama(), GET(), isAuthorized(), jose, authenticateUser() (+42 more)
+Cohesion: 0.21
+Nodes (12): jose, JWT_SECRET, verifyTokenBasic(), csrfErrorResponse(), timingSafeEqual(), validateCsrfToken(), jose, config (+4 more)
 
 ### Community 8 - "global-error.tsx / GlobalError() / layer-viewer.tsx"
 Cohesion: 0.03
-Nodes (33): LAYERS, LayerStats, LayerViewerProps, LAYER_OPTIONS, PromotionDialogProps, JobsHeaderProps, ReindexSectionProps, Stats (+25 more)
+Nodes (35): Backlink, BacklinkPanelProps, LINK_TYPE_LABELS, LAYERS, LayerStats, LayerViewerProps, LAYER_OPTIONS, PromotionDialogProps (+27 more)
 
 ### Community 9 - "page.tsx / Home() / page.tsx"
-Cohesion: 0.05
-Nodes (44): TypingIndicator(), NarrativeStatePanel(), NarrativeStatePanelProps, RawSceneApiResponse, SceneConflict, SceneGoal, SceneState, StateSnapshot (+36 more)
+Cohesion: 0.04
+Nodes (41): TypingIndicator(), NarrativeStatePanel(), NarrativeStatePanelProps, RawSceneApiResponse, SceneConflict, SceneGoal, SceneState, StateSnapshot (+33 more)
 
 ### Community 10 - "POST / POST() / extractId()"
-Cohesion: 0.21
-Nodes (16): ENTITY_TYPE_TO_SUBTYPE, ExtractedEntity, ExtractedEvent, ExtractedRelationship, LoreExtractionResult, buildEvolutionPrompt(), handleNpcEvolutionJob(), parseEvolutionResponse() (+8 more)
+Cohesion: 0.18
+Nodes (14): ENTITY_TYPE_TO_SUBTYPE, ExtractedEntity, ExtractedEvent, ExtractedRelationship, LoreExtractionResult, buildEvolutionPrompt(), handleNpcEvolutionJob(), parseEvolutionResponse() (+6 more)
 
 ### Community 11 - "retrieval-inspector.tsx / renderAdditionalContext() / render"
 Cohesion: 0.11
-Nodes (23): classifyIntent(), ConversationContext, getActiveThreads(), getCanonContext(), getConversationPairMessages(), getDecisionPoints(), getMemoryContext(), getMessageSummaries() (+15 more)
+Nodes (22): ConversationContext, getActiveThreads(), getCanonContext(), getConversationPairMessages(), getDecisionPoints(), getMemoryContext(), getMessageSummaries(), getRecentMessages() (+14 more)
 
 ### Community 12 - "use-connection-status.ts / ConnectionStatus / LOADING_STATUS"
-Cohesion: 0.08
-Nodes (24): ConnectionStatus, LOADING_STATUS, ServiceStatus, useConnectionStatus(), TIMEOUTS, buildSystemPrompt(), ModelSettings, OllamaModel (+16 more)
+Cohesion: 0.16
+Nodes (12): buildSystemPrompt(), ModelSettings, OllamaModel, ServerSettings, ServerSettingsPage(), TTSCacheStats, ConnectionStatus, ConnectionStatusSection() (+4 more)
 
 ### Community 13 - "migrate-events-to-wiki.ts / args / buildFrontmatter()"
 Cohesion: 0.32
@@ -258,32 +264,32 @@ Cohesion: 0.12
 Nodes (15): EvolutionDetail, EvolutionEntry, getDominantEmotion(), getEmotionDirection(), POSITIVE_EMOTIONS, RelationshipTimeline(), RelationshipTimelineProps, TimelineEntry (+7 more)
 
 ### Community 17 - "entity-manager-client.tsx / Entity / EntityManagerClient()"
-Cohesion: 0.07
-Nodes (30): Entity, ENTITY_FOLDER, EntityManagerClient(), FILTER_TABS, FilterType, TYPE_META, ENTRY_TYPE_ICONS, ENTRY_TYPE_LABELS (+22 more)
+Cohesion: 0.05
+Nodes (36): Entity, ENTITY_FOLDER, EntityManagerClient(), FILTER_TABS, FilterType, TYPE_META, ENTRY_TYPE_ICONS, ENTRY_TYPE_LABELS (+28 more)
 
 ### Community 18 - "route.ts / POST() / Path"
 Cohesion: 0.09
-Nodes (29): PUT, GET, POST, GET, POST, GET, PUT, hasEntityAccess() (+21 more)
+Nodes (28): GET, POST, GET, POST, GET, PUT, GET(), hasEntityAccess() (+20 more)
 
 ### Community 19 - "use-wikilink-autocomplete.ts / TEXTAREA_EVENTS / useWikilink"
 Cohesion: 0.09
 Nodes (33): c_users_jakep_documents_github_roleplay_engine_src_components_wiki_editor_editor_styles_css, TEXTAREA_EVENTS, useWikilinkAutocomplete(), UseWikilinkAutocompleteOptions, UseWikilinkAutocompleteResult, filterPages(), findWikilinkContext(), getCursorCoordinates() (+25 more)
 
 ### Community 20 - "AdminEntitiesPage() / EntityDetail / EntityMention"
-Cohesion: 0.07
-Nodes (28): Contradiction, SEVERITY_ORDER, STAT_FILTERS, EntityDetail, EntityMention, EntityRow, SOURCE_LABELS, TabKey (+20 more)
+Cohesion: 0.08
+Nodes (25): EntityDetail, EntityMention, EntityRow, SOURCE_LABELS, TabKey, TABS, BulkMoveResult, BulkMoveTab() (+17 more)
 
 ### Community 21 - "lore-extraction.ts / ENTITY_TYPE_TO_SUBTYPE / ExtractedEntit"
-Cohesion: 0.12
-Nodes (26): batchRewriteLinks(), BulkMoveItem, bulkMovePages(), BulkMoveResult, collectWikiFiles(), MovedPageInfo, singularizeFolder(), applyChangesToPage() (+18 more)
+Cohesion: 0.11
+Nodes (26): handleWikiSuggestRestructure(), RestructureSuggestion, suggestRestructure(), batchRewriteLinks(), BulkMoveItem, bulkMovePages(), BulkMoveResult, collectWikiFiles() (+18 more)
 
 ### Community 22 - "decay-handler.ts / handleDecayRelationships() / embedding-ha"
 Cohesion: 0.09
-Nodes (51): handleDecayRelationships(), backfillRelationshipEvolution(), cancelAllUserJobs(), cancelJob(), getJobStats(), getNextJob(), getUserJobs(), isTransientError() (+43 more)
+Nodes (58): handleArchivalProcessing(), process(), handleDecayRelationships(), handleGenerateEmbeddings(), findWikiFilesWithEntityId(), process(), cancelAllUserJobs(), cancelJob() (+50 more)
 
 ### Community 23 - "backlink-panel.tsx / Backlink / BacklinkPanel()"
-Cohesion: 0.22
-Nodes (5): AUTH_CONFIG, EVENT_BUS_CONFIG, JOB_CONFIG, MEMORY_CONFIG, ChangePasswordSectionProps
+Cohesion: 0.18
+Nodes (8): APP_CONFIG, AUTH_CONFIG, EVENT_BUS_CONFIG, JOB_CONFIG, MEMORY_CONFIG, OLLAMA_CONFIG, TIMEOUTS, ChangePasswordSectionProps
 
 ### Community 24 - "route.ts / ExportMessage / formatAsJson()"
 Cohesion: 0.09
@@ -306,28 +312,28 @@ Cohesion: 0.11
 Nodes (28): BenchmarkJob, BENCHMARKS_DIR, createJob(), deleteJob(), deleteJobFile(), ensureBenchmarksDir(), generateJobId(), getJob() (+20 more)
 
 ### Community 29 - "route.ts / ensureColumn() / POST()"
-Cohesion: 0.08
-Nodes (26): GET, POST, VALID_LAYER_TYPES, ensureParticipantColumns(), ApiResponse, DbParams, DbRow, DecodedToken (+18 more)
+Cohesion: 0.09
+Nodes (24): DELETE(), GET, POST, VALID_LAYER_TYPES, rowToJson(), ApiResponse, DbParams, DecodedToken (+16 more)
 
 ### Community 30 - "page.tsx / PersonasPage() / persona-editor.tsx"
 Cohesion: 0.16
 Nodes (18): TTS_CONFIG, cacheAudio(), checkTTSConnection(), getCachedAudio(), getCacheKey(), TTSGenerateRequest, availableVoices, discoverVoices() (+10 more)
 
 ### Community 31 - "canon-layer-selector.tsx / CanonLayerSelector() / CanonLayer"
-Cohesion: 0.14
-Nodes (19): args, buildFrontmatter(), canonTierToStatus(), DB_PATH, getPageBody(), IS_DRY_RUN, logMigration(), main() (+11 more)
+Cohesion: 0.27
+Nodes (10): args, buildFrontmatter(), canonTierToStatus(), DB_PATH, getPageBody(), IS_DRY_RUN, logMigration(), main() (+2 more)
 
 ### Community 32 - "streaming-text.tsx / StreamingText() / StreamingTextProps"
-Cohesion: 0.05
-Nodes (25): MessageInput, MessageInputProps, StreamingText(), StreamingTextProps, AudioPlayerOptions, UseAudioPlayerResult, UseAuthResult, User (+17 more)
+Cohesion: 0.07
+Nodes (24): GroupSelector, NavItem, navItems, SessionSelector, UniverseSelector, StreamingText(), StreamingTextProps, ConnectionStatus (+16 more)
 
 ### Community 33 - "file-tree.test.tsx / bulk-move.test.ts / createTestWiki()"
-Cohesion: 0.13
-Nodes (29): bun_test, suggestRestructure(), os, createTestWiki(), createTestWiki(), createFixtureWiki(), addSubtypeToConfig(), addTypeToConfig() (+21 more)
+Cohesion: 0.12
+Nodes (26): bun_test, fs, os, createTestWiki(), createTestWiki(), createFixtureWiki(), addSubtypeToConfig(), addTypeToConfig() (+18 more)
 
 ### Community 34 - "relationship-tasks.ts / processRelationshipIdleAnalysis() / "
-Cohesion: 0.10
-Nodes (48): processRelationshipIdleAnalysis(), processRelationshipIdleTier(), processRemainingQueuedJobs(), queueRelationshipIdleJobs(), wikiArchive(), wikiCompressSummaries(), wikiDecayRelationships(), wikiDeepenPages() (+40 more)
+Cohesion: 0.08
+Nodes (52): processRelationshipIdleAnalysis(), processRelationshipIdleTier(), processRemainingQueuedJobs(), queueRelationshipIdleJobs(), backfillRelationshipEvolution(), queueJob(), reapOldJobs(), Backlink (+44 more)
 
 ### Community 35 - "migrate-wiki-to-subtype-folders.ts / backupDataDir() / build"
 Cohesion: 0.12
@@ -338,20 +344,20 @@ Cohesion: 0.15
 Nodes (18): aliveDeadRule, Contradiction, CONTRADICTION_RULES, ContradictionRule, detectAllContradictions(), detectAllContradictionsWithSemantic(), detectContradictions(), locationRule (+10 more)
 
 ### Community 37 - "relationship-analysis.ts / extractEntityNames() / needsRelat"
-Cohesion: 0.22
-Nodes (9): Backlink, getBacklinks(), getOutgoingLinks(), parseAndResolveLinks(), parseWikilinksFromContent(), ResolvedLink, resolveWikilinkFromDB(), storeBacklinks() (+1 more)
+Cohesion: 0.09
+Nodes (22): CanonLayerSelectorProps, CANON_MIGRATION_MAP, CANON_TIERS, CanonTier, ARC_TYPE_LABELS, CANON_TIER_COLORS, CANON_TIER_LABELS, ENTRY_TYPE_ICONS (+14 more)
 
 ### Community 38 - "Community 38"
 Cohesion: 0.08
-Nodes (26): bcryptjs, dnd_kit_core, dnd_kit_sortable, dnd_kit_utilities, dotenv, flexsearch, flowershow_remark_wiki_link, gray_matter (+18 more)
+Nodes (24): bcryptjs, dnd_kit_core, dnd_kit_sortable, dnd_kit_utilities, dotenv, flexsearch, flowershow_remark_wiki_link, dependencies (+16 more)
 
 ### Community 39 - "narrative-state-panel.tsx / FieldRow() / NarrativeStatePanel"
-Cohesion: 0.33
-Nodes (10): DELETE(), extractBlock(), extractSection(), findPageByName(), GET(), PUT(), resolveSlugPath(), resolveWikiPagePath() (+2 more)
+Cohesion: 0.17
+Nodes (14): CollisionInfo, ConflictError, LinkGraph, QueryResult, Wikilink, WikiRevision, WriteWikiPageOptions, detectCollisions() (+6 more)
 
 ### Community 40 - "cancelAllUserJobs() / cancelJob() / getJobStats()"
-Cohesion: 0.11
-Nodes (30): DELETE, GET, PUT, ExportMessage, formatAsJson(), formatAsMarkdown(), formatAsText(), GET() (+22 more)
+Cohesion: 0.24
+Nodes (12): formatBytes(), GET(), POST(), POST(), requireJson(), getUserTtsUrl(), generateSpeech(), generateSpeechStream() (+4 more)
 
 ### Community 41 - "markdown-utils.ts / buildMarkdown() / LoreFrontmatter"
 Cohesion: 0.16
@@ -374,8 +380,8 @@ Cohesion: 0.10
 Nodes (17): react-markdown, rehype-raw, remark-gfm, react_markdown, rehype_raw, remark_gfm, remark_wiki_link, Callout() (+9 more)
 
 ### Community 46 - "ChatWindow / file-tree.test.tsx / chat-window.test.tsx"
-Cohesion: 0.15
-Nodes (17): jest_dom, Session, SessionList(), SessionListProps, defaultIntentIcons, defaultProps, inputRef, sampleMessages (+9 more)
+Cohesion: 0.18
+Nodes (15): ChatWindow, jest_dom, defaultIntentIcons, defaultProps, inputRef, sampleMessages, scrollRef, folderOrder (+7 more)
 
 ### Community 47 - "importance.ts / calculateImportance() / decayRecency()"
 Cohesion: 0.14
@@ -394,8 +400,8 @@ Cohesion: 0.17
 Nodes (7): CompatDatabase, CompatStatement, countJobsByStatus(), createTestDb(), createTestDbWithUser(), createTestUser(), getJobById()
 
 ### Community 51 - "chat-window.tsx / ChatWindowProps / edit-history.tsx"
-Cohesion: 0.13
-Nodes (15): ChatWindow, ChatWindowProps, EditHistory(), EditHistoryProps, EditRecord, Intent, INTENT_KEYWORDS, INTENT_PROTOTYPES (+7 more)
+Cohesion: 0.14
+Nodes (15): ChatWindowProps, EditHistory(), EditHistoryProps, EditRecord, classifyIntent(), Intent, INTENT_KEYWORDS, INTENT_PROTOTYPES (+7 more)
 
 ### Community 52 - "EmotionalState / relationship-viz.ts / buildRelationshipGrap"
 Cohesion: 0.17
@@ -403,19 +409,23 @@ Nodes (17): EmotionalState, buildRelationshipGraph(), calculateEmotionVectors(),
 
 ### Community 53 - "page.tsx / BacklinkInfo / EditMode"
 Cohesion: 0.06
-Nodes (34): BacklinkInfo, EditMode, FileTreePageItem, ReorderChange, EMPTY_FRONTMATTER, parseWikiFrontmatter(), formatTimestamp(), FrontmatterPropertiesPanel() (+26 more)
+Nodes (33): BacklinkInfo, EditMode, FileTreePageItem, ReorderChange, EMPTY_FRONTMATTER, parseWikiFrontmatter(), formatTimestamp(), FrontmatterPropertiesPanel() (+25 more)
 
 ### Community 54 - "test-phase4.js / fs / main()"
-Cohesion: 0.29
-Nodes (8): handleGenerateEmbeddings(), deleteEmbedding(), EmbeddingResult, ensureVectorTable(), getEmbedding(), getEntityText(), hasEmbedding(), processEmbeddings()
+Cohesion: 0.13
+Nodes (5): COMMUNITY_COLORS, GraphViewProps, OutgoingLinksPanel(), OutgoingLinksPanelProps, WikiPage
+
+### Community 55 - "EventBus / .addConnection() / .canConnect()"
+Cohesion: 0.08
+Nodes (9): checkpointDb(), closeDb(), EventBus, runSchemaMigrations(), failProcessingJobs(), runShutdown(), setupGracefulShutdown(), runStartupChecks() (+1 more)
 
 ### Community 56 - "relationship-graph.tsx / GraphEdge / GraphNode"
-Cohesion: 0.09
-Nodes (23): GET, POST, ensureColumn(), POST(), resolveOrCreateEntityId(), EventHandler, SessionEvents, StoredEvent (+15 more)
+Cohesion: 0.28
+Nodes (11): c_users_jakep_documents_github_roleplay_engine_src_lib_auth_token_ts, checkDb(), checkKokoro(), checkOllama(), GET(), isAuthorized(), cleanupExpiredDenylistEntries(), revokeToken() (+3 more)
 
 ### Community 57 - "wikilinks-rewrite.test.ts / makePage() / types.ts"
-Cohesion: 0.07
-Nodes (38): COMMUNITY_COLORS, GraphViewProps, comparePagesForContradiction(), Contradiction, ContradictionResult, detectContradictions(), detectStaleClaims(), extractUserIdFromWikiRoot() (+30 more)
+Cohesion: 0.25
+Nodes (17): comparePagesForContradiction(), Contradiction, ContradictionResult, detectContradictions(), detectStaleClaims(), extractUserIdFromWikiRoot(), findMissingCrossReferences(), groupPagesByEntity() (+9 more)
 
 ### Community 58 - "callout-remark-plugin.ts"
 Cohesion: 0.16
@@ -430,19 +440,19 @@ Cohesion: 0.13
 Nodes (3): dataDir(), mockAppConfigDataDir(), mockConfig
 
 ### Community 61 - "lint.ts / comparePagesForContradiction() / Contradiction"
-Cohesion: 0.07
-Nodes (30): jobs_page_formattime, Job, JOB_TYPE_LABELS, JOB_TYPES, JobsPage(), PRIORITY_COLORS, Stats, STATUS_COLORS (+22 more)
+Cohesion: 0.08
+Nodes (28): Contradiction, SEVERITY_ORDER, STAT_FILTERS, jobs_page_formattime, Job, JOB_TYPE_LABELS, JOB_TYPES, JobsPage() (+20 more)
 
 ### Community 62 - "entity-registry.ts / addAlias() / Entity"
 Cohesion: 0.19
 Nodes (14): addAlias(), Entity, EntityFilters, EntityRow, EntityType, generateEntityId(), getAliasesForEntity(), getEntity() (+6 more)
 
 ### Community 63 - "index-utils.ts / parseWikiIndex() / resolveWikiPagePath()"
-Cohesion: 0.18
-Nodes (17): buildCandidates(), Candidate, levenshteinDistance(), ResolutionResult, resolveEntityToWikiPage(), wiki_file_io_wikipage, parseWikiIndex(), resolveWikiPagePath() (+9 more)
+Cohesion: 0.29
+Nodes (12): wiki_file_io_wikipage, parseWikiIndex(), resolveWikiPagePath(), scoreWikiEntry(), WikiIndexEntry, buildSynthesisPrompt(), extractCitationsFromResponse(), extractRelevantSection() (+4 more)
 
 ### Community 64 - "merge-suggester.ts / findMergeCandidates() / MergeCandidate"
-Cohesion: 0.17
+Cohesion: 0.22
 Nodes (11): EntityRow, GET, normalize(), similarity(), STRIP_WORDS, findMergeCandidates(), MergeCandidate, MergeSearchOptions (+3 more)
 
 ### Community 65 - "ollama-meta.ts / buildModelMeta() / CacheEntry"
@@ -458,8 +468,8 @@ Cohesion: 0.23
 Nodes (11): generateRecommendation(), checkOllamaConnectivity(), convertModelMeta(), runBenchmark(), runBenchmarkBackground(), updateProgress(), OllamaModelMeta, getModelMeta() (+3 more)
 
 ### Community 68 - "backfill-entity-ids.ts / DATA_DIR / dbPath"
-Cohesion: 0.11
-Nodes (14): DATA_DIR, dbPath, better_sqlite3, crypto, DATA_DIR, dbPath, EntityRow, DATA_DIR (+6 more)
+Cohesion: 0.09
+Nodes (16): DATA_DIR, dbPath, better_sqlite3, crypto, DATA_DIR, dbPath, EntityRow, DATA_DIR (+8 more)
 
 ### Community 69 - "devDependencies / eslint / @next/bundle-analyzer"
 Cohesion: 0.15
@@ -478,32 +488,32 @@ Cohesion: 0.17
 Nodes (9): inter, metadata, bundle_analyzer, c_users_jakep_documents_github_roleplay_engine_src_app_globals_css, google, next, nextConfig, withBundleAnalyzer (+1 more)
 
 ### Community 73 - "handleSceneStateExtract() / scene-extraction.ts / detectAndR"
-Cohesion: 0.24
-Nodes (12): handleSceneStateExtract(), CONTENT_LIMITS, detectAndRecordDecisionPoints(), extractAndApplySceneState(), extractChoiceMade(), extractChoicePrompt(), isDecisionPair(), isSimpleAcknowledgment() (+4 more)
+Cohesion: 0.26
+Nodes (11): CONTENT_LIMITS, detectAndRecordDecisionPoints(), extractAndApplySceneState(), extractChoiceMade(), extractChoicePrompt(), isDecisionPair(), isSimpleAcknowledgment(), resolveNpcNamesToIds() (+3 more)
 
 ### Community 74 - "logger.ts / buildEntry() / COLORS"
 Cohesion: 0.24
 Nodes (8): buildEntry(), COLORS, extractMetadata(), formatDev(), formatTimestamp(), getCorrelationId(), log(), StructuredLogger
 
 ### Community 75 - "prompt-builder.ts / applyContextBudget() / assemblePrompt()"
-Cohesion: 0.13
-Nodes (22): renderAdditionalContext(), renderBudgetOverview(), renderBudgetSections(), RetrievalInspector(), RetrievalInspectorProps, PROMPT_BUDGET, applyContextBudget(), assemblePrompt() (+14 more)
+Cohesion: 0.22
+Nodes (14): PROMPT_BUDGET, applyContextBudget(), assemblePrompt(), assemblePromptWithBudget(), buildIntentContext(), estimateTokens(), lib_prompt_builder_injection_protection, NarratorOptions (+6 more)
 
 ### Community 76 - "ai-management-client.tsx / AIMetricsData / ArrowDown()"
 Cohesion: 0.18
 Nodes (4): AIMetricsData, sectionColors, UniverseAIManagementClient(), ManagePageProps
 
 ### Community 77 - "createFixtureWiki() / config-migration.ts / addSubtypeToConf"
-Cohesion: 0.15
-Nodes (19): POST, handleArchivalProcessing(), handleRefineRelationshipSummary(), handleThreadAnalysis(), resolveEntityNamesToIds(), getMessageSummaries(), getSessionSemanticSummaries(), MessageSummaryResult (+11 more)
+Cohesion: 0.09
+Nodes (29): POST, POST, handleCompressMemories(), handleSummarizationJob(), handleSummarizeMessages(), handleThreadAnalysis(), resolveEntityNamesToIds(), getMessageSummaries() (+21 more)
 
 ### Community 78 - "auto-tune.ts / generateRecommendation() / Recommendation"
 Cohesion: 0.26
 Nodes (11): Recommendation, attemptCombination(), binarySearchPredictForContext(), CombinationTestProgressCallback, isOomError(), isTimeoutError(), runCombinationTests(), CombinationResult (+3 more)
 
 ### Community 79 - "MessageBubble.tsx / MessageBubble / MessageBubbleProps"
-Cohesion: 0.20
-Nodes (8): MessageBubble, MessageBubbleProps, clsx, clsx, Input, InputProps, StatusIndicator(), StatusIndicatorProps
+Cohesion: 0.12
+Nodes (12): BenchmarkPoint, TEST_SIZES, MessageBubble, MessageBubbleProps, clsx, clsx, Button, ButtonProps (+4 more)
 
 ### Community 80 - "api-client.ts / api / ApiClient"
 Cohesion: 0.25
@@ -525,6 +535,10 @@ Nodes (13): parseEmotionalState(), EMOTION_HALF_LIVES, applyDecayToAllRelationsh
 Cohesion: 0.33
 Nodes (8): attemptGeneration(), ContextTestProgressCallback, isContextTooLargeError(), isOomError(), isTimeoutError(), runContextTest(), sleep(), mockGenerateText
 
+### Community 85 - "Community 85"
+Cohesion: 0.24
+Nodes (12): authenticateUser(), AuthToken, changePassword(), createUser(), generateToken(), getUserById(), getUserByUsername(), hashPassword() (+4 more)
+
 ### Community 86 - "server-config.ts / emptyRow() / FALLBACK_OLLAMA_PORT"
 Cohesion: 0.22
 Nodes (9): emptyRow(), FALLBACK_OLLAMA_PORT, FALLBACK_TTS_PORT, ModelDefaultsMap, ModelSettings, ResolvedServerConfig, ServerConfigRow, ServerConfigUpdate (+1 more)
@@ -534,12 +548,16 @@ Cohesion: 0.20
 Nodes (6): react-dom, react_dom, HoverPreviewProps, previewCache, PreviewData, UseHoverPreviewReturn
 
 ### Community 88 - "benchmark-wiki.ts / benchmark() / cleanupWikiRoot()"
-Cohesion: 0.33
-Nodes (9): benchmark(), cleanupWikiRoot(), createTempWikiRoot(), FOLDERS, formatMs(), generateContent(), generateFrontmatter(), main() (+1 more)
+Cohesion: 0.23
+Nodes (12): benchmark(), cleanupWikiRoot(), createTempWikiRoot(), FOLDERS, formatMs(), generateContent(), generateFrontmatter(), main() (+4 more)
 
 ### Community 89 - "sync-frontmatter.ts / buildFrontmatter() / DATA_DIR"
 Cohesion: 0.27
 Nodes (9): buildFrontmatter(), DATA_DIR, dbPath, LORE_TYPES, LoreFrontmatter, LoreType, main(), parseFrontmatter() (+1 more)
+
+### Community 90 - "migrate-universe-scope.ts / DATA_DIR / dbPath"
+Cohesion: 0.29
+Nodes (9): args, buildFrontmatter(), canonTierToStatus(), DB_PATH, getPageBody(), IS_DRY_RUN, logMigration(), parseTags() (+1 more)
 
 ### Community 91 - "test-phase2.js / apiRoutes / protectedPages"
 Cohesion: 0.22
@@ -548,6 +566,10 @@ Nodes (6): apiRoutes, protectedPages, publicPages, rand, requests, USER
 ### Community 92 - "wiki-quick-switcher.tsx / charactersAppearInOrder() / FOOTER"
 Cohesion: 0.25
 Nodes (7): charactersAppearInOrder(), FOOTER_HINTS, ResultsList, scorePage(), TYPE_BADGE_CLASSES, WikiPage, WikiQuickSwitcherProps
+
+### Community 93 - "Community 93"
+Cohesion: 0.27
+Nodes (8): renderAdditionalContext(), renderBudgetOverview(), renderBudgetSections(), RetrievalInspector(), RetrievalInspectorProps, BudgetBreakdown, RetrievalInspectorResponse, SectionBudget
 
 ### Community 94 - "NewSessionPage() / Universe / session-creator.tsx"
 Cohesion: 0.18
@@ -558,20 +580,20 @@ Cohesion: 0.25
 Nodes (3): ErrorBoundary, Props, State
 
 ### Community 96 - "config.ts / addFolderToConfig() / DEFAULT_FOLDER_ORDER"
-Cohesion: 0.13
-Nodes (17): addFolderToConfig(), DEFAULT_FOLDER_ORDER, getResolvedFolderOrder(), getTypeRegistryForConfig(), readWikiConfig(), WikiConfig, writeWikiConfig(), cleanupStaleLocks() (+9 more)
+Cohesion: 0.10
+Nodes (23): gray_matter, gray-matter, GET, MoveInput, MoveResult, POST, addFolderToConfig(), DEFAULT_FOLDER_ORDER (+15 more)
 
 ### Community 97 - "page-split.ts / checkPageSize() / headingToFilename()"
 Cohesion: 0.32
 Nodes (7): checkPageSize(), headingToFilename(), PageSizeInfo, resolveMaxPageSize(), SplitSuggestion, SuggestedSubpage, suggestSplit()
 
 ### Community 98 - "combination-test.ts / attemptCombination() / binarySearchPre"
-Cohesion: 0.17
-Nodes (10): APP_CONFIG, OLLAMA_CONFIG, checkpointDb(), closeDb(), runSchemaMigrations(), failProcessingJobs(), runShutdown(), setupGracefulShutdown() (+2 more)
+Cohesion: 0.29
+Nodes (5): jobs_page_parsepayload, safeParse(), parseBoundaries(), personas_page_selectpersona, relationships_page_parseemotions
 
 ### Community 99 - "page.tsx / BenchmarkPage() / BenchmarkPoint"
-Cohesion: 0.33
-Nodes (4): BenchmarkPoint, TEST_SIZES, Button, ButtonProps
+Cohesion: 0.38
+Nodes (4): POST(), markOllamaBusy(), markOllamaIdle(), lib_retrieval_assemblepromptwithbudget
 
 ### Community 100 - "embed-transclusion.tsx / EmbedTransclusion() / EmbedTransclu"
 Cohesion: 0.33
@@ -606,16 +628,16 @@ Cohesion: 0.38
 Nodes (11): generateTextStream(), generateTextWithMetrics(), getChoicesModel(), getUserModels(), getUserOllamaUrl(), resolveMainGpu(), resolveModelOptions(), resolveNumCtx() (+3 more)
 
 ### Community 109 - "add-missing-indexes.ts / DATA_DIR / DB_PATH"
-Cohesion: 0.09
-Nodes (14): fs, DATA_DIR, ensureDir(), main(), ensureDir(), main(), WIKI_FOLDERS, writeFileIfMissing() (+6 more)
+Cohesion: 0.11
+Nodes (14): path, Path, DATA_DIR, ensureDir(), main(), ensureDir(), main(), WIKI_FOLDERS (+6 more)
 
 ### Community 110 - "check-db.ts / db / messages"
 Cohesion: 0.33
 Nodes (5): db, messages, sessions, tables, users
 
 ### Community 111 - "conversation-log.tsx / ConversationLog() / ConversationLogPr"
-Cohesion: 0.15
-Nodes (3): bun_sqlite, _emittedChunks, _mockChoices
+Cohesion: 0.12
+Nodes (4): bun_sqlite, _emittedChunks, _mockChoices, wikiStore
 
 ### Community 112 - "outline-panel.tsx / HeadingItem / OutlinePanel()"
 Cohesion: 0.40
@@ -637,9 +659,21 @@ Nodes (4): cytoscape, cytoscape, CytoscapeComponent, CytoscapeComponentProps
 Cohesion: 0.47
 Nodes (5): fs, main(), path, t(), title()
 
+### Community 117 - "Community 117"
+Cohesion: 0.33
+Nodes (6): BenchmarkStatus, formatContextWindow(), OllamaModel, OllamaSettingsProps, OllamaSettingsSection(), ServerSettings
+
+### Community 118 - "Community 118"
+Cohesion: 0.47
+Nodes (5): getCsrfToken(), initCsrfClient(), isMutatingMethod(), lib_csrf_csrfcookiename, lib_csrf_csrftokenheader
+
 ### Community 120 - "jobs-header.tsx / JobsHeader() / JobsHeaderProps"
 Cohesion: 0.20
 Nodes (9): Goal, Phase 1 — NPCs Page: Remove inline editor, keep catalog, Phase 2 — Personas Page: Simplify to RP-only editor, Phase 3 — Entities Page: Convert to wiki-only catalog, Phase 4 — Sidebar Cleanup, Phase 5 — Wiki Page Enhancements, Plan 030 — Wiki as Editor, Pages as Catalog Viewers, Tasks (+1 more)
+
+### Community 121 - "Community 121"
+Cohesion: 0.47
+Nodes (5): buildCandidates(), Candidate, levenshteinDistance(), ResolutionResult, resolveEntityToWikiPage()
 
 ### Community 122 - "run-benchmark.mjs / fetchJSON() / main()"
 Cohesion: 1.00
@@ -669,6 +703,10 @@ Nodes (7): analyzeRelationshipsAI(), extractEntityNames(), needsRelationshipAnal
 Cohesion: 0.25
 Nodes (3): SearchDocument, SearchProps, WikiPage
 
+### Community 154 - "Community 154"
+Cohesion: 0.60
+Nodes (5): checkDb(), checkKokoro(), checkOllama(), GET(), isAuthorized()
+
 ### Community 155 - "Community 155"
 Cohesion: 0.33
 Nodes (4): ESCALATION_COLORS, NarrativeThread, STATUS_ICONS, ThreadTrackerProps
@@ -678,36 +716,36 @@ Cohesion: 0.40
 Nodes (5): DATA_DIR, DB_PATH, INDEXES, main(), tableExists()
 
 ### Community 157 - "Community 157"
-Cohesion: 0.40
-Nodes (3): Backlink, BacklinkPanelProps, LINK_TYPE_LABELS
+Cohesion: 0.67
+Nodes (3): formatTime(), TTSIndicator(), TTSIndicatorProps
 
 ### Community 158 - "Community 158"
-Cohesion: 0.40
-Nodes (4): DELETE, GET, POST, PUT
+Cohesion: 0.09
+Nodes (24): GET(), POST(), lib_job_processor_queuejob, camelizeKeys(), snakeToCamel(), ensureParticipantColumns(), PUT, GET (+16 more)
 
 ### Community 159 - "Community 159"
 Cohesion: 0.83
 Nodes (3): estimateTokens(), GET(), fetchLocalModels()
 
 ## Knowledge Gaps
-- **853 isolated node(s):** `path`, `Active Jobs`, `Completed Jobs`, `Goal`, `The simple flow` (+848 more)
+- **853 isolated node(s):** `PUT`, `path`, `Active Jobs`, `Completed Jobs`, `Goal` (+848 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **19 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **17 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Path` connect `npc-wiki-sync.ts / buildTraitsSection() / handleNpcWikiSync(` to `route.ts / DELETE() / GET()`, `route.ts / PUT / route.ts`, `wiki-tasks.ts / wikiArchive() / wikiCompressSummaries()`, `route.ts / PUT / route.ts`, `route.ts / checkDb() / checkKokoro()`, `POST / POST() / extractId()`, `retrieval-inspector.tsx / renderAdditionalContext() / render`, `migrate-events-to-wiki.ts / args / buildFrontmatter()`, `route.ts / POST() / Path`, `lore-extraction.ts / ENTITY_TYPE_TO_SUBTYPE / ExtractedEntit`, `decay-handler.ts / handleDecayRelationships() / embedding-ha`, `audit-wiki.ts / allCrossUniverseLinks / allPagesFlat`, `Community 156`, `page.tsx / PersonasPage() / persona-editor.tsx`, `Community 159`, `canon-layer-selector.tsx / CanonLayerSelector() / CanonLayer`, `file-tree.test.tsx / bulk-move.test.ts / createTestWiki()`, `relationship-tasks.ts / processRelationshipIdleAnalysis() / `, `migrate-wiki-to-subtype-folders.ts / backupDataDir() / build`, `narrative-state-panel.tsx / FieldRow() / NarrativeStatePanel`, `cancelAllUserJobs() / cancelJob() / getJobStats()`, `markdown-utils.ts / buildMarkdown() / LoreFrontmatter`, `wikilinks-rewrite.test.ts / makePage() / types.ts`, `_check_chunks.py / verify-plan.py / extract_commands()`, `auth.test.ts / createAuthDb() / bcryptRounds()`, `index-utils.ts / parseWikiIndex() / resolveWikiPagePath()`, `merge-suggester.ts / findMergeCandidates() / MergeCandidate`, `cleanup-old-lore-tables.ts / args / collectLoreFiles()`, `backfill-entity-ids.ts / DATA_DIR / dbPath`, `npc-editor.tsx / NpcEditor() / NpcEditorProps`, `createFixtureWiki() / config-migration.ts / addSubtypeToConf`, `backlinks.ts / Backlink / getBacklinks()`, `benchmark-wiki.ts / benchmark() / cleanupWikiRoot()`, `sync-frontmatter.ts / buildFrontmatter() / DATA_DIR`, `migrate-universe-scope.ts / DATA_DIR / dbPath`, `config.ts / addFolderToConfig() / DEFAULT_FOLDER_ORDER`, `combination-test.ts / attemptCombination() / binarySearchPre`, `test-phase3.js / fs / main()`, `add-missing-indexes.ts / DATA_DIR / DB_PATH`, `entity-ref-handler.ts / escapeRegex() / findWikiFilesWithEnt`?**
-  _High betweenness centrality (0.093) - this node is a cross-community bridge._
-- **Why does `getDb()` connect `relationship-tasks.ts / processRelationshipIdleAnalysis() / ` to `route.ts / DELETE() / GET()`, `route.ts / PUT / route.ts`, `wiki-tasks.ts / wikiArchive() / wikiCompressSummaries()`, `route.ts / PUT / route.ts`, `npc-wiki-sync.ts / buildTraitsSection() / handleNpcWikiSync(`, `route.ts / checkDb() / checkKokoro()`, `POST / POST() / extractId()`, `retrieval-inspector.tsx / renderAdditionalContext() / render`, `route.ts / estimateTokens() / GET()`, `route.ts / POST() / Path`, `decay-handler.ts / handleDecayRelationships() / embedding-ha`, `Community 152`, `job-store.ts / BenchmarkJob / BENCHMARKS_DIR`, `route.ts / ensureColumn() / POST()`, `page.tsx / PersonasPage() / persona-editor.tsx`, `Community 159`, `Community 158`, `contradiction-detector.ts / aliveDeadRule / Contradiction`, `relationship-analysis.ts / extractEntityNames() / needsRelat`, `narrative-state-panel.tsx / FieldRow() / NarrativeStatePanel`, `cancelAllUserJobs() / cancelJob() / getJobStats()`, `markdown-utils.ts / buildMarkdown() / LoreFrontmatter`, `test-phase4.js / fs / main()`, `relationship-graph.tsx / GraphEdge / GraphNode`, `wikilinks-rewrite.test.ts / makePage() / types.ts`, `merge-suggester.ts / findMergeCandidates() / MergeCandidate`, `handleSceneStateExtract() / scene-extraction.ts / detectAndR`, `prompt-builder.ts / applyContextBudget() / assemblePrompt()`, `createFixtureWiki() / config-migration.ts / addSubtypeToConf`, `graph-view.tsx / COMMUNITY_COLORS / computeDegrees()`, `server-config.ts / emptyRow() / FALLBACK_OLLAMA_PORT`, `combination-test.ts / attemptCombination() / binarySearchPre`, `backlink-panel.tsx / BacklinkInfo / BacklinkPanel()`, `entity-resolution.ts / buildCandidates() / Candidate`, `check-db.ts / db / messages`?**
-  _High betweenness centrality (0.067) - this node is a cross-community bridge._
-- **Why does `dependencies` connect `Community 38` to `route.ts / checkDb() / checkKokoro()`, `inter / metadata / RootLayout()`, `react-markdown / rehype-raw / remark-gfm`, `MessageBubble.tsx / MessageBubble / MessageBubbleProps`, `package.json / name / private`, `cytoscape / react-cytoscapejs.d.ts / CytoscapeComponent`, `react-dom / hover-preview.tsx / clampPosition()`?**
-  _High betweenness centrality (0.033) - this node is a cross-community bridge._
-- **What connects `path`, `Active Jobs`, `Completed Jobs` to the rest of the system?**
+- **Why does `Path` connect `add-missing-indexes.ts / DATA_DIR / DB_PATH` to `route.ts / DELETE() / GET()`, `route.ts / PUT / route.ts`, `wiki-tasks.ts / wikiArchive() / wikiCompressSummaries()`, `route.ts / PUT / route.ts`, `npc-wiki-sync.ts / buildTraitsSection() / handleNpcWikiSync(`, `POST / POST() / extractId()`, `retrieval-inspector.tsx / renderAdditionalContext() / render`, `migrate-events-to-wiki.ts / args / buildFrontmatter()`, `route.ts / POST() / Path`, `lore-extraction.ts / ENTITY_TYPE_TO_SUBTYPE / ExtractedEntit`, `decay-handler.ts / handleDecayRelationships() / embedding-ha`, `backlink-panel.tsx / Backlink / BacklinkPanel()`, `audit-wiki.ts / allCrossUniverseLinks / allPagesFlat`, `Community 156`, `page.tsx / PersonasPage() / persona-editor.tsx`, `Community 159`, `canon-layer-selector.tsx / CanonLayerSelector() / CanonLayer`, `file-tree.test.tsx / bulk-move.test.ts / createTestWiki()`, `migrate-wiki-to-subtype-folders.ts / backupDataDir() / build`, `narrative-state-panel.tsx / FieldRow() / NarrativeStatePanel`, `cancelAllUserJobs() / cancelJob() / getJobStats()`, `markdown-utils.ts / buildMarkdown() / LoreFrontmatter`, `wikilinks-rewrite.test.ts / makePage() / types.ts`, `_check_chunks.py / verify-plan.py / extract_commands()`, `auth.test.ts / createAuthDb() / bcryptRounds()`, `index-utils.ts / parseWikiIndex() / resolveWikiPagePath()`, `merge-suggester.ts / findMergeCandidates() / MergeCandidate`, `cleanup-old-lore-tables.ts / args / collectLoreFiles()`, `backfill-entity-ids.ts / DATA_DIR / dbPath`, `npc-editor.tsx / NpcEditor() / NpcEditorProps`, `createFixtureWiki() / config-migration.ts / addSubtypeToConf`, `backlinks.ts / Backlink / getBacklinks()`, `Community 85`, `benchmark-wiki.ts / benchmark() / cleanupWikiRoot()`, `sync-frontmatter.ts / buildFrontmatter() / DATA_DIR`, `migrate-universe-scope.ts / DATA_DIR / dbPath`, `config.ts / addFolderToConfig() / DEFAULT_FOLDER_ORDER`, `test-phase3.js / fs / main()`, `conversation-log.tsx / ConversationLog() / ConversationLogPr`, `entity-ref-handler.ts / escapeRegex() / findWikiFilesWithEnt`, `Community 121`?**
+  _High betweenness centrality (0.101) - this node is a cross-community bridge._
+- **Why does `getDb()` connect `relationship-tasks.ts / processRelationshipIdleAnalysis() / ` to `route.ts / DELETE() / GET()`, `route.ts / PUT / route.ts`, `wiki-tasks.ts / wikiArchive() / wikiCompressSummaries()`, `route.ts / PUT / route.ts`, `npc-wiki-sync.ts / buildTraitsSection() / handleNpcWikiSync(`, `POST / POST() / extractId()`, `retrieval-inspector.tsx / renderAdditionalContext() / render`, `route.ts / estimateTokens() / GET()`, `route.ts / POST() / Path`, `decay-handler.ts / handleDecayRelationships() / embedding-ha`, `Community 152`, `Community 154`, `job-store.ts / BenchmarkJob / BENCHMARKS_DIR`, `route.ts / ensureColumn() / POST()`, `Community 158`, `Community 159`, `page.tsx / PersonasPage() / persona-editor.tsx`, `contradiction-detector.ts / aliveDeadRule / Contradiction`, `cancelAllUserJobs() / cancelJob() / getJobStats()`, `markdown-utils.ts / buildMarkdown() / LoreFrontmatter`, `EventBus / .addConnection() / .canConnect()`, `relationship-graph.tsx / GraphEdge / GraphNode`, `wikilinks-rewrite.test.ts / makePage() / types.ts`, `merge-suggester.ts / findMergeCandidates() / MergeCandidate`, `handleSceneStateExtract() / scene-extraction.ts / detectAndR`, `prompt-builder.ts / applyContextBudget() / assemblePrompt()`, `createFixtureWiki() / config-migration.ts / addSubtypeToConf`, `graph-view.tsx / COMMUNITY_COLORS / computeDegrees()`, `Community 85`, `server-config.ts / emptyRow() / FALLBACK_OLLAMA_PORT`, `page.tsx / BenchmarkPage() / BenchmarkPoint`, `backlink-panel.tsx / BacklinkInfo / BacklinkPanel()`, `entity-resolution.ts / buildCandidates() / Candidate`, `check-db.ts / db / messages`?**
+  _High betweenness centrality (0.065) - this node is a cross-community bridge._
+- **Why does `dependencies` connect `Community 38` to `config.ts / addFolderToConfig() / DEFAULT_FOLDER_ORDER`, `route.ts / checkDb() / checkKokoro()`, `inter / metadata / RootLayout()`, `react-markdown / rehype-raw / remark-gfm`, `MessageBubble.tsx / MessageBubble / MessageBubbleProps`, `package.json / name / private`, `cytoscape / react-cytoscapejs.d.ts / CytoscapeComponent`, `react-dom / hover-preview.tsx / clampPosition()`?**
+  _High betweenness centrality (0.034) - this node is a cross-community bridge._
+- **What connects `PUT`, `path`, `Active Jobs` to the rest of the system?**
   _857 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `route.ts / DELETE() / GET()` be split into smaller, more focused modules?**
-  _Cohesion score 0.1090543259557344 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.1138763197586727 - nodes in this community are weakly interconnected._
 - **Should `route.ts / PUT / route.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.055364314400458976 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05287128712871287 - nodes in this community are weakly interconnected._
 - **Should `wiki-tasks.ts / wikiArchive() / wikiCompressSummaries()` be split into smaller, more focused modules?**
-  _Cohesion score 0.07825507825507826 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08291708291708291 - nodes in this community are weakly interconnected._

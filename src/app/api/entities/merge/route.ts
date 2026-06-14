@@ -4,7 +4,7 @@ import { withAuth } from "@/lib/with-auth";
 import { getDb } from "@/lib/db";
 import { badRequestError, notFoundError, requireJson } from "@/lib/error-response";
 import { getEntity } from "@/lib/entity-registry";
-import { queueJob } from "@/lib/job-processor";
+import { queueJob, processJobsByType } from "@/lib/job-processor";
 
 /**
  * PUT /api/entities/merge
@@ -85,12 +85,15 @@ export const PUT = withErrorHandler(async (request: NextRequest) => {
 
   transaction();
 
-  // Queue background job to update wiki frontmatter and supplementary records
+  // Queue and immediately process the wiki update job
   queueJob(userId, "update_entity_references", {
     sourceId,
     targetId,
     userId,
   }, "low");
+  try {
+    await processJobsByType(userId, "update_entity_references", 1);
+  } catch { /* non-fatal — falls back to idle processing */ }
 
   return NextResponse.json({
     success: true,

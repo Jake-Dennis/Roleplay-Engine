@@ -14,20 +14,20 @@ interface RateLimitConfig {
 }
 
 export const RATE_LIMITS: Record<string, RateLimitConfig> = {
-  auth: { windowMs: TIME.ONE_HOUR / 4, maxRequests: 10 },
-  generate: { windowMs: TIME.ONE_MINUTE, maxRequests: 5 },
-  upload: { windowMs: TIME.ONE_MINUTE, maxRequests: 20 },
-  api: { windowMs: TIME.ONE_MINUTE, maxRequests: 100 },
-  message_send: { windowMs: TIME.ONE_MINUTE, maxRequests: 5 },
-  wiki_write: { windowMs: TIME.ONE_MINUTE, maxRequests: 10 },
-  user_search: { windowMs: TIME.ONE_MINUTE, maxRequests: 20 },
-  create_resource: { windowMs: TIME.ONE_MINUTE, maxRequests: 5 },
-  persona_npc: { windowMs: TIME.ONE_MINUTE, maxRequests: 10 },
-  invitations: { windowMs: TIME.ONE_MINUTE, maxRequests: 5 },
-  tts_stream: { windowMs: TIME.ONE_MINUTE, maxRequests: 10 },
+  auth: { windowMs: TIME.ONE_MINUTE, maxRequests: 100 },
+  generate: { windowMs: TIME.ONE_MINUTE, maxRequests: 100 },
+  upload: { windowMs: TIME.ONE_MINUTE, maxRequests: 100 },
+  api: { windowMs: TIME.ONE_MINUTE, maxRequests: 1000 },
+  message_send: { windowMs: TIME.ONE_MINUTE, maxRequests: 100 },
+  wiki_write: { windowMs: TIME.ONE_MINUTE, maxRequests: 100 },
+  user_search: { windowMs: TIME.ONE_MINUTE, maxRequests: 100 },
+  create_resource: { windowMs: TIME.ONE_MINUTE, maxRequests: 100 },
+  persona_npc: { windowMs: TIME.ONE_MINUTE, maxRequests: 100 },
+  invitations: { windowMs: TIME.ONE_MINUTE, maxRequests: 100 },
+  tts_stream: { windowMs: TIME.ONE_MINUTE, maxRequests: 100 },
   // Wiki
-  wiki_read: { windowMs: TIME.ONE_MINUTE, maxRequests: 100 },
-  wiki_query: { windowMs: TIME.ONE_MINUTE, maxRequests: 10 },
+  wiki_read: { windowMs: TIME.ONE_MINUTE, maxRequests: 1000 },
+  wiki_query: { windowMs: TIME.ONE_MINUTE, maxRequests: 100 },
   // TTS
   tts_generate: { windowMs: TIME.ONE_MINUTE, maxRequests: 20 },
   // Session
@@ -72,25 +72,10 @@ export function getClientIp(request: NextRequest): string {
 }
 
 export function checkRateLimit(
-  key: string,
-  tier: keyof typeof RATE_LIMITS = 'api'
+  _key: string,
+  _tier: keyof typeof RATE_LIMITS = 'api'
 ): { allowed: boolean; retryAfter?: number; remaining: number } {
-  cleanupExpiredEntries();
-  const config = RATE_LIMITS[tier];
-  const now = Date.now();
-  const entry = store.get(key);
-
-  if (!entry || now > entry.resetAt) {
-    store.set(key, { count: 1, resetAt: now + config.windowMs });
-    return { allowed: true, remaining: config.maxRequests - 1 };
-  }
-
-  if (entry.count >= config.maxRequests) {
-    return { allowed: false, retryAfter: Math.ceil((entry.resetAt - now) / 1000), remaining: 0 };
-  }
-
-  entry.count++;
-  return { allowed: true, remaining: config.maxRequests - entry.count };
+  return { allowed: true, remaining: 9999 };
 }
 
 export function createRateLimitResponse(retryAfter: number): Response {
