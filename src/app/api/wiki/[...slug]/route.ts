@@ -19,7 +19,6 @@ import { findOrphans } from "@/lib/wiki/orphans";
 import { parseWikilinks, resolveWikilink } from "@/lib/wiki/wikilinks";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import { getWikiRoot } from '@/lib/wiki/wiki-root';
-import { getDb } from '@/lib/db';
 import path from "path";
 import fs from "fs";
 import { notFoundError, badRequestError, requireJson } from '@/lib/error-response';
