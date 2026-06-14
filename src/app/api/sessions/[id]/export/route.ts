@@ -83,10 +83,10 @@ export async function GET(
 
     // Fetch ALL messages (no pagination)
     const messages = db.prepare(`
-      SELECT m.*, u.username as sender_name, p.name as persona_name, p.avatar_url as persona_avatar
+      SELECT m.*, u.username as sender_name, er.display_name as persona_name, NULL as persona_avatar
       FROM messages m
       LEFT JOIN users u ON m.sender_id = u.id
-      LEFT JOIN personas p ON m.persona_id = p.id
+      LEFT JOIN entity_registry er ON m.persona_id = er.id
       WHERE m.session_id = ? AND m.is_deleted = 0
       ORDER BY m.timestamp ASC, m.id ASC
     `).all(sessionId);

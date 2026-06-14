@@ -54,10 +54,10 @@ export async function GET(
     const limit = limitParam ? Math.min(parseInt(limitParam, 10), 100000) : 100;
 
     let query = `
-      SELECT m.*, u.username as sender_name, p.name as persona_name, p.avatar_url as persona_avatar
+      SELECT m.*, u.username as sender_name, er.display_name as persona_name, NULL as persona_avatar
       FROM messages m
       LEFT JOIN users u ON m.sender_id = u.id
-      LEFT JOIN personas p ON m.persona_id = p.id
+      LEFT JOIN entity_registry er ON m.persona_id = er.id
       WHERE m.session_id = ? AND m.is_deleted = 0
     `;
     const queryParams: unknown[] = [sessionId];
@@ -234,10 +234,10 @@ export async function POST(
     db.prepare("UPDATE sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(sessionId);
 
     const message = db.prepare(`
-      SELECT m.*, u.username as sender_name, p.name as persona_name, p.avatar_url as persona_avatar
+      SELECT m.*, u.username as sender_name, er.display_name as persona_name, NULL as persona_avatar
       FROM messages m
       LEFT JOIN users u ON m.sender_id = u.id
-      LEFT JOIN personas p ON m.persona_id = p.id
+      LEFT JOIN entity_registry er ON m.persona_id = er.id
       WHERE m.id = ?
     `).get(messageId);
 
