@@ -164,7 +164,7 @@ const SessionSelector = memo(function SessionSelector() {
   const { activeSession, setActiveSession, sessions, loading, activeUniverse } = useApp();
   const [open, setOpen] = useState(false);
   const filteredSessions = activeUniverse
-    ? sessions.filter(s => (s as { universeId?: string }).universeId === activeUniverse.id)
+    ? sessions.filter(s => (s as { universe_id?: string }).universe_id === activeUniverse.id)
     : sessions;
 
   // Remember last session per universe
