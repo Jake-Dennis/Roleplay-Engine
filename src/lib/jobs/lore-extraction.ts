@@ -11,6 +11,7 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import { getDb } from "@/lib/db";
+import { registerEntity } from "@/lib/entity-registry";
 import { generateText, getActiveJobModel } from "@/lib/ollama";
 import { logger } from "@/lib/logger";
 import { PROMPTS } from "@/lib/prompts";
@@ -79,6 +80,13 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
   const { userId, universeId, sessionId } = payload;
   if (!userId || !universeId) throw new Error("Missing userId or universeId");
   const sessionTag = sessionId ? `source:session-${sessionId}` : null;
+
+  // Map wiki entity subtypes to entity_registry types
+  const SUBTYPE_TO_ENTITY_TYPE: Record<string, string> = {
+    character: "npc", location: "location", organization: "faction",
+    object: "item", event: "event", faction: "faction",
+    item: "item", persona: "persona", npc: "npc",
+  };
 
   updateJobProgress(jobId, 10, "Fetching messages...");
 
@@ -165,6 +173,17 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
                 subtype: existingPage.frontmatter.subtype ?? ENTITY_TYPE_TO_SUBTYPE[entity.entityType] as WikiFrontmatter["subtype"] | undefined,
                 updated: new Date().toISOString(),
               };
+
+              // Auto-register entity if this existing page doesn't have one yet
+              if (!updatedFrontmatter.entity_id) {
+                try {
+                  const db = getDb();
+                  const entityType = SUBTYPE_TO_ENTITY_TYPE[entity.entityType] || "npc";
+                  const regEntity = registerEntity(db, userId, entityType, entityName, universeId);
+                  (updatedFrontmatter as Record<string, unknown>).entity_id = regEntity.id;
+                } catch { /* non-fatal */ }
+              }
+
               writeWikiPage(pagePath, updatedContent, updatedFrontmatter);
             } else {
               continue; // Non-draft pages (reviewed/locked) are skipped
@@ -189,6 +208,14 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
               tags: ["extracted", `type:${entity.entityType || "unknown"}`, ...(sessionTag ? [sessionTag] : [])],
               created: new Date().toISOString(),
             };
+
+            // Auto-register entity in entity_registry
+            try {
+              const db = getDb();
+              const entityType = SUBTYPE_TO_ENTITY_TYPE[entity.entityType] || "npc";
+              const regEntity = registerEntity(db, userId, entityType, entityName, universeId);
+              (frontmatter as Record<string, unknown>).entity_id = regEntity.id;
+            } catch { /* non-fatal */ }
 
             writeWikiPage(pagePath, body, frontmatter);
           }
