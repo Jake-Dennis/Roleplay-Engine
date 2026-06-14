@@ -385,12 +385,17 @@ export function useSessionChat(
   // Persona change
   const handlePersonaChange = useCallback(async (personaId: string | null) => {
     try {
-      await fetch(`/api/sessions/${sessionId}/persona`, {
+      const res = await fetch(`/api/sessions/${sessionId}/persona`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ persona_id: personaId }),
       });
-      setActivePersonaId(personaId);
+      if (res.ok) {
+        setActivePersonaId(personaId);
+      } else {
+        const err = await res.json().catch(() => ({ error: "Persona change failed" }));
+        logger.warn("persona change rejected", err);
+      }
     } catch (err: unknown) {
       logger.warn("persona change failed", err);
     }
