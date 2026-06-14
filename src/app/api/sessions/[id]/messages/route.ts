@@ -154,11 +154,13 @@ export async function POST(
     const contentError = validateLength(content, 100000, "Content");
     if (contentError) return badRequestError(contentError);
 
-    // Verify persona belongs to user if provided
+    // Verify persona exists in the session's universe if provided
     if (personaId) {
       const persona = db.prepare(
-        "SELECT id FROM entity_registry WHERE id = ? AND user_id = ?"
-      ).get(personaId, userId);
+        session.universe_id
+          ? "SELECT id FROM entity_registry WHERE id = ? AND universe_id = ?"
+          : "SELECT id FROM entity_registry WHERE id = ? AND user_id = ?"
+      ).get(personaId, session.universe_id || userId);
       if (!persona) {
         return notFoundError("Persona");
       }
