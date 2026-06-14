@@ -161,8 +161,11 @@ const GroupSelector = memo(function GroupSelector() {
 });
 
 const SessionSelector = memo(function SessionSelector() {
-  const { activeSession, setActiveSession, sessions, loading } = useApp();
+  const { activeSession, setActiveSession, sessions, loading, activeUniverse } = useApp();
   const [open, setOpen] = useState(false);
+  const filteredSessions = activeUniverse
+    ? sessions.filter(s => (s as { universe_id?: string }).universe_id === activeUniverse.id)
+    : sessions;
 
   if (loading) {
     return (
@@ -194,10 +197,10 @@ const SessionSelector = memo(function SessionSelector() {
 
       {open && (
         <div className="absolute left-3 right-3 z-50 mt-1 rounded-lg border border-border-default bg-bg-elevated py-1 shadow-lg">
-          {sessions.length === 0 ? (
-            <div className="px-3 py-2 text-xs text-text-muted">No sessions yet</div>
+          {filteredSessions.length === 0 ? (
+            <div className="px-3 py-2 text-xs text-text-muted">No sessions in this universe</div>
           ) : (
-            sessions.map((s) => (
+            filteredSessions.map((s) => (
               <button
                 key={s.id}
                 onClick={() => { setActiveSession(s); setOpen(false); }}
