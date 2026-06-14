@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
 import { Modal } from "@/components/ui/modal";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 interface Entity {
   id: string;
@@ -69,6 +70,7 @@ export function EntityManagerClient() {
   const [createType, setCreateType] = useState("persona");
   const [createName, setCreateName] = useState("");
   const [createLoading, setCreateLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Entity | null>(null);
 
   const loadEntities = useCallback(async () => {
     setLoading(true);
@@ -496,15 +498,7 @@ export function EntityManagerClient() {
                   )}
                   {!mergeMode && (
                     <button
-                      onClick={async () => {
-                        if (!confirm(`Delete entity "${entity.displayName}"? This cannot be undone.`)) return;
-                        try {
-                          await fetch(`/api/entities/${entity.id}`, { method: "DELETE" });
-                          await loadEntities();
-                        } catch {
-                          alert("Failed to delete entity");
-                        }
-                      }}
+                      onClick={() => setDeleteTarget(entity)}
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium text-error hover:bg-error/10 transition-colors"
                       title={`Delete ${entity.displayName}`}
                     >
@@ -518,6 +512,21 @@ export function EntityManagerClient() {
         </div>
       )}
     </div>
+
+      {/* Delete confirmation */}
+      <ConfirmationDialog
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          await fetch(`/api/entities/${deleteTarget.id}`, { method: "DELETE" });
+          await loadEntities();
+        }}
+        title={`Delete ${deleteTarget?.displayName || "Entity"}`}
+        message={`Are you sure you want to delete "${deleteTarget?.displayName}"? This will also remove the associated wiki page. This cannot be undone.`}
+        confirmLabel="Delete"
+        confirmVariant="danger"
+      />
 
       {/* Create entity modal */}
       <Modal
