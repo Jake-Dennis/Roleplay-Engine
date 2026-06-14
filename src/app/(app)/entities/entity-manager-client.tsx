@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
-  User, Ghost, MapPin, Calendar, Flag, Package, Plus, Search, Loader2, ExternalLink, BookOpen, Merge, X, Globe
+  User, Ghost, MapPin, Calendar, Flag, Package, Plus, Search, Loader2, ExternalLink, BookOpen, Merge, X, Globe, Trash2
 } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
 import { Modal } from "@/components/ui/modal";
@@ -493,6 +493,23 @@ export function EntityManagerClient() {
                     </button>
                   ) : (
                     <span className="text-xxs text-text-muted">No wiki page</span>
+                  )}
+                  {!mergeMode && (
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`Delete entity "${entity.displayName}"? This cannot be undone.`)) return;
+                        try {
+                          await fetch(`/api/entities/${entity.id}`, { method: "DELETE" });
+                          await loadEntities();
+                        } catch {
+                          alert("Failed to delete entity");
+                        }
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium text-error hover:bg-error/10 transition-colors"
+                      title={`Delete ${entity.displayName}`}
+                    >
+                      <Trash2 size={12} />
+                    </button>
                   )}
                 </div>
               </div>
