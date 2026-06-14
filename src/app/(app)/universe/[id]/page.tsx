@@ -67,8 +67,9 @@ export default function UniverseDetailPage() {
         setBoundaries(Array.isArray(uData.universe.boundaries) ? uData.universe.boundaries.join("\n") : "");
 
         // Filter sessions belonging to this universe
+        // API returns camelCase keys via camelizeKeys, so use universeId
         const universeSessions = (sData.sessions || []).filter(
-          (s: Session & { universe_id: string | null }) => s.universe_id === id
+          (s: Session & { universe_id?: string | null; universeId?: string | null }) => (s.universeId ?? s.universe_id) === id
         );
         setSessions(universeSessions);
 

@@ -106,12 +106,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         group_id: u.group_id || null,
       }));
 
-      const sessionList: Session[] = (sessionData.sessions || []).map((s: { id: string; name: string; type: string; group_id: string | null; universe_id: string | null }) => ({
+      const sessionList: Session[] = (sessionData.sessions || []).map((s: { id: string; name: string; type: string; group_id?: string | null; groupId?: string | null; universeId?: string | null; universe_id?: string | null }) => ({
         id: s.id,
         name: s.name,
         type: s.type,
-        group_id: s.group_id || null,
-        universe_id: s.universe_id || null,
+        group_id: s.group_id ?? s.groupId ?? null,
+        universe_id: s.universeId ?? s.universe_id ?? null,
       }));
 
       const groupList: Group[] = (groupData.groups || []).map((g: { id: string; name: string; description: string | null; member_count: number; session_count: number; universe_count: number }) => ({
@@ -233,8 +233,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const universeList = (universeData.universes || []).map((u: { id: string; name: string; group_id: string | null }) => ({
         id: u.id, name: u.name, group_id: u.group_id || null,
       }));
-      const sessionList = (sessionData.sessions || []).map((s: { id: string; name: string; type: string; group_id: string | null; universe_id: string | null }) => ({
-        id: s.id, name: s.name, type: s.type, group_id: s.group_id || null, universe_id: s.universe_id || null,
+      const sessionList = (sessionData.sessions || []).map((s: { id: string; name: string; type: string; group_id?: string | null; groupId?: string | null; universeId?: string | null; universe_id?: string | null }) => ({
+        id: s.id, name: s.name, type: s.type, group_id: s.group_id ?? s.groupId ?? null, universe_id: s.universeId ?? s.universe_id ?? null,
       }));
       const groupList = (groupData.groups || []).map((g: { id: string; name: string; description: string | null; member_count: number; session_count: number; universe_count: number }) => ({
         id: g.id, name: g.name, description: g.description || null, member_count: g.member_count || 0, session_count: g.session_count || 0, universe_count: g.universe_count || 0,

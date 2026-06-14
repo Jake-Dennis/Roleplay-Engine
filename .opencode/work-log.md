@@ -1018,6 +1018,23 @@ In predict-test.ts and combination-test.ts, the binary search phase skips all va
 - `src/app/(app)/universe/[id]/manage/ai-management-client.tsx` — NEW
 - `src/app/(app)/universe/[id]/page.tsx` — AI Management nav link
 
+## 2026-06-15 — Cycle: Fix 'No sessions in this universe' (camelCase/snake_case mismatch)
+
+**Trigger:** User reported the session sidebar showed "No sessions in this universe" despite sessions existing.
+
+**Root cause:** The API uses `camelizeKeys()` on all responses (converting `universe_id` → `universeId`, `group_id` → `groupId`), but 3 frontend components were reading `universe_id` (snake_case) from the API response — getting `undefined`, which became `null`. Every session in the app context had `universe_id: null`, so the sidebar filter `s.universe_id === activeUniverse.id` never matched.
+
+**Files fixed:**
+1. `src/contexts/app-context.tsx` — Both session mapping blocks (loadData + refreshAll) now map from `universeId` (API's camelCase) to `universe_id` (internal format). Same for `groupId`.
+2. `src/app/(app)/universe/[id]/page.tsx` — Direct API fetch filter now checks `universeId ?? universe_id`.
+3. `src/app/(app)/session/[id]/page.tsx` — `setActiveSession` call now handles both `universeId` and `universe_id`.
+
+**Note:** The dashboard (`dashboard/page.tsx:389`) already had this fix (`universe_id || universeId || ''`).
+
+**Verification:** `npx tsc --noEmit` — clean (only pre-existing test file errors).
+
+---
+
 ## 2026-06-14 — Cycle 2: Plan 007 finalization
 
 **Trigger:** User asked to work on Plan 007.

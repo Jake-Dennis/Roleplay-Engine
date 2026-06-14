@@ -52,12 +52,14 @@ export default function SessionChatPage() {
   // Set active session in app context
   useEffect(() => {
     if (state.session) {
+      // API returns camelCase keys; handle both formats
+      const sess = state.session as { universe_id?: string | null; universeId?: string | null; group_id?: string | null; groupId?: string | null };
       setActiveSession({
         id: state.session.id,
         name: state.session.name,
         type: state.session.type || "solo",
-        group_id: state.session.group_id || null,
-        universe_id: state.session.universe_id || null,
+        group_id: sess.group_id ?? sess.groupId ?? null,
+        universe_id: sess.universe_id ?? sess.universeId ?? null,
       });
       refreshAll();
     }
