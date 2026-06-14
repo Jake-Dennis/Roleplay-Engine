@@ -18,23 +18,22 @@ const PROPER_NOUN_REGEX = /\b[A-Z][a-z]+(?:\s[A-Z][a-z]+)*\b/g;
 /**
  * Resolve an entity name to a registry ID, creating a transient entry if needed.
  */
-function resolveMentionEntityId(db: any, userId: string, name: string): string | null {
-  // First check entity_registry by display_name or alias
+function resolveMentionEntityId(db: any, userId: string, universeId: string | null, name: string): string | null {
+  // Check for persona entity first (scoped to universe)
+  if (universeId) {
+    const persona = db.prepare(
+      "SELECT id FROM entity_registry WHERE LOWER(display_name) = LOWER(?) AND entity_type = 'persona' AND universe_id = ? LIMIT 1"
+    ).get(name, universeId) as { id: string } | undefined;
+    if (persona) return persona.id;
+  }
+  // Fall back to entity_registry by display_name or alias
   const found = db.prepare(`
     SELECT er.id FROM entity_registry er
     LEFT JOIN entity_aliases ea ON ea.entity_id = er.id
     WHERE er.user_id = ? AND (er.display_name = ? OR ea.alias = ?)
     LIMIT 1
   `).get(userId, name, name) as { id: string } | undefined;
-  if (found) return found.id;
-
-  // Check if it matches a persona or NPC
-  for (const table of ['personas', 'npcs']) {
-    const row = db.prepare(`SELECT id FROM ${table} WHERE user_id = ? AND name = ?`).get(userId, name) as { id: string } | undefined;
-    if (row) return `${table === 'personas' ? 'persona' : 'npc'}:${row.id}`;
-  }
-
-  return null; // No registry entry needed — name-only tracking is fine
+  return found?.id || null;
 }
 
 export interface EntityMentionResult {

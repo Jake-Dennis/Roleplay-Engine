@@ -30,8 +30,15 @@ import type { DbDatabase } from "@/lib/types";
  * Returns the entity ID string (e.g. "persona:{uuid}" or "npc:{uuid}")
  * or null if all resolution paths fail.
  */
-function resolveEntityId(db: DbDatabase, userId: string, name: string): string | null {
-  // 1. Try to resolve via entity_registry (display_name or aliases)
+function resolveEntityId(db: DbDatabase, userId: string, name: string, universeId: string | null = null): string | null {
+  // Check for persona entity first (scoped to universe)
+  if (universeId) {
+    const persona = db.prepare(
+      "SELECT id FROM entity_registry WHERE LOWER(display_name) = LOWER(?) AND entity_type = 'persona' AND universe_id = ? LIMIT 1"
+    ).get(name, universeId) as { id: string } | undefined;
+    if (persona) return persona.id;
+  }
+  // Try to resolve via entity_registry (display_name or aliases)
   const found = db.prepare(`
     SELECT er.id FROM entity_registry er
     LEFT JOIN entity_aliases ea ON ea.entity_id = er.id
@@ -71,6 +78,10 @@ export async function processRelationshipAnalysis(
   sessionId: string
 ): Promise<RelationshipAnalysisResult> {
   const db = getDb();
+  const sessionRow = db.prepare(
+    "SELECT universe_id FROM sessions WHERE id = ?"
+  ).get(sessionId) as { universe_id: string | null } | undefined;
+  const universeId = sessionRow?.universe_id || null;
 
   // Get recent messages (last 20) for analysis
   const messages = db.prepare(`
@@ -121,8 +132,8 @@ export async function processRelationshipAnalysis(
     if (existing) {
       // Update existing relationship
       try {
-        const sourceId = resolveEntityId(db, userId, rel.source);
-        const targetId = resolveEntityId(db, userId, rel.target);
+        const sourceId = resolveEntityId(db, userId, rel.source, universeId);
+        const targetId = resolveEntityId(db, userId, rel.target, universeId);
         db.prepare(`
           UPDATE relationships
           SET emotional_state = ?, relationship_stage = ?, shared_history = ?,
@@ -140,8 +151,8 @@ export async function processRelationshipAnalysis(
       // Create new relationship
       const relId = crypto.randomUUID();
       try {
-        const sourceId = resolveEntityId(db, userId, rel.source);
-        const targetId = resolveEntityId(db, userId, rel.target);
+        const sourceId = resolveEntityId(db, userId, rel.source, universeId);
+        const targetId = resolveEntityId(db, userId, rel.target, universeId);
         db.prepare(`
           INSERT INTO relationships (id, user_id, source_entity, target_entity,
             source_entity_id, target_entity_id,

@@ -864,6 +864,17 @@ export function getRecentMessages(
  * or null if not found in the registry.
  */
 function resolveNpcEntityId(db: DbDatabase, name: string, sessionId: string): string | null {
+  // Check for persona entity first (scoped to session's universe)
+  const sessionRow = db.prepare(
+    "SELECT universe_id FROM sessions WHERE id = ?"
+  ).get(sessionId) as { universe_id: string | null } | undefined;
+  if (sessionRow?.universe_id) {
+    const persona = db.prepare(
+      "SELECT id FROM entity_registry WHERE LOWER(display_name) = LOWER(?) AND entity_type = 'persona' AND universe_id = ? LIMIT 1"
+    ).get(name, sessionRow.universe_id) as { id: string } | undefined;
+    if (persona) return persona.id;
+  }
+  // Fall back to entity_registry by display_name or aliases
   const found = db.prepare(`
     SELECT er.id FROM entity_registry er
     LEFT JOIN entity_aliases ea ON ea.entity_id = er.id
@@ -1165,6 +1176,15 @@ export async function getRetrievedContext(
   if (scene.activeNpcs.length > 0 && userId) {
     try {
       const details = scene.activeNpcs.map(name => {
+        // Check for persona entity first (scoped to session's universe)
+        const uniRow = db.prepare(
+          "SELECT universe_id FROM sessions WHERE id = ?"
+        ).get(sessionId) as { universe_id: string | null } | undefined;
+        const persona = uniRow?.universe_id ? db.prepare(`
+          SELECT description FROM entity_registry WHERE LOWER(display_name) = LOWER(?) AND entity_type = 'persona' AND universe_id = ? LIMIT 1
+        `).get(name, uniRow.universe_id) as { description: string | null } | undefined : null;
+        if (persona?.description) return { name, description: persona.description };
+
         const entity = db.prepare(`
           SELECT er.description FROM entity_registry er
           WHERE er.display_name = ? AND er.user_id = ?
