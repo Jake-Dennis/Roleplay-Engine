@@ -240,7 +240,8 @@ export default function WikiPageView() {
   // Sidebar entity sections — group pages by subtype
   const sidebarSections = useMemo(() => {
     const typeDefs: Array<{ type: string; label: string; icon: React.ComponentType<{ size?: number; className?: string }>; color: string }> = [
-      { type: 'character', label: 'Characters', icon: User, color: 'text-blue-400' },
+      { type: 'persona', label: 'Personas', icon: User, color: 'text-blue-400' },
+      { type: 'npc', label: 'NPCs', icon: Ghost, color: 'text-purple-400' },
       { type: 'location', label: 'Locations', icon: MapPin, color: 'text-green-400' },
       { type: 'item', label: 'Items', icon: Package, color: 'text-orange-400' },
       { type: 'event', label: 'Events', icon: Calendar, color: 'text-amber-400' },
@@ -258,7 +259,9 @@ export default function WikiPageView() {
           const fm = p.frontmatter;
           const subtype = (fm?.subtype as string) || '';
           const type = (fm?.type as string) || '';
-          if (def.type === 'character') return subtype === 'character' || (!subtype && type === 'entity');
+          const eid = (fm?.entity_id as string) || '';
+          if (def.type === 'persona') return (subtype === 'character' || (!subtype && type === 'entity')) && eid.startsWith('persona:');
+          if (def.type === 'npc') return (subtype === 'character' || (!subtype && type === 'entity')) && (!eid || eid.startsWith('npc:'));
           return subtype === def.type;
         })
         .map(p => ({

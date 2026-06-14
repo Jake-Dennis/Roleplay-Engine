@@ -20,7 +20,7 @@
     "semantic_hash": "239f3ebf717465dc636818a1a619398d"
   },
   "scripts/init-db.ts": {
-    "mtime": 1781429531.0601366,
+    "mtime": 1781434227.157835,
     "ast_hash": "13ff45bbfede172d75d165e29a9f27cd",
     "semantic_hash": ""
   },
@@ -195,7 +195,7 @@
     "semantic_hash": "4539f9fa9a7d32c74269dab607d6480d"
   },
   "src/app/api/generate/[id]/route.ts": {
-    "mtime": 1781425703.8568056,
+    "mtime": 1781434227.160345,
     "ast_hash": "40a5913867d91dee541650bf35a1b09e",
     "semantic_hash": ""
   },
@@ -245,13 +245,13 @@
     "semantic_hash": "36a47c9d9867e5f933986332dc0485f5"
   },
   "src/app/api/npcs/route.ts": {
-    "mtime": 1781426285.2303572,
-    "ast_hash": "db93ec1029a6dbf4809a3264ab2ed68e",
+    "mtime": 1781434227.1623454,
+    "ast_hash": "694ec84bbfd04c12ca4c75493ffc9535",
     "semantic_hash": ""
   },
   "src/app/api/npcs/[id]/route.ts": {
-    "mtime": 1781425818.2748356,
-    "ast_hash": "883b8ddbb80987b8210efe7ab55aad64",
+    "mtime": 1781434227.1613448,
+    "ast_hash": "d4ec3d91e6116d73d88e1bf8948736b5",
     "semantic_hash": ""
   },
   "src/app/api/ollama/models/route.ts": {
@@ -780,7 +780,7 @@
     "semantic_hash": "3bb93459c294173d975490bcea90ab62"
   },
   "src/lib/job-processor.ts": {
-    "mtime": 1781428866.105721,
+    "mtime": 1781434227.1699374,
     "ast_hash": "971f6fffc37ec68670427fbbe4eec45c",
     "semantic_hash": ""
   },
@@ -790,7 +790,7 @@
     "semantic_hash": "9f294719cb90da9cc3c047e2b8fe6932"
   },
   "src/lib/ollama.ts": {
-    "mtime": 1781425753.3275914,
+    "mtime": 1781434227.173942,
     "ast_hash": "99d5ccad41614e852f4486fa3d05be6a",
     "semantic_hash": ""
   },
@@ -910,7 +910,7 @@
     "semantic_hash": "0e4d5d22789cf5688baabac10d6d0539"
   },
   "src/app/(app)/app-layout-shell.tsx": {
-    "mtime": 1781432984.3478384,
+    "mtime": 1781434227.1583395,
     "ast_hash": "c9d71560e0775dfb5d701928728e1177",
     "semantic_hash": ""
   },
@@ -950,13 +950,13 @@
     "semantic_hash": "aa6345ac0fba6b7dc160fab97d1c718d"
   },
   "src/app/api/personas/route.ts": {
-    "mtime": 1781426270.8614252,
-    "ast_hash": "468150f7d83ea4e00601a9407091de4f",
+    "mtime": 1781434227.163409,
+    "ast_hash": "1d4a483e23f70ac64b0d71fda18d0139",
     "semantic_hash": ""
   },
   "src/app/api/personas/[id]/route.ts": {
-    "mtime": 1781425609.0820699,
-    "ast_hash": "2bcf56fdd23b6abf4408b2b77f978d01",
+    "mtime": 1781434227.1623454,
+    "ast_hash": "ddb1224c6c45c115cb88407c84b33a95",
     "semantic_hash": ""
   },
   "src/app/api/relationships/[id]/file/route.ts": {
@@ -980,8 +980,8 @@
     "semantic_hash": "a2e33442aa1936a3c049a9e1424a9ba2"
   },
   "src/lib/group-migrations.ts": {
-    "mtime": 1781426158.882006,
-    "ast_hash": "7b6288a61f46a7b13670f3570be45eb0",
+    "mtime": 1781434227.168434,
+    "ast_hash": "d65cf40c89c3b2ad9fa211cbd12d9b39",
     "semantic_hash": ""
   },
   "src/lib/message-summarizer.ts": {
@@ -1225,7 +1225,7 @@
     "semantic_hash": "e99d12eb07d127ed6490741c56f4ebd9"
   },
   "src/app/api/wiki/[...slug]/route.ts": {
-    "mtime": 1781432421.6058626,
+    "mtime": 1781434227.163409,
     "ast_hash": "b820e133f83caaee406c973599c28133",
     "semantic_hash": ""
   },
@@ -1270,12 +1270,12 @@
     "semantic_hash": "531608ec82bcd7aee6099b066e3ec81f"
   },
   "src/components/wiki/file-tree.tsx": {
-    "mtime": 1781432421.695572,
+    "mtime": 1781434227.1644077,
     "ast_hash": "862d660342214252eac7e87ad1fee0b6",
     "semantic_hash": ""
   },
   "src/components/wiki/graph-view.tsx": {
-    "mtime": 1781432421.7868457,
+    "mtime": 1781434227.1644077,
     "ast_hash": "604e7af21607babb0602a024bb12af49",
     "semantic_hash": ""
   },
@@ -1330,7 +1330,7 @@
     "semantic_hash": "95d0277e19c806d02e23abbcceb7486a"
   },
   "src/components/wiki/version-history.tsx": {
-    "mtime": 1781432421.880778,
+    "mtime": 1781434227.1664276,
     "ast_hash": "7f74e9afe79061eea77e7fe0ca42e006",
     "semantic_hash": ""
   },
@@ -1395,7 +1395,7 @@
     "semantic_hash": "b62ccf338c6b8483b71b1c38d8f1863a"
   },
   "src/lib/schema-migrations.ts": {
-    "mtime": 1781427171.8135314,
+    "mtime": 1781434227.1749425,
     "ast_hash": "6a5a920cce7ddf17349ae0bde7a6743a",
     "semantic_hash": ""
   },
@@ -1445,12 +1445,12 @@
     "semantic_hash": "ab3d6356c66d12e30e19fe53d311dd08"
   },
   "src/lib/jobs/lore-extraction.ts": {
-    "mtime": 1781428912.5158994,
-    "ast_hash": "f5a90651e0950f7ba89bab65b877200f",
+    "mtime": 1781434227.170943,
+    "ast_hash": "210bfee82a733a1175fd0b425e8267b6",
     "semantic_hash": ""
   },
   "src/lib/jobs/npc-evolution.ts": {
-    "mtime": 1781429652.6265638,
+    "mtime": 1781434227.1719408,
     "ast_hash": "eaa1e1ef92a841ef3134f8a6336a329b",
     "semantic_hash": ""
   },
@@ -1465,7 +1465,7 @@
     "semantic_hash": "f020cf56cc99a439719977b7a9e4042b"
   },
   "src/lib/jobs/wiki-handler.ts": {
-    "mtime": 1781432422.0695837,
+    "mtime": 1781434227.173942,
     "ast_hash": "c2b41938bf649d8e95b95bff3789d0ac",
     "semantic_hash": ""
   },
@@ -1480,7 +1480,7 @@
     "semantic_hash": "348450e27c74c1305e2ac2d7890b0f8c"
   },
   "src/lib/wiki/file-io.ts": {
-    "mtime": 1781432422.1570132,
+    "mtime": 1781434227.1749425,
     "ast_hash": "8749e77bdcff495519c52218cf9c3a61",
     "semantic_hash": ""
   },
@@ -1495,7 +1495,7 @@
     "semantic_hash": "7ecb8a57f9fcd86363fdb38139e295a0"
   },
   "src/lib/wiki/index-generator.ts": {
-    "mtime": 1781432422.264813,
+    "mtime": 1781434227.1764467,
     "ast_hash": "0df40d7f52b28a6f8e4e8abed0c77083",
     "semantic_hash": ""
   },
@@ -1555,7 +1555,7 @@
     "semantic_hash": "e0d41ab2904cc138d41fa2491fa1369d"
   },
   "src/lib/wiki/wikilinks.ts": {
-    "mtime": 1781432422.3714337,
+    "mtime": 1781434227.1764467,
     "ast_hash": "6f9511f6a951e7741fad7b655b40c5d0",
     "semantic_hash": ""
   },
@@ -1785,7 +1785,7 @@
     "semantic_hash": "bf3fb3c44e33275551351b710658f88b"
   },
   "src/lib/jobs/types.ts": {
-    "mtime": 1781429544.6216903,
+    "mtime": 1781434227.172945,
     "ast_hash": "d10e8d639dab05aadd853574bafdbe83",
     "semantic_hash": ""
   },
@@ -1875,8 +1875,8 @@
     "semantic_hash": "6a7dbf27d227a9425bf72100be833fec"
   },
   "src/lib/__tests__/helpers.ts": {
-    "mtime": 1781427178.0103009,
-    "ast_hash": "16b04d37ac9311ab6cf35841fb5b6784",
+    "mtime": 1781434227.1674333,
+    "ast_hash": "ffea5f0cf4827caafd2813b864a5e7df",
     "semantic_hash": ""
   },
   "src/lib/jobs/__tests__/helpers.ts": {
@@ -4115,8 +4115,8 @@
     "semantic_hash": "11ad92d68cb2383f0c8485da9c0f5e58"
   },
   "src/app/(app)/entities/entity-manager-client.tsx": {
-    "mtime": 1781428156.354652,
-    "ast_hash": "8d69590f305dfe14bbdeddaac6c7439d",
+    "mtime": 1781434227.159347,
+    "ast_hash": "f859907062de6b1ea0d8e0ef6acb4985",
     "semantic_hash": ""
   },
   "src/app/(app)/entities/page.tsx": {
@@ -4140,8 +4140,8 @@
     "semantic_hash": "f60bb7ce23bc5babc0814a8dff4e5e88"
   },
   "src/app/api/__tests__/generate.test.ts": {
-    "mtime": 1781426153.4033487,
-    "ast_hash": "81d54570e987133aa419d103807904fb",
+    "mtime": 1781434227.159347,
+    "ast_hash": "95f3e88aa58ba787d41a0f2786117688",
     "semantic_hash": ""
   },
   "src/app/api/__tests__/sessions.test.ts": {
@@ -4275,7 +4275,7 @@
     "semantic_hash": "69576db9675d5efe6efb63c648d9be18"
   },
   "src/components/wiki/wiki-ai-header-buttons.tsx": {
-    "mtime": 1781432421.9775107,
+    "mtime": 1781434227.1664276,
     "ast_hash": "a8b2a2df6c86933a518b40793ea4cadc",
     "semantic_hash": ""
   },
@@ -4295,8 +4295,8 @@
     "semantic_hash": "fe9959c7683759a83c5bf69c3a65f06e"
   },
   "src/lib/__tests__/ollama.test.ts": {
-    "mtime": 1781425739.0850549,
-    "ast_hash": "d8a91fb58c651e6ae721db83e0cf1f52",
+    "mtime": 1781434227.168434,
+    "ast_hash": "bd8460b6290a90663af64d666064e7ff",
     "semantic_hash": ""
   },
   "src/lib/__tests__/prompt-builder.test.ts": {
@@ -4325,8 +4325,8 @@
     "semantic_hash": "b3dbfc453343bb2ebeaa7cc15e98f2b1"
   },
   "src/lib/entity-registry.ts": {
-    "mtime": 1781426891.5491295,
-    "ast_hash": "898cd52732bed36e4b3869303efad103",
+    "mtime": 1781434227.168434,
+    "ast_hash": "c89d7c6e7c59c73b5d43d53a76d83341",
     "semantic_hash": ""
   },
   "src/lib/jobs/__tests__/job-processor.test.ts": {
@@ -4340,8 +4340,8 @@
     "semantic_hash": "fcb7f6b1f304146da50b8dcd9b342620"
   },
   "src/lib/jobs/entity-ref-handler.ts": {
-    "mtime": 1781428627.9335563,
-    "ast_hash": "c97383e2354b027e26f0f2ec9555eb55",
+    "mtime": 1781434227.170943,
+    "ast_hash": "01fb1454c0919a88114c131fe38f2ff4",
     "semantic_hash": ""
   },
   "src/lib/wiki/curate.ts": {
@@ -4522,16 +4522,6 @@
   ".opencode/plans/plan-030-wiki-as-editor.md": {
     "mtime": 1781431869.8317184,
     "ast_hash": "e0fa9078c77e8026ce6dc3a33081638e",
-    "semantic_hash": ""
-  },
-  ".git.1/hooks/post-checkout": {
-    "mtime": 1781419494.498668,
-    "ast_hash": "108de2e65c5b0cf453d03c84ea1eba62",
-    "semantic_hash": ""
-  },
-  ".git.1/hooks/post-commit": {
-    "mtime": 1781419494.498668,
-    "ast_hash": "460deb0bf9b06d26ba759a96c639298b",
     "semantic_hash": ""
   }
 }

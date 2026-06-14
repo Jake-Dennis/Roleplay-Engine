@@ -18,7 +18,7 @@ import OutgoingLinksPanel from '@/components/wiki/outgoing-links-panel';
 import { parseWikiFrontmatter, serializeWikiFrontmatter, validateWikiFrontmatter, EMPTY_FRONTMATTER } from '@/lib/wiki/frontmatter';
 import type { WikiFrontmatter } from '@/lib/wiki/types';
 import { useApp } from '@/contexts/app-context';
-import { BookOpen, Network, Plus, PanelLeftClose, PanelLeftOpen, X, ExternalLink, PanelRightClose, PanelRightOpen, Sparkles, User, MapPin, Calendar, Flag, Package, Search, Loader2 } from 'lucide-react';
+import { BookOpen, Network, Plus, PanelLeftClose, PanelLeftOpen, X, ExternalLink, PanelRightClose, PanelRightOpen, Sparkles, User, Ghost, MapPin, Calendar, Flag, Package, Search, Loader2 } from 'lucide-react';
 import type { WikiPage } from '@/lib/wiki/file-io';
 
 type EditMode = 'view' | 'edit' | 'preview';
@@ -122,7 +122,8 @@ export default function WikiHomePage() {
   // Sidebar entity sections — group pages by subtype
   const sidebarSections = useMemo(() => {
     const typeDefs: Array<{ type: string; label: string; icon: React.ComponentType<{ size?: number; className?: string }>; color: string }> = [
-      { type: 'character', label: 'Characters', icon: User, color: 'text-blue-400' },
+      { type: 'persona', label: 'Personas', icon: User, color: 'text-blue-400' },
+      { type: 'npc', label: 'NPCs', icon: Ghost, color: 'text-purple-400' },
       { type: 'location', label: 'Locations', icon: MapPin, color: 'text-green-400' },
       { type: 'item', label: 'Items', icon: Package, color: 'text-orange-400' },
       { type: 'event', label: 'Events', icon: Calendar, color: 'text-amber-400' },
@@ -139,7 +140,9 @@ export default function WikiHomePage() {
         .filter(p => {
           const subtype = (p.frontmatter?.subtype as string) || '';
           const type = (p.frontmatter?.type as string) || '';
-          if (def.type === 'character') return subtype === 'character' || (!subtype && type === 'entity');
+          const eid = (p.frontmatter?.entity_id as string) || '';
+          if (def.type === 'persona') return (subtype === 'character' || (!subtype && type === 'entity')) && eid.startsWith('persona:');
+          if (def.type === 'npc') return (subtype === 'character' || (!subtype && type === 'entity')) && (!eid || eid.startsWith('npc:'));
           return subtype === def.type;
         })
         .map(p => ({
