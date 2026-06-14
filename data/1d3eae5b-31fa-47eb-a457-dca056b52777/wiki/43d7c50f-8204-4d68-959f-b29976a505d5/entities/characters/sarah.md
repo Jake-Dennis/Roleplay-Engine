@@ -9,6 +9,7 @@ tags:
   - 'type:character'
 created: '2026-05-27T15:43:12.220Z'
 updated: '2026-05-27T15:43:12.220Z'
+entity_id: "npc:1ffd1b58-fbe6-4c64-b3a2-c1f65c83b1a0"
 ---
 **Type:** character
 **Traits:** worried, innkeeper

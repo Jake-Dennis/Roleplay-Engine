@@ -13,7 +13,7 @@ import { getResolvedFolderOrder } from "./config";
  * The wiki folders scanned by listWikiPages by default. Custom folders added
  * at runtime are also discovered automatically from the filesystem.
  */
-const DEFAULT_SCAN_FOLDERS = ["entities", "concepts", "sources", "synthesis", "_review"];
+const DEFAULT_SCAN_FOLDERS = ["entities", "concepts", "sources", "synthesis", "events", "relationships", "_review"];
 
 // ---------------------------------------------------------------------------
 // File Locking

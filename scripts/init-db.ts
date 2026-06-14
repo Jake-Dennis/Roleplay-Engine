@@ -74,28 +74,8 @@ function main() {
     );
 
     -- Personas
-    CREATE TABLE IF NOT EXISTS personas (
-      id TEXT PRIMARY KEY,
-      entity_id TEXT REFERENCES entity_registry(id),
-      user_id TEXT NOT NULL REFERENCES users(id),
-      name TEXT NOT NULL,
-      description TEXT,
-      personality TEXT,
-      writing_style TEXT,
-      scenario TEXT,
-      first_mes TEXT,
-      mes_example TEXT,
-      creator_notes TEXT,
-      system_prompt TEXT,
-      post_history_instructions TEXT,
-      tags TEXT,
-      tts_voice TEXT,
-      avatar_url TEXT,
-      llm_model TEXT,
-      is_active INTEGER DEFAULT 0,
-      universe_id TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+    -- Personas and NPCs are now wiki pages (entities/characters/).
+    -- See entity_registry for the index.
 
     -- Universes
     CREATE TABLE IF NOT EXISTS universes (
@@ -231,7 +211,7 @@ function main() {
     -- Entity registry — universal ID tracking for personas, NPCs, users, locations, events, factions
     CREATE TABLE IF NOT EXISTS entity_registry (
       id TEXT PRIMARY KEY,
-      entity_type TEXT NOT NULL CHECK(entity_type IN ('persona', 'npc', 'user', 'location', 'event', 'faction')),
+      entity_type TEXT NOT NULL CHECK(entity_type IN ('persona', 'npc', 'user', 'location', 'event', 'faction', 'item')),
       display_name TEXT NOT NULL,
       description TEXT,
       user_id TEXT NOT NULL REFERENCES users(id),
@@ -270,22 +250,6 @@ function main() {
     CREATE INDEX IF NOT EXISTS idx_contradiction_flags_entity ON contradiction_flags(entity_name);
 
     -- NPCs
-    CREATE TABLE IF NOT EXISTS npcs (
-      id TEXT PRIMARY KEY,
-      entity_id TEXT REFERENCES entity_registry(id),
-      user_id TEXT NOT NULL REFERENCES users(id),
-      universe_id TEXT REFERENCES universes(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
-      description TEXT,
-      personality_traits TEXT,
-      behavior_patterns TEXT,
-      voice_id TEXT,
-      is_canon BOOLEAN DEFAULT 0,
-      evolution_log TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME
-    );
-
     -- Locations (queried by embeddings, backlinks, contradictions)
     CREATE TABLE IF NOT EXISTS locations (
       id TEXT PRIMARY KEY,

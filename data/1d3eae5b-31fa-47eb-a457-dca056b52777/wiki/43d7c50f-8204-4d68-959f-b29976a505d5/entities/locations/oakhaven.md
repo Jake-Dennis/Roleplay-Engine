@@ -9,6 +9,7 @@ tags:
   - 'type:location'
 created: '2026-05-27T15:43:12.215Z'
 updated: '2026-05-27T15:43:12.215Z'
+entity_id: "location:e51385ec-4077-47e8-a39b-4d85d258b19d"
 ---
 **Type:** location
 **Traits:** village, ancient

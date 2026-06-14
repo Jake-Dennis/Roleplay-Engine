@@ -1,0 +1,18 @@
+[
+  {
+    "contextSize": 4096,
+    "tokPerSec": 25.75,
+    "qualityScore": 0.9666666666666667,
+    "memoryScore": 0.8,
+    "success": true,
+    "durationMs": 114039
+  },
+  {
+    "contextSize": 131072,
+    "tokPerSec": 8.32,
+    "qualityScore": 0.9999999999999999,
+    "memoryScore": 0.8,
+    "success": true,
+    "durationMs": 292038
+  }
+]

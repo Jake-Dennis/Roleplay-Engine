@@ -9,6 +9,7 @@ tags:
   - 'type:location'
 created: '2026-05-27T15:43:12.225Z'
 updated: '2026-05-27T15:43:12.225Z'
+entity_id: "location:0b1a1309-139c-4eaa-91dd-7158f58e084e"
 ---
 **Type:** location
 **Traits:** city

@@ -181,7 +181,6 @@ import {
   getUserModels,
   getUserOllamaUrl,
   getUserTtsUrl,
-  getActivePersonaContext,
 } from "../ollama";
 
 // ===========================================================================

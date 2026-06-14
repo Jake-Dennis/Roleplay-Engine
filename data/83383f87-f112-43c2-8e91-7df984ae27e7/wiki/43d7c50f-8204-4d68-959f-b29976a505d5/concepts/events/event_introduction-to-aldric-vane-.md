@@ -10,6 +10,7 @@ tags:
   - 'importance:medium'
 created: '2026-05-27T14:08:46.547Z'
 updated: '2026-05-27T14:08:46.547Z'
+entity_id: "event:7a8c40d6-38b0-499b-8c85-f1aec762cc81"
 ---
 **Importance:** medium
 **Participants:** [[[[The Collector]]]], [[[[Elara]]]], [[[[Aldric Vane]]]]

@@ -10,6 +10,7 @@ tags:
   - 'importance:high'
 created: '2026-05-27T14:08:46.546Z'
 updated: '2026-05-27T14:08:46.546Z'
+entity_id: "event:631f4feb-2e07-4cd9-bf76-f99d67f633f1"
 ---
 **Importance:** high
 **Participants:** [[[[The Collector]]]], [[[[Sarah]]]]

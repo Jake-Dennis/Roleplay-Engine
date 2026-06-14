@@ -9,6 +9,7 @@ tags:
   - 'type:location'
 created: '2026-05-27T14:49:41.898Z'
 updated: '2026-05-27T14:49:41.898Z'
+entity_id: "location:da0c85f9-20f4-4cac-b38e-4a517017d4cc"
 ---
 **Type:** location
 **Traits:** ancient, forbidden, dangerous

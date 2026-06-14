@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireJson } from "@/lib/error-response";
 import { getDb } from "@/lib/db";
-import { generateTextStream, getUserModels, getActivePersonaContext, buildPersonaPrompt, checkModelAvailable, type PersonaContext } from "@/lib/ollama";
+import { generateTextStream, getUserModels, buildPersonaPrompt, checkModelAvailable, type PersonaContext } from "@/lib/ollama";
 import { buildSystemPrompt } from "@/lib/prompt-builder";
 import { getRetrievedContext, assemblePromptWithBudget, type RetrievedContext } from "@/lib/retrieval";
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { queueJob, processJobsByType, processUserJobs } from "@/lib/job-processor";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
+import { getWikiRoot } from '@/lib/wiki/wiki-root';
+import { listWikiPages } from '@/lib/wiki/file-io';
 import { withAuth } from '@/lib/with-auth';
 import { logger } from '@/lib/logger';
 import { getServerConfig } from '@/lib/server-config';
@@ -122,50 +124,41 @@ export async function POST(
   const messageError = validateLength(userMessage, 10000, "userMessage");
   if (messageError) return NextResponse.json({ error: messageError }, { status: 400 });
 
-  // Session-aware persona: session persona → global active → undefined
+  // Session-aware persona: read from wiki by entity_id
   let persona: PersonaContext | null = null;
   const sessionPersonaId = (session as Record<string, unknown>).persona_id as string | undefined;
   if (sessionPersonaId) {
-    const row = db.prepare(
-      "SELECT name, description, personality, scenario, first_mes, mes_example, creator_notes, system_prompt, post_history_instructions, tags, writing_style, llm_model FROM personas WHERE id = ? AND user_id = ?"
-    ).get(sessionPersonaId, userId) as {
-      name: string;
-      description: string | null;
-      personality: string | null;
-      scenario: string | null;
-      first_mes: string | null;
-      mes_example: string | null;
-      creator_notes: string | null;
-      system_prompt: string | null;
-      post_history_instructions: string | null;
-      tags: string | null;
-      writing_style: string | null;
-      llm_model: string | null;
-    } | undefined;
-    if (row) {
-      let tags: string[] | null = null;
-      if (row.tags) {
-        try { tags = JSON.parse(row.tags); } catch { /* ignore */ }
+    try {
+      const wikiRoot = getWikiRoot(userId);
+      const allPages = listWikiPages(wikiRoot);
+      const page = allPages.find(p =>
+        p.frontmatter.type === 'entity' &&
+        p.frontmatter.subtype === 'character' &&
+        p.frontmatter.entity_id === sessionPersonaId
+      );
+      if (page) {
+        const fm = page.frontmatter;
+        persona = {
+          entityId: (fm.entity_id as string) || null,
+          name: fm.title,
+          description: page.content ? page.content.substring(0, 3000) : null,
+          personality: (fm.personality as string) || null,
+          scenario: (fm.scenario as string) || null,
+          firstMes: (fm.first_mes as string) || null,
+          mesExample: null,
+          creatorNotes: null,
+          systemPrompt: (fm.system_prompt as string) || null,
+          postHistoryInstructions: null,
+          tags: null,
+          writingStyle: null,
+          llmModel: (fm.llm_model as string) || null,
+        };
       }
-      persona = {
-        name: row.name,
-        description: row.description,
-        personality: row.personality,
-        scenario: row.scenario,
-        firstMes: row.first_mes,
-        mesExample: row.mes_example,
-        creatorNotes: row.creator_notes,
-        systemPrompt: row.system_prompt,
-        postHistoryInstructions: row.post_history_instructions,
-        tags,
-        writingStyle: row.writing_style,
-        llmModel: row.llm_model,
-      };
+    } catch {
+      // Wiki not available — continue without persona
     }
   }
-  if (!persona) {
-    persona = getActivePersonaContext(userId);
-  }
+  // No fallback to active persona — session must explicitly set one
 
   // Pre-flight model check: verify the resolved model exists on Ollama
   // before entering the retrieval pipeline or creating any placeholders.

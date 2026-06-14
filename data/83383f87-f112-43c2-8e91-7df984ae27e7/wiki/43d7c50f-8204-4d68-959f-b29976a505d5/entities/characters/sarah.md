@@ -9,6 +9,7 @@ tags:
   - 'type:character'
 created: '2026-05-27T14:49:41.897Z'
 updated: '2026-05-27T14:49:41.897Z'
+entity_id: "npc:37e4e97a-be44-44f5-971c-4562caef5071"
 ---
 **Type:** character
 **Traits:** cautious, friendly, protective

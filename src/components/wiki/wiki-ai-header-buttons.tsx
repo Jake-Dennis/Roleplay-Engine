@@ -9,10 +9,10 @@ interface WikiAiHeaderButtonsProps {
 
 type ButtonKey = 'enrich' | 'deepen' | 'rumors';
 
-const BUTTONS: Record<ButtonKey, { label: string; icon: typeof Sparkles; endpoint: string }> = {
-  enrich: { label: 'Enrich', icon: Sparkles, endpoint: '/api/wiki/enrich' },
-  deepen: { label: 'Deepen', icon: Globe, endpoint: '/api/wiki/deepen' },
-  rumors: { label: 'Rumors', icon: MessagesSquare, endpoint: '/api/wiki/generate-rumors' },
+const BUTTONS: Record<ButtonKey, { label: string; icon: typeof Sparkles; endpoint: string; description: string }> = {
+  enrich: { label: 'Enrich', icon: Sparkles, endpoint: '/api/wiki/enrich', description: 'Add more details, traits, and descriptions to this page via AI' },
+  deepen: { label: 'Deepen', icon: Globe, endpoint: '/api/wiki/deepen', description: 'Find cross-references and connections to other wiki pages' },
+  rumors: { label: 'Rumors', icon: MessagesSquare, endpoint: '/api/wiki/generate-rumors', description: 'Generate in-world rumors and hearsay based on this page' },
 };
 
 /**
@@ -91,7 +91,7 @@ export default function WikiAiHeaderButtons({
                 ? 'bg-accent/20 text-accent border border-accent/30'
                 : 'bg-bg-base text-text-secondary border border-border-default hover:text-text-primary hover:border-accent/30'
             }`}
-            title={`${config.label} this page`}
+            title={config.description}
           >
             <Icon size={12} className={isActive ? 'animate-pulse' : ''} />
             {config.label}

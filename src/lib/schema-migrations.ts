@@ -512,7 +512,7 @@ export function runSchemaMigrations(): void {
   try {
     db.exec(`CREATE TABLE IF NOT EXISTS entity_registry (
       id TEXT PRIMARY KEY,
-      entity_type TEXT NOT NULL CHECK(entity_type IN ('persona', 'npc', 'user', 'location', 'event', 'faction')),
+      entity_type TEXT NOT NULL CHECK(entity_type IN ('persona', 'npc', 'user', 'location', 'event', 'faction', 'item')),
       display_name TEXT NOT NULL,
       description TEXT,
       user_id TEXT NOT NULL REFERENCES users(id),
@@ -545,4 +545,42 @@ export function runSchemaMigrations(): void {
   try {
     db.exec("ALTER TABLE entity_registry ADD COLUMN description TEXT");
   } catch { /* already exists */ }
+
+  // Migration: Update CHECK constraint to allow 'item' type
+  // SQLite can't ALTER CHECK, so we recreate the table
+  try {
+    // Check if 'item' is already allowed
+    const tblInfo = db.prepare("PRAGMA table_info(entity_registry)").all() as { name: string }[];
+    const typeCol = tblInfo.find(c => c.name === 'entity_type');
+    if (typeCol) {
+      // Try inserting 'item' to see if the constraint rejects it
+      try {
+        db.prepare("INSERT INTO entity_registry (id, entity_type, display_name, user_id) VALUES (?, 'item', ?, ?)")
+          .run('_check_item_constraint_', '_check_', '_check_');
+        // If it succeeded, drop the test row — constraint already allows item
+        db.prepare("DELETE FROM entity_registry WHERE id = '_check_item_constraint_'").run();
+      } catch {
+        // Constraint rejected 'item' — recreate table
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS entity_registry_new (
+            id TEXT PRIMARY KEY,
+            entity_type TEXT NOT NULL CHECK(entity_type IN ('persona', 'npc', 'user', 'location', 'event', 'faction', 'item')),
+            display_name TEXT NOT NULL,
+            description TEXT,
+            user_id TEXT NOT NULL REFERENCES users(id),
+            universe_id TEXT REFERENCES universes(id),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+        db.exec(`INSERT INTO entity_registry_new SELECT * FROM entity_registry`);
+        db.exec(`DROP TABLE entity_registry`);
+        db.exec(`ALTER TABLE entity_registry_new RENAME TO entity_registry`);
+        // Recreate indexes
+        db.exec("CREATE INDEX IF NOT EXISTS idx_entity_registry_user ON entity_registry(user_id)");
+        db.exec("CREATE INDEX IF NOT EXISTS idx_entity_registry_universe ON entity_registry(universe_id)");
+        db.exec("CREATE INDEX IF NOT EXISTS idx_entity_registry_type ON entity_registry(entity_type)");
+      }
+    }
+  } catch { /* non-fatal */ }
 }

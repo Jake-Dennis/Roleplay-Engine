@@ -194,29 +194,7 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
           existingPages.add(pageKey);
           pagesCreated++;
 
-          // Auto-create NPC record for character-type entities
-          if (entity.entityType === "character") {
-            try {
-              const existing = getDb().prepare(
-                "SELECT id FROM npcs WHERE user_id = ? AND universe_id = ? AND LOWER(name) = LOWER(?)"
-              ).get(userId, universeId, entityName) as { id: string } | undefined;
-              if (!existing) {
-                getDb().prepare(
-                  `INSERT INTO npcs (id, user_id, universe_id, name, description, personality_traits, is_canon)
-                   VALUES (?, ?, ?, ?, ?, ?, 0)`
-                ).run(
-                  crypto.randomUUID(),
-                  userId,
-                  universeId,
-                  entityName,
-                  entity.description || null,
-                  entity.traits?.length ? JSON.stringify(entity.traits) : null,
-                );
-              }
-            } catch {
-              // Non-fatal — NPC creation is a best-effort bonus
-            }
-          }
+          // Wiki page is the NPC record — no separate SQLite entry needed
         } catch {
           // Skip malformed entity — continue with next
         }

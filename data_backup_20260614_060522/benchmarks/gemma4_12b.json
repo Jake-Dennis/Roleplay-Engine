@@ -1,0 +1,45 @@
+[
+  {
+    "contextSize": 4096,
+    "tokPerSec": 0,
+    "success": true,
+    "durationMs": 53291
+  },
+  {
+    "contextSize": 8192,
+    "tokPerSec": 0,
+    "success": true,
+    "durationMs": 51343
+  },
+  {
+    "contextSize": 16384,
+    "tokPerSec": 0,
+    "success": true,
+    "durationMs": 56968
+  },
+  {
+    "contextSize": 32768,
+    "tokPerSec": 0,
+    "success": true,
+    "durationMs": 148747
+  },
+  {
+    "contextSize": 65536,
+    "tokPerSec": 0,
+    "success": true,
+    "durationMs": 445451
+  },
+  {
+    "contextSize": 131072,
+    "tokPerSec": 0,
+    "success": true,
+    "durationMs": 1425387
+  },
+  {
+    "contextSize": 262144,
+    "tokPerSec": 0,
+    "success": false,
+    "durationMs": 386647,
+    "error": "Ollama responded with 500: {\"error\":\"llama-server reported out-of-memory during startup: cudaMalloc failed: out of memory\\nggml_gallocr_reserve_n_impl: failed to allocate CUDA0 buffer of size 5120722944\\ngraph_reserve: failed t"
+  }
+]

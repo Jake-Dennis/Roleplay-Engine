@@ -23,6 +23,7 @@ import { listWikiPages, writeWikiPage, readWikiPage, WikiFrontmatter } from "@/l
 import { getTypeRegistry } from "@/lib/wiki/type-registry";
 import { folderForPage } from "@/lib/wiki/subtype-folders";
 import { generateIndex } from "@/lib/wiki/index-generator";
+import { recordVersion, createSnapshotFile, getNextVersionNumber } from "@/lib/wiki/history";
 // @deprecated: logger.ts is deprecated — use history.ts (SQLite wiki_versions) instead
 import { appendLog } from "@/lib/wiki/logger";
 import fs from "fs";
@@ -31,6 +32,34 @@ import { eventBus, SessionEvents } from "@/lib/event-bus";
 import type { JobPayload, JobResult } from "@/lib/job-processor";
 import { updateJobProgress, markJobCompleted } from "@/lib/job-processor";
 import { safeParseWarn } from "@/lib/safe-json";
+
+// ---------------------------------------------------------------------------
+// Helper: record a version snapshot before modifying a page
+// ---------------------------------------------------------------------------
+
+/**
+ * Record a version snapshot of a wiki page before it gets overwritten.
+ * This ensures AI edits produce version history entries for manual rollback.
+ * Non-critical — failures to record are silently caught.
+ */
+function recordWriteVersion(
+  wikiRoot: string,
+  pageAbsPath: string,
+  userId: string,
+  changeSummary: string
+): void {
+  try {
+    const relativePath = path.relative(wikiRoot, pageAbsPath).replace(/\\/g, "/");
+    const slug = relativePath.replace(/\.md$/, "").split("/");
+    if (!fs.existsSync(pageAbsPath)) return; // Page doesn't exist yet (new file), skip
+    const rawContent = fs.readFileSync(pageAbsPath, "utf-8");
+    const snapshotPath = createSnapshotFile(wikiRoot, slug, rawContent);
+    const versionNumber = getNextVersionNumber(relativePath, userId);
+    recordVersion(relativePath, userId, versionNumber, changeSummary, snapshotPath);
+  } catch {
+    // Non-critical: version recording failure should not block writes
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Job Handlers
@@ -135,6 +164,7 @@ async function handleWikiEnrichEntity(jobId: string, payload: JobPayload): Promi
       };
 
       writeWikiPage(page.path, newContent, updatedFrontmatter);
+      recordWriteVersion(wikiRoot, page.path, userId as string, "AI enrich");
       processed++;
     } catch {
       // Skip failed entities
@@ -332,6 +362,7 @@ async function handleWikiDeepenPage(jobId: string, payload: JobPayload): Promise
       };
 
       writeWikiPage(page.path, newContent, updatedFrontmatter);
+      recordWriteVersion(wikiRoot, page.path, userId as string, "AI deepen");
       deepened++;
     } catch {
       // Skip failed pages
@@ -414,6 +445,7 @@ async function handleWikiDeepenLocation(jobId: string, payload: JobPayload): Pro
       };
 
       writeWikiPage(page.path, newContent, updatedFrontmatter);
+      recordWriteVersion(wikiRoot, page.path, userId as string, "AI deepen location");
       expanded++;
     } catch {
       // Skip failed locations
@@ -457,12 +489,12 @@ async function handleWikiExtractEvent(jobId: string, payload: JobPayload): Promi
 
   // Get recent messages from the session
   const messages = db.prepare(`
-    SELECT id, content, sender_id, timestamp
+    SELECT id, content, sender_id, persona_id, speaking_as, timestamp
     FROM messages
     WHERE session_id = ? AND is_deleted = 0
     ORDER BY timestamp DESC
     LIMIT 10
-  `).all(sessionId) as { id: string; content: string; sender_id: string | null; timestamp: string }[];
+  `).all(sessionId) as { id: string; content: string; sender_id: string | null; persona_id: string | null; speaking_as: string | null; timestamp: string }[];
 
   if (messages.length === 0) {
     markJobCompleted(jobId);
@@ -470,7 +502,17 @@ async function handleWikiExtractEvent(jobId: string, payload: JobPayload): Promi
   }
 
   const messageText = messages
-    .map((m) => `${m.sender_id === null ? "AI" : "Player"}: ${m.content}`)
+    .map((m) => {
+      if (m.sender_id === null) {
+        const speaker = m.speaking_as || "AI";
+        return `${speaker}: ${m.content}`;
+      }
+      if (m.persona_id) {
+        const persona = db.prepare("SELECT name FROM personas WHERE id = ?").get(m.persona_id) as { name: string } | undefined;
+        if (persona) return `${persona.name}: ${m.content}`;
+      }
+      return `Player: ${m.content}`;
+    })
     .join("\n");
 
   const prompt = PROMPTS.extractEvents(messageText);
@@ -501,6 +543,7 @@ async function handleWikiExtractEvent(jobId: string, payload: JobPayload): Promi
             created: new Date().toISOString(),
           };
 
+          recordWriteVersion(wikiRoot, pagePath, userId as string, "AI event extraction");
           writeWikiPage(pagePath, body, eventFrontmatter);
           extracted++;
 
@@ -653,6 +696,7 @@ async function handleUniverseWikiSync(jobId: string, payload: JobPayload): Promi
     // Update existing page in place (preserves subtype folder structure)
     pagePath = existing.path;
     relativePagePath = path.relative(wikiRoot, existing.path).replace(/\\/g, "/");
+    recordWriteVersion(wikiRoot, pagePath, userId as string, "AI create entity");
     writeWikiPage(pagePath, content, {
       ...existing.frontmatter,
       title: expectedTitle,
@@ -754,6 +798,7 @@ async function handleWikiCreateEntity(jobId: string, payload: JobPayload): Promi
         const dateStr = new Date().toISOString().split("T")[0];
         const content = existingPage.content.trimEnd() +
           `\n\n## Session Update (${dateStr})\n\n${description}`;
+        recordWriteVersion(wikiRoot, pagePath, userId as string, "AI curation update");
         writeWikiPage(pagePath, content, {
           ...existingPage.frontmatter,
           updated: new Date().toISOString(),

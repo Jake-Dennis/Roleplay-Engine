@@ -79,7 +79,7 @@ export function ensureGroupSupport(db: DbDatabase) {
       avatar_url TEXT,
       llm_model TEXT,
       tts_voice TEXT,
-      is_active INTEGER DEFAULT 0,
+
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 

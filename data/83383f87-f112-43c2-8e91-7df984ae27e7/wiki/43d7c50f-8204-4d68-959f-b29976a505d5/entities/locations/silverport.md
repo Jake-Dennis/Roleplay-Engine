@@ -9,6 +9,7 @@ tags:
   - 'type:location'
 created: '2026-05-27T14:49:41.899Z'
 updated: '2026-05-27T14:49:41.899Z'
+entity_id: "location:a71ca572-4bb9-4ed4-acaa-c467f8500b46"
 ---
 **Type:** location
 **Traits:** urban, magical, busy

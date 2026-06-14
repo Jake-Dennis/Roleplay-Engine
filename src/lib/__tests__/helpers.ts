@@ -85,14 +85,13 @@ export function createTestDb(): Database.Database {
       tts_voice TEXT,
       avatar_url TEXT,
       llm_model TEXT,
-      is_active INTEGER DEFAULT 0,
       universe_id TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS entity_registry (
       id TEXT PRIMARY KEY,
-      entity_type TEXT NOT NULL CHECK(entity_type IN ('persona', 'npc', 'user', 'location', 'event')),
+      entity_type TEXT NOT NULL CHECK(entity_type IN ('persona', 'npc', 'user', 'location', 'event', 'faction', 'item')),
       display_name TEXT NOT NULL,
       user_id TEXT NOT NULL REFERENCES users(id),
       universe_id TEXT REFERENCES universes(id),

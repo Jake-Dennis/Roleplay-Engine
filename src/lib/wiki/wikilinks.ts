@@ -326,12 +326,18 @@ export function resolveWithNamespace(
 /**
  * Build a link graph from wiki pages.
  * Returns adjacency map: { sourcePath: [targetPaths] }
+ *
+ * Includes both explicit wikilinks from page content and auto-inferred
+ * edges based on shared tags. Tag-based edges connect pages that share
+ * common tags, using `linkType: "tag"` to distinguish them from
+ * manual wikilinks.
  */
 export function buildLinkGraph(pages: WikiPage[]): LinkGraph {
   const nodes = new Map<string, string[]>();
   const edges: Array<{ source: string; target: string; linkType: string }> = [];
   const collisions = detectCollisions(pages);
 
+  // Phase 1: parse explicit wikilinks from page content
   for (const page of pages) {
     const links = parseWikilinks(page.content);
     const targets: string[] = [];
@@ -353,6 +359,72 @@ export function buildLinkGraph(pages: WikiPage[]): LinkGraph {
     }
 
     nodes.set(page.path, targets);
+  }
+
+  // Phase 2: build tag index for auto-inferred edges
+  const tagIndex = new Map<string, Set<string>>(); // tag -> Set<pagePath>
+  for (const page of pages) {
+    const tags = page.frontmatter.tags;
+    if (Array.isArray(tags)) {
+      for (const tag of tags) {
+        if (!tagIndex.has(tag)) tagIndex.set(tag, new Set());
+        tagIndex.get(tag)!.add(page.path);
+      }
+    }
+  }
+
+  // Phase 3: add edges between pages sharing the same tag
+  // Limit to tags with 2-15 pages (avoid massive complete graphs from generic tags)
+  const existingPair = new Set<string>();
+  for (const e of edges) {
+    existingPair.add([e.source, e.target].sort().join("|"));
+  }
+
+  for (const [tag, paths] of tagIndex) {
+    const arr = [...paths];
+    if (arr.length < 2 || arr.length > 15) continue;
+
+    // Connect each page in this tag group to the FIRST page in the group
+    // (This creates a star, not a complete graph — O(n) edges instead of O(n²))
+    const hub = arr[0];
+    for (let i = 1; i < arr.length; i++) {
+      const pair = [hub, arr[i]].sort().join("|");
+      if (!existingPair.has(pair)) {
+        existingPair.add(pair);
+        edges.push({ source: hub, target: arr[i], linkType: "tag" });
+      }
+    }
+  }
+
+  // Phase 4: connect truly isolated pages (0 edges) to their nearest type-group
+  const pageDegrees = new Map<string, number>();
+  for (const e of edges) {
+    pageDegrees.set(e.source, (pageDegrees.get(e.source) || 0) + 1);
+    pageDegrees.set(e.target, (pageDegrees.get(e.target) || 0) + 1);
+  }
+
+  const typeGroups = new Map<string, string[]>(); // "type/subtype" -> [paths]
+  for (const page of pages) {
+    const key = `${page.frontmatter.type || "unknown"}/${page.frontmatter.subtype || ""}`;
+    if (!typeGroups.has(key)) typeGroups.set(key, []);
+    typeGroups.get(key)!.push(page.path);
+  }
+
+  for (const page of pages) {
+    const degree = pageDegrees.get(page.path) || 0;
+    if (degree > 0) continue; // Already connected
+
+    const key = `${page.frontmatter.type || "unknown"}/${page.frontmatter.subtype || ""}`;
+    const siblings = typeGroups.get(key) || [];
+    // Find a sibling that IS connected
+    const connectedSibling = siblings.find(s => (pageDegrees.get(s) || 0) > 0 && s !== page.path);
+    if (connectedSibling) {
+      const pair = [page.path, connectedSibling].sort().join("|");
+      if (!existingPair.has(pair)) {
+        existingPair.add(pair);
+        edges.push({ source: page.path, target: connectedSibling, linkType: "tag" });
+      }
+    }
   }
 
   return { nodes, edges, collisions };

@@ -9,6 +9,7 @@ tags:
   - 'type:object'
 created: '2026-05-27T14:49:41.900Z'
 updated: '2026-05-27T14:49:41.900Z'
+entity_id: "item:df4b7c6e-2dfd-4b8c-9e2e-473685170091"
 ---
 **Type:** object
 **Traits:** mysterious, powerful, ancient

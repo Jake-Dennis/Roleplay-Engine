@@ -10,6 +10,7 @@ tags:
   - 'importance:high'
 created: '2026-05-27T15:43:12.231Z'
 updated: '2026-05-27T15:43:12.231Z'
+entity_id: "event:c42d70ad-37d5-44fa-b29c-a91c54678795"
 ---
 **Importance:** high
 **Participants:** [[The Collector]], [[Sarah]], [[Oakhaven]]

@@ -17,9 +17,10 @@ interface VersionEntry {
 interface VersionHistoryProps {
   slug: string[];
   onRestore?: () => void;
+  onEdit?: () => void;
 }
 
-export default function VersionHistory({ slug, onRestore }: VersionHistoryProps) {
+export default function VersionHistory({ slug, onRestore, onEdit }: VersionHistoryProps) {
   const [versions, setVersions] = useState<VersionEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +67,7 @@ export default function VersionHistory({ slug, onRestore }: VersionHistoryProps)
     return () => cancelAnimationFrame(frame);
   }, [pagePath, activeUniverse?.id]);
 
-  const handleRestore = async (versionId: string) => {
+  const handleRestore = async (versionId: string, shouldEdit?: boolean) => {
     setRestoring(versionId);
     setConfirmRestore(null);
 
@@ -92,6 +93,12 @@ export default function VersionHistory({ slug, onRestore }: VersionHistoryProps)
 
       // Notify parent to refresh page content
       onRestore?.();
+
+      // If edit mode requested, notify parent
+      if (shouldEdit) {
+        // Small delay to let content refresh first
+        setTimeout(() => onEdit?.(), 50);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to restore');
     } finally {
@@ -140,12 +147,21 @@ export default function VersionHistory({ slug, onRestore }: VersionHistoryProps)
           </p>
           <div className="flex gap-2">
             <button
-              onClick={() => handleRestore(confirmRestore)}
+              onClick={() => handleRestore(confirmRestore, false)}
               disabled={restoring === confirmRestore}
               className="flex-1 px-2 py-1.5 rounded text-xs font-medium bg-accent/20 text-accent hover:bg-accent/30 transition-colors disabled:opacity-50"
             >
-              {restoring === confirmRestore ? 'Restoring...' : 'Confirm'}
+              {restoring === confirmRestore ? 'Restoring...' : 'Restore'}
             </button>
+            {onEdit && (
+              <button
+                onClick={() => handleRestore(confirmRestore, true)}
+                disabled={restoring === confirmRestore}
+                className="flex-1 px-2 py-1.5 rounded text-xs font-medium bg-accent text-white hover:bg-accent-hover transition-colors disabled:opacity-50"
+              >
+                {restoring === confirmRestore ? 'Restoring...' : 'Restore & Edit'}
+              </button>
+            )}
             <button
               onClick={() => setConfirmRestore(null)}
               className="flex-1 px-2 py-1.5 rounded text-xs font-medium bg-bg-base text-text-secondary border border-border-default hover:text-text-primary transition-colors"

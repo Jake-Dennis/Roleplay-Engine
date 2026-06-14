@@ -1,1053 +1,752 @@
-# Graph Report - .  (2026-06-09)
+# Graph Report - Roleplay-Engine  (2026-06-14)
 
 ## Corpus Check
-- Large corpus: 681 files · ~573,587 words. Semantic extraction will be expensive (many Claude tokens). Consider running on a subfolder.
+- 636 files · ~602,498 words
+- Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3019 nodes · 7613 edges · 266 communities (212 shown, 54 thin omitted)
-- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 234 edges (avg confidence: 0.8)
-- Token cost: 124,500 input · 2,850 output
+- 2849 nodes · 8305 edges · 162 communities (144 shown, 18 thin omitted)
+- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 4 edges (avg confidence: 0.8)
+- Token cost: 0 input · 0 output
+
+## Graph Freshness
+- Built from commit: `39c8dcb6`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_API Route Dispatchers|API Route Dispatchers]]
-- [[_COMMUNITY_API Route Handlers|API Route Handlers]]
-- [[_COMMUNITY_Wiki API Routes|Wiki API Routes]]
-- [[_COMMUNITY_Lore Extraction System|Lore Extraction System]]
-- [[_COMMUNITY_Relationship Processing|Relationship Processing]]
-- [[_COMMUNITY_Callout Rendering|Callout Rendering]]
-- [[_COMMUNITY_Admin Contradictions|Admin Contradictions]]
-- [[_COMMUNITY_App Context & Universe|App Context & Universe]]
-- [[_COMMUNITY_Resource API Routes|Resource API Routes]]
-- [[_COMMUNITY_Benchmark Jobs|Benchmark Jobs]]
-- [[_COMMUNITY_Job Queue System|Job Queue System]]
-- [[_COMMUNITY_Embedding & Memory|Embedding & Memory]]
-- [[_COMMUNITY_Wiki Autocomplete|Wiki Autocomplete]]
-- [[_COMMUNITY_Migration Scripts|Migration Scripts]]
-- [[_COMMUNITY_Wiki Audit Tools|Wiki Audit Tools]]
-- [[_COMMUNITY_Archival Processing|Archival Processing]]
-- [[_COMMUNITY_QA Campaign Evidence|QA Campaign Evidence]]
-- [[_COMMUNITY_Timeline System|Timeline System]]
-- [[_COMMUNITY_Retrieval Pipeline|Retrieval Pipeline]]
-- [[_COMMUNITY_Test Infrastructure|Test Infrastructure]]
-- [[_COMMUNITY_Admin Settings|Admin Settings]]
-- [[_COMMUNITY_Contradiction Detection|Contradiction Detection]]
-- [[_COMMUNITY_Persona Management|Persona Management]]
-- [[_COMMUNITY_Canon Layer System|Canon Layer System]]
-- [[_COMMUNITY_Bulk API Routes|Bulk API Routes]]
-- [[_COMMUNITY_File Tree UI|File Tree UI]]
-- [[_COMMUNITY_Job Progress UI|Job Progress UI]]
-- [[_COMMUNITY_Ollama LLM Client|Ollama LLM Client]]
-- [[_COMMUNITY_Wiki Migration|Wiki Migration]]
-- [[_COMMUNITY_Benchmark UI|Benchmark UI]]
-- [[_COMMUNITY_Moderate Cluster 30|Moderate Cluster 30]]
-- [[_COMMUNITY_Moderate Cluster 31|Moderate Cluster 31]]
-- [[_COMMUNITY_Moderate Cluster 32|Moderate Cluster 32]]
-- [[_COMMUNITY_Loose Cluster 33|Loose Cluster 33]]
-- [[_COMMUNITY_Loose Cluster 34|Loose Cluster 34]]
-- [[_COMMUNITY_Moderate Cluster 35|Moderate Cluster 35]]
-- [[_COMMUNITY_Moderate Cluster 36|Moderate Cluster 36]]
-- [[_COMMUNITY_Moderate Cluster 37|Moderate Cluster 37]]
-- [[_COMMUNITY_Moderate Cluster 38|Moderate Cluster 38]]
-- [[_COMMUNITY_Tight Cluster 39|Tight Cluster 39]]
-- [[_COMMUNITY_Tight Cluster 40|Tight Cluster 40]]
-- [[_COMMUNITY_Moderate Cluster 41|Moderate Cluster 41]]
-- [[_COMMUNITY_Tight Cluster 42|Tight Cluster 42]]
-- [[_COMMUNITY_Tight Cluster 43|Tight Cluster 43]]
-- [[_COMMUNITY_Moderate Cluster 44|Moderate Cluster 44]]
-- [[_COMMUNITY_Moderate Cluster 45|Moderate Cluster 45]]
-- [[_COMMUNITY_Moderate Cluster 46|Moderate Cluster 46]]
-- [[_COMMUNITY_Moderate Cluster 47|Moderate Cluster 47]]
-- [[_COMMUNITY_Moderate Cluster 48|Moderate Cluster 48]]
-- [[_COMMUNITY_Tight Cluster 49|Tight Cluster 49]]
-- [[_COMMUNITY_Moderate Cluster 50|Moderate Cluster 50]]
-- [[_COMMUNITY_Moderate Cluster 51|Moderate Cluster 51]]
-- [[_COMMUNITY_Tight Cluster 52|Tight Cluster 52]]
-- [[_COMMUNITY_Tight Cluster 53|Tight Cluster 53]]
-- [[_COMMUNITY_Moderate Cluster 54|Moderate Cluster 54]]
-- [[_COMMUNITY_Tight Cluster 55|Tight Cluster 55]]
-- [[_COMMUNITY_Moderate Cluster 56|Moderate Cluster 56]]
-- [[_COMMUNITY_Tight Cluster 57|Tight Cluster 57]]
-- [[_COMMUNITY_Moderate Cluster 58|Moderate Cluster 58]]
-- [[_COMMUNITY_Tight Cluster 59|Tight Cluster 59]]
-- [[_COMMUNITY_Tight Cluster 60|Tight Cluster 60]]
-- [[_COMMUNITY_Tight Cluster 61|Tight Cluster 61]]
-- [[_COMMUNITY_Tight Cluster 62|Tight Cluster 62]]
-- [[_COMMUNITY_Tight Cluster 63|Tight Cluster 63]]
-- [[_COMMUNITY_Tight Cluster 64|Tight Cluster 64]]
-- [[_COMMUNITY_Moderate Cluster 65|Moderate Cluster 65]]
-- [[_COMMUNITY_Tight Cluster 66|Tight Cluster 66]]
-- [[_COMMUNITY_Tight Cluster 67|Tight Cluster 67]]
-- [[_COMMUNITY_Tight Cluster 68|Tight Cluster 68]]
-- [[_COMMUNITY_Tight Cluster 69|Tight Cluster 69]]
-- [[_COMMUNITY_Tight Cluster 70|Tight Cluster 70]]
-- [[_COMMUNITY_Tight Cluster 71|Tight Cluster 71]]
-- [[_COMMUNITY_Tight Cluster 72|Tight Cluster 72]]
-- [[_COMMUNITY_Tight Cluster 73|Tight Cluster 73]]
-- [[_COMMUNITY_Tight Cluster 74|Tight Cluster 74]]
-- [[_COMMUNITY_Tight Cluster 75|Tight Cluster 75]]
-- [[_COMMUNITY_Tight Cluster 76|Tight Cluster 76]]
-- [[_COMMUNITY_Tight Cluster 77|Tight Cluster 77]]
-- [[_COMMUNITY_Tight Cluster 78|Tight Cluster 78]]
-- [[_COMMUNITY_Tight Cluster 79|Tight Cluster 79]]
-- [[_COMMUNITY_Tight Cluster 80|Tight Cluster 80]]
-- [[_COMMUNITY_Tight Cluster 81|Tight Cluster 81]]
-- [[_COMMUNITY_Tight Cluster 82|Tight Cluster 82]]
-- [[_COMMUNITY_Tight Cluster 83|Tight Cluster 83]]
-- [[_COMMUNITY_Tight Cluster 84|Tight Cluster 84]]
-- [[_COMMUNITY_Tight Cluster 85|Tight Cluster 85]]
-- [[_COMMUNITY_Tight Cluster 86|Tight Cluster 86]]
-- [[_COMMUNITY_Tight Cluster 87|Tight Cluster 87]]
-- [[_COMMUNITY_Tight Cluster 88|Tight Cluster 88]]
-- [[_COMMUNITY_Tight Cluster 89|Tight Cluster 89]]
-- [[_COMMUNITY_Tight Cluster 90|Tight Cluster 90]]
-- [[_COMMUNITY_Tight Cluster 91|Tight Cluster 91]]
-- [[_COMMUNITY_Tight Cluster 92|Tight Cluster 92]]
-- [[_COMMUNITY_Tight Cluster 93|Tight Cluster 93]]
-- [[_COMMUNITY_Tight Cluster 94|Tight Cluster 94]]
-- [[_COMMUNITY_Tight Cluster 95|Tight Cluster 95]]
-- [[_COMMUNITY_Tight Cluster 96|Tight Cluster 96]]
-- [[_COMMUNITY_Tight Cluster 97|Tight Cluster 97]]
-- [[_COMMUNITY_Tight Cluster 98|Tight Cluster 98]]
-- [[_COMMUNITY_Tight Cluster 99|Tight Cluster 99]]
-- [[_COMMUNITY_Tight Cluster 100|Tight Cluster 100]]
-- [[_COMMUNITY_Tight Cluster 101|Tight Cluster 101]]
-- [[_COMMUNITY_Tight Cluster 102|Tight Cluster 102]]
-- [[_COMMUNITY_Tight Cluster 103|Tight Cluster 103]]
-- [[_COMMUNITY_Tight Cluster 104|Tight Cluster 104]]
-- [[_COMMUNITY_Tight Cluster 105|Tight Cluster 105]]
-- [[_COMMUNITY_Tight Cluster 106|Tight Cluster 106]]
-- [[_COMMUNITY_Tight Cluster 107|Tight Cluster 107]]
-- [[_COMMUNITY_Tight Cluster 108|Tight Cluster 108]]
-- [[_COMMUNITY_Tight Cluster 109|Tight Cluster 109]]
-- [[_COMMUNITY_Tight Cluster 110|Tight Cluster 110]]
-- [[_COMMUNITY_Tight Cluster 111|Tight Cluster 111]]
-- [[_COMMUNITY_Tight Cluster 112|Tight Cluster 112]]
-- [[_COMMUNITY_Tight Cluster 113|Tight Cluster 113]]
-- [[_COMMUNITY_Tight Cluster 114|Tight Cluster 114]]
-- [[_COMMUNITY_Tight Cluster 115|Tight Cluster 115]]
-- [[_COMMUNITY_Tight Cluster 116|Tight Cluster 116]]
-- [[_COMMUNITY_Tight Cluster 117|Tight Cluster 117]]
-- [[_COMMUNITY_Tight Cluster 118|Tight Cluster 118]]
-- [[_COMMUNITY_Tight Cluster 119|Tight Cluster 119]]
-- [[_COMMUNITY_Tight Cluster 120|Tight Cluster 120]]
-- [[_COMMUNITY_Tight Cluster 121|Tight Cluster 121]]
-- [[_COMMUNITY_Tight Cluster 122|Tight Cluster 122]]
-- [[_COMMUNITY_Tight Cluster 123|Tight Cluster 123]]
-- [[_COMMUNITY_Tight Cluster 124|Tight Cluster 124]]
-- [[_COMMUNITY_Tight Cluster 125|Tight Cluster 125]]
-- [[_COMMUNITY_Tight Cluster 126|Tight Cluster 126]]
-- [[_COMMUNITY_Tight Cluster 127|Tight Cluster 127]]
-- [[_COMMUNITY_Tight Cluster 128|Tight Cluster 128]]
-- [[_COMMUNITY_Tight Cluster 129|Tight Cluster 129]]
-- [[_COMMUNITY_Tight Cluster 130|Tight Cluster 130]]
-- [[_COMMUNITY_Tight Cluster 131|Tight Cluster 131]]
-- [[_COMMUNITY_Tight Cluster 132|Tight Cluster 132]]
-- [[_COMMUNITY_Tight Cluster 133|Tight Cluster 133]]
-- [[_COMMUNITY_Tight Cluster 134|Tight Cluster 134]]
-- [[_COMMUNITY_Tight Cluster 135|Tight Cluster 135]]
-- [[_COMMUNITY_Tight Cluster 136|Tight Cluster 136]]
-- [[_COMMUNITY_Tight Cluster 138|Tight Cluster 138]]
-- [[_COMMUNITY_Tight Cluster 139|Tight Cluster 139]]
-- [[_COMMUNITY_Tight Cluster 140|Tight Cluster 140]]
-- [[_COMMUNITY_Tight Cluster 141|Tight Cluster 141]]
-- [[_COMMUNITY_Tight Cluster 142|Tight Cluster 142]]
-- [[_COMMUNITY_Tight Cluster 143|Tight Cluster 143]]
-- [[_COMMUNITY_Tight Cluster 144|Tight Cluster 144]]
-- [[_COMMUNITY_Tight Cluster 145|Tight Cluster 145]]
-- [[_COMMUNITY_Tight Cluster 146|Tight Cluster 146]]
-- [[_COMMUNITY_Tight Cluster 147|Tight Cluster 147]]
-- [[_COMMUNITY_Tight Cluster 148|Tight Cluster 148]]
-- [[_COMMUNITY_Tight Cluster 149|Tight Cluster 149]]
-- [[_COMMUNITY_Tight Cluster 150|Tight Cluster 150]]
-- [[_COMMUNITY_Tight Cluster 151|Tight Cluster 151]]
-- [[_COMMUNITY_Tight Cluster 152|Tight Cluster 152]]
-- [[_COMMUNITY_Tight Cluster 153|Tight Cluster 153]]
-- [[_COMMUNITY_Tight Cluster 154|Tight Cluster 154]]
-- [[_COMMUNITY_Tight Cluster 155|Tight Cluster 155]]
-- [[_COMMUNITY_Tight Cluster 156|Tight Cluster 156]]
-- [[_COMMUNITY_Tight Cluster 157|Tight Cluster 157]]
-- [[_COMMUNITY_Tight Cluster 158|Tight Cluster 158]]
-- [[_COMMUNITY_Tight Cluster 159|Tight Cluster 159]]
-- [[_COMMUNITY_Tight Cluster 160|Tight Cluster 160]]
-- [[_COMMUNITY_Tight Cluster 161|Tight Cluster 161]]
-- [[_COMMUNITY_Tight Cluster 162|Tight Cluster 162]]
-- [[_COMMUNITY_Tight Cluster 163|Tight Cluster 163]]
-- [[_COMMUNITY_Tight Cluster 164|Tight Cluster 164]]
-- [[_COMMUNITY_Tight Cluster 165|Tight Cluster 165]]
-- [[_COMMUNITY_Tight Cluster 166|Tight Cluster 166]]
-- [[_COMMUNITY_Tight Cluster 167|Tight Cluster 167]]
-- [[_COMMUNITY_Tight Cluster 168|Tight Cluster 168]]
-- [[_COMMUNITY_Tight Cluster 169|Tight Cluster 169]]
-- [[_COMMUNITY_Tight Cluster 170|Tight Cluster 170]]
-- [[_COMMUNITY_Tight Cluster 171|Tight Cluster 171]]
-- [[_COMMUNITY_Tight Cluster 172|Tight Cluster 172]]
-- [[_COMMUNITY_Tight Cluster 173|Tight Cluster 173]]
-- [[_COMMUNITY_Tight Cluster 174|Tight Cluster 174]]
-- [[_COMMUNITY_Tight Cluster 175|Tight Cluster 175]]
-- [[_COMMUNITY_Tight Cluster 176|Tight Cluster 176]]
-- [[_COMMUNITY_Tight Cluster 177|Tight Cluster 177]]
-- [[_COMMUNITY_Tight Cluster 178|Tight Cluster 178]]
-- [[_COMMUNITY_Tight Cluster 179|Tight Cluster 179]]
-- [[_COMMUNITY_Tight Cluster 180|Tight Cluster 180]]
-- [[_COMMUNITY_Tight Cluster 181|Tight Cluster 181]]
-- [[_COMMUNITY_Tight Cluster 182|Tight Cluster 182]]
-- [[_COMMUNITY_Tight Cluster 183|Tight Cluster 183]]
-- [[_COMMUNITY_Tight Cluster 184|Tight Cluster 184]]
-- [[_COMMUNITY_Tight Cluster 185|Tight Cluster 185]]
-- [[_COMMUNITY_Tight Cluster 186|Tight Cluster 186]]
-- [[_COMMUNITY_Tight Cluster 187|Tight Cluster 187]]
-- [[_COMMUNITY_Tight Cluster 188|Tight Cluster 188]]
-- [[_COMMUNITY_Tight Cluster 189|Tight Cluster 189]]
-- [[_COMMUNITY_Tight Cluster 190|Tight Cluster 190]]
-- [[_COMMUNITY_Tight Cluster 191|Tight Cluster 191]]
-- [[_COMMUNITY_Tight Cluster 192|Tight Cluster 192]]
-- [[_COMMUNITY_Tight Cluster 193|Tight Cluster 193]]
-- [[_COMMUNITY_Tight Cluster 194|Tight Cluster 194]]
-- [[_COMMUNITY_Tight Cluster 195|Tight Cluster 195]]
-- [[_COMMUNITY_Tight Cluster 196|Tight Cluster 196]]
-- [[_COMMUNITY_Tight Cluster 197|Tight Cluster 197]]
-- [[_COMMUNITY_Tight Cluster 198|Tight Cluster 198]]
-- [[_COMMUNITY_Tight Cluster 199|Tight Cluster 199]]
-- [[_COMMUNITY_Tight Cluster 200|Tight Cluster 200]]
-- [[_COMMUNITY_Tight Cluster 201|Tight Cluster 201]]
-- [[_COMMUNITY_Tight Cluster 202|Tight Cluster 202]]
-- [[_COMMUNITY_Tight Cluster 203|Tight Cluster 203]]
-- [[_COMMUNITY_Tight Cluster 204|Tight Cluster 204]]
-- [[_COMMUNITY_Tight Cluster 205|Tight Cluster 205]]
-- [[_COMMUNITY_Tight Cluster 206|Tight Cluster 206]]
-- [[_COMMUNITY_Tight Cluster 207|Tight Cluster 207]]
-- [[_COMMUNITY_Tight Cluster 208|Tight Cluster 208]]
-- [[_COMMUNITY_Tight Cluster 209|Tight Cluster 209]]
-- [[_COMMUNITY_Tight Cluster 210|Tight Cluster 210]]
-- [[_COMMUNITY_Tight Cluster 220|Tight Cluster 220]]
-- [[_COMMUNITY_Tight Cluster 222|Tight Cluster 222]]
-- [[_COMMUNITY_Tight Cluster 223|Tight Cluster 223]]
-- [[_COMMUNITY_Tight Cluster 226|Tight Cluster 226]]
-- [[_COMMUNITY_Tight Cluster 228|Tight Cluster 228]]
-- [[_COMMUNITY_Tight Cluster 233|Tight Cluster 233]]
-- [[_COMMUNITY_Tight Cluster 234|Tight Cluster 234]]
-- [[_COMMUNITY_Tight Cluster 236|Tight Cluster 236]]
-- [[_COMMUNITY_Tight Cluster 238|Tight Cluster 238]]
-- [[_COMMUNITY_Tight Cluster 249|Tight Cluster 249]]
-- [[_COMMUNITY_Tight Cluster 250|Tight Cluster 250]]
-- [[_COMMUNITY_Tight Cluster 251|Tight Cluster 251]]
-- [[_COMMUNITY_Tight Cluster 252|Tight Cluster 252]]
-- [[_COMMUNITY_Tight Cluster 253|Tight Cluster 253]]
-- [[_COMMUNITY_Tight Cluster 254|Tight Cluster 254]]
-- [[_COMMUNITY_Tight Cluster 255|Tight Cluster 255]]
-- [[_COMMUNITY_Tight Cluster 256|Tight Cluster 256]]
-- [[_COMMUNITY_Tight Cluster 257|Tight Cluster 257]]
-- [[_COMMUNITY_Tight Cluster 258|Tight Cluster 258]]
-- [[_COMMUNITY_Tight Cluster 259|Tight Cluster 259]]
-- [[_COMMUNITY_Tight Cluster 260|Tight Cluster 260]]
-- [[_COMMUNITY_Tight Cluster 261|Tight Cluster 261]]
-- [[_COMMUNITY_Tight Cluster 263|Tight Cluster 263]]
-- [[_COMMUNITY_Tight Cluster 265|Tight Cluster 265]]
+- [[_COMMUNITY_route.ts  DELETE()  GET()|route.ts / DELETE() / GET()]]
+- [[_COMMUNITY_route.ts  PUT  route.ts|route.ts / PUT / route.ts]]
+- [[_COMMUNITY_wiki-tasks.ts  wikiArchive()  wikiCompressSummaries()|wiki-tasks.ts / wikiArchive() / wikiCompressSummaries()]]
+- [[_COMMUNITY_route.ts  PUT  route.ts|route.ts / PUT / route.ts]]
+- [[_COMMUNITY_app-layout-shell.tsx  AppLayoutShell()  GroupSelector|app-layout-shell.tsx / AppLayoutShell() / GroupSelector]]
+- [[_COMMUNITY_error.tsx  ErrorPage()  loading.tsx|error.tsx / ErrorPage() / loading.tsx]]
+- [[_COMMUNITY_npc-wiki-sync.ts  buildTraitsSection()  handleNpcWikiSync(|npc-wiki-sync.ts / buildTraitsSection() / handleNpcWikiSync(]]
+- [[_COMMUNITY_route.ts  checkDb()  checkKokoro()|route.ts / checkDb() / checkKokoro()]]
+- [[_COMMUNITY_global-error.tsx  GlobalError()  layer-viewer.tsx|global-error.tsx / GlobalError() / layer-viewer.tsx]]
+- [[_COMMUNITY_page.tsx  Home()  page.tsx|page.tsx / Home() / page.tsx]]
+- [[_COMMUNITY_POST  POST()  extractId()|POST / POST() / extractId()]]
+- [[_COMMUNITY_retrieval-inspector.tsx  renderAdditionalContext()  render|retrieval-inspector.tsx / renderAdditionalContext() / render]]
+- [[_COMMUNITY_use-connection-status.ts  ConnectionStatus  LOADING_STATUS|use-connection-status.ts / ConnectionStatus / LOADING_STATUS]]
+- [[_COMMUNITY_migrate-events-to-wiki.ts  args  buildFrontmatter()|migrate-events-to-wiki.ts / args / buildFrontmatter()]]
+- [[_COMMUNITY_route.ts  estimateTokens()  GET()|route.ts / estimateTokens() / GET()]]
+- [[_COMMUNITY_page.tsx  AdminContradictionsPage()  Contradiction|page.tsx / AdminContradictionsPage() / Contradiction]]
+- [[_COMMUNITY_relationship-timeline.tsx  EvolutionDetail  EvolutionEntry|relationship-timeline.tsx / EvolutionDetail / EvolutionEntry]]
+- [[_COMMUNITY_entity-manager-client.tsx  Entity  EntityManagerClient()|entity-manager-client.tsx / Entity / EntityManagerClient()]]
+- [[_COMMUNITY_route.ts  POST()  Path|route.ts / POST() / Path]]
+- [[_COMMUNITY_use-wikilink-autocomplete.ts  TEXTAREA_EVENTS  useWikilink|use-wikilink-autocomplete.ts / TEXTAREA_EVENTS / useWikilink]]
+- [[_COMMUNITY_AdminEntitiesPage()  EntityDetail  EntityMention|AdminEntitiesPage() / EntityDetail / EntityMention]]
+- [[_COMMUNITY_lore-extraction.ts  ENTITY_TYPE_TO_SUBTYPE  ExtractedEntit|lore-extraction.ts / ENTITY_TYPE_TO_SUBTYPE / ExtractedEntit]]
+- [[_COMMUNITY_decay-handler.ts  handleDecayRelationships()  embedding-ha|decay-handler.ts / handleDecayRelationships() / embedding-ha]]
+- [[_COMMUNITY_backlink-panel.tsx  Backlink  BacklinkPanel()|backlink-panel.tsx / Backlink / BacklinkPanel()]]
+- [[_COMMUNITY_route.ts  ExportMessage  formatAsJson()|route.ts / ExportMessage / formatAsJson()]]
+- [[_COMMUNITY_Community 25|Community 25]]
+- [[_COMMUNITY_audit-wiki.ts  allCrossUniverseLinks  allPagesFlat|audit-wiki.ts / allCrossUniverseLinks / allPagesFlat]]
+- [[_COMMUNITY_file-tree.tsx  buildHierarchy()|file-tree.tsx / buildHierarchy()]]
+- [[_COMMUNITY_job-store.ts  BenchmarkJob  BENCHMARKS_DIR|job-store.ts / BenchmarkJob / BENCHMARKS_DIR]]
+- [[_COMMUNITY_route.ts  ensureColumn()  POST()|route.ts / ensureColumn() / POST()]]
+- [[_COMMUNITY_page.tsx  PersonasPage()  persona-editor.tsx|page.tsx / PersonasPage() / persona-editor.tsx]]
+- [[_COMMUNITY_canon-layer-selector.tsx  CanonLayerSelector()  CanonLayer|canon-layer-selector.tsx / CanonLayerSelector() / CanonLayer]]
+- [[_COMMUNITY_streaming-text.tsx  StreamingText()  StreamingTextProps|streaming-text.tsx / StreamingText() / StreamingTextProps]]
+- [[_COMMUNITY_file-tree.test.tsx  bulk-move.test.ts  createTestWiki()|file-tree.test.tsx / bulk-move.test.ts / createTestWiki()]]
+- [[_COMMUNITY_relationship-tasks.ts  processRelationshipIdleAnalysis()|relationship-tasks.ts / processRelationshipIdleAnalysis() / ]]
+- [[_COMMUNITY_migrate-wiki-to-subtype-folders.ts  backupDataDir()  build|migrate-wiki-to-subtype-folders.ts / backupDataDir() / build]]
+- [[_COMMUNITY_contradiction-detector.ts  aliveDeadRule  Contradiction|contradiction-detector.ts / aliveDeadRule / Contradiction]]
+- [[_COMMUNITY_relationship-analysis.ts  extractEntityNames()  needsRelat|relationship-analysis.ts / extractEntityNames() / needsRelat]]
+- [[_COMMUNITY_Community 38|Community 38]]
+- [[_COMMUNITY_narrative-state-panel.tsx  FieldRow()  NarrativeStatePanel|narrative-state-panel.tsx / FieldRow() / NarrativeStatePanel]]
+- [[_COMMUNITY_cancelAllUserJobs()  cancelJob()  getJobStats()|cancelAllUserJobs() / cancelJob() / getJobStats()]]
+- [[_COMMUNITY_markdown-utils.ts  buildMarkdown()  LoreFrontmatter|markdown-utils.ts / buildMarkdown() / LoreFrontmatter]]
+- [[_COMMUNITY_auth.test.ts  createAuthDb()  createJsonRequest()|auth.test.ts / createAuthDb() / createJsonRequest()]]
+- [[_COMMUNITY_individual-memories.tsx  IndividualMemories()  IndividualM|individual-memories.tsx / IndividualMemories() / IndividualM]]
+- [[_COMMUNITY_roleplay-test.ts  checkFormat()  DEFAULT_LORE_PACK|roleplay-test.ts / checkFormat() / DEFAULT_LORE_PACK]]
+- [[_COMMUNITY_react-markdown  rehype-raw  remark-gfm|react-markdown / rehype-raw / remark-gfm]]
+- [[_COMMUNITY_ChatWindow  file-tree.test.tsx  chat-window.test.tsx|ChatWindow / file-tree.test.tsx / chat-window.test.tsx]]
+- [[_COMMUNITY_importance.ts  calculateImportance()  decayRecency()|importance.ts / calculateImportance() / decayRecency()]]
+- [[_COMMUNITY_emotion-bar.tsx  EmotionBar()  EmotionBarProps|emotion-bar.tsx / EmotionBar() / EmotionBarProps]]
+- [[_COMMUNITY_migrate-backlinks-validations.ts  args  DB_PATH|migrate-backlinks-validations.ts / args / DB_PATH]]
+- [[_COMMUNITY_job-processor.test.ts  capturedEvents  CompatDatabase|job-processor.test.ts / capturedEvents / CompatDatabase]]
+- [[_COMMUNITY_chat-window.tsx  ChatWindowProps  edit-history.tsx|chat-window.tsx / ChatWindowProps / edit-history.tsx]]
+- [[_COMMUNITY_EmotionalState  relationship-viz.ts  buildRelationshipGrap|EmotionalState / relationship-viz.ts / buildRelationshipGrap]]
+- [[_COMMUNITY_page.tsx  BacklinkInfo  EditMode|page.tsx / BacklinkInfo / EditMode]]
+- [[_COMMUNITY_test-phase4.js  fs  main()|test-phase4.js / fs / main()]]
+- [[_COMMUNITY_EventBus  .addConnection()  .canConnect()|EventBus / .addConnection() / .canConnect()]]
+- [[_COMMUNITY_relationship-graph.tsx  GraphEdge  GraphNode|relationship-graph.tsx / GraphEdge / GraphNode]]
+- [[_COMMUNITY_wikilinks-rewrite.test.ts  makePage()  types.ts|wikilinks-rewrite.test.ts / makePage() / types.ts]]
+- [[_COMMUNITY_callout-remark-plugin.ts|callout-remark-plugin.ts]]
+- [[_COMMUNITY__check_chunks.py  verify-plan.py  extract_commands()|_check_chunks.py / verify-plan.py / extract_commands()]]
+- [[_COMMUNITY_auth.test.ts  createAuthDb()  bcryptRounds()|auth.test.ts / createAuthDb() / bcryptRounds()]]
+- [[_COMMUNITY_lint.ts  comparePagesForContradiction()  Contradiction|lint.ts / comparePagesForContradiction() / Contradiction]]
+- [[_COMMUNITY_entity-registry.ts  addAlias()  Entity|entity-registry.ts / addAlias() / Entity]]
+- [[_COMMUNITY_index-utils.ts  parseWikiIndex()  resolveWikiPagePath()|index-utils.ts / parseWikiIndex() / resolveWikiPagePath()]]
+- [[_COMMUNITY_merge-suggester.ts  findMergeCandidates()  MergeCandidate|merge-suggester.ts / findMergeCandidates() / MergeCandidate]]
+- [[_COMMUNITY_ollama-meta.ts  buildModelMeta()  CacheEntry|ollama-meta.ts / buildModelMeta() / CacheEntry]]
+- [[_COMMUNITY_cleanup-old-lore-tables.ts  args  collectLoreFiles()|cleanup-old-lore-tables.ts / args / collectLoreFiles()]]
+- [[_COMMUNITY_orchestrator.ts  checkOllamaConnectivity()  convertModelMe|orchestrator.ts / checkOllamaConnectivity() / convertModelMe]]
+- [[_COMMUNITY_backfill-entity-ids.ts  DATA_DIR  dbPath|backfill-entity-ids.ts / DATA_DIR / dbPath]]
+- [[_COMMUNITY_devDependencies  eslint  @nextbundle-analyzer|devDependencies / eslint / @next/bundle-analyzer]]
+- [[_COMMUNITY_use-tts.ts  useTTS()  UseTTSResult|use-tts.ts / useTTS() / UseTTSResult]]
+- [[_COMMUNITY_npc-editor.tsx  NpcEditor()  NpcEditorProps|npc-editor.tsx / NpcEditor() / NpcEditorProps]]
+- [[_COMMUNITY_inter  metadata  RootLayout()|inter / metadata / RootLayout()]]
+- [[_COMMUNITY_handleSceneStateExtract()  scene-extraction.ts  detectAndR|handleSceneStateExtract() / scene-extraction.ts / detectAndR]]
+- [[_COMMUNITY_logger.ts  buildEntry()  COLORS|logger.ts / buildEntry() / COLORS]]
+- [[_COMMUNITY_prompt-builder.ts  applyContextBudget()  assemblePrompt()|prompt-builder.ts / applyContextBudget() / assemblePrompt()]]
+- [[_COMMUNITY_ai-management-client.tsx  AIMetricsData  ArrowDown()|ai-management-client.tsx / AIMetricsData / ArrowDown()]]
+- [[_COMMUNITY_createFixtureWiki()  config-migration.ts  addSubtypeToConf|createFixtureWiki() / config-migration.ts / addSubtypeToConf]]
+- [[_COMMUNITY_auto-tune.ts  generateRecommendation()  Recommendation|auto-tune.ts / generateRecommendation() / Recommendation]]
+- [[_COMMUNITY_MessageBubble.tsx  MessageBubble  MessageBubbleProps|MessageBubble.tsx / MessageBubble / MessageBubbleProps]]
+- [[_COMMUNITY_api-client.ts  api  ApiClient|api-client.ts / api / ApiClient]]
+- [[_COMMUNITY_backlinks.ts  Backlink  getBacklinks()|backlinks.ts / Backlink / getBacklinks()]]
+- [[_COMMUNITY_package.json  name  private|package.json / name / private]]
+- [[_COMMUNITY_graph-view.tsx  COMMUNITY_COLORS  computeDegrees()|graph-view.tsx / COMMUNITY_COLORS / computeDegrees()]]
+- [[_COMMUNITY_context-test.ts  attemptGeneration()  ContextTestProgressC|context-test.ts / attemptGeneration() / ContextTestProgressC]]
+- [[_COMMUNITY_detectSpeakingAs()  POST()  buildPersonaPrompt()|detectSpeakingAs() / POST() / buildPersonaPrompt()]]
+- [[_COMMUNITY_server-config.ts  emptyRow()  FALLBACK_OLLAMA_PORT|server-config.ts / emptyRow() / FALLBACK_OLLAMA_PORT]]
+- [[_COMMUNITY_react-dom  hover-preview.tsx  clampPosition()|react-dom / hover-preview.tsx / clampPosition()]]
+- [[_COMMUNITY_benchmark-wiki.ts  benchmark()  cleanupWikiRoot()|benchmark-wiki.ts / benchmark() / cleanupWikiRoot()]]
+- [[_COMMUNITY_sync-frontmatter.ts  buildFrontmatter()  DATA_DIR|sync-frontmatter.ts / buildFrontmatter() / DATA_DIR]]
+- [[_COMMUNITY_migrate-universe-scope.ts  DATA_DIR  dbPath|migrate-universe-scope.ts / DATA_DIR / dbPath]]
+- [[_COMMUNITY_test-phase2.js  apiRoutes  protectedPages|test-phase2.js / apiRoutes / protectedPages]]
+- [[_COMMUNITY_wiki-quick-switcher.tsx  charactersAppearInOrder()  FOOTER|wiki-quick-switcher.tsx / charactersAppearInOrder() / FOOTER]]
+- [[_COMMUNITY_embeddings.ts  deleteEmbedding()  EmbeddingResult|embeddings.ts / deleteEmbedding() / EmbeddingResult]]
+- [[_COMMUNITY_NewSessionPage()  Universe  session-creator.tsx|NewSessionPage() / Universe / session-creator.tsx]]
+- [[_COMMUNITY_error-boundary.tsx  ErrorBoundary  .componentDidCatch()|error-boundary.tsx / ErrorBoundary / .componentDidCatch()]]
+- [[_COMMUNITY_config.ts  addFolderToConfig()  DEFAULT_FOLDER_ORDER|config.ts / addFolderToConfig() / DEFAULT_FOLDER_ORDER]]
+- [[_COMMUNITY_page-split.ts  checkPageSize()  headingToFilename()|page-split.ts / checkPageSize() / headingToFilename()]]
+- [[_COMMUNITY_combination-test.ts  attemptCombination()  binarySearchPre|combination-test.ts / attemptCombination() / binarySearchPre]]
+- [[_COMMUNITY_page.tsx  BenchmarkPage()  BenchmarkPoint|page.tsx / BenchmarkPage() / BenchmarkPoint]]
+- [[_COMMUNITY_embed-transclusion.tsx  EmbedTransclusion()  EmbedTransclu|embed-transclusion.tsx / EmbedTransclusion() / EmbedTransclu]]
+- [[_COMMUNITY_checkpointDb()  closeDb()  shutdown.ts|checkpointDb() / closeDb() / shutdown.ts]]
+- [[_COMMUNITY_backlink-panel.tsx  BacklinkInfo  BacklinkPanel()|backlink-panel.tsx / BacklinkInfo / BacklinkPanel()]]
+- [[_COMMUNITY_test-phase3.js  fs  main()|test-phase3.js / fs / main()]]
+- [[_COMMUNITY_test-phase5.js  groupSession  req()|test-phase5.js / groupSession / req()]]
+- [[_COMMUNITY_predict-test.ts  attemptPredictGeneration()  isOomError()|predict-test.ts / attemptPredictGeneration() / isOomError()]]
+- [[_COMMUNITY_eslint.config.mjs  eslintConfig  typescript|eslint.config.mjs / eslintConfig / typescript]]
+- [[_COMMUNITY_jsdom  setup.ts  dom|jsdom / setup.ts / dom]]
+- [[_COMMUNITY_entity-resolution.ts  buildCandidates()  Candidate|entity-resolution.ts / buildCandidates() / Candidate]]
+- [[_COMMUNITY_add-missing-indexes.ts  DATA_DIR  DB_PATH|add-missing-indexes.ts / DATA_DIR / DB_PATH]]
+- [[_COMMUNITY_check-db.ts  db  messages|check-db.ts / db / messages]]
+- [[_COMMUNITY_outline-panel.tsx  HeadingItem  OutlinePanel()|outline-panel.tsx / HeadingItem / OutlinePanel()]]
+- [[_COMMUNITY_test-phase6.js  main()  req()|test-phase6.js / main() / req()]]
+- [[_COMMUNITY_test-phase7.js  main()  req()|test-phase7.js / main() / req()]]
+- [[_COMMUNITY_cytoscape  react-cytoscapejs.d.ts  CytoscapeComponent|cytoscape / react-cytoscapejs.d.ts / CytoscapeComponent]]
+- [[_COMMUNITY_entity-ref-handler.ts  escapeRegex()  findWikiFilesWithEnt|entity-ref-handler.ts / escapeRegex() / findWikiFilesWithEnt]]
+- [[_COMMUNITY_init-wiki.ts  ensureDir()  main()|init-wiki.ts / ensureDir() / main()]]
+- [[_COMMUNITY_route.ts  DELETE  GET|route.ts / DELETE / GET]]
+- [[_COMMUNITY_test-phase1.js  assert()  fetchJSON()|test-phase1.js / assert() / fetchJSON()]]
+- [[_COMMUNITY_jobs-header.tsx  JobsHeader()  JobsHeaderProps|jobs-header.tsx / JobsHeader() / JobsHeaderProps]]
+- [[_COMMUNITY_init-db.ts  DATA_DIR  ensureDir()|init-db.ts / DATA_DIR / ensureDir()]]
+- [[_COMMUNITY_run-benchmark.mjs  fetchJSON()  main()|run-benchmark.mjs / fetchJSON() / main()]]
+- [[_COMMUNITY_run-benchmark-local.mjs  fetchJSON()  main()|run-benchmark-local.mjs / fetchJSON() / main()]]
+- [[_COMMUNITY_session-list.tsx  Session  SessionList()|session-list.tsx / Session / SessionList()]]
+- [[_COMMUNITY_test-llm-config.mjs  start|test-llm-config.mjs / start]]
+- [[_COMMUNITY_test-benchmark.mjs  main()  testModel()|test-benchmark.mjs / main() / testModel()]]
+- [[_COMMUNITY__test_speed.mjs  main()  testGenerate()|_test_speed.mjs / main() / testGenerate()]]
+- [[_COMMUNITY_cross-env|cross-env]]
+- [[_COMMUNITY_eslint-config-next|eslint-config-next]]
+- [[_COMMUNITY_tailwindcss|tailwindcss]]
+- [[_COMMUNITY_@testing-libraryjest-dom|@testing-library/jest-dom]]
+- [[_COMMUNITY_@testing-libraryreact|@testing-library/react]]
+- [[_COMMUNITY_tsx|tsx]]
+- [[_COMMUNITY_@typesbetter-sqlite3|@types/better-sqlite3]]
+- [[_COMMUNITY_@typesbun|@types/bun]]
+- [[_COMMUNITY_@typescytoscape|@types/cytoscape]]
+- [[_COMMUNITY_@typesnode|@types/node]]
+- [[_COMMUNITY_error.tsx  PersonasError()|error.tsx / PersonasError()]]
+- [[_COMMUNITY_postcss.config.mjs  config|postcss.config.mjs / config]]
+- [[_COMMUNITY_get-active-job-model.test.ts  stubGetUserModels()|get-active-job-model.test.ts / stubGetUserModels()]]
+- [[_COMMUNITY_Community 151|Community 151]]
+- [[_COMMUNITY_Community 152|Community 152]]
+- [[_COMMUNITY_Community 153|Community 153]]
+- [[_COMMUNITY_Community 154|Community 154]]
+- [[_COMMUNITY_Community 155|Community 155]]
+- [[_COMMUNITY_Community 156|Community 156]]
+- [[_COMMUNITY_Community 157|Community 157]]
+- [[_COMMUNITY_Community 158|Community 158]]
+- [[_COMMUNITY_Community 159|Community 159]]
+- [[_COMMUNITY_Community 160|Community 160]]
+- [[_COMMUNITY_Community 161|Community 161]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `getDb()` - 250 edges
-2. `withAuth()` - 169 edges
-3. `checkRateLimit()` - 156 edges
-4. `createRateLimitResponse()` - 151 edges
+1. `getDb()` - 254 edges
+2. `withAuth()` - 172 edges
+3. `checkRateLimit()` - 155 edges
+4. `createRateLimitResponse()` - 150 edges
 5. `getClientIp()` - 138 edges
-6. `Path` - 87 edges
-7. `requireJson()` - 84 edges
-8. `getWikiRoot()` - 76 edges
-9. `generateText()` - 72 edges
-10. `withErrorHandler()` - 72 edges
+6. `requireJson()` - 86 edges
+7. `getWikiRoot()` - 82 edges
+8. `generateText()` - 79 edges
+9. `writeWikiPage()` - 74 edges
+10. `withErrorHandler()` - 73 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Wiki Frontmatter Field Conventions` --references--> `WikiFrontmatter`  [EXTRACTED]
-  C:/Users/JakeP/Documents/GitHub/Roleplay-Engine/docs/wiki-schema-reference.md → src/lib/wiki/types.ts
-- `Documented Concurrent Edit Protection` --references--> `ConflictError`  [EXTRACTED]
-  C:/Users/JakeP/Documents/GitHub/Roleplay-Engine/docs/wiki-schema-reference.md → src/lib/wiki/types.ts
-- `Documented Wikilink Syntax and Resolution` --references--> `parseWikilinks()`  [EXTRACTED]
-  C:/Users/JakeP/Documents/GitHub/Roleplay-Engine/docs/wiki-schema-reference.md → src/lib/wiki/wikilinks.ts
-- `Persona selection API + UI for sessions` --conceptually_related_to--> `Architecture Audit Report`  [INFERRED]
-  docs/historical-evidence/omo/notepads/persona-selection/learnings.md → .opencode/audit/03-architecture.md
-- `UI overflow fix: h-full over calc(100vh-3rem)` --conceptually_related_to--> `Architecture Audit Report`  [INFERRED]
-  docs/historical-evidence/omo/notepads/ui-overflow-fix/learnings.md → .opencode/audit/03-architecture.md
+- `main()` ----> `sanitizeWikiFilename()`  [EXTRACTED]
+  docs/historical-evidence/omo/archived-scripts/migrate-events-to-wiki.ts → src/lib/wiki/file-io.ts
+- `main()` ----> `readWikiPage()`  [EXTRACTED]
+  scripts/benchmark-wiki.ts → src/lib/wiki/file-io.ts
+- `main()` ----> `readWikiPage()`  [EXTRACTED]
+  scripts/migrate-backlinks-validations.ts → src/lib/wiki/file-io.ts
+- `main()` ----> `writeWikiPage()`  [EXTRACTED]
+  docs/historical-evidence/omo/archived-scripts/migrate-events-to-wiki.ts → src/lib/wiki/file-io.ts
+- `main()` ----> `writeWikiPage()`  [EXTRACTED]
+  docs/historical-evidence/omo/archived-scripts/migrate-locations-to-wiki.ts → src/lib/wiki/file-io.ts
 
 ## Import Cycles
-- 1-file cycle: `src/lib/jobs/__tests__/helpers.ts -> src/lib/jobs/__tests__/helpers.ts`
+- None detected.
 
-## Hyperedges (group relationships)
-- **Narrative Architecture Layers (Universe → Timeline → Location → Scene → Relationship → Memory)** — spec_UniverseLayer, spec_TimelineLayer, spec_SceneStateLayer, spec_RelationshipMemory, spec_NarrativeMemory, spec_RealtimePipelineArchitecture [EXTRACTED 1.00]
-- **Canon Governance System (5 tiers + contradiction prevention + user overrides)** — spec_CanonLayers, spec_CanonImmutable, spec_CanonSoft, spec_CanonGeneratedLore, spec_CanonSessionLore, spec_CanonRumors, spec_ContradictionPrevention, spec_UserOverrides [EXTRACTED 1.00]
-- **Background Job Priority Hierarchy (high → medium → idle-time tiers)** — spec_BackgroundJobSystem, spec_HighPriorityJobs, spec_MediumPriorityJobs, spec_IdleTimeJobs, spec_AsyncProcessingPhilosophy, spec_IdleTimeEnrichmentTiers, spec_EnrichmentConstraints [EXTRACTED 1.00]
-- **Retrieval-to-Generation Pipeline (intent → retrieval → prompt → LLM → response)** — spec_IntentAnalysis, spec_RetrievalPipeline, spec_PromptAssembly, spec_ContextBudget, spec_NarrativeImportanceSystem, spec_RealtimeRPPipeline [EXTRACTED 1.00]
-- **TTS Subsystem (Kokoro engine, voice discovery/assignment/mixing, queue, streaming)** — spec_KokoroTTS, spec_VoiceDiscovery, spec_VoiceAssignment, spec_VoiceCombination, spec_TTSQueue, spec_StreamingTTS, spec_TTSBehavior [EXTRACTED 1.00]
-- **Auth/Security Domain (registration, login, password rules, JWT)** — spec_AuthenticationMethod, spec_PasswordConstraints, spec_UsernameConstraints, spec_AuthEndpoints, spec_MultiUserDataIsolation [EXTRACTED 1.00]
-- **Chat Message Action System (TTS, Copy, Edit, Regenerate, Delete behaviors)** — spec_MessageActions, spec_RegenerateBehavior, spec_EditBehavior, spec_DeleteBehavior, spec_TTSBehavior [EXTRACTED 1.00]
-- **Group Session Architecture (modes, SSE sync, turn management, REST API)** — spec_GroupSessions, spec_RealtimeSyncSSE, spec_GroupSessionAPI [EXTRACTED 1.00]
-- **UI/UX Specification (dark theme, 30fps, message actions)** — spec_DarkTheme, spec_30fpsRefresh, spec_MessageActions [EXTRACTED 1.00]
-- **Core Design Philosophy (Narrative First, Localized Context, Incremental Expansion, Persistent Consequence)** — spec_NarrativeFirstPhilosophy, spec_LocalizedContextPrinciple, spec_IncrementalExpansionPrinciple, spec_PersistentNarrativeConsequence, spec_AsyncProcessingPhilosophy [EXTRACTED 1.00]
-- **Relationship Management Subsystem (memory, evolution, decay, centric retrieval)** — spec_RelationshipMemory, spec_RelationshipEvolution, spec_RelationshipDecay, spec_RelationshipCentricRetrieval [EXTRACTED 1.00]
-- **Document Icon Design Components** — file_svg_Document Icon, file_svg_Dog-Ear Fold, file_svg_Content Lines, file_svg_Gray Fill Color, file_svg_SVG Vector Format [EXTRACTED 1.00]
-- **Next.js Logo SVG Composition** — NEXT_SVG_logo_file, NEXT_SVG_wordmark, NEXT_SVG_trailing_element, NEXT_SVG_vector_paths, NEXT_SVG_black_fill, NEXT_SVG_viewport [EXTRACTED 1.00]
-- **Next.js Brand Visual Identity** — NEXT_SVG_brand, NEXT_SVG_logo_file, NEXT_SVG_public_asset, NEXT_SVG_monochrome_palette [EXTRACTED 1.00]
-- **Window SVG Icon Composition** — window_svg_Window Icon, window_svg_Window Frame, window_svg_Title Bar Buttons, window_svg_Close Button, window_svg_Minimize Button, window_svg_Maximize Button [EXTRACTED 1.00]
-- **Scene State Auto-Update QA Campaign** — finalqa_final_verdict_txt, finalqa_integration_test_txt, finalqa_edge_cases_txt, finalqa_final_report_md, finalqa_t1_extraction_module_txt, finalqa_t1_llm_failure_txt, finalqa_t2_json_parsing_txt, finalqa_t3_extraction_trigger_txt, finalqa_t4_sse_wiring_txt, finalqa_t5_build_pass_txt, scene_state_auto_update, created_at_bug, active_threads_gap [EXTRACTED 1.00]
-- **Wiki Features QA Campaign (12 scenarios)** — finalqa_qa_report_md, finalqa_qa1_existing_link_txt, finalqa_qa2_new_link_txt, finalqa_qa3_6_callouts_txt, finalqa_qa7_outline_txt, finalqa_qa8_10_embeds_txt, finalqa_qa11_hover_preview_txt, finalqa_qa12_outgoing_links_txt, wikilink_render_pipeline, callout_ast_plugin, embed_transclusion_mechanism, outline_panel_component, hover_preview_hook, outgoing_links_resolver [EXTRACTED 1.00]
-- **LLM Benchmark development cycle** — plan004_llm_benchmark_md, plan005_benchmark_fixes_md, benchmark_infrastructure, memory_retention_pending, ollama_host_url_bug, benchmark_ui_type_mismatches, hardware_detection_concept [EXTRACTED 1.00]
-- **Wiki Subsystem Evolution (plans 006, 008, 009, 010, 023)** — opencode_plans_completed_plan_006_rich_wiki_editor, opencode_plans_completed_plan_008_wiki_type_registry, opencode_plans_completed_plan_009_subtype_folder_structure, opencode_plans_completed_plan_010_evolution_tooling, opencode_plans_completed_plan_023_ai_wiki_editing [INFERRED 0.95]
-- **Audit-to-Improvement Pipeline (plans 012-023)** — opencode_plans_completed_plan_012_comprehensive_audit, opencode_plans_completed_plan_013_critical_fixes, opencode_plans_completed_plan_014_infrastructure_quick_wins, opencode_plans_completed_plan_015_security_fixes, opencode_plans_completed_plan_016_code_quality_cleanup, opencode_plans_completed_plan_017_performance_optimization, opencode_plans_completed_plan_018_architecture_cleanup, opencode_plans_completed_plan_019_test_coverage_core, opencode_plans_completed_plan_020_test_coverage_integration, opencode_plans_completed_plan_021_wiki_data_cleanup, opencode_plans_completed_plan_022_longer_term_improvements, opencode_plans_completed_plan_023_ai_wiki_editing [INFERRED 0.95]
-- **OMO Evidence Verification Suite (F1-F4)** — docs_historical_evidence_omo_evidence_f1_plan_compliance, docs_historical_evidence_omo_evidence_f2_accuracy_spot_check, docs_historical_evidence_omo_evidence_f3_format_validation, docs_historical_evidence_omo_evidence_f4_scope_fidelity, docs_historical_evidence_omo_evidence_task_1_count_check, docs_historical_evidence_omo_evidence_task_1_spot_check, docs_historical_evidence_omo_evidence_task_2_count_check, docs_historical_evidence_omo_evidence_task_2_spot_check [INFERRED 0.95]
-- **LLM Generation Pipeline** — src_app_api_llm_route, app_generate_id_route, OllamaClient, generateTextStream, getRetrievedContext, buildPrompt, EventBus, withAuth, withErrorHandler [INFERRED]
-- **Chain: Security audit identifies SSRF, ADR decides denylist, Phase 1 path traversal fix** — opencode_audit_04-security_security_audit, opencode_audit_04-security_ssrf_vulnerability, opencode_decisions_adr-015-security-hardening_ssrf_denylist, docs_historical-evidence_omo_notepads_phase-1-security-hardening_learnings_path_traversal_fix, opencode_decisions_adr-015-security-hardening_path_traversal_layers [EXTRACTED 1.00]
-- **Chain: Performance audit finds React.memo, missing indexes, session page bloat** — opencode_audit_07-performance_performance_audit, opencode_audit_07-performance_zero_react_memo, opencode_audit_07-performance_missing_indexes, opencode_audit_07-performance_session_page_bloat, opencode_audit_07-performance_ollama_cascade [EXTRACTED 1.00]
-- **Chain: Test coverage audit finds critical gaps across API routes, components, hooks** — opencode_audit_05-test-coverage_test_coverage_audit, opencode_audit_05-test-coverage_coverage_stats, opencode_audit_05-test-coverage_critical_untested, opencode_audit_04-security_security_audit, opencode_audit_06-wiki-data_wiki_data_audit, opencode_audit_07-performance_performance_audit [INFERRED 0.85]
-- **API Infrastructure Layer** — app_api_agents_with_auth, app_api_agents_sse_stream, app_api_agents_raw_sql, lib_agents_event_bus [INFERRED 0.85]
-- **Background Processing Pipeline** — lib_jobs_agents_job_sys, lib_jobs_agents_handler, lib_agents_idle, lib_agents_benchmark [INFERRED 0.85]
-- **Wiki Content Management System** — lib_wiki_agents_file_io, lib_wiki_agents_wikilinks, lib_wiki_agents_validation, lib_wiki_agents_concurrent, lib_wiki_agents_llm_ingest, lib_agents_ollama [INFERRED 0.85]
+## Communities (162 total, 18 thin omitted)
 
-## Communities (266 total, 54 thin omitted)
-
-### Community 0 - "API Route Dispatchers"
-Cohesion: 0.05
-Nodes (61): PUT, GET, PUT, GET, POST, POST, GET, POST (+53 more)
-
-### Community 1 - "API Route Handlers"
-Cohesion: 0.10
-Nodes (49): POST, POST, DELETE(), GET, POST(), POST(), GET(), POST() (+41 more)
-
-### Community 2 - "Wiki API Routes"
-Cohesion: 0.08
-Nodes (40): DELETE, GET, PUT, DELETE, GET, queueJob(), errorResponse(), forbiddenError() (+32 more)
-
-### Community 3 - "Lore Extraction System"
-Cohesion: 0.12
-Nodes (47): handleArchivalProcessing(), ENTITY_TYPE_TO_SUBTYPE, ExtractedEntity, ExtractedEvent, ExtractedRelationship, handleLoreExtractionJob(), LoreExtractionResult, markJobCompleted() (+39 more)
-
-### Community 4 - "Relationship Processing"
-Cohesion: 0.10
-Nodes (40): processRelationshipIdleAnalysis(), processRelationshipIdleTier(), processRemainingQueuedJobs(), queueRelationshipIdleJobs(), wikiArchive(), wikiCompressSummaries(), wikiDecayRelationships(), wikiDeepenPages() (+32 more)
-
-### Community 5 - "Callout Rendering"
-Cohesion: 0.05
-Nodes (31): CALLOUT_CONFIG, CalloutProps, CALLOUT_ALIASES, CALLOUT_TYPES, CalloutData, CalloutNode, processCallout(), processChildren() (+23 more)
-
-### Community 6 - "Admin Contradictions"
-Cohesion: 0.07
-Nodes (28): Contradiction, SEVERITY_ORDER, STAT_FILTERS, EntityDetail, EntityMention, EntityRow, SOURCE_LABELS, TabKey (+20 more)
-
-### Community 7 - "App Context & Universe"
-Cohesion: 0.07
-Nodes (32): useActiveUniverse(), ActiveState, AppContext, AppContextType, AppProvider(), AppUser, Group, Session (+24 more)
-
-### Community 8 - "Resource API Routes"
+### Community 0 - "route.ts / DELETE() / GET()"
 Cohesion: 0.11
-Nodes (27): DELETE(), GET(), POST(), POST(), POST(), PUT(), ExportMessage, formatAsJson() (+19 more)
+Nodes (48): DELETE(), GET(), POST(), DELETE(), formatBytes(), GET(), POST(), POST() (+40 more)
 
-### Community 9 - "Benchmark Jobs"
-Cohesion: 0.08
-Nodes (35): BenchmarkJob, BENCHMARKS_DIR, createJob(), deleteJob(), deleteJobFile(), ensureBenchmarksDir(), generateJobId(), getJob() (+27 more)
-
-### Community 10 - "Job Queue System"
-Cohesion: 0.15
-Nodes (32): handleDecayRelationships(), handleGenerateEmbeddings(), cancelAllUserJobs(), cancelJob(), getJobStats(), getNextJob(), getUserJobs(), isTransientError() (+24 more)
-
-### Community 11 - "Embedding & Memory"
-Cohesion: 0.09
-Nodes (33): MEMORY_CONFIG, getDb(), isVecAvailable(), loadVecExtension(), deleteEmbedding(), EmbeddingResult, ensureVectorTable(), getEmbedding() (+25 more)
-
-### Community 12 - "Wiki Autocomplete"
-Cohesion: 0.09
-Nodes (32): TEXTAREA_EVENTS, useWikilinkAutocomplete(), UseWikilinkAutocompleteOptions, UseWikilinkAutocompleteResult, filterPages(), findWikilinkContext(), getCursorCoordinates(), normalizePageName() (+24 more)
-
-### Community 13 - "Migration Scripts"
-Cohesion: 0.07
-Nodes (20): DATA_DIR, dbPath, int, Path, DATA_DIR, ensureDir(), main(), DATA_DIR (+12 more)
-
-### Community 14 - "Wiki Audit Tools"
+### Community 1 - "route.ts / PUT / route.ts"
 Cohesion: 0.06
-Nodes (26): allCrossUniverseLinks, allPagesFlat, args, AuditIssue, collectMd(), CrossUniverseLink, DATA_DIR, FixAction (+18 more)
+Nodes (46): POST, POST, GET, PUT, POST, GET, POST, POST (+38 more)
 
-### Community 15 - "Archival Processing"
-Cohesion: 0.16
-Nodes (17): POST, POST, process(), buildEvolutionPrompt(), handleNpcEvolutionJob(), parseEvolutionResponse(), handleThreadAnalysis(), JobPayload (+9 more)
+### Community 2 - "wiki-tasks.ts / wikiArchive() / wikiCompressSummaries()"
+Cohesion: 0.06
+Nodes (52): args, buildFrontmatter(), canonTierToStatus(), DB_PATH, getPageBody(), IS_DRY_RUN, logMigration(), main() (+44 more)
 
-### Community 16 - "QA Campaign Evidence"
-Cohesion: 0.08
-Nodes (12): active_threads missing from getSceneContext, Callout remark AST plugin (12 types), Wrong column name bug (created_at vs timestamp), Embed transclusion (![[Page]]), Hover preview hook (300ms debounce), Graceful LLM error handling pattern, Outgoing links panel with existence check, Outline panel with IntersectionObserver (+4 more)
-
-### Community 17 - "Timeline System"
-Cohesion: 0.09
-Nodes (23): ENTRY_TYPE_ICONS, ENTRY_TYPE_LABELS, IMPORTANCE_COLORS, TimelineEntry, CANON_STATUSES, CharacterEditor(), CharacterEditorProps, ROLES (+15 more)
-
-### Community 18 - "Retrieval Pipeline"
-Cohesion: 0.12
-Nodes (19): classifyIntent(), getActiveThreads(), getCanonContext(), getDecisionPoints(), getMemoryContext(), getMessageSummaries(), getRecentMessages(), getRelationshipContext() (+11 more)
-
-### Community 19 - "Test Infrastructure"
-Cohesion: 0.21
-Nodes (20): createTestWiki(), createFixtureWiki(), addSubtypeToConfig(), addTypeToConfig(), migrateConfigV1toV2(), readAndMigrateConfig(), removeSubtypeFromConfig(), removeTypeFromConfig() (+12 more)
-
-### Community 20 - "Admin Settings"
-Cohesion: 0.12
-Nodes (23): formatBytes(), GET(), POST(), validatePassword(), validateUsername(), generateCsrfToken(), setCsrfCookie(), requireJson() (+15 more)
-
-### Community 21 - "Contradiction Detection"
-Cohesion: 0.11
-Nodes (27): aliveDeadRule, Contradiction, CONTRADICTION_RULES, ContradictionRule, detectAllContradictions(), detectAllContradictionsWithSemantic(), detectContradictions(), locationRule (+19 more)
-
-### Community 22 - "Persona Management"
+### Community 3 - "route.ts / PUT / route.ts"
 Cohesion: 0.10
-Nodes (19): PersonaEditor(), PersonaEditorProps, TABS, PersonaList(), PersonaListProps, PersonaPreview(), PersonaPreviewProps, PersonaTabAdvanced() (+11 more)
+Nodes (28): POST, POST(), POST(), POST(), findAliasConflict(), requireJson(), markOllamaBusy(), markOllamaIdle() (+20 more)
 
-### Community 23 - "Canon Layer System"
-Cohesion: 0.09
-Nodes (22): CanonLayerSelectorProps, CANON_MIGRATION_MAP, CANON_TIERS, CanonTier, ARC_TYPE_LABELS, CANON_TIER_COLORS, CANON_TIER_LABELS, EMOTION_COLORS (+14 more)
+### Community 4 - "app-layout-shell.tsx / AppLayoutShell() / GroupSelector"
+Cohesion: 0.04
+Nodes (43): AppLayoutShell(), useActiveUniverse(), ActiveState, AppContext, AppContextType, AppProvider(), AppUser, Group (+35 more)
 
-### Community 24 - "Bulk API Routes"
-Cohesion: 0.08
-Nodes (24): GET(), GET, POST, VALID_LAYER_TYPES, ApiResponse, DbParams, DbRow, DecodedToken (+16 more)
+### Community 5 - "error.tsx / ErrorPage() / loading.tsx"
+Cohesion: 0.04
+Nodes (22): ARC_TYPE_LABELS, ESCALATION_COLORS, NarrativeThread, Session, STATUS_COLORS, Universe, ReindexSectionProps, PageHeaderProps (+14 more)
 
-### Community 25 - "File Tree UI"
-Cohesion: 0.08
-Nodes (17): buildHierarchy(), CreateFlowProps, DragPreview, FileTree(), FileTreeProps, findActiveItem(), folderIdToName(), pageIdToPath() (+9 more)
-
-### Community 26 - "Job Progress UI"
-Cohesion: 0.10
-Nodes (22): JobProgress(), JobProgressProps, JobTableProps, Job, JOB_TYPE_LABELS, JOB_TYPES, JobsPage(), PRIORITY_COLORS (+14 more)
-
-### Community 27 - "Ollama LLM Client"
-Cohesion: 0.12
-Nodes (23): buildPersonaPrompt(), checkOllamaConnection(), fetchLocalModels(), generateTextStream(), getActivePersonaContext(), getLocalModels(), getUserModels(), getUserOllamaUrl() (+15 more)
-
-### Community 28 - "Wiki Migration"
-Cohesion: 0.13
-Nodes (25): backupDataDir(), CliOptions, collectAllWikiFiles(), collectMdFiles(), copyRecursiveSync(), DATA_DIR, DiscoveredFile, discoverFiles() (+17 more)
-
-### Community 29 - "Benchmark UI"
-Cohesion: 0.10
-Nodes (21): BenchmarkJob, BenchmarkProgressDisplayProps, BenchmarkReport, BenchmarkResults(), CombinationResult, ContextTestResult, formatDuration(), formatNumber() (+13 more)
-
-### Community 30 - "Moderate Cluster 30"
-Cohesion: 0.12
-Nodes (18): ChatWindow, ChatWindowProps, EditHistory(), EditHistoryProps, EditRecord, Intent, INTENT_KEYWORDS, INTENT_PROTOTYPES (+10 more)
-
-### Community 31 - "Moderate Cluster 31"
-Cohesion: 0.11
-Nodes (16): GET, POST, ensureColumn(), POST(), EventHandler, SessionEvents, StoredEvent, DbDatabase (+8 more)
-
-### Community 32 - "Moderate Cluster 32"
-Cohesion: 0.14
-Nodes (20): checkFormat(), DEFAULT_LORE_PACK, detectContradictions(), FactScore, LoreCharacter, LoreLocation, LorePack, LoreRule (+12 more)
-
-### Community 33 - "Loose Cluster 33"
-Cohesion: 0.09
-Nodes (6): checkpointDb(), closeDb(), EventBus, failProcessingJobs(), runShutdown(), setupGracefulShutdown()
-
-### Community 34 - "Loose Cluster 34"
-Cohesion: 0.09
-Nodes (23): dependencies, bcryptjs, better-sqlite3, clsx, cytoscape, @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities (+15 more)
-
-### Community 35 - "Moderate Cluster 35"
-Cohesion: 0.12
-Nodes (16): TypingIndicator(), useSessionChat(), useSession(), SessionChatPage(), CharacterDeclarationModal(), CharacterDeclarationModalProps, GenerationErrorBanner, GenerationErrorBannerProps (+8 more)
-
-### Community 36 - "Moderate Cluster 36"
-Cohesion: 0.13
-Nodes (18): DateFormatOptions, DEFAULT_OPTIONS, formatDate(), formatDateTime(), formatRelative(), formatRelativeTime(), formatTime(), PrivateThought (+10 more)
-
-### Community 37 - "Moderate Cluster 37"
-Cohesion: 0.10
-Nodes (21): Catch block standardization (57 files, 89 catch blocks), Error message leakage fixed (12 files, 18 occurrences), Missing auth on /api/models/ollama and /api/tts/voices, XSS fix in FTS5 snippet via escapeHtmlPreservingMarks, Full Audit Remediation Learnings (Wave 2), Phase 1: Path traversal bypass fix (7 wiki routes), Scene state auto-update via extractAndApplySceneState, Cookie Secure flag conditional on NODE_ENV (LOW) (+13 more)
-
-### Community 38 - "Moderate Cluster 38"
-Cohesion: 0.13
-Nodes (14): AppLayoutShell(), GroupSelector, NavItem, navItems, SessionSelector, UniverseSelector, ConnectionStatus, LOADING_STATUS (+6 more)
-
-### Community 39 - "Tight Cluster 39"
-Cohesion: 0.17
-Nodes (15): checkOllamaConnectivity(), convertModelMeta(), runBenchmark(), runBenchmarkBackground(), updateProgress(), attemptPredictGeneration(), isOomError(), isTimeoutError() (+7 more)
-
-### Community 40 - "Tight Cluster 40"
-Cohesion: 0.19
-Nodes (14): buildTraitsSection(), handleNpcWikiSync(), updateBodyTraitsSection(), createTestWiki(), collectPagesRecursive(), readWikiPage(), maxDate(), mergePages() (+6 more)
-
-### Community 41 - "Moderate Cluster 41"
-Cohesion: 0.14
-Nodes (15): calculateImportance(), decayRecency(), ImportanceLevel, ImportanceResult, ImportanceScores, LEVEL_VALUES, scoreToTier(), updateImportance() (+7 more)
-
-### Community 42 - "Tight Cluster 42"
+### Community 6 - "npc-wiki-sync.ts / buildTraitsSection() / handleNpcWikiSync("
 Cohesion: 0.18
-Nodes (17): logger, batchRewriteLinks(), BulkMoveItem, bulkMovePages(), BulkMoveResult, collectWikiFiles(), MovedPageInfo, singularizeFolder() (+9 more)
+Nodes (23): POST(), DELETE(), extractBlock(), extractSection(), findPageByName(), GET(), PUT(), resolveSlugPath() (+15 more)
 
-### Community 43 - "Tight Cluster 43"
-Cohesion: 0.17
-Nodes (17): cacheAudio(), checkTTSConnection(), getCachedAudio(), getCacheKey(), TTSGenerateRequest, availableVoices, discoverVoices(), getAvailableVoices() (+9 more)
-
-### Community 44 - "Moderate Cluster 44"
-Cohesion: 0.14
-Nodes (15): EmotionBar(), EmotionBarProps, EvolutionEntry, RelationshipHistory(), RelationshipHistoryProps, DecayIndicator(), DecayStatus, getDecayStatus() (+7 more)
-
-### Community 45 - "Moderate Cluster 45"
-Cohesion: 0.10
-Nodes (19): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModules, jsx, lib, module (+11 more)
-
-### Community 46 - "Moderate Cluster 46"
-Cohesion: 0.15
-Nodes (19): API Routes Documentation, Raw SQL via better-sqlite3, SSE Streaming Endpoints, withAuth() Auth HOF, Ollama Benchmark Subsystem, Library Utilities Documentation, In-process Event Bus, Idle Processing Tiers (+11 more)
-
-### Community 47 - "Moderate Cluster 47"
-Cohesion: 0.15
-Nodes (8): StreamingText(), StreamingTextProps, useMeasuredFPS(), useRenderLoop(), RenderLoop, StreamingArea, StreamingAreaProps, FPSCounter()
-
-### Community 48 - "Moderate Cluster 48"
-Cohesion: 0.15
-Nodes (12): Session, SessionList(), SessionListProps, dom, GLOBALS_TO_SET, win, folderOrder, samplePagesByFolder (+4 more)
-
-### Community 49 - "Tight Cluster 49"
-Cohesion: 0.19
-Nodes (17): buildMarkdown(), appendSharedHistory(), buildHistoryMarkdown(), buildRelationshipMarkdown(), DEFAULT_DECAY_CONFIG, deleteRelationshipFiles(), getAllRelationshipDirs(), getHistoryFilePath() (+9 more)
-
-### Community 50 - "Moderate Cluster 50"
-Cohesion: 0.11
-Nodes (19): devDependencies, cross-env, eslint, eslint-config-next, jsdom, @next/bundle-analyzer, tailwindcss, @tailwindcss/postcss (+11 more)
-
-### Community 51 - "Moderate Cluster 51"
-Cohesion: 0.12
-Nodes (15): IndividualMemories(), IndividualMemoriesProps, IndividualMemory, EmotionKey, EMOTIONS, PersonalRelationship, PersonalRelationships(), PersonalRelationshipsProps (+7 more)
-
-### Community 52 - "Tight Cluster 52"
-Cohesion: 0.18
-Nodes (14): BacklinkInfo, EditMode, RightPanel, EMPTY_FRONTMATTER, parseWikiFrontmatter(), formatTimestamp(), FrontmatterPropertiesPanel(), FrontmatterPropertiesPanelProps (+6 more)
-
-### Community 53 - "Tight Cluster 53"
-Cohesion: 0.23
-Nodes (18): comparePagesForContradiction(), Contradiction, ContradictionResult, detectContradictions(), detectStaleClaims(), extractUserIdFromWikiRoot(), findMissingCrossReferences(), groupPagesByEntity() (+10 more)
-
-### Community 54 - "Moderate Cluster 54"
-Cohesion: 0.14
-Nodes (15): SessionChatHandlers, SessionChatSetters, SessionChatState, UseSessionChatResult, INITIAL_STATE, Message, Participant, SceneState (+7 more)
-
-### Community 55 - "Tight Cluster 55"
+### Community 7 - "route.ts / checkDb() / checkKokoro()"
 Cohesion: 0.20
-Nodes (16): authenticateUser(), AuthToken, changePassword(), cleanupExpiredDenylistEntries(), createUser(), generateToken(), getUserById(), getUserByUsername() (+8 more)
+Nodes (16): c_users_jakep_documents_github_roleplay_engine_src_lib_auth_token_ts, checkDb(), checkKokoro(), checkOllama(), GET(), isAuthorized(), cleanupExpiredDenylistEntries(), revokeToken() (+8 more)
 
-### Community 56 - "Moderate Cluster 56"
-Cohesion: 0.14
-Nodes (14): buildCandidates(), Candidate, levenshteinDistance(), ResolutionResult, resolveEntityToWikiPage(), cleanupStaleLocks(), DEFAULT_SCAN_FOLDERS, fileLocks (+6 more)
+### Community 8 - "global-error.tsx / GlobalError() / layer-viewer.tsx"
+Cohesion: 0.03
+Nodes (30): LAYERS, LayerStats, LayerViewerProps, LAYER_OPTIONS, PromotionDialogProps, MessageInput, MessageInputProps, AudioPlayerOptions (+22 more)
 
-### Community 57 - "Tight Cluster 57"
-Cohesion: 0.18
-Nodes (16): EmotionalState, buildRelationshipGraph(), calculateEmotionVectors(), calculateStrength(), EMOTION_COLORS, getDominantEmotion(), layoutForceDirected(), parseEmotions() (+8 more)
+### Community 9 - "page.tsx / Home() / page.tsx"
+Cohesion: 0.04
+Nodes (39): TypingIndicator(), NarrativeStatePanel(), NarrativeStatePanelProps, RawSceneApiResponse, SceneConflict, SceneGoal, SceneState, StateSnapshot (+31 more)
 
-### Community 58 - "Moderate Cluster 58"
-Cohesion: 0.13
-Nodes (13): ModelSettings, OllamaModel, ServerSettings, TTSCacheStats, ConnectionStatus, ConnectionStatusSection(), ConnectionStatusSectionProps, NarratorVoiceSection() (+5 more)
-
-### Community 59 - "Tight Cluster 59"
-Cohesion: 0.22
-Nodes (13): generateRecommendation(), Recommendation, attemptCombination(), binarySearchPredictForContext(), CombinationTestProgressCallback, isOomError(), isTimeoutError(), runCombinationTests() (+5 more)
-
-### Community 60 - "Tight Cluster 60"
-Cohesion: 0.16
-Nodes (11): FilterBar(), FilterBarProps, STATUS_OPTIONS, JobTable(), JobsHeaderProps, StatCardItem, StatsCards(), StatsCardsProps (+3 more)
-
-### Community 61 - "Tight Cluster 61"
+### Community 10 - "POST / POST() / extractId()"
 Cohesion: 0.19
-Nodes (13): JWT_SECRET, verifyTokenBasic(), getCsrfToken(), initCsrfClient(), isMutatingMethod(), csrfErrorResponse(), timingSafeEqual(), validateCsrfToken() (+5 more)
+Nodes (14): ENTITY_TYPE_TO_SUBTYPE, ExtractedEntity, ExtractedEvent, ExtractedRelationship, LoreExtractionResult, buildEvolutionPrompt(), handleNpcEvolutionJob(), parseEvolutionResponse() (+6 more)
 
-### Community 62 - "Tight Cluster 62"
-Cohesion: 0.26
-Nodes (12): PROMPT_BUDGET, applyContextBudget(), assemblePrompt(), assemblePromptWithBudget(), buildIntentContext(), estimateTokens(), wrapUserContent(), BudgetItemInfo (+4 more)
+### Community 11 - "retrieval-inspector.tsx / renderAdditionalContext() / render"
+Cohesion: 0.11
+Nodes (23): classifyIntent(), ConversationContext, getActiveThreads(), getCanonContext(), getConversationPairMessages(), getDecisionPoints(), getMemoryContext(), getMessageSummaries() (+15 more)
 
-### Community 63 - "Tight Cluster 63"
-Cohesion: 0.18
-Nodes (14): parseEmotionalState(), EMOTION_HALF_LIVES, applyDecayToAllRelationships(), applyEmotionalDecay(), applyEmotionDecay(), applyStageRegression(), DecayResult, DEFAULT_DECAY_RATES (+6 more)
+### Community 12 - "use-connection-status.ts / ConnectionStatus / LOADING_STATUS"
+Cohesion: 0.11
+Nodes (18): buildSystemPrompt(), ModelSettings, OllamaModel, ServerSettings, ServerSettingsPage(), TTSCacheStats, ConnectionStatus, ConnectionStatusSection() (+10 more)
 
-### Community 64 - "Tight Cluster 64"
-Cohesion: 0.17
-Nodes (9): APP_CONFIG, AUTH_CONFIG, EVENT_BUS_CONFIG, JOB_CONFIG, TIMEOUTS, TTS_CONFIG, runSchemaMigrations(), runStartupChecks() (+1 more)
-
-### Community 65 - "Moderate Cluster 65"
-Cohesion: 0.13
-Nodes (3): dataDir(), mockAppConfigDataDir(), mockConfig
-
-### Community 66 - "Tight Cluster 66"
-Cohesion: 0.17
-Nodes (7): CompatDatabase, CompatStatement, countJobsByStatus(), createTestDb(), createTestDbWithUser(), createTestUser(), getJobById()
-
-### Community 67 - "Tight Cluster 67"
-Cohesion: 0.22
-Nodes (12): DELETE(), extractBlock(), extractSection(), findPageByName(), resolveSlugPath(), resolveWikiPagePath(), splitEmbedSpec(), GET() (+4 more)
-
-### Community 68 - "Tight Cluster 68"
-Cohesion: 0.24
-Nodes (11): CollisionInfo, LinkGraph, Wikilink, WriteWikiPageOptions, detectCollisions(), followSupersededRedirect(), resolveWikilink(), resolveWikilinkWithoutRedirect() (+3 more)
-
-### Community 69 - "Tight Cluster 69"
-Cohesion: 0.15
-Nodes (14): EventBus, ModelConfig, OllamaClient, SessionEvents, src/app/api/generate/[id]/route.ts, buildPrompt, checkLlmHealth, src/app/api/embed/route.ts (+6 more)
-
-### Community 70 - "Tight Cluster 70"
-Cohesion: 0.19
-Nodes (9): buildModelMeta(), CacheEntry, extractFamily(), extractQuantization(), modelCache, OllamaModelMeta, OllamaShowResponse, parseParameterSize() (+1 more)
-
-### Community 71 - "Tight Cluster 71"
-Cohesion: 0.21
-Nodes (13): args, collectLoreFiles(), CONTENT_TABLES, countWikiPages(), DB_PATH, getRowCount(), IS_DRY_RUN, IS_FORCE (+5 more)
-
-### Community 72 - "Tight Cluster 72"
-Cohesion: 0.26
-Nodes (12): parseWikiIndex(), resolveWikiPagePath(), scoreWikiEntry(), WikiIndexEntry, buildSynthesisPrompt(), extractCitationsFromResponse(), extractRelevantSection(), flexSearchFallback() (+4 more)
-
-### Community 73 - "Tight Cluster 73"
-Cohesion: 0.17
-Nodes (6): UseTTSResult, TtsCallback, TtsErrorCallback, TtsQueue, TtsRequest, TtsResult
-
-### Community 74 - "Tight Cluster 74"
-Cohesion: 0.18
-Nodes (9): NpcEditor(), NpcEditorProps, Universe, Npc, NpcList(), NpcListProps, Universe, Npc (+1 more)
-
-### Community 75 - "Tight Cluster 75"
-Cohesion: 0.15
-Nodes (13): task_sessions, agent, category, elapsed_ms, ended_at, session_id, started_at, status (+5 more)
-
-### Community 76 - "Tight Cluster 76"
-Cohesion: 0.23
-Nodes (8): createTestWiki(), applyChangesToPage(), bulkRecategorize(), BulkRecategorizeResult, computeNewTags(), RecategorizeChanges, RecategorizeFilter, RecategorizeItem
-
-### Community 77 - "Tight Cluster 77"
+### Community 13 - "migrate-events-to-wiki.ts / args / buildFrontmatter()"
 Cohesion: 0.32
 Nodes (11): args, buildFrontmatter(), canonLayerToStatus(), DB_PATH, formatDateTag(), getPageBody(), IS_DRY_RUN, logMigration() (+3 more)
 
-### Community 78 - "Tight Cluster 78"
-Cohesion: 0.17
-Nodes (8): Backlink, BacklinkPanelProps, LINK_TYPE_LABELS, TIME, ESCALATION_COLORS, NarrativeThread, STATUS_ICONS, ThreadTrackerProps
+### Community 14 - "route.ts / estimateTokens() / GET()"
+Cohesion: 0.12
+Nodes (20): buildPersonaPrompt(), checkModelAvailable(), checkOllamaConnection(), getLocalModels(), isModelAvailable(), isOllamaAvailable(), isValidServiceUrl(), LEAK_PATTERNS (+12 more)
 
-### Community 79 - "Tight Cluster 79"
-Cohesion: 0.30
-Nodes (10): handleSceneStateExtract(), detectAndRecordDecisionPoints(), extractAndApplySceneState(), extractChoiceMade(), extractChoicePrompt(), isDecisionPair(), isSimpleAcknowledgment(), SceneConflict (+2 more)
+### Community 15 - "page.tsx / AdminContradictionsPage() / Contradiction"
+Cohesion: 0.06
+Nodes (34): 2026-06-04 — Cycle 1: Project setup, 2026-06-04 — Cycle 2: Fix dev server crash (Next.js 16 middleware → proxy), 2026-06-04 — Cycle 3: Fix dev server crash (parallel pages in `(auth)` route group), 2026-06-04 — Cycle 4: Commits, 2026-06-05 � Cycle 5: Full graphify rebuild, 2026-06-05 — Cycle 6: Cleanup + re-run graphify, 2026-06-05 — Cycle 7 commit (241e085), 2026-06-05 — Cycle 7: Stop-using cleanup (dyslexia font + OMO archive + credential scrub) (+26 more)
 
-### Community 80 - "Tight Cluster 80"
-Cohesion: 0.24
-Nodes (8): buildEntry(), COLORS, extractMetadata(), formatDev(), formatTimestamp(), getCorrelationId(), log(), StructuredLogger
-
-### Community 81 - "Tight Cluster 81"
-Cohesion: 0.17
-Nodes (11): active_plan, active_work_id, agent, elapsed_ms, ended_at, plan_name, schema_version, session_ids (+3 more)
-
-### Community 82 - "Tight Cluster 82"
-Cohesion: 0.17
-Nodes (12): active_plan, agent, elapsed_ms, ended_at, plan_name, session_ids, started_at, status (+4 more)
-
-### Community 83 - "Tight Cluster 83"
-Cohesion: 0.17
-Nodes (12): agent, elapsed_ms, ended_at, session_id, started_at, status, task_key, task_label (+4 more)
-
-### Community 84 - "Tight Cluster 84"
-Cohesion: 0.17
-Nodes (12): agent, category, elapsed_ms, ended_at, session_id, started_at, status, task_key (+4 more)
-
-### Community 85 - "Tight Cluster 85"
-Cohesion: 0.17
-Nodes (12): agent, category, elapsed_ms, ended_at, session_id, started_at, status, task_key (+4 more)
-
-### Community 86 - "Tight Cluster 86"
-Cohesion: 0.17
-Nodes (12): todo:1, agent, category, elapsed_ms, ended_at, session_id, started_at, status (+4 more)
-
-### Community 87 - "Tight Cluster 87"
+### Community 16 - "relationship-timeline.tsx / EvolutionDetail / EvolutionEntry"
 Cohesion: 0.20
 Nodes (10): EvolutionDetail, EvolutionEntry, getDominantEmotion(), getEmotionDirection(), POSITIVE_EMOTIONS, RelationshipTimeline(), RelationshipTimelineProps, TimelineEntry (+2 more)
 
-### Community 88 - "Tight Cluster 88"
+### Community 17 - "entity-manager-client.tsx / Entity / EntityManagerClient()"
+Cohesion: 0.07
+Nodes (30): Entity, ENTITY_FOLDER, EntityManagerClient(), FILTER_TABS, FilterType, TYPE_META, ENTRY_TYPE_ICONS, ENTRY_TYPE_LABELS (+22 more)
+
+### Community 18 - "route.ts / POST() / Path"
+Cohesion: 0.09
+Nodes (29): PUT, GET, POST, GET, POST, GET, PUT, hasEntityAccess() (+21 more)
+
+### Community 19 - "use-wikilink-autocomplete.ts / TEXTAREA_EVENTS / useWikilink"
+Cohesion: 0.09
+Nodes (33): c_users_jakep_documents_github_roleplay_engine_src_components_wiki_editor_editor_styles_css, TEXTAREA_EVENTS, useWikilinkAutocomplete(), UseWikilinkAutocompleteOptions, UseWikilinkAutocompleteResult, filterPages(), findWikilinkContext(), getCursorCoordinates() (+25 more)
+
+### Community 20 - "AdminEntitiesPage() / EntityDetail / EntityMention"
+Cohesion: 0.07
+Nodes (28): Contradiction, SEVERITY_ORDER, STAT_FILTERS, EntityDetail, EntityMention, EntityRow, SOURCE_LABELS, TabKey (+20 more)
+
+### Community 21 - "lore-extraction.ts / ENTITY_TYPE_TO_SUBTYPE / ExtractedEntit"
+Cohesion: 0.12
+Nodes (24): suggestRestructure(), batchRewriteLinks(), BulkMoveItem, bulkMovePages(), BulkMoveResult, collectWikiFiles(), MovedPageInfo, singularizeFolder() (+16 more)
+
+### Community 22 - "decay-handler.ts / handleDecayRelationships() / embedding-ha"
+Cohesion: 0.09
+Nodes (54): handleDecayRelationships(), handleGenerateEmbeddings(), backfillRelationshipEvolution(), cancelAllUserJobs(), cancelJob(), getJobStats(), getNextJob(), getUserJobs() (+46 more)
+
+### Community 23 - "backlink-panel.tsx / Backlink / BacklinkPanel()"
+Cohesion: 0.13
+Nodes (13): ConnectionStatus, LOADING_STATUS, ServiceStatus, IdleConfig, APP_CONFIG, AUTH_CONFIG, EVENT_BUS_CONFIG, IDLE_TIERS (+5 more)
+
+### Community 24 - "route.ts / ExportMessage / formatAsJson()"
+Cohesion: 0.09
+Nodes (22): Goal, Phase 1 — Backfill, Phase 2 — Rewrite Persona API to read from wiki, Phase 3 — Update Generation, Phase 4 — Rewrite NPC API, Phase 5 — Read-only viewer pages, Phase 6 — Cleanup, Plan 026: Wiki as Source of Truth for Personas & NPCs (+14 more)
+
+### Community 25 - "Community 25"
+Cohesion: 0.06
+Nodes (34): ref_docs_historical_evidence, ref_dom, ref_dom_iterable, ref_esnext, ref_mts, ref_next_dev_types_ts, ref_next_env_d_ts, ref_next_types_ts (+26 more)
+
+### Community 26 - "audit-wiki.ts / allCrossUniverseLinks / allPagesFlat"
+Cohesion: 0.06
+Nodes (26): allCrossUniverseLinks, allPagesFlat, args, AuditIssue, collectMd(), CrossUniverseLink, DATA_DIR, FixAction (+18 more)
+
+### Community 27 - "file-tree.tsx / buildHierarchy()"
+Cohesion: 0.07
+Nodes (20): core, sortable, utilities, buildHierarchy(), CreateFlowProps, DragPreview, FileTree(), FileTreeProps (+12 more)
+
+### Community 28 - "job-store.ts / BenchmarkJob / BENCHMARKS_DIR"
+Cohesion: 0.11
+Nodes (28): BenchmarkJob, BENCHMARKS_DIR, createJob(), deleteJob(), deleteJobFile(), ensureBenchmarksDir(), generateJobId(), getJob() (+20 more)
+
+### Community 29 - "route.ts / ensureColumn() / POST()"
+Cohesion: 0.08
+Nodes (26): GET, POST, VALID_LAYER_TYPES, ensureParticipantColumns(), ApiResponse, DbParams, DbRow, DecodedToken (+18 more)
+
+### Community 30 - "page.tsx / PersonasPage() / persona-editor.tsx"
+Cohesion: 0.16
+Nodes (18): TTS_CONFIG, cacheAudio(), checkTTSConnection(), getCachedAudio(), getCacheKey(), TTSGenerateRequest, availableVoices, discoverVoices() (+10 more)
+
+### Community 31 - "canon-layer-selector.tsx / CanonLayerSelector() / CanonLayer"
+Cohesion: 0.09
+Nodes (22): CanonLayerSelectorProps, CANON_MIGRATION_MAP, CANON_TIERS, CanonTier, ARC_TYPE_LABELS, CANON_TIER_COLORS, CANON_TIER_LABELS, ENTRY_TYPE_ICONS (+14 more)
+
+### Community 32 - "streaming-text.tsx / StreamingText() / StreamingTextProps"
+Cohesion: 0.08
+Nodes (23): GroupSelector, NavItem, navItems, SessionSelector, UniverseSelector, StreamingText(), StreamingTextProps, useConnectionStatus() (+15 more)
+
+### Community 33 - "file-tree.test.tsx / bulk-move.test.ts / createTestWiki()"
+Cohesion: 0.10
+Nodes (27): bun_test, fs, os, createTestWiki(), createTestWiki(), createFixtureWiki(), wikiStore, addSubtypeToConfig() (+19 more)
+
+### Community 34 - "relationship-tasks.ts / processRelationshipIdleAnalysis() / "
+Cohesion: 0.14
+Nodes (24): processRelationshipIdleAnalysis(), processRelationshipIdleTier(), processRemainingQueuedJobs(), queueRelationshipIdleJobs(), queueJob(), CONTENT_LIMITS, getEntitiesNeedingEmbeddings(), EntityMentionResult (+16 more)
+
+### Community 35 - "migrate-wiki-to-subtype-folders.ts / backupDataDir() / build"
+Cohesion: 0.12
+Nodes (27): fast_glob, backupDataDir(), buildMovePlan(), CliOptions, collectAllWikiFiles(), collectMdFiles(), copyRecursiveSync(), DATA_DIR (+19 more)
+
+### Community 36 - "contradiction-detector.ts / aliveDeadRule / Contradiction"
+Cohesion: 0.15
+Nodes (18): aliveDeadRule, Contradiction, CONTRADICTION_RULES, ContradictionRule, detectAllContradictions(), detectAllContradictionsWithSemantic(), detectContradictions(), locationRule (+10 more)
+
+### Community 37 - "relationship-analysis.ts / extractEntityNames() / needsRelat"
+Cohesion: 0.08
+Nodes (38): handleCompressMemories(), handleSummarizationJob(), handleSummarizeMessages(), Backlink, getBacklinks(), getOutgoingLinks(), parseAndResolveLinks(), parseWikilinksFromContent() (+30 more)
+
+### Community 38 - "Community 38"
+Cohesion: 0.08
+Nodes (26): bcryptjs, dnd_kit_core, dnd_kit_sortable, dnd_kit_utilities, dotenv, flexsearch, flowershow_remark_wiki_link, gray_matter (+18 more)
+
+### Community 39 - "narrative-state-panel.tsx / FieldRow() / NarrativeStatePanel"
+Cohesion: 0.29
+Nodes (5): jobs_page_parsepayload, safeParse(), parseBoundaries(), personas_page_selectpersona, relationships_page_parseemotions
+
+### Community 40 - "cancelAllUserJobs() / cancelJob() / getJobStats()"
+Cohesion: 0.11
+Nodes (30): DELETE, GET, PUT, ExportMessage, formatAsJson(), formatAsMarkdown(), formatAsText(), GET() (+22 more)
+
+### Community 41 - "markdown-utils.ts / buildMarkdown() / LoreFrontmatter"
+Cohesion: 0.16
+Nodes (20): buildMarkdown(), LoreFrontmatter, MarkdownFrontmatter, parseFrontmatter(), appendSharedHistory(), buildHistoryMarkdown(), buildRelationshipMarkdown(), DEFAULT_DECAY_CONFIG (+12 more)
+
+### Community 42 - "auth.test.ts / createAuthDb() / createJsonRequest()"
 Cohesion: 0.20
-Nodes (6): Modal(), ModalProps, SIZE_CLASSES, CreateFromPromptModalProps, TypeConfig, NewFolderModalProps
+Nodes (7): bun_sqlite, createJsonRequest(), createTestUser(), _mockWithAuthResult, setupAuthenticatedUser(), _emittedChunks, _mockChoices
 
-### Community 89 - "Tight Cluster 89"
-Cohesion: 0.24
-Nodes (10): addCrossReference(), Citation, fileAnswer(), FileResult, getPageTitle(), slugify(), getRecentLogs(), LogEntry (+2 more)
+### Community 43 - "individual-memories.tsx / IndividualMemories() / IndividualM"
+Cohesion: 0.10
+Nodes (18): IndividualMemories(), IndividualMemoriesProps, IndividualMemory, EmotionKey, EMOTIONS, PersonalRelationship, PersonalRelationships(), PersonalRelationshipsProps (+10 more)
 
-### Community 90 - "Tight Cluster 90"
-Cohesion: 0.33
-Nodes (10): args, buildFrontmatter(), canonTierToStatus(), DB_PATH, getPageBody(), IS_DRY_RUN, logMigration(), main() (+2 more)
+### Community 44 - "roleplay-test.ts / checkFormat() / DEFAULT_LORE_PACK"
+Cohesion: 0.14
+Nodes (20): checkFormat(), DEFAULT_LORE_PACK, detectContradictions(), FactScore, LoreCharacter, LoreLocation, LorePack, LoreRule (+12 more)
 
-### Community 91 - "Tight Cluster 91"
+### Community 45 - "react-markdown / rehype-raw / remark-gfm"
+Cohesion: 0.10
+Nodes (17): react-markdown, rehype-raw, remark-gfm, react_markdown, rehype_raw, remark_gfm, remark_wiki_link, Callout() (+9 more)
+
+### Community 46 - "ChatWindow / file-tree.test.tsx / chat-window.test.tsx"
+Cohesion: 0.19
+Nodes (14): jest_dom, defaultIntentIcons, defaultProps, inputRef, sampleMessages, scrollRef, folderOrder, samplePagesByFolder (+6 more)
+
+### Community 47 - "importance.ts / calculateImportance() / decayRecency()"
+Cohesion: 0.14
+Nodes (15): calculateImportance(), decayRecency(), ImportanceLevel, ImportanceResult, ImportanceScores, LEVEL_VALUES, scoreToTier(), updateImportance() (+7 more)
+
+### Community 48 - "emotion-bar.tsx / EmotionBar() / EmotionBarProps"
+Cohesion: 0.14
+Nodes (15): EMOTION_COLORS, EmotionBar(), EmotionBarProps, EvolutionEntry, RelationshipHistory(), RelationshipHistoryProps, DecayIndicator(), DecayStatus (+7 more)
+
+### Community 49 - "migrate-backlinks-validations.ts / args / DB_PATH"
+Cohesion: 0.17
+Nodes (11): Files Changed (est.), Goal, Migration Plan, Phase 1: Entity Registry Support (no behavior changes), Phase 2: ID-based Relationships, Phase 3: Wiki Sync, Phase 4: UI + Verification, Plan 006: Universal Entity Tracking System (+3 more)
+
+### Community 50 - "job-processor.test.ts / capturedEvents / CompatDatabase"
+Cohesion: 0.17
+Nodes (7): CompatDatabase, CompatStatement, countJobsByStatus(), createTestDb(), createTestDbWithUser(), createTestUser(), getJobById()
+
+### Community 51 - "chat-window.tsx / ChatWindowProps / edit-history.tsx"
+Cohesion: 0.17
+Nodes (12): ChatWindow, ChatWindowProps, Intent, INTENT_KEYWORDS, INTENT_PROTOTYPES, Message, MessageItem, MessageItemProps (+4 more)
+
+### Community 52 - "EmotionalState / relationship-viz.ts / buildRelationshipGrap"
+Cohesion: 0.17
+Nodes (17): EmotionalState, buildRelationshipGraph(), calculateEmotionVectors(), calculateStrength(), EMOTION_COLORS, getDominantEmotion(), layoutForceDirected(), parseEmotions() (+9 more)
+
+### Community 53 - "page.tsx / BacklinkInfo / EditMode"
+Cohesion: 0.05
+Nodes (42): BacklinkInfo, EditMode, WikiPageView(), Modal(), ModalProps, SIZE_CLASSES, CreateFromPromptModalProps, TypeConfig (+34 more)
+
+### Community 54 - "test-phase4.js / fs / main()"
 Cohesion: 0.22
-Nodes (8): ChatExport(), ChatExportProps, FORMATS, ChatSearch(), ChatSearchProps, SearchResult, SessionHeader, SessionHeaderProps
+Nodes (40): wikiArchive(), wikiCompressSummaries(), wikiDecayRelationships(), wikiDeepenPages(), wikiEnrichEntities(), wikiGenerateRumors(), wikiRefineRelationships(), handleArchivalProcessing() (+32 more)
 
-### Community 92 - "Tight Cluster 92"
+### Community 56 - "relationship-graph.tsx / GraphEdge / GraphNode"
+Cohesion: 0.09
+Nodes (23): GET, POST, ensureColumn(), POST(), resolveOrCreateEntityId(), EventHandler, SessionEvents, StoredEvent (+15 more)
+
+### Community 57 - "wikilinks-rewrite.test.ts / makePage() / types.ts"
+Cohesion: 0.07
+Nodes (38): COMMUNITY_COLORS, GraphViewProps, comparePagesForContradiction(), Contradiction, ContradictionResult, detectContradictions(), detectStaleClaims(), extractUserIdFromWikiRoot() (+30 more)
+
+### Community 58 - "callout-remark-plugin.ts"
+Cohesion: 0.16
+Nodes (14): mdast, unified, unist, unist_util_visit, CALLOUT_ALIASES, CALLOUT_TYPES, CalloutData, CalloutNode (+6 more)
+
+### Community 59 - "_check_chunks.py / verify-plan.py / extract_commands()"
+Cohesion: 0.16
+Nodes (14): pathlib, re, extract_commands(), find_verification_section(), main(), move_to_completed(), Return the body of the `## Verification` section, or None if missing., Extract runnable commands from verification lines.      A verification line lo (+6 more)
+
+### Community 60 - "auth.test.ts / createAuthDb() / bcryptRounds()"
+Cohesion: 0.13
+Nodes (3): dataDir(), mockAppConfigDataDir(), mockConfig
+
+### Community 61 - "lint.ts / comparePagesForContradiction() / Contradiction"
+Cohesion: 0.08
+Nodes (28): jobs_page_formattime, Job, JOB_TYPE_LABELS, JOB_TYPES, JobsPage(), PRIORITY_COLORS, Stats, STATUS_COLORS (+20 more)
+
+### Community 62 - "entity-registry.ts / addAlias() / Entity"
+Cohesion: 0.19
+Nodes (14): addAlias(), Entity, EntityFilters, EntityRow, EntityType, generateEntityId(), getAliasesForEntity(), getEntity() (+6 more)
+
+### Community 63 - "index-utils.ts / parseWikiIndex() / resolveWikiPagePath()"
+Cohesion: 0.18
+Nodes (17): buildCandidates(), Candidate, levenshteinDistance(), ResolutionResult, resolveEntityToWikiPage(), wiki_file_io_wikipage, parseWikiIndex(), resolveWikiPagePath() (+9 more)
+
+### Community 64 - "merge-suggester.ts / findMergeCandidates() / MergeCandidate"
+Cohesion: 0.17
+Nodes (11): EntityRow, GET, normalize(), similarity(), STRIP_WORDS, findMergeCandidates(), MergeCandidate, MergeSearchOptions (+3 more)
+
+### Community 65 - "ollama-meta.ts / buildModelMeta() / CacheEntry"
+Cohesion: 0.19
+Nodes (9): buildModelMeta(), CacheEntry, extractFamily(), extractQuantization(), modelCache, OllamaModelMeta, OllamaShowResponse, parseParameterSize() (+1 more)
+
+### Community 66 - "cleanup-old-lore-tables.ts / args / collectLoreFiles()"
+Cohesion: 0.21
+Nodes (13): args, collectLoreFiles(), CONTENT_TABLES, countWikiPages(), DB_PATH, getRowCount(), IS_DRY_RUN, IS_FORCE (+5 more)
+
+### Community 67 - "orchestrator.ts / checkOllamaConnectivity() / convertModelMe"
+Cohesion: 0.27
+Nodes (9): checkOllamaConnectivity(), convertModelMeta(), runBenchmark(), runBenchmarkBackground(), updateProgress(), getModelMeta(), args, flags (+1 more)
+
+### Community 68 - "backfill-entity-ids.ts / DATA_DIR / dbPath"
+Cohesion: 0.21
+Nodes (8): crypto, DATA_DIR, dbPath, EntityRow, createTestDb(), createTestSession(), createTestUniverse(), createTestUser()
+
+### Community 69 - "devDependencies / eslint / @next/bundle-analyzer"
+Cohesion: 0.15
+Nodes (13): cross_env, eslint, devDependencies, cross-env, eslint, @tailwindcss/postcss, @types/jsdom, @types/react (+5 more)
+
+### Community 70 - "use-tts.ts / useTTS() / UseTTSResult"
+Cohesion: 0.17
+Nodes (6): UseTTSResult, TtsCallback, TtsErrorCallback, TtsQueue, TtsRequest, TtsResult
+
+### Community 71 - "npc-editor.tsx / NpcEditor() / NpcEditorProps"
 Cohesion: 0.24
-Nodes (11): AI Wiki Editing: AI-assisted text transformation, Subtype Folder Structure: 2-level folder mapping, Wiki Evolution Tooling: bulk ops, merge, dormancy, Wiki Type Registry: config-driven taxonomy, Rich Wiki Editor: Hand-Rolled Markdown Editor, Wiki Type Registry: Config-Driven Taxonomy, Subtype Folder Structure: 2-Level Mapping, Wiki Evolution Tooling: Bulk Ops, Merge, Dormancy (+3 more)
+Nodes (11): buildFrontmatter(), DATA_DIR, dbPath, ensureDir(), getDefaultUniverse(), main(), NpcRow, PersonaRow (+3 more)
 
-### Community 93 - "Tight Cluster 93"
+### Community 72 - "inter / metadata / RootLayout()"
+Cohesion: 0.17
+Nodes (9): inter, metadata, bundle_analyzer, c_users_jakep_documents_github_roleplay_engine_src_app_globals_css, google, next, nextConfig, withBundleAnalyzer (+1 more)
+
+### Community 73 - "handleSceneStateExtract() / scene-extraction.ts / detectAndR"
+Cohesion: 0.28
+Nodes (11): handleSceneStateExtract(), detectAndRecordDecisionPoints(), extractAndApplySceneState(), extractChoiceMade(), extractChoicePrompt(), isDecisionPair(), isSimpleAcknowledgment(), resolveNpcNamesToIds() (+3 more)
+
+### Community 74 - "logger.ts / buildEntry() / COLORS"
+Cohesion: 0.24
+Nodes (8): buildEntry(), COLORS, extractMetadata(), formatDev(), formatTimestamp(), getCorrelationId(), log(), StructuredLogger
+
+### Community 75 - "prompt-builder.ts / applyContextBudget() / assemblePrompt()"
+Cohesion: 0.20
+Nodes (15): PROMPT_BUDGET, applyContextBudget(), assemblePrompt(), assemblePromptWithBudget(), buildIntentContext(), estimateTokens(), lib_prompt_builder_injection_protection, NarratorOptions (+7 more)
+
+### Community 76 - "ai-management-client.tsx / AIMetricsData / ArrowDown()"
+Cohesion: 0.18
+Nodes (4): AIMetricsData, sectionColors, UniverseAIManagementClient(), ManagePageProps
+
+### Community 77 - "createFixtureWiki() / config-migration.ts / addSubtypeToConf"
+Cohesion: 0.14
+Nodes (14): POST, logger, PROMPTS, POST(), POST, AutoExtractResult, buildUniverseContext(), ExtractedEntity (+6 more)
+
+### Community 78 - "auto-tune.ts / generateRecommendation() / Recommendation"
+Cohesion: 0.38
+Nodes (7): generateRecommendation(), Recommendation, CombinationResult, ContextTestResult, OllamaModelMeta, PredictTestResult, TurnResult
+
+### Community 79 - "MessageBubble.tsx / MessageBubble / MessageBubbleProps"
+Cohesion: 0.20
+Nodes (8): MessageBubble, MessageBubbleProps, clsx, clsx, Input, InputProps, StatusIndicator(), StatusIndicatorProps
+
+### Community 80 - "api-client.ts / api / ApiClient"
 Cohesion: 0.25
 Nodes (4): api, ApiClient, ApiOptions, ApiResponse
 
-### Community 94 - "Tight Cluster 94"
-Cohesion: 0.22
-Nodes (9): Backlink, getBacklinks(), getOutgoingLinks(), parseAndResolveLinks(), parseWikilinksFromContent(), ResolvedLink, resolveWikilinkFromDB(), storeBacklinks() (+1 more)
+### Community 81 - "backlinks.ts / Backlink / getBacklinks()"
+Cohesion: 0.20
+Nodes (17): authenticateUser(), AuthToken, changePassword(), createUser(), generateToken(), getUserById(), getUserByUsername(), hashPassword() (+9 more)
 
-### Community 95 - "Tight Cluster 95"
+### Community 82 - "package.json / name / private"
 Cohesion: 0.18
-Nodes (11): 30fps Refresh Rate System (capped rendering for performance during long sessions), Core Stack (Next.js, React, Tailwind, SQLite, BGE-M3, Qwen3.5:9B, Ollama, sqlite-vec, Kokoro, Web Audio API), Dark Modern Theme (#0a0a0a background, #4a9eff accent, greys hierarchy), Incremental Expansion Principle, Localized Context Principle, Multi-User Data Isolation (per-user_id tables, filesystem directories, JWT middleware), Narrative First Philosophy, Ollama Inference (external server 192.168.4.2:11434, qwen3.5:9b, bge-m3, exponential backoff retry) (+3 more)
+Nodes (10): name, private, scripts, analyze, build, dev, lint, start (+2 more)
 
-### Community 96 - "Tight Cluster 96"
-Cohesion: 0.27
-Nodes (10): Black Fill (#000) Logo Color, Next.js, Next.js Logo SVG, Monochrome Palette (no stroke, single fill color), Public Static Asset, Trailing dot and decorative glyph, Two SVG vector path elements, 394x80 SVG Viewport (+2 more)
+### Community 83 - "graph-view.tsx / COMMUNITY_COLORS / computeDegrees()"
+Cohesion: 0.17
+Nodes (13): parseEmotionalState(), EMOTION_HALF_LIVES, applyDecayToAllRelationships(), applyEmotionalDecay(), applyEmotionDecay(), applyStageRegression(), DecayResult, DEFAULT_DECAY_RATES (+5 more)
 
-### Community 97 - "Tight Cluster 97"
+### Community 84 - "context-test.ts / attemptGeneration() / ContextTestProgressC"
 Cohesion: 0.33
 Nodes (8): attemptGeneration(), ContextTestProgressCallback, isContextTooLargeError(), isOomError(), isTimeoutError(), runContextTest(), sleep(), mockGenerateText
 
-### Community 98 - "Tight Cluster 98"
+### Community 85 - "detectSpeakingAs() / POST() / buildPersonaPrompt()"
+Cohesion: 0.21
+Nodes (12): jose, JWT_SECRET, verifyTokenBasic(), csrfErrorResponse(), timingSafeEqual(), validateCsrfToken(), jose, config (+4 more)
+
+### Community 86 - "server-config.ts / emptyRow() / FALLBACK_OLLAMA_PORT"
+Cohesion: 0.22
+Nodes (9): emptyRow(), FALLBACK_OLLAMA_PORT, FALLBACK_TTS_PORT, ModelDefaultsMap, ModelSettings, ResolvedServerConfig, ServerConfigRow, ServerConfigUpdate (+1 more)
+
+### Community 87 - "react-dom / hover-preview.tsx / clampPosition()"
 Cohesion: 0.20
-Nodes (7): NarrativeStatePanel(), NarrativeStatePanelProps, RawSceneApiResponse, SceneConflict, SceneGoal, SceneState, StateSnapshot
+Nodes (6): react-dom, react_dom, HoverPreviewProps, previewCache, PreviewData, UseHoverPreviewReturn
 
-### Community 99 - "Tight Cluster 99"
-Cohesion: 0.27
-Nodes (8): renderAdditionalContext(), renderBudgetOverview(), renderBudgetSections(), RetrievalInspector(), RetrievalInspectorProps, BudgetBreakdown, RetrievalInspectorResponse, SectionBudget
-
-### Community 100 - "Tight Cluster 100"
+### Community 88 - "benchmark-wiki.ts / benchmark() / cleanupWikiRoot()"
 Cohesion: 0.33
 Nodes (9): benchmark(), cleanupWikiRoot(), createTempWikiRoot(), FOLDERS, formatMs(), generateContent(), generateFrontmatter(), main() (+1 more)
 
-### Community 101 - "Tight Cluster 101"
+### Community 89 - "sync-frontmatter.ts / buildFrontmatter() / DATA_DIR"
 Cohesion: 0.27
 Nodes (9): buildFrontmatter(), DATA_DIR, dbPath, LORE_TYPES, LoreFrontmatter, LoreType, main(), parseFrontmatter() (+1 more)
 
-### Community 102 - "Tight Cluster 102"
-Cohesion: 0.29
-Nodes (6): findMergeCandidates(), MergeCandidate, MergeSearchOptions, strategyA(), strategyB(), strategyC()
+### Community 90 - "migrate-universe-scope.ts / DATA_DIR / dbPath"
+Cohesion: 0.14
+Nodes (8): DATA_DIR, dbPath, better_sqlite3, DATA_DIR, dbPath, FOLDER_TYPE, DATA_DIR, dbPath
 
-### Community 103 - "Tight Cluster 103"
-Cohesion: 0.22
-Nodes (7): ReorderChange, LoreExtractionTrigger(), WikiHomePage(), TEMPLATE_ICONS, TemplateSelectorProps, TYPE_ICONS, WikiTemplate
-
-### Community 104 - "Tight Cluster 104"
-Cohesion: 0.22
-Nodes (5): CytoscapeComponent, GraphView(), GraphViewProps, NODE_COLORS, buildLinkGraph()
-
-### Community 105 - "Tight Cluster 105"
-Cohesion: 0.36
-Nodes (8): args, buildFrontmatter(), canonTierToStatus(), DB_PATH, getPageBody(), IS_DRY_RUN, logMigration(), main()
-
-### Community 106 - "Tight Cluster 106"
-Cohesion: 0.36
-Nodes (8): args, buildFrontmatter(), DB_PATH, getPageBody(), IS_DRY_RUN, logMigration(), main(), parseDecayRates()
-
-### Community 107 - "Tight Cluster 107"
+### Community 91 - "test-phase2.js / apiRoutes / protectedPages"
 Cohesion: 0.22
 Nodes (6): apiRoutes, protectedPages, publicPages, rand, requests, USER
 
-### Community 108 - "Tight Cluster 108"
-Cohesion: 0.28
-Nodes (5): LoreFrontmatter, MarkdownFrontmatter, parseFrontmatter(), safeParse(), parseBoundaries()
-
-### Community 109 - "Tight Cluster 109"
-Cohesion: 0.33
-Nodes (7): handleSummarizationJob(), handleSummarizeMessages(), getSessionSummaries(), needsSummarization(), processSummarization(), SummarizationResult, summarizeBatch()
-
-### Community 110 - "Tight Cluster 110"
-Cohesion: 0.25
-Nodes (8): DecayConfig, RelationshipEvolutionEntry, RelationshipEvolutionRow, RelationshipFrontmatter, RelationshipMarkdownData, RelationshipRow, RelationshipRowWithGroup, SharedHistoryEntry
-
-### Community 111 - "Tight Cluster 111"
-Cohesion: 0.22
-Nodes (9): Comprehensive Project Audit, Critical Runtime Fixes, Infrastructure Quick Wins, Security Fixes, Code Quality Cleanup, Performance Optimization, Architecture Cleanup, Test Coverage: Core Infrastructure (+1 more)
-
-### Community 112 - "Tight Cluster 112"
-Cohesion: 0.36
-Nodes (8): addFolderToConfig(), DEFAULT_FOLDER_ORDER, getResolvedFolderOrder(), getTypeRegistryForConfig(), readWikiConfig(), WikiTypeDef, WikiConfig, writeWikiConfig()
-
-### Community 113 - "Tight Cluster 113"
+### Community 92 - "wiki-quick-switcher.tsx / charactersAppearInOrder() / FOOTER"
 Cohesion: 0.25
 Nodes (7): charactersAppearInOrder(), FOOTER_HINTS, ResultsList, scorePage(), TYPE_BADGE_CLASSES, WikiPage, WikiQuickSwitcherProps
 
-### Community 114 - "Tight Cluster 114"
-Cohesion: 0.29
-Nodes (6): NewSessionPage(), Universe, SessionCreateData, SessionCreator(), SessionCreatorProps, Universe
+### Community 93 - "embeddings.ts / deleteEmbedding() / EmbeddingResult"
+Cohesion: 0.24
+Nodes (10): addCrossReference(), Citation, fileAnswer(), FileResult, getPageTitle(), slugify(), getRecentLogs(), LogEntry (+2 more)
 
-### Community 115 - "Tight Cluster 115"
-Cohesion: 0.25
-Nodes (7): reason, state, updatedAt, sessionID, sources, background-task, updatedAt
+### Community 94 - "NewSessionPage() / Universe / session-creator.tsx"
+Cohesion: 0.18
+Nodes (10): Files Changed (est.), Goal, Key Principle, Migration Strategy, Motivation, Phase 1: Add entity_id to personas + npcs tables, Phase 2: Create via registry first, Phase 3: Converge readers (+2 more)
 
-### Community 116 - "Tight Cluster 116"
-Cohesion: 0.25
-Nodes (7): reason, state, updatedAt, sessionID, sources, background-task, updatedAt
-
-### Community 117 - "Tight Cluster 117"
-Cohesion: 0.29
-Nodes (8): Generated Lore (AI-generated, requires validation), Immutable Canon (read-only, cannot be contradicted), Canon 5-Tier Hierarchy (immutable → soft → generated → session → rumor), Rumors (unverified information, may be false), Session Lore (temporary narrative state, session-scoped), Soft Canon (expandable without contradiction, editable), Contradiction Prevention Workflow (generated_unverified → under_review → validated → rejected), User Override System (user edits override AI content)
-
-### Community 118 - "Tight Cluster 118"
+### Community 95 - "error-boundary.tsx / ErrorBoundary / .componentDidCatch()"
 Cohesion: 0.25
 Nodes (3): ErrorBoundary, Props, State
 
-### Community 119 - "Tight Cluster 119"
-Cohesion: 0.25
-Nodes (3): SearchDocument, SearchProps, WikiPage
+### Community 96 - "config.ts / addFolderToConfig() / DEFAULT_FOLDER_ORDER"
+Cohesion: 0.13
+Nodes (17): addFolderToConfig(), DEFAULT_FOLDER_ORDER, getResolvedFolderOrder(), getTypeRegistryForConfig(), readWikiConfig(), WikiConfig, writeWikiConfig(), cleanupStaleLocks() (+9 more)
 
-### Community 120 - "Tight Cluster 120"
-Cohesion: 0.57
-Nodes (5): LLM Benchmark system (~85% complete), Benchmark UI type mismatches (status, hardware), Hardware detection for auto-tune, Memory retention tests (needs implementation), ollamaHost not passed in benchmark URL chain
+### Community 97 - "page-split.ts / checkPageSize() / headingToFilename()"
+Cohesion: 0.32
+Nodes (7): checkPageSize(), headingToFilename(), PageSizeInfo, resolveMaxPageSize(), SplitSuggestion, SuggestedSubpage, suggestSplit()
 
-### Community 121 - "Tight Cluster 121"
-Cohesion: 0.29
-Nodes (7): Persona selection API + UI for sessions, UI overflow fix: h-full over calc(100vh-3rem), active-universe.tsx compat shim (6 files still importing), AGENTS.md 40-50% out of date, Architecture Audit Report, Duplicate files: ChatWindow.tsx + useRenderLoop.ts (critical), tailwind.config.ts dead code (Tailwind v4)
+### Community 98 - "combination-test.ts / attemptCombination() / binarySearchPre"
+Cohesion: 0.21
+Nodes (8): checkpointDb(), closeDb(), runSchemaMigrations(), failProcessingJobs(), runShutdown(), setupGracefulShutdown(), runStartupChecks(), register()
 
-### Community 122 - "Tight Cluster 122"
-Cohesion: 0.29
-Nodes (7): ESLint 10 Migration Plan, TypeScript 6 Migration Plan, Dependency health: Good (0 genuine unused, 0 peer conflicts), Dependency Audit Report, ESLint 10 migration blocked by eslint-config-next, postcss XSS vulnerability (moderate), TypeScript 6 migration deferred
-
-### Community 123 - "Tight Cluster 123"
+### Community 99 - "page.tsx / BenchmarkPage() / BenchmarkPoint"
 Cohesion: 0.33
-Nodes (7): 16x16 Pixel ViewBox (Small Icon), Text Content Indicator Lines, Document Icon (Next.js default file icon), Folded Corner (Dog-Ear) Design Element, Transparent Background (fill="none"), Gray Fill (#666) Icon Color, SVG Vector Icon Format
+Nodes (4): BenchmarkPoint, TEST_SIZES, Button, ButtonProps
 
-### Community 124 - "Tight Cluster 124"
-Cohesion: 0.29
-Nodes (7): scripts, analyze, build, dev, lint, start, test
-
-### Community 125 - "Tight Cluster 125"
-Cohesion: 0.29
-Nodes (6): state, updatedAt, sessionID, sources, background-task, updatedAt
-
-### Community 126 - "Tight Cluster 126"
-Cohesion: 0.29
-Nodes (6): state, updatedAt, sessionID, sources, background-task, updatedAt
-
-### Community 127 - "Tight Cluster 127"
-Cohesion: 0.29
-Nodes (6): state, updatedAt, sessionID, sources, background-task, updatedAt
-
-### Community 128 - "Tight Cluster 128"
-Cohesion: 0.29
-Nodes (6): state, updatedAt, sessionID, sources, background-task, updatedAt
-
-### Community 129 - "Tight Cluster 129"
-Cohesion: 0.29
-Nodes (6): state, updatedAt, sessionID, sources, background-task, updatedAt
-
-### Community 130 - "Tight Cluster 130"
-Cohesion: 0.29
-Nodes (6): state, updatedAt, sessionID, sources, background-task, updatedAt
-
-### Community 131 - "Tight Cluster 131"
-Cohesion: 0.29
-Nodes (6): state, updatedAt, sessionID, sources, background-task, updatedAt
-
-### Community 132 - "Tight Cluster 132"
-Cohesion: 0.29
-Nodes (6): state, updatedAt, sessionID, sources, background-task, updatedAt
-
-### Community 133 - "Tight Cluster 133"
+### Community 100 - "embed-transclusion.tsx / EmbedTransclusion() / EmbedTransclu"
 Cohesion: 0.33
-Nodes (6): BenchmarkStatus, formatContextWindow(), OllamaModel, OllamaSettingsProps, OllamaSettingsSection(), ServerSettings
+Nodes (6): dynamic, image, EmbedTransclusion(), EmbedTransclusionProps, MarkdownRenderer, parseDimensions()
 
-### Community 134 - "Tight Cluster 134"
+### Community 101 - "checkpointDb() / closeDb() / shutdown.ts"
+Cohesion: 0.22
+Nodes (8): ChatExport(), ChatExportProps, FORMATS, ChatSearch(), ChatSearchProps, SearchResult, SessionHeader, SessionHeaderProps
+
+### Community 102 - "backlink-panel.tsx / BacklinkInfo / BacklinkPanel()"
 Cohesion: 0.29
-Nodes (7): Background Job System (async workers, priority tiers, idle-time processing), Enrichment Constraints (importance ≥ 5, no immutable_canon contradictions, additive only, logged), High Priority Jobs (summarize_message, generate_embedding, relationship_analysis, extract_event), Idle-Time Enrichment Tiers (5min/10min/15min/30min escalation), Idle-Time Jobs (memory_compression >5min, lore_deepening >10min, archival >15min, decay >30min), Medium Priority Jobs (expand_location_lore, enrich_npc, generate_rumors, thread_analysis), Narrative Importance Scoring (emotional/local/canonical/recency dimensions)
+Nodes (10): generateEmbedding(), ollamaPost(), cosineSimilarity(), getSearchStats(), SearchResult, searchSimilarLocations(), searchSimilarMemories(), searchSimilarMessages() (+2 more)
 
-### Community 135 - "Tight Cluster 135"
-Cohesion: 0.33
-Nodes (7): Context Budget Allocation (8192 tokens Qwen3.5:9B), Intent Analysis Pipeline (exploration/combat/social/investigation/rest/travel/ritual), Prompt Assembly (structured sections with 8192 token budget), High-Level Architecture (Universe → Timeline → Location → Scene → Relationship → Memory → Context → Prompt → LLM → Persistence → Enrichment), Retrieval Pipeline (intent → scene → relationships → memories → lore → compression → prompt), Timeline Layer (era, timeline restrictions, factions, active characters), Universe Layer (franchise, world rules, canon source, tone)
-
-### Community 136 - "Tight Cluster 136"
-Cohesion: 0.48
-Nodes (4): createTestDb(), createTestSession(), createTestUniverse(), createTestUser()
-
-### Community 139 - "Tight Cluster 139"
-Cohesion: 0.33
-Nodes (3): OutgoingLinksPanel(), OutgoingLinksPanelProps, WikiPage
-
-### Community 140 - "Tight Cluster 140"
-Cohesion: 0.33
-Nodes (7): Window Close Button (leftmost circle), Window Maximize Button (rightmost circle), Window Minimize Button (middle circle), Next.js Default Window Icon (from create-next-app), Title Bar Control Buttons (3 circular dots), Window Frame (Outer Border + Inner Content Area), Window Icon (SVG UI Element)
-
-### Community 141 - "Tight Cluster 141"
+### Community 103 - "test-phase3.js / fs / main()"
 Cohesion: 0.47
 Nodes (5): fs, main(), path, t(), title()
 
-### Community 142 - "Tight Cluster 142"
-Cohesion: 0.47
-Nodes (5): fs, main(), path, t(), title()
+### Community 105 - "predict-test.ts / attemptPredictGeneration() / isOomError()"
+Cohesion: 0.53
+Nodes (5): attemptPredictGeneration(), isOomError(), isTimeoutError(), PredictTestProgressCallback, runPredictTest()
 
-### Community 144 - "Tight Cluster 144"
-Cohesion: 0.40
-Nodes (6): Wiki ingest module (ingest.ts) with LLM extraction, Wiki query module (query.ts) with FlexSearch fallback, All 76 wiki pages in draft status (no reviewed/locked), ORPHAN: 23 pages with zero inbound wikilinks, TYPE_MISMATCH: 76 instances, singular vs plural convention, Wiki Data Audit Report
-
-### Community 145 - "Tight Cluster 145"
-Cohesion: 0.60
-Nodes (5): checkDb(), checkKokoro(), checkOllama(), GET(), isAuthorized()
-
-### Community 146 - "Tight Cluster 146"
+### Community 106 - "eslint.config.mjs / eslintConfig / typescript"
 Cohesion: 0.33
-Nodes (4): ARC_TYPE_LABELS, ESCALATION_COLORS, NarrativeThread, STATUS_COLORS
+Nodes (5): config, core_web_vitals, eslintConfig, typescript, typescript
 
-### Community 147 - "Tight Cluster 147"
-Cohesion: 0.60
-Nodes (5): checkDb(), checkKokoro(), checkOllama(), GET(), isAuthorized()
-
-### Community 148 - "Tight Cluster 148"
+### Community 107 - "jsdom / setup.ts / dom"
 Cohesion: 0.33
-Nodes (4): GraphEdge, GraphNode, RelationshipGraphProps, TYPE_COLORS
+Nodes (5): jsdom, jsdom, dom, GLOBALS_TO_SET, win
 
-### Community 149 - "Tight Cluster 149"
-Cohesion: 0.40
-Nodes (5): DATA_DIR, DB_PATH, INDEXES, main(), tableExists()
+### Community 108 - "entity-resolution.ts / buildCandidates() / Candidate"
+Cohesion: 0.38
+Nodes (11): generateTextStream(), generateTextWithMetrics(), getChoicesModel(), getUserModels(), getUserOllamaUrl(), resolveMainGpu(), resolveModelOptions(), resolveNumCtx() (+3 more)
 
-### Community 150 - "Tight Cluster 150"
+### Community 109 - "add-missing-indexes.ts / DATA_DIR / DB_PATH"
+Cohesion: 0.13
+Nodes (17): path, Path, DATA_DIR, ensureDir(), main(), PUT(), createTestWiki(), collectPagesRecursive() (+9 more)
+
+### Community 110 - "check-db.ts / db / messages"
 Cohesion: 0.33
 Nodes (5): db, messages, sessions, tables, users
 
-### Community 151 - "Tight Cluster 151"
-Cohesion: 0.33
-Nodes (6): Events System (combat/discovery/conversation/betrayal/journey/ritual/death/alliance), Message Summaries (semantic, emotional, relationship impact, lore extraction for each interaction), Narrative Memory (discoveries, conversations, betrayals, promises, consequences), Narrative Thread Tracking (unresolved mysteries, tensions, conflicts, arcs), Obsidian-Style Wiki Storage (markdown, YAML frontmatter, [[wikilinks]], backlinks), Scene State Layer (immediate narrative context, active location, NPCs, threads)
-
-### Community 152 - "Tight Cluster 152"
-Cohesion: 0.33
-Nodes (6): Kokoro TTS (Kokoro-82M via Kokoro-FastAPI at 192.168.4.2:8880), Streaming TTS (audio chunks returned as generated, playback before full completion), TTS Queue (async generation, immediate text display, background audio), Voice Assignment (per-NPC, per-character, per-narrator, per-location), Voice Combination/Mixing (weighted mixing for unique character voices), Voice Discovery (auto-detect voices on startup via GET /v1/audio/voices)
-
-### Community 153 - "Tight Cluster 153"
-Cohesion: 0.47
-Nodes (4): createJsonRequest(), createTestUser(), _mockWithAuthResult, setupAuthenticatedUser()
-
-### Community 154 - "Tight Cluster 154"
+### Community 112 - "outline-panel.tsx / HeadingItem / OutlinePanel()"
 Cohesion: 0.40
 Nodes (4): HeadingItem, OutlinePanelProps, parseHeadings(), slugify()
 
-### Community 155 - "Tight Cluster 155"
-Cohesion: 0.33
-Nodes (4): Action, ACTION_LABELS, SelectionToolbarProps, ToolbarState
-
-### Community 156 - "Tight Cluster 156"
+### Community 113 - "test-phase6.js / main() / req()"
 Cohesion: 0.70
 Nodes (4): main(), req(), t(), title()
 
-### Community 157 - "Tight Cluster 157"
+### Community 114 - "test-phase7.js / main() / req()"
 Cohesion: 0.70
 Nodes (4): main(), req(), t(), title()
 
-### Community 158 - "Tight Cluster 158"
+### Community 115 - "cytoscape / react-cytoscapejs.d.ts / CytoscapeComponent"
 Cohesion: 0.40
-Nodes (3): LAYERS, LayerStats, LayerViewerProps
+Nodes (4): cytoscape, cytoscape, CytoscapeComponent, CytoscapeComponentProps
 
-### Community 159 - "Tight Cluster 159"
-Cohesion: 0.50
-Nodes (5): Wiki Migration Guide, Legacy Lore to Wiki Migration, 12 Legacy Lore Tables Replaced by Markdown, WIKI_FIRST / WIKI_JOBS Feature Flags, Wiki Feature Flags (WIKI_FIRST, WIKI_JOBS)
+### Community 116 - "entity-ref-handler.ts / escapeRegex() / findWikiFilesWithEnt"
+Cohesion: 0.47
+Nodes (5): fs, main(), path, t(), title()
 
-### Community 160 - "Tight Cluster 160"
-Cohesion: 0.40
-Nodes (3): UseVoicesResult, VoiceAssignment, VoiceInfo
-
-### Community 161 - "Tight Cluster 161"
-Cohesion: 0.40
-Nodes (3): Event, EVENT_TYPE_COLORS, EventTimelineProps
-
-### Community 162 - "Tight Cluster 162"
-Cohesion: 0.50
-Nodes (3): Parallel pages route conflict ((auth) vs login), Phantom jsonwebtoken import in middleware, Next.js 16 middleware-to-proxy migration
-
-### Community 163 - "Tight Cluster 163"
-Cohesion: 0.40
-Nodes (4): GET, MoveInput, MoveResult, POST
-
-### Community 164 - "Tight Cluster 164"
+### Community 117 - "init-wiki.ts / ensureDir() / main()"
 Cohesion: 0.60
 Nodes (4): ensureDir(), main(), WIKI_FOLDERS, writeFileIfMissing()
 
-### Community 165 - "Tight Cluster 165"
-Cohesion: 0.40
-Nodes (5): Async Processing Philosophy (never block on embeddings/summarization/indexing/lore expansion), Group Session REST API (create/list/details/invite/join/leave/kick/update), Group Sessions (Solo/Group/Observer modes, turn management, SSE sync), Realtime RP Pipeline (user message → retrieve context → generate → store → queue jobs → return immediately), Real-Time SSE Sync (message/scene_update/thread_update/participant_change/job_complete events)
+### Community 118 - "route.ts / DELETE / GET"
+Cohesion: 0.20
+Nodes (6): JobsHeaderProps, Stats, ConversationLogProps, ConversationPair, Exchange, MessageRow
 
-### Community 166 - "Tight Cluster 166"
-Cohesion: 0.40
-Nodes (5): Delete Message Behavior (confirmation prompt, cascade delete, clean up jobs), Edit Message Behavior (inline edit, delete after, regenerate, clean up jobs), Message Action Buttons (TTS, Copy, Edit, Regenerate, Delete), Regenerate Message Behavior (delete selected + all after, rewind, regenerate, re-queue jobs), TTS Playback Behavior (Kokoro generation, per-voice assignment, Web Audio playback, caching)
+### Community 120 - "jobs-header.tsx / JobsHeader() / JobsHeaderProps"
+Cohesion: 0.20
+Nodes (9): Goal, Phase 1 — NPCs Page: Remove inline editor, keep catalog, Phase 2 — Personas Page: Simplify to RP-only editor, Phase 3 — Entities Page: Convert to wiki-only catalog, Phase 4 — Sidebar Cleanup, Phase 5 — Wiki Page Enhancements, Plan 030 — Wiki as Editor, Pages as Catalog Viewers, Tasks (+1 more)
 
-### Community 169 - "Tight Cluster 169"
-Cohesion: 0.40
-Nodes (3): ButtonKey, BUTTONS, WikiAiHeaderButtonsProps
+### Community 121 - "init-db.ts / DATA_DIR / ensureDir()"
+Cohesion: 0.31
+Nodes (7): renderAdditionalContext(), renderBudgetOverview(), renderBudgetSections(), RetrievalInspector(), RetrievalInspectorProps, BudgetBreakdown, RetrievalInspectorResponse
 
-### Community 173 - "Tight Cluster 173"
-Cohesion: 0.50
-Nodes (4): API Endpoint Catalog (94 route files), 5 dead/unused SSE events (JOB_COMPLETED, THREAD_UPDATED, etc.), EventBus: in-process singleton, 19 event types, SSE streaming, SQLite Schema Reference (40 tables, 35 indexes)
-
-### Community 174 - "Tight Cluster 174"
-Cohesion: 0.50
-Nodes (4): Plan Compliance Audit (F1), Scope Fidelity Check (F4), Task 1 Count Check: Table Verification, Task 2 Count Check: API Endpoint Verification
-
-### Community 178 - "Tight Cluster 178"
-Cohesion: 0.67
-Nodes (3): handleWikiSuggestRestructure(), RestructureSuggestion, suggestRestructure()
-
-### Community 180 - "Tight Cluster 180"
-Cohesion: 0.67
-Nodes (4): session_origins, session_origins, ses_19567baddffecJ3h5XQ82McW7K, ses_1c53eff67ffeCdr0YX3P28JlBj
-
-### Community 181 - "Tight Cluster 181"
-Cohesion: 0.50
-Nodes (3): name, private, version
-
-### Community 182 - "Tight Cluster 182"
+### Community 122 - "run-benchmark.mjs / fetchJSON() / main()"
 Cohesion: 1.00
 Nodes (3): fetchJSON(), main(), testGenerate()
 
-### Community 183 - "Tight Cluster 183"
+### Community 123 - "run-benchmark-local.mjs / fetchJSON() / main()"
 Cohesion: 0.83
 Nodes (3): fetchJSON(), main(), testGenerate()
 
-### Community 187 - "Tight Cluster 187"
+### Community 124 - "session-list.tsx / Session / SessionList()"
 Cohesion: 0.67
-Nodes (4): Auth REST Endpoints (register/login/logout/me/password), Authentication (username/password, bcrypt cost 12, JWT HttpOnly cookies), Password Constraints (min 8 characters, 1 letter + 1 number required), Username Constraints (3-20 chars, alphanumeric + underscore, case-insensitive)
+Nodes (3): BenchmarkPoint, estimateTokens(), runBenchmark()
 
-### Community 188 - "Tight Cluster 188"
+### Community 130 - "cross-env"
 Cohesion: 0.50
-Nodes (4): Relationship-Centric Retrieval (organize histories by pairwise relationship directories), Relationship Decay Formula (exponential decay by half-life per emotion type), Relationship Evolution (decay rates, triggers, half-lives per emotion), Relationship Memory (trust, suspicion, loyalty, resentment, shared history)
+Nodes (3): Active Jobs, Completed Jobs, JOBS — Live Subagent Progress Tracker
 
-### Community 189 - "Tight Cluster 189"
-Cohesion: 0.67
-Nodes (3): formatTime(), TTSIndicator(), TTSIndicatorProps
+### Community 151 - "Community 151"
+Cohesion: 0.25
+Nodes (8): DecayConfig, RelationshipEvolutionEntry, RelationshipEvolutionRow, RelationshipFrontmatter, RelationshipMarkdownData, RelationshipRow, RelationshipRowWithGroup, SharedHistoryEntry
 
-### Community 191 - "Tight Cluster 191"
-Cohesion: 0.67
-Nodes (3): AGENTS.md Project Knowledge Base, README: AI-assisted roleplay engine, App Router Structure Guide (src/app/AGENTS.md)
+### Community 152 - "Community 152"
+Cohesion: 0.39
+Nodes (7): analyzeRelationshipsAI(), extractEntityNames(), needsRelationshipAnalysis(), processRelationshipAnalysis(), RelationshipAnalysisResult, resolveEntityId(), syncRelationshipToFilesystem()
 
-### Community 194 - "Tight Cluster 194"
-Cohesion: 0.67
-Nodes (3): Client Components (59%), UI Components Documentation, Shared UI Primitives
+### Community 153 - "Community 153"
+Cohesion: 0.25
+Nodes (3): SearchDocument, SearchProps, WikiPage
 
-### Community 195 - "Tight Cluster 195"
-Cohesion: 0.67
-Nodes (3): src/proxy.ts (Next.js 16), Roleplay Engine Architecture Reference, Custom Hooks Conventions (AGENTS.md)
+### Community 154 - "Community 154"
+Cohesion: 0.48
+Nodes (6): attemptCombination(), binarySearchPredictForContext(), CombinationTestProgressCallback, isOomError(), isTimeoutError(), runCombinationTests()
 
-### Community 196 - "Tight Cluster 196"
-Cohesion: 0.67
-Nodes (3): Accuracy Spot Check (F2), Task 1 Spot Check: Schema Verification, Task 2 Spot Check: API Catalog Verification
+### Community 155 - "Community 155"
+Cohesion: 0.33
+Nodes (4): ESCALATION_COLORS, NarrativeThread, STATUS_ICONS, ThreadTrackerProps
 
-### Community 202 - "Tight Cluster 202"
-Cohesion: 0.67
-Nodes (3): 6.5% test coverage, 20 test files, 0 API route tests, 7 critical untested modules (retrieval, ollama, auth, event-bus, etc.), Test Coverage Audit Report
+### Community 156 - "Community 156"
+Cohesion: 0.40
+Nodes (5): DATA_DIR, DB_PATH, INDEXES, main(), tableExists()
 
-## Ambiguous Edges - Review These
-- `build-verification.txt` → `Scene State Auto-Update Feature`  [AMBIGUOUS]
-  docs/historical-evidence/omo/evidence/final-qa/build-verification.txt · relation: references
-- `build-verification.txt` → `Wikilink render pipeline (blue/red)`  [AMBIGUOUS]
-  docs/historical-evidence/omo/evidence/final-qa/build-verification.txt · relation: references
+### Community 157 - "Community 157"
+Cohesion: 0.40
+Nodes (3): Backlink, BacklinkPanelProps, LINK_TYPE_LABELS
+
+### Community 158 - "Community 158"
+Cohesion: 0.40
+Nodes (4): DELETE, GET, POST, PUT
+
+### Community 159 - "Community 159"
+Cohesion: 0.83
+Nodes (3): estimateTokens(), GET(), fetchLocalModels()
+
+### Community 160 - "Community 160"
+Cohesion: 0.50
+Nodes (3): EditHistory(), EditHistoryProps, EditRecord
+
+### Community 161 - "Community 161"
+Cohesion: 0.50
+Nodes (3): Session, SessionList(), SessionListProps
 
 ## Knowledge Gaps
-- **1015 isolated node(s):** `DB_PATH`, `args`, `IS_DRY_RUN`, `DB_PATH`, `args` (+1010 more)
+- **853 isolated node(s):** `Goal`, `Problem`, `Solution: Entity Registry`, `Phase 1: Entity Registry Support (no behavior changes)`, `Phase 2: ID-based Relationships` (+848 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **54 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **18 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **What is the exact relationship between `build-verification.txt` and `Scene State Auto-Update Feature`?**
-  _Edge tagged AMBIGUOUS (relation: references) - confidence is low._
-- **What is the exact relationship between `build-verification.txt` and `Wikilink render pipeline (blue/red)`?**
-  _Edge tagged AMBIGUOUS (relation: references) - confidence is low._
-- **Why does `Path` connect `Migration Scripts` to `API Route Dispatchers`, `API Route Handlers`, `Lore Extraction System`, `Relationship Processing`, `Resource API Routes`, `Tight Cluster 141`, `Tight Cluster 142`, `Wiki Audit Tools`, `Archival Processing`, `Retrieval Pipeline`, `Test Infrastructure`, `Admin Settings`, `Tight Cluster 149`, `Wiki Migration`, `Tight Cluster 163`, `Tight Cluster 164`, `Tight Cluster 40`, `Tight Cluster 42`, `Tight Cluster 43`, `Tight Cluster 49`, `Tight Cluster 178`, `Tight Cluster 53`, `Tight Cluster 55`, `Moderate Cluster 56`, `Tight Cluster 64`, `Moderate Cluster 65`, `Tight Cluster 67`, `Tight Cluster 68`, `Tight Cluster 71`, `Tight Cluster 72`, `Tight Cluster 76`, `Tight Cluster 77`, `Tight Cluster 89`, `Tight Cluster 90`, `Tight Cluster 100`, `Tight Cluster 101`, `Tight Cluster 102`, `Tight Cluster 105`, `Tight Cluster 106`, `Tight Cluster 112`?**
-  _High betweenness centrality (0.117) - this node is a cross-community bridge._
-- **Why does `getDb()` connect `Embedding & Memory` to `API Route Dispatchers`, `API Route Handlers`, `Wiki API Routes`, `Lore Extraction System`, `Relationship Processing`, `Resource API Routes`, `Benchmark Jobs`, `Job Queue System`, `Archival Processing`, `Tight Cluster 145`, `Retrieval Pipeline`, `Tight Cluster 147`, `Admin Settings`, `Contradiction Detection`, `Tight Cluster 150`, `Bulk API Routes`, `Ollama LLM Client`, `Moderate Cluster 31`, `Loose Cluster 33`, `Tight Cluster 40`, `Tight Cluster 43`, `Tight Cluster 49`, `Tight Cluster 179`, `Tight Cluster 53`, `Tight Cluster 55`, `Tight Cluster 62`, `Tight Cluster 63`, `Tight Cluster 64`, `Tight Cluster 79`, `Tight Cluster 94`, `Tight Cluster 109`?**
-  _High betweenness centrality (0.058) - this node is a cross-community bridge._
-- **Why does `logger` connect `Tight Cluster 42` to `API Route Dispatchers`, `API Route Handlers`, `Wiki API Routes`, `Lore Extraction System`, `App Context & Universe`, `Resource API Routes`, `Benchmark Jobs`, `Job Queue System`, `Archival Processing`, `Tight Cluster 145`, `Tight Cluster 147`, `Admin Settings`, `Persona Management`, `Ollama LLM Client`, `Moderate Cluster 32`, `Tight Cluster 39`, `Tight Cluster 40`, `Moderate Cluster 54`, `Moderate Cluster 56`, `Tight Cluster 59`, `Tight Cluster 67`, `Tight Cluster 70`, `Tight Cluster 74`, `Tight Cluster 76`, `Tight Cluster 79`, `Tight Cluster 80`, `Tight Cluster 94`, `Tight Cluster 97`?**
-  _High betweenness centrality (0.020) - this node is a cross-community bridge._
-- **Are the 10 inferred relationships involving `getDb()` (e.g. with `POST()` and `runStartupChecks()`) actually correct?**
-  _`getDb()` has 10 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 22 inferred relationships involving `withAuth()` (e.g. with `POST()` and `PUT()`) actually correct?**
-  _`withAuth()` has 22 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `Path` connect `add-missing-indexes.ts / DATA_DIR / DB_PATH` to `route.ts / DELETE() / GET()`, `route.ts / PUT / route.ts`, `wiki-tasks.ts / wikiArchive() / wikiCompressSummaries()`, `route.ts / PUT / route.ts`, `npc-wiki-sync.ts / buildTraitsSection() / handleNpcWikiSync(`, `POST / POST() / extractId()`, `retrieval-inspector.tsx / renderAdditionalContext() / render`, `migrate-events-to-wiki.ts / args / buildFrontmatter()`, `route.ts / POST() / Path`, `lore-extraction.ts / ENTITY_TYPE_TO_SUBTYPE / ExtractedEntit`, `decay-handler.ts / handleDecayRelationships() / embedding-ha`, `backlink-panel.tsx / Backlink / BacklinkPanel()`, `audit-wiki.ts / allCrossUniverseLinks / allPagesFlat`, `Community 156`, `page.tsx / PersonasPage() / persona-editor.tsx`, `Community 159`, `file-tree.test.tsx / bulk-move.test.ts / createTestWiki()`, `migrate-wiki-to-subtype-folders.ts / backupDataDir() / build`, `cancelAllUserJobs() / cancelJob() / getJobStats()`, `markdown-utils.ts / buildMarkdown() / LoreFrontmatter`, `test-phase4.js / fs / main()`, `wikilinks-rewrite.test.ts / makePage() / types.ts`, `_check_chunks.py / verify-plan.py / extract_commands()`, `auth.test.ts / createAuthDb() / bcryptRounds()`, `index-utils.ts / parseWikiIndex() / resolveWikiPagePath()`, `merge-suggester.ts / findMergeCandidates() / MergeCandidate`, `cleanup-old-lore-tables.ts / args / collectLoreFiles()`, `backfill-entity-ids.ts / DATA_DIR / dbPath`, `npc-editor.tsx / NpcEditor() / NpcEditorProps`, `createFixtureWiki() / config-migration.ts / addSubtypeToConf`, `backlinks.ts / Backlink / getBacklinks()`, `benchmark-wiki.ts / benchmark() / cleanupWikiRoot()`, `sync-frontmatter.ts / buildFrontmatter() / DATA_DIR`, `migrate-universe-scope.ts / DATA_DIR / dbPath`, `embeddings.ts / deleteEmbedding() / EmbeddingResult`, `config.ts / addFolderToConfig() / DEFAULT_FOLDER_ORDER`, `test-phase3.js / fs / main()`, `entity-ref-handler.ts / escapeRegex() / findWikiFilesWithEnt`, `init-wiki.ts / ensureDir() / main()`?**
+  _High betweenness centrality (0.093) - this node is a cross-community bridge._
+- **Why does `getDb()` connect `relationship-analysis.ts / extractEntityNames() / needsRelat` to `route.ts / DELETE() / GET()`, `route.ts / PUT / route.ts`, `route.ts / PUT / route.ts`, `npc-wiki-sync.ts / buildTraitsSection() / handleNpcWikiSync(`, `route.ts / checkDb() / checkKokoro()`, `POST / POST() / extractId()`, `retrieval-inspector.tsx / renderAdditionalContext() / render`, `route.ts / estimateTokens() / GET()`, `route.ts / POST() / Path`, `decay-handler.ts / handleDecayRelationships() / embedding-ha`, `Community 152`, `job-store.ts / BenchmarkJob / BENCHMARKS_DIR`, `route.ts / ensureColumn() / POST()`, `page.tsx / PersonasPage() / persona-editor.tsx`, `Community 159`, `Community 158`, `relationship-tasks.ts / processRelationshipIdleAnalysis() / `, `contradiction-detector.ts / aliveDeadRule / Contradiction`, `cancelAllUserJobs() / cancelJob() / getJobStats()`, `markdown-utils.ts / buildMarkdown() / LoreFrontmatter`, `test-phase4.js / fs / main()`, `relationship-graph.tsx / GraphEdge / GraphNode`, `wikilinks-rewrite.test.ts / makePage() / types.ts`, `merge-suggester.ts / findMergeCandidates() / MergeCandidate`, `handleSceneStateExtract() / scene-extraction.ts / detectAndR`, `prompt-builder.ts / applyContextBudget() / assemblePrompt()`, `createFixtureWiki() / config-migration.ts / addSubtypeToConf`, `backlinks.ts / Backlink / getBacklinks()`, `graph-view.tsx / COMMUNITY_COLORS / computeDegrees()`, `server-config.ts / emptyRow() / FALLBACK_OLLAMA_PORT`, `combination-test.ts / attemptCombination() / binarySearchPre`, `backlink-panel.tsx / BacklinkInfo / BacklinkPanel()`, `entity-resolution.ts / buildCandidates() / Candidate`, `check-db.ts / db / messages`?**
+  _High betweenness centrality (0.068) - this node is a cross-community bridge._
+- **Why does `dependencies` connect `Community 38` to `inter / metadata / RootLayout()`, `react-markdown / rehype-raw / remark-gfm`, `MessageBubble.tsx / MessageBubble / MessageBubbleProps`, `package.json / name / private`, `cytoscape / react-cytoscapejs.d.ts / CytoscapeComponent`, `detectSpeakingAs() / POST() / buildPersonaPrompt()`, `react-dom / hover-preview.tsx / clampPosition()`?**
+  _High betweenness centrality (0.033) - this node is a cross-community bridge._
+- **What connects `Goal`, `Problem`, `Solution: Entity Registry` to the rest of the system?**
+  _857 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `route.ts / DELETE() / GET()` be split into smaller, more focused modules?**
+  _Cohesion score 0.1090543259557344 - nodes in this community are weakly interconnected._
+- **Should `route.ts / PUT / route.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.055364314400458976 - nodes in this community are weakly interconnected._
+- **Should `wiki-tasks.ts / wikiArchive() / wikiCompressSummaries()` be split into smaller, more focused modules?**
+  _Cohesion score 0.05649717514124294 - nodes in this community are weakly interconnected._

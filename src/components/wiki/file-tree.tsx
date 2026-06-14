@@ -84,6 +84,8 @@ interface FileTreeProps {
   onCreatePage?: () => void;
   onCreateFolder?: () => void;
   onReorder?: (change: ReorderChange) => Promise<void>;
+  /** When provided, clicking a page calls this instead of navigating */
+  onPageClick?: (path: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -509,12 +511,14 @@ const SortablePageRow = memo(function SortablePageRow({
   isActive,
   isOrphan,
   isOverlay,
+  onPageClick,
 }: {
   page: FileTreePageItem;
   basePath: string;
   isActive: boolean;
   isOrphan: boolean;
   isOverlay?: boolean;
+  onPageClick?: (path: string) => void;
 }) {
   const {
     attributes,
@@ -535,6 +539,7 @@ const SortablePageRow = memo(function SortablePageRow({
   const slug = page.path.split('/').pop()?.replace(/\.md$/, '') || '';
 
   const opacity = isDragging && !isOverlay ? 0.3 : 1;
+  const linkClass = `flex items-center gap-1 px-2 py-1 rounded ${isActive ? 'bg-accent-muted text-accent' : 'hover:bg-bg-raised'}`;
 
   return (
     <div
@@ -544,20 +549,33 @@ const SortablePageRow = memo(function SortablePageRow({
       {...listeners}
       className="touch-none"
     >
-      <Link
-        href={`${basePath}/${folder}/${slug}`}
-        className={`flex items-center gap-1 px-2 py-1 rounded ${
-          isActive ? 'bg-accent-muted text-accent' : 'hover:bg-bg-raised'
-        }`}
-      >
-        <Icon size={12} />
-        <span className="truncate">{page.title || slug}</span>
-        {isOrphan && (
-          <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-warning/20 text-warning font-medium" title="No inbound or outbound wikilinks">
-            orphan
-          </span>
-        )}
-      </Link>
+      {onPageClick ? (
+        <button
+          onClick={(e) => { e.preventDefault(); onPageClick(page.path); }}
+          className={`${linkClass} w-full text-left`}
+        >
+          <Icon size={12} />
+          <span className="truncate">{page.title || slug}</span>
+          {isOrphan && (
+            <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-warning/20 text-warning font-medium" title="No inbound or outbound wikilinks">
+              orphan
+            </span>
+          )}
+        </button>
+      ) : (
+        <Link
+          href={`${basePath}/${folder}/${slug}`}
+          className={linkClass}
+        >
+          <Icon size={12} />
+          <span className="truncate">{page.title || slug}</span>
+          {isOrphan && (
+            <span className="ml-auto text-[10px] px-1 py-0.5 rounded bg-warning/20 text-warning font-medium" title="No inbound or outbound wikilinks">
+              orphan
+            </span>
+          )}
+        </Link>
+      )}
     </div>
   );
 });
@@ -573,6 +591,7 @@ const SubfolderSection = memo(function SubfolderSection({
   currentPage,
   isExpanded,
   onToggle,
+  onPageClick,
 }: {
   subfolder: SubfolderInfo;
   basePath: string;
@@ -580,6 +599,7 @@ const SubfolderSection = memo(function SubfolderSection({
   currentPage?: string;
   isExpanded: boolean;
   onToggle: () => void;
+  onPageClick?: (path: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: idForSubfolder(subfolder.path),
@@ -615,6 +635,7 @@ const SubfolderSection = memo(function SubfolderSection({
                 basePath={basePath}
                 isActive={p.path === currentPage}
                 isOrphan={orphanSet.has(p.path)}
+                onPageClick={onPageClick}
               />
             ))}
             {subfolder.pages.length === 0 && (
@@ -641,6 +662,7 @@ function TopLevelFolderContent({
   currentPage,
   subfolderExpanded,
   onSubfolderToggle,
+  onPageClick,
 }: {
   topFolder: string;
   info: TopLevelInfo;
@@ -649,6 +671,7 @@ function TopLevelFolderContent({
   currentPage?: string;
   subfolderExpanded: Set<string>;
   onSubfolderToggle: (subfolderPath: string) => void;
+  onPageClick?: (path: string) => void;
 }) {
   const totalPages = info.directPages.length +
     info.subfolders.reduce((sum, sf) => sum + sf.pages.length, 0);
@@ -669,31 +692,19 @@ function TopLevelFolderContent({
                 basePath={basePath}
                 isActive={p.path === currentPage}
                 isOrphan={orphanSet.has(p.path)}
+                onPageClick={onPageClick}
               />
             ))}
           </SortableContext>
         </div>
       )}
 
-      {/* No pages at all */}
+      {/* No pages or subfolders at all */}
       {info.directPages.length === 0 && info.subfolders.length === 0 && (
         <div className="text-[10px] text-text-muted px-2 py-1 italic">
           Empty folder
         </div>
       )}
-
-      {/* Subtype subfolders */}
-      {info.subfolders.map((sf) => (
-        <SubfolderSection
-          key={sf.path}
-          subfolder={sf}
-          basePath={basePath}
-          orphanSet={orphanSet}
-          currentPage={currentPage}
-          isExpanded={subfolderExpanded.has(sf.path)}
-          onToggle={() => onSubfolderToggle(sf.path)}
-        />
-      ))}
     </div>
   );
 }
@@ -710,8 +721,11 @@ const SortableFolderWrapper = memo(function SortableFolderWrapper(props: {
   currentPage?: string;
   subfolderExpanded: Set<string>;
   onSubfolderToggle: (subfolderPath: string) => void;
+  onPageClick?: (path: string) => void;
+  isExpanded: boolean;
+  onToggle: () => void;
 }) {
-  const { folder, info, subfolderExpanded, onSubfolderToggle } = props;
+  const { folder, info, subfolderExpanded, onSubfolderToggle, isExpanded, onToggle } = props;
   const {
     attributes,
     listeners,
@@ -735,11 +749,15 @@ const SortableFolderWrapper = memo(function SortableFolderWrapper(props: {
   return (
     <div ref={setNodeRef} style={style} className={isDragging ? 'opacity-50' : ''}>
       <div className="flex items-center">
-        <div className="flex items-center gap-1 flex-1 px-2 py-1 text-left">
+        <button
+          onClick={(e) => { e.preventDefault(); onToggle(); }}
+          className="flex items-center gap-1 flex-1 px-2 py-1 text-left hover:bg-bg-raised rounded transition-colors"
+        >
+          {isExpanded ? <ChevronDown size={14} className="text-text-muted shrink-0" /> : <ChevronRight size={14} className="text-text-muted shrink-0" />}
           <Folder size={14} className="text-accent shrink-0" />
           <span className="font-medium">{folder}</span>
           <span className="text-[10px] text-text-muted ml-1">({totalPages})</span>
-        </div>
+        </button>
         <button
           {...(listeners as unknown as Record<string, unknown>)}
           {...(attributes as unknown as Record<string, unknown>)}
@@ -750,15 +768,35 @@ const SortableFolderWrapper = memo(function SortableFolderWrapper(props: {
           <span className="block w-1 h-3 leading-none text-[10px] tracking-tighter">⋮⋮</span>
         </button>
       </div>
-      <TopLevelFolderContent
-        topFolder={folder}
-        info={info}
-        basePath={props.basePath}
-        orphanSet={props.orphanSet}
-        currentPage={props.currentPage}
-        subfolderExpanded={subfolderExpanded}
-        onSubfolderToggle={onSubfolderToggle}
-      />
+      {/* Always show subfolder sections, even when collapsed — clickable headers with chevron toggles */}
+      {info.subfolders.length > 0 && (
+        <div>
+          {info.subfolders.map((sf) => (
+            <SubfolderSection
+              key={sf.path}
+              subfolder={sf}
+              basePath={props.basePath}
+              orphanSet={props.orphanSet}
+              currentPage={props.currentPage}
+              isExpanded={subfolderExpanded.has(sf.path)}
+              onToggle={() => onSubfolderToggle(sf.path)}
+              onPageClick={props.onPageClick}
+            />
+          ))}
+        </div>
+      )}
+      {isExpanded && (
+        <TopLevelFolderContent
+          topFolder={folder}
+          info={info}
+          basePath={props.basePath}
+          orphanSet={props.orphanSet}
+          currentPage={props.currentPage}
+          subfolderExpanded={subfolderExpanded}
+          onSubfolderToggle={onSubfolderToggle}
+          onPageClick={props.onPageClick}
+        />
+      )}
     </div>
   );
 });
@@ -804,11 +842,13 @@ export default function FileTree({
   onCreatePage,
   onCreateFolder,
   onReorder,
+  onPageClick,
 }: FileTreeProps) {
   const router = useRouter();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const lastCommittedRef = useRef<ReorderChange | null>(null);
   const [subfolderExpanded, setSubfolderExpanded] = useState<Set<string>>(new Set());
+  const [folderExpanded, setFolderExpanded] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
   const [showDormant, setShowDormant] = useState(false);
 
@@ -1116,6 +1156,26 @@ export default function FileTree({
                 currentPage={currentPage}
                 subfolderExpanded={subfolderExpanded}
                 onSubfolderToggle={toggleSubfolder}
+                onPageClick={onPageClick}
+                isExpanded={folderExpanded.has(folder)}
+                onToggle={() => {
+                  const isCurrentlyExpanded = folderExpanded.has(folder);
+                  setFolderExpanded(prev => {
+                    const next = new Set(prev);
+                    if (next.has(folder)) next.delete(folder);
+                    else next.add(folder);
+                    return next;
+                  });
+                  // Auto-expand all subtype subfolders when expanding a folder
+                  if (!isCurrentlyExpanded) {
+                    const info = hierarchy[folder];
+                    if (info) {
+                      for (const sf of info.subfolders) {
+                        setSubfolderExpanded(subPrev => new Set(subPrev).add(sf.path));
+                      }
+                    }
+                  }
+                }}
               />
             );
           })}

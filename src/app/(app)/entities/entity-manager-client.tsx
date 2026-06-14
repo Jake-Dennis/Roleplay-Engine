@@ -3,30 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
-  User,
-  Ghost,
-  MapPin,
-  Calendar,
-  Flag,
-  Plus,
-  Link2,
-  Copy,
-  Check,
-  Trash2,
-  Search,
-  X,
-  Sparkles,
-  AlertTriangle,
-  Loader2,
-  Pencil,
-  FileText,
-  ExternalLink,
+  User, Ghost, MapPin, Calendar, Flag, Package, Plus, Search, Loader2, ExternalLink, BookOpen, Merge, X
 } from "lucide-react";
-import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 
 interface Entity {
   id: string;
@@ -34,15 +12,10 @@ interface Entity {
   displayName: string;
   description: string | null;
   aliases: string[];
-  userId: string;
   universeId: string | null;
   createdAt: string;
   updatedAt: string;
 }
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
 
 const TYPE_META: Record<string, { icon: typeof User; color: string; bgColor: string; label: string }> = {
   persona: { icon: User, color: "text-blue-400", bgColor: "bg-blue-500/10", label: "Persona" },
@@ -50,11 +23,10 @@ const TYPE_META: Record<string, { icon: typeof User; color: string; bgColor: str
   location: { icon: MapPin, color: "text-green-400", bgColor: "bg-green-500/10", label: "Location" },
   event: { icon: Calendar, color: "text-amber-400", bgColor: "bg-amber-500/10", label: "Event" },
   faction: { icon: Flag, color: "text-rose-400", bgColor: "bg-rose-500/10", label: "Faction" },
+  item: { icon: Package, color: "text-orange-400", bgColor: "bg-orange-500/10", label: "Item" },
 };
 
-const TYPE_ORDER = ["persona", "npc", "location", "event", "faction"] as const;
-
-type FilterType = "all" | "persona" | "npc" | "location" | "event" | "faction";
+type FilterType = "all" | "persona" | "npc" | "location" | "event" | "faction" | "item";
 
 const FILTER_TABS: { key: FilterType; label: string }[] = [
   { key: "all", label: "All" },
@@ -63,819 +35,442 @@ const FILTER_TABS: { key: FilterType; label: string }[] = [
   { key: "location", label: "Locations" },
   { key: "event", label: "Events" },
   { key: "faction", label: "Factions" },
+  { key: "item", label: "Items" },
 ];
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function truncateId(id: string): string {
-  const parts = id.split(":");
-  if (parts.length === 2) {
-    const uuid = parts[1];
-    return `${parts[0]}:${uuid.slice(0, 8)}...${uuid.slice(-3)}`;
-  }
-  return id.length > 20 ? `${id.slice(0, 8)}...${id.slice(-3)}` : id;
-}
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
+const ENTITY_FOLDER: Record<string, string> = {
+  persona: "entities/characters",
+  npc: "entities/characters",
+  location: "entities/locations",
+  event: "entities/events",
+  faction: "entities/factions",
+  item: "entities/items",
+};
 
 export function EntityManagerClient() {
   const router = useRouter();
   const [entities, setEntities] = useState<Entity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Filter / search
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Add alias
-  const [addingAliasFor, setAddingAliasFor] = useState<string | null>(null);
-  const [newAlias, setNewAlias] = useState("");
-  const [savingAlias, setSavingAlias] = useState(false);
-
-  // Copy feedback
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  // Merge
+  const [wikiMap, setWikiMap] = useState<Record<string, string>>({});
   const [mergeMode, setMergeMode] = useState(false);
-  const [mergeSource, setMergeSource] = useState<string | null>(null);
-  const [mergeTarget, setMergeTarget] = useState<string | null>(null);
-  const [showMergeConfirm, setShowMergeConfirm] = useState(false);
-  const [merging, setMerging] = useState(false);
-
-  // Delete
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  // Description editing
-  const [editingDescFor, setEditingDescFor] = useState<string | null>(null);
-  const [descriptionText, setDescriptionText] = useState("");
-  const [savingDescription, setSavingDescription] = useState(false);
-
-  // Wiki page tracking
-  const [wikiEntityMap, setWikiEntityMap] = useState<Record<string, string>>({});
-  const [creatingWiki, setCreatingWiki] = useState<string | null>(null);
-  const [wikiError, setWikiError] = useState<string | null>(null);
-
-  // -----------------------------------------------------------------------
-  // Data fetching
-  // -----------------------------------------------------------------------
+  const [mergeSource, setMergeSource] = useState<Entity | null>(null);
+  const [suggestions, setSuggestions] = useState<Array<{
+    sourceId: string; sourceName: string; sourceType: string;
+    targetId: string; targetName: string; targetType: string; score: number;
+  }> | null>(null);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+  const [mergingId, setMergingId] = useState<string | null>(null);
 
   const loadEntities = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const params = new URLSearchParams();
       if (filterType !== "all") params.set("type", filterType);
       if (searchQuery.trim()) params.set("search", searchQuery.trim());
-
       const res = await fetch(`/api/entities${params.toString() ? "?" + params.toString() : ""}`);
-      if (!res.ok) {
-        setError("Failed to load entities");
-        return;
+      if (res.ok) {
+        const json = await res.json();
+        setEntities(json.entities || []);
       }
-      const json = await res.json();
-      setEntities(json.entities || []);
     } catch {
-      setError("Failed to load entities");
+      // Non-fatal
     } finally {
       setLoading(false);
     }
   }, [filterType, searchQuery]);
 
   useEffect(() => {
-    queueMicrotask(() => loadEntities());
+    loadEntities();
   }, [loadEntities]);
 
-  // -----------------------------------------------------------------------
-  // Wiki page existence check
-  // -----------------------------------------------------------------------
-
-  const loadWikiEntityMap = useCallback(async () => {
-    try {
-      const res = await fetch("/api/wiki");
-      if (!res.ok) return;
-      const json = await res.json();
-      const pages = json.pages || [];
-      const map: Record<string, string> = {};
-      for (const page of pages) {
-        if (page.frontmatter?.entity_id) {
-          map[page.frontmatter.entity_id] = page.path.replace(/\.md$/, "");
+  // Load wiki page map for "Edit in Wiki" links
+  useEffect(() => {
+    fetch("/api/wiki")
+      .then(r => r.json())
+      .then(json => {
+        const pages = json.pages || [];
+        const map: Record<string, string> = {};
+        for (const page of pages) {
+          if (page.frontmatter?.entity_id) {
+            map[page.frontmatter.entity_id] = page.path.replace(/\.md$/, "");
+          }
         }
-      }
-      setWikiEntityMap(map);
-    } catch {
-      // Non-critical — wiki check is a best-effort enhancement
-    }
+        setWikiMap(map);
+      })
+      .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    queueMicrotask(() => loadWikiEntityMap());
-  }, [loadWikiEntityMap]);
+  async function handleNewEntity(type: string) {
+    const name = prompt(`Enter name for new ${type}:`);
+    if (!name || !name.trim()) return;
 
-  // -----------------------------------------------------------------------
-  // Description save
-  // -----------------------------------------------------------------------
-
-  async function handleSaveDescription(entityId: string) {
-    if (!descriptionText.trim()) return;
-    setSavingDescription(true);
     try {
-      const res = await fetch(`/api/entities/${entityId}`, {
-        method: "PUT",
+      // Create entity registry entry
+      const regRes = await fetch("/api/entities", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description: descriptionText.trim() }),
+        body: JSON.stringify({
+          entityType: type,
+          displayName: name.trim(),
+        }),
       });
-
-      if (res.ok) {
-        setEntities((prev) =>
-          prev.map((e) =>
-            e.id === entityId ? { ...e, description: descriptionText.trim() } : e
-          )
-        );
-        setEditingDescFor(null);
-        setDescriptionText("");
-      } else {
-        const json = await res.json();
-        setError(json.error || "Failed to save description");
+      if (!regRes.ok) {
+        alert("Failed to create entity");
+        return;
       }
-    } catch {
-      setError("Failed to save description");
-    } finally {
-      setSavingDescription(false);
-    }
-  }
+      const regJson = await regRes.json();
+      const entityId = regJson.entity.id;
+      const folder = ENTITY_FOLDER[type] || "entities";
 
-  // -----------------------------------------------------------------------
-  // Wiki page creation
-  // -----------------------------------------------------------------------
-
-  async function handleCreateWiki(entity: Entity) {
-    setCreatingWiki(entity.id);
-    setWikiError(null);
-    try {
-      const slug = entity.displayName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "");
-      const pagePath = `entities/${slug}.md`;
-
-      const content = entity.description
-        ? `# ${entity.displayName}\n\n${entity.description}\n`
-        : `# ${entity.displayName}\n`;
-
-      const frontmatter = {
-        title: entity.displayName,
-        type: "entity",
-        status: "draft",
-        entity_id: entity.id,
-        tags: [entity.entityType],
-        created: new Date().toISOString(),
-      };
-
-      const res = await fetch("/api/wiki", {
+      // Create wiki page
+      const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+      const pagePath = `${folder}/${slug}.md`;
+      const wikiRes = await fetch("/api/wiki", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           path: pagePath,
-          content,
-          frontmatter,
+          content: `# ${name.trim()}\n`,
+          frontmatter: {
+            title: name.trim(),
+            type: "entity",
+            subtype: type,
+            status: "draft",
+            entity_id: entityId,
+            tags: [type],
+          },
         }),
       });
-
-      if (res.ok) {
-        const json = await res.json();
-        const wikiPath = json.path.replace(/\.md$/, "");
-        setWikiEntityMap((prev) => ({ ...prev, [entity.id]: wikiPath }));
+      if (wikiRes.ok) {
+        const wikiJson = await wikiRes.json();
+        const wikiPath = wikiJson.path.replace(/\.md$/, "");
         router.push(`/wiki/${wikiPath}`);
-      } else {
-        const json = await res.json();
-        setWikiError(json.error || "Failed to create wiki page");
       }
+      await loadEntities();
     } catch {
-      setWikiError("Failed to create wiki page");
-    } finally {
-      setCreatingWiki(null);
+      alert("Failed to create entity");
     }
   }
 
-  // -----------------------------------------------------------------------
-  // Filtered entities
-  // -----------------------------------------------------------------------
-
-  const groupedEntities = entities.reduce<Record<string, Entity[]>>((acc, e) => {
-    const key = e.entityType;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(e);
-    return acc;
-  }, {});
-
-  // Ensure type order for display
-  const orderedGroups = TYPE_ORDER.filter((t) => groupedEntities[t]?.length > 0);
-
-  // -----------------------------------------------------------------------
-  // Add alias
-  // -----------------------------------------------------------------------
-
-  async function handleAddAlias(entityId: string) {
-    if (!newAlias.trim()) return;
-    setSavingAlias(true);
-    try {
-      const res = await fetch(`/api/entities/${entityId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ aliases: [newAlias.trim()] }),
-      });
-
-      if (res.ok) {
-        setEntities((prev) =>
-          prev.map((e) =>
-            e.id === entityId ? { ...e, aliases: [...e.aliases, newAlias.trim()] } : e
-          )
-        );
-        setNewAlias("");
-        setAddingAliasFor(null);
-      } else {
-        const json = await res.json();
-        setError(json.error || "Failed to add alias");
-      }
-    } catch {
-      setError("Failed to add alias");
-    } finally {
-      setSavingAlias(false);
-    }
-  }
-
-  // -----------------------------------------------------------------------
-  // Copy ID
-  // -----------------------------------------------------------------------
-
-  async function handleCopyId(id: string) {
-    try {
-      await navigator.clipboard.writeText(id);
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch {
-      // Fallback for non-HTTPS environments
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
-    }
-  }
-
-  // -----------------------------------------------------------------------
-  // Merge
-  // -----------------------------------------------------------------------
-
-  function handleMergeClick(entityId: string) {
-    if (!mergeSource) {
-      // First selection — this is the source
-      setMergeSource(entityId);
-    } else if (mergeSource === entityId) {
-      // Clicking the same entity deselects
-      setMergeSource(null);
-    } else {
-      // Second selection — this is the target
-      setMergeTarget(entityId);
-      setShowMergeConfirm(true);
-    }
-  }
-
-  async function handleMergeConfirm() {
-    if (!mergeSource || !mergeTarget) return;
-    setMerging(true);
-    try {
-      const res = await fetch("/api/entities/merge", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sourceId: mergeSource, targetId: mergeTarget }),
-      });
-
-      if (res.ok) {
-        // Remove source from local state, update target (reload aliases)
-        setEntities((prev) => prev.filter((e) => e.id !== mergeSource));
-        await loadEntities();
-      } else {
-        const json = await res.json();
-        setError(json.error || "Merge failed");
-      }
-    } catch {
-      setError("Merge failed");
-    } finally {
-      setMerging(false);
-      setShowMergeConfirm(false);
-      setMergeSource(null);
-      setMergeTarget(null);
-      setMergeMode(false);
-    }
-  }
-
-  function cancelMerge() {
-    setMergeMode(false);
-    setMergeSource(null);
-    setMergeTarget(null);
-    setShowMergeConfirm(false);
-  }
-
-  // -----------------------------------------------------------------------
-  // Delete
-  // -----------------------------------------------------------------------
-
-  async function handleDelete(id: string) {
-    setDeleting(true);
-    try {
-      const res = await fetch(`/api/entities/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setEntities((prev) => prev.filter((e) => e.id !== id));
-      } else {
-        const json = await res.json();
-        setError(json.error || "Failed to delete entity");
-      }
-    } catch {
-      setError("Failed to delete entity");
-    } finally {
-      setDeleting(false);
-      setDeleteTarget(null);
-    }
-  }
-
-  // -----------------------------------------------------------------------
-  // Render helpers
-  // -----------------------------------------------------------------------
-
-  function renderEntityCard(entity: Entity) {
-    const meta = TYPE_META[entity.entityType];
-    const Icon = meta?.icon || User;
-    const isMergeSource = mergeSource === entity.id;
-    const isMergeTarget = mergeTarget === entity.id;
-    const isAdding = addingAliasFor === entity.id;
-
-    return (
-      <div
-        key={entity.id}
-        className={`rounded-xl border bg-bg-elevated overflow-hidden transition-all ${
-          isMergeSource
-            ? "border-accent ring-1 ring-accent/30"
-            : isMergeTarget
-              ? "border-error ring-1 ring-error/30"
-              : mergeMode
-                ? "border-border-default cursor-pointer hover:border-accent/50"
-                : "border-border-default"
-        }`}
-        onClick={() => {
-          if (mergeMode) handleMergeClick(entity.id);
-        }}
-      >
-        <div className="p-4">
-          {/* Header row */}
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div
-                className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ${
-                  meta?.bgColor || "bg-bg-raised"
-                }`}
-              >
-                <Icon className={`h-4 w-4 ${meta?.color || "text-text-muted"}`} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-text-primary truncate">
-                  {entity.displayName}
-                </p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  {/* Type badge */}
-                  {meta && (
-                    <span
-                      className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-xxs font-medium ${meta.bgColor} ${meta.color}`}
-                    >
-                      {meta.label}
-                    </span>
-                  )}
-                  {/* Universe */}
-                  {entity.universeId && (
-                    <span className="text-xxs text-text-muted truncate">
-                      {entity.universeId.slice(0, 8)}...
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Action buttons */}
-            {!mergeMode && (
-              <div className="flex items-center gap-0.5 flex-shrink-0">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCopyId(entity.id);
-                  }}
-                  className="rounded p-1 text-text-muted hover:bg-bg-raised hover:text-text-primary transition-colors"
-                  title="Copy entity ID"
-                >
-                  {copiedId === entity.id ? (
-                    <Check className="h-3.5 w-3.5 text-success" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" />
-                  )}
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMergeMode(true);
-                    setMergeSource(entity.id);
-                  }}
-                  className="rounded p-1 text-text-muted hover:bg-bg-raised hover:text-text-accent transition-colors"
-                  title="Merge this entity"
-                >
-                  <Link2 className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeleteTarget(entity.id);
-                  }}
-                  className="rounded p-1 text-text-muted hover:bg-bg-raised hover:text-error transition-colors"
-                  title="Delete entity"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Entity ID row */}
-          <div className="mt-2 flex items-center gap-1.5">
-            <span className="text-xxs text-text-muted font-mono">{truncateId(entity.id)}</span>
-          </div>
-
-          {/* Description */}
-          {editingDescFor === entity.id ? (
-            <div className="mt-2 space-y-1.5">
-              <textarea
-                value={descriptionText}
-                onChange={(e) => setDescriptionText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape" && !e.shiftKey) {
-                    setEditingDescFor(null);
-                    setDescriptionText("");
-                  }
-                  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                    handleSaveDescription(entity.id);
-                  }
-                }}
-                placeholder="Add a description..."
-                rows={3}
-                className="w-full rounded-lg border border-border-default bg-bg-raised px-2.5 py-1.5 text-xs text-text-primary placeholder:text-text-muted outline-none resize-none focus:border-accent"
-                autoFocus
-                disabled={savingDescription}
-              />
-              <div className="flex items-center gap-1.5 justify-end">
-                <button
-                  onClick={() => { setEditingDescFor(null); setDescriptionText(""); }}
-                  className="rounded px-2 py-1 text-xxs text-text-muted hover:text-text-primary transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleSaveDescription(entity.id)}
-                  disabled={savingDescription || !descriptionText.trim()}
-                  className="flex items-center gap-1 rounded-lg bg-accent px-2 py-1 text-xxs font-medium text-white hover:bg-accent-hover disabled:opacity-50"
-                >
-                  {savingDescription ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Check className="h-3 w-3" />
-                  )}
-                  Save
-                </button>
-              </div>
-            </div>
-          ) : entity.description ? (
-            <div className="mt-2 group/desc relative">
-              <p className="text-xxs text-text-secondary leading-relaxed line-clamp-3">
-                {entity.description}
-              </p>
-              {!mergeMode && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDescriptionText(entity.description || "");
-                    setEditingDescFor(entity.id);
-                  }}
-                  className="absolute -right-1 -top-1 rounded p-1 text-text-muted opacity-0 group-hover/desc:opacity-100 hover:text-text-accent transition-all"
-                  title="Edit description"
-                >
-                  <Pencil className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-          ) : (
-            !mergeMode && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDescriptionText("");
-                  setEditingDescFor(entity.id);
-                }}
-                className="mt-2 flex items-center gap-1 text-xxs text-text-muted hover:text-text-accent transition-colors"
-              >
-                <Pencil className="h-3 w-3" />
-                Add description
-              </button>
-            )
-          )}
-
-          {/* Aliases */}
-          {entity.aliases.length > 0 && (
-            <div className="mt-2 flex flex-wrap items-center gap-1">
-              {entity.aliases.map((alias) => (
-                <span
-                  key={alias}
-                  className="inline-flex items-center rounded-md bg-bg-raised px-1.5 py-0.5 text-xxs text-text-secondary"
-                >
-                  {alias}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Wiki page indicator */}
-          {!mergeMode && !isAdding && (
-            <div className="mt-2">
-              {wikiEntityMap[entity.id] ? (
-                <a
-                  href={`/wiki/${wikiEntityMap[entity.id]}`}
-                  onClick={(e) => { e.stopPropagation(); }}
-                  className="inline-flex items-center gap-1 text-xxs text-text-accent hover:text-accent transition-colors"
-                >
-                  <FileText className="h-3 w-3" />
-                  View Wiki Page
-                  <ExternalLink className="h-2.5 w-2.5" />
-                </a>
-              ) : (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCreateWiki(entity);
-                  }}
-                  disabled={creatingWiki === entity.id}
-                  className="inline-flex items-center gap-1 text-xxs text-text-muted hover:text-text-accent transition-colors disabled:opacity-50"
-                >
-                  {creatingWiki === entity.id ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <FileText className="h-3 w-3" />
-                  )}
-                  {creatingWiki === entity.id ? "Creating..." : "Create Wiki Page"}
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Add alias inline */}
-          {isAdding ? (
-            <div className="mt-2 flex items-center gap-1.5">
-              <input
-                value={newAlias}
-                onChange={(e) => setNewAlias(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleAddAlias(entity.id);
-                  if (e.key === "Escape") { setAddingAliasFor(null); setNewAlias(""); }
-                }}
-                placeholder="New alias..."
-                className="flex-1 rounded-lg border border-border-default bg-bg-raised px-2 py-1 text-xs text-text-primary placeholder:text-text-muted outline-none focus:border-accent"
-                autoFocus
-                disabled={savingAlias}
-              />
-              <button
-                onClick={() => handleAddAlias(entity.id)}
-                disabled={savingAlias || !newAlias.trim()}
-                className="flex items-center gap-1 rounded-lg bg-accent px-2 py-1 text-xxs font-medium text-white hover:bg-accent-hover disabled:opacity-50"
-              >
-                {savingAlias ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Check className="h-3 w-3" />
-                )}
-                Save
-              </button>
-              <button
-                onClick={() => { setAddingAliasFor(null); setNewAlias(""); }}
-                className="rounded p-1 text-text-muted hover:text-text-primary"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ) : (
-            !mergeMode && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setNewAlias("");
-                  setAddingAliasFor(entity.id);
-                }}
-                className="mt-2 flex items-center gap-1 text-xxs text-text-muted hover:text-text-accent transition-colors"
-              >
-                <Plus className="h-3 w-3" />
-                Add alias
-              </button>
-            )
-          )}
-
-          {/* Merge mode indicator */}
-          {mergeMode && (
-            <div className="mt-2 flex items-center gap-1.5">
-              {isMergeSource ? (
-                <span className="text-xxs font-medium text-text-accent">
-                  Source selected — click another entity to merge into it
-                </span>
-              ) : mergeSource ? (
-                <span className="text-xxs text-text-muted">
-                  Click to merge <strong className="text-text-primary">{entities.find((e) => e.id === mergeSource)?.displayName}</strong> into this entity
-                </span>
-              ) : null}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // -----------------------------------------------------------------------
-  // Render
-  // -----------------------------------------------------------------------
+  const filtered = searchQuery.trim()
+    ? entities.filter(e => e.displayName.toLowerCase().includes(searchQuery.toLowerCase()))
+    : entities;
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-base font-semibold text-text-primary">Entity Registry</h1>
-            <p className="mt-1 text-xs text-text-muted">
-              Manage all registered entities — personas, NPCs, locations, events, and factions
-            </p>
+          <h1 className="text-xl font-bold text-text-primary">Entities</h1>
         </div>
-
-        {mergeMode && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={cancelMerge}
-              className="rounded-lg border border-border-default bg-bg-raised px-3 py-1.5 text-xs font-medium text-text-muted hover:text-text-primary transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleNewEntity("persona")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-accent-hover transition-colors"
+          >
+            <Plus size={14} /> Persona
+          </button>
+          <button
+            onClick={() => handleNewEntity("npc")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default text-text-primary text-sm font-medium hover:bg-bg-raised transition-colors"
+          >
+            <Plus size={14} /> NPC
+          </button>
+          <button
+            onClick={() => handleNewEntity("location")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default text-text-primary text-sm font-medium hover:bg-bg-raised transition-colors"
+          >
+            <Plus size={14} /> Location
+          </button>
+          <button
+            onClick={() => handleNewEntity("event")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default text-text-primary text-sm font-medium hover:bg-bg-raised transition-colors"
+          >
+            <Plus size={14} /> Event
+          </button>
+          <button
+            onClick={() => handleNewEntity("faction")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default text-text-primary text-sm font-medium hover:bg-bg-raised transition-colors"
+          >
+            <Plus size={14} /> Faction
+          </button>
+          <button
+            onClick={() => handleNewEntity("item")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default text-text-primary text-sm font-medium hover:bg-bg-raised transition-colors"
+          >
+            <Plus size={14} /> Item
+          </button>
+        </div>
       </div>
 
-      {/* Error banner */}
-      {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-error/30 bg-error/10 px-3 py-2 text-xs text-error">
-          <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
-          <span className="flex-1">{error}</span>
-          <button onClick={() => setError(null)} className="rounded p-0.5 hover:bg-error/10">
-            <X className="h-3 w-3" />
+      {/* Filter tabs */}
+      <div className="flex items-center gap-1 mb-4">
+        {FILTER_TABS.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setFilterType(tab.key)}
+            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+              filterType === tab.key
+                ? "bg-accent text-white"
+                : "text-text-muted hover:text-text-primary hover:bg-bg-raised"
+            }`}
+          >
+            {tab.label}
           </button>
-        </div>
-      )}
-
-      {/* Wiki error banner */}
-      {wikiError && (
-        <div className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
-          <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
-          <span className="flex-1">{wikiError}</span>
-          <button onClick={() => setWikiError(null)} className="rounded p-0.5 hover:bg-warning/10">
-            <X className="h-3 w-3" />
-          </button>
-        </div>
-      )}
-
-      {/* Filter tabs + search */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex gap-1 rounded-lg bg-bg-raised p-1">
-          {FILTER_TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setFilterType(tab.key)}
-              className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                filterType === tab.key
-                  ? "bg-accent text-white"
-                  : "text-text-muted hover:text-text-primary"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
+        ))}
+        <div className="flex-1" />
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted" />
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted" />
           <input
+            type="text"
+            placeholder="Search..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search entities..."
-            className="w-56 rounded-lg border border-border-default bg-bg-raised py-1.5 pl-8 pr-3 text-xs text-text-primary placeholder:text-text-muted outline-none transition-colors focus:border-accent"
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-48 pl-8 pr-3 py-1.5 rounded border border-border-default bg-bg-raised text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-accent"
           />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-text-muted hover:text-text-primary"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          )}
         </div>
       </div>
 
       {/* Merge mode banner */}
       {mergeMode && (
-        <div className="flex items-center gap-2 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-xs text-text-accent">
-          <Link2 className="h-3.5 w-3.5 flex-shrink-0" />
-          <span>
-            {mergeSource
-              ? `Select the target entity to merge "${entities.find((e) => e.id === mergeSource)?.displayName}" into`
-              : "Select the source entity to merge from"}
-          </span>
+        <div className="mb-3 p-3 rounded-lg border border-accent/30 bg-accent/5">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-text-primary">
+              {mergeSource
+                ? `Merging "${mergeSource.displayName}" into... click the target entity below`
+                : "Click the entity you want to merge FROM"}
+            </p>
+            <div className="flex gap-2">
+              {mergeSource && (
+                <button
+                  onClick={async () => {
+                    setMergingId("manual");
+                    const targetId = prompt("Enter target entity ID to merge into:");
+                    if (targetId) {
+                      try {
+                        await fetch("/api/entities/merge", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ sourceId: mergeSource.id, targetId }),
+                        });
+                        await loadEntities();
+                      } catch {}
+                    }
+                    setMergingId(null);
+                    setMergeMode(false);
+                    setMergeSource(null);
+                  }}
+                  disabled={mergingId === "manual"}
+                  className="px-2.5 py-1 rounded text-xs font-medium bg-accent text-white hover:bg-accent-hover disabled:opacity-50"
+                >
+                  {mergingId === "manual" ? "Merging..." : "Merge by ID"}
+                </button>
+              )}
+              <button
+                onClick={() => { setMergeMode(false); setMergeSource(null); }}
+                className="p-1 rounded text-text-muted hover:text-text-primary"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Content */}
-      {loading ? (
-        <div className="flex items-center gap-2 rounded-xl border border-border-default bg-bg-elevated px-4 py-12 text-text-muted justify-center">
-          <Sparkles className="h-4 w-4 animate-pulse" />
-          <span className="text-xs">Loading entities...</span>
+      {/* Merge suggestions */}
+      <div className="flex items-center gap-2 mb-3">
+        <button
+          onClick={() => { setMergeMode(true); setMergeSource(null); }}
+          className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium border border-border-default text-text-muted hover:text-text-primary hover:bg-bg-raised transition-colors"
+        >
+          <Merge size={12} /> {mergeMode ? "Select source..." : "Merge Entities"}
+        </button>
+        <button
+          onClick={async () => {
+            setSuggestLoading(true);
+            try {
+              const res = await fetch("/api/entities/merge-suggestions");
+              const json = await res.json();
+              setSuggestions(json.suggestions || []);
+            } catch {
+              setSuggestions([]);
+            } finally {
+              setSuggestLoading(false);
+            }
+          }}
+          className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium border border-border-default text-text-muted hover:text-text-primary hover:bg-bg-raised transition-colors"
+        >
+          <Merge size={12} /> {suggestLoading ? "Scanning..." : "Suggest Merges"}
+        </button>
+        {suggestions && suggestions.length > 0 && (
+          <span className="text-xs text-text-muted">{suggestions.length} potential duplicate(s) found</span>
+        )}
+        {suggestions && suggestions.length === 0 && (
+          <span className="text-xs text-text-muted">No duplicates found</span>
+        )}
+        {suggestions !== null && (
+          <button
+            onClick={() => setSuggestions(null)}
+            className="text-xs text-text-muted hover:text-text-primary"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {suggestions && suggestions.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {suggestions.map((s, i) => (
+            <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
+              <div className="flex-1 text-sm">
+                <span className="text-text-primary font-medium">{s.sourceName}</span>
+                <span className="text-text-muted mx-1">({s.sourceType})</span>
+                <span className="text-text-muted">→</span>
+                <span className="text-text-primary font-medium ml-1">{s.targetName}</span>
+                <span className="text-text-muted mx-1">({s.targetType})</span>
+                <span className="text-xxs text-text-muted ml-2">match: {s.score}</span>
+              </div>
+              <button
+                onClick={async () => {
+                  setMergingId(s.sourceId);
+                  try {
+                    await fetch("/api/entities/merge", {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ sourceId: s.sourceId, targetId: s.targetId }),
+                    });
+                    setSuggestions(prev => prev ? prev.filter((_, idx) => idx !== i) : null);
+                  } finally {
+                    setMergingId(null);
+                  }
+                }}
+                disabled={mergingId === s.sourceId}
+                className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium bg-accent text-white hover:bg-accent-hover transition-colors disabled:opacity-50"
+              >
+                {mergingId === s.sourceId ? "Merging..." : "Merge"}
+              </button>
+            </div>
+          ))}
         </div>
-      ) : entities.length === 0 ? (
-        <div className="rounded-xl border border-border-default bg-bg-elevated px-6 py-12 text-center">
-          <User className="mx-auto h-10 w-10 text-text-muted" />
-          <h3 className="mt-3 text-sm font-medium text-text-primary">No entities found</h3>
-          <p className="mt-1 text-xs text-text-muted">
-            {searchQuery
-              ? "Try a different search term"
-              : "Entities appear here when they are registered in the system"}
+      )}
+
+      {/* Loading */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
+        </div>
+      )}
+
+      {/* Entity list */}
+      {!loading && filtered.length === 0 && (
+        <div className="text-center py-12">
+          <BookOpen className="h-8 w-8 mx-auto text-text-muted mb-2" />
+          <p className="text-text-muted">
+            {searchQuery ? "No matching entities" : "No entities yet"}
           </p>
         </div>
-      ) : (
-        <div className="space-y-8">
-          {orderedGroups.map((typeKey) => {
-            const meta = TYPE_META[typeKey];
-            const Icon = meta?.icon || User;
-            const groupEntities = groupedEntities[typeKey] || [];
+      )}
 
+      {!loading && filtered.length > 0 && (
+        <div className="space-y-2">
+          {filtered.map(entity => {
+            const meta = TYPE_META[entity.entityType] || TYPE_META.persona;
+            const Icon = meta.icon;
+            const wikiPath = wikiMap[entity.id];
             return (
-              <div key={typeKey}>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className={`flex h-6 w-6 items-center justify-center rounded-md ${meta?.bgColor || "bg-bg-raised"}`}>
-                    <Icon className={`h-3.5 w-3.5 ${meta?.color || "text-text-muted"}`} />
-                  </div>
-                  <h2 className="text-sm font-medium text-text-primary">{meta?.label || typeKey}</h2>
-                  <span className="text-xxs text-text-muted">({groupEntities.length})</span>
+              <div
+                key={entity.id}
+                className={`flex items-start gap-3 p-4 rounded-lg border transition-colors ${
+                  mergeSource?.id === entity.id
+                    ? "border-accent bg-accent/5"
+                    : mergeMode
+                    ? "border-amber-500/30 bg-amber-500/5 cursor-pointer hover:border-accent/30"
+                    : "border-border-default bg-bg-elevated hover:border-accent/30"
+                }`}
+                onClick={mergeMode && !mergeSource ? () => setMergeSource(entity) : undefined}
+              >
+                {/* Type icon */}
+                <div className={`p-2 rounded-md ${meta.bgColor} shrink-0`}>
+                  <Icon className={`h-4 w-4 ${meta.color}`} />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                  {groupEntities.map(renderEntityCard)}
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-text-primary truncate">
+                      {entity.displayName}
+                    </span>
+                    <span className={`text-xxs px-1.5 py-0.5 rounded ${meta.bgColor} ${meta.color}`}>
+                      {meta.label}
+                    </span>
+                  </div>
+                  {entity.description && (
+                    <p className="text-xs text-text-muted mt-1 line-clamp-2">
+                      {entity.description}
+                    </p>
+                  )}
+                  {entity.aliases.length > 0 && (
+                    <p className="text-xxs text-text-muted mt-1">
+                      Aliases: {entity.aliases.join(", ")}
+                    </p>
+                  )}
+                  <p className="text-xxs text-text-muted mt-0.5 font-mono">
+                    {entity.id}
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 shrink-0">
+                  {mergeMode ? (
+                    mergeSource ? (
+                      <button
+                        onClick={async () => {
+                          if (!mergeSource) return;
+                          setMergingId(entity.id);
+                          try {
+                            await fetch("/api/entities/merge", {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ sourceId: mergeSource.id, targetId: entity.id }),
+                            });
+                            setMergeMode(false);
+                            setMergeSource(null);
+                            await loadEntities();
+                          } finally {
+                            setMergingId(null);
+                          }
+                        }}
+                        disabled={entity.id === mergeSource.id || mergingId === entity.id}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium bg-accent text-white hover:bg-accent-hover transition-colors disabled:opacity-50"
+                      >
+                        {mergingId === entity.id ? "Merging..." : `Merge into "${entity.displayName}"`}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setMergeSource(entity)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium border border-accent text-accent hover:bg-accent/10 transition-colors"
+                      >
+                        Merge FROM
+                      </button>
+                    )
+                  ) : wikiPath ? (
+                    <button
+                      onClick={() => router.push(`/wiki/${wikiPath}`)}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium bg-accent text-white hover:bg-accent-hover transition-colors"
+                    >
+                      <ExternalLink size={12} /> Edit in Wiki
+                    </button>
+                  ) : (
+                    <span className="text-xxs text-text-muted">No wiki page</span>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
       )}
-
-      {/* Merge confirmation dialog */}
-      <ConfirmationDialog
-        open={showMergeConfirm}
-        onClose={() => {
-          setShowMergeConfirm(false);
-          setMergeTarget(null);
-        }}
-        onConfirm={handleMergeConfirm}
-        title="Merge Entities"
-        message={
-          mergeSource && mergeTarget
-            ? `Merge "${entities.find((e) => e.id === mergeSource)?.displayName}" into "${entities.find((e) => e.id === mergeTarget)?.displayName}"? All aliases and relationships will be transferred to the target entity. This cannot be undone.`
-            : "Merge these entities?"
-        }
-        confirmLabel={merging ? "Merging..." : "Merge"}
-        confirmVariant="danger"
-      />
-
-      {/* Delete confirmation dialog */}
-      <ConfirmationDialog
-        open={deleteTarget !== null}
-        onClose={() => {
-          if (!deleting) setDeleteTarget(null);
-        }}
-        onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
-        title="Delete Entity"
-        message={
-          deleteTarget
-            ? `Delete "${entities.find((e) => e.id === deleteTarget)?.displayName}"? This will remove all aliases and references. This cannot be undone.`
-            : "Delete this entity?"
-        }
-        confirmLabel={deleting ? "Deleting..." : "Delete"}
-        confirmVariant="danger"
-      />
     </div>
   );
 }

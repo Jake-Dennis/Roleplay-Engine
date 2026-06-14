@@ -10,6 +10,7 @@ tags:
   - 'importance:medium'
 created: '2026-05-27T15:43:12.233Z'
 updated: '2026-05-27T15:43:12.233Z'
+entity_id: "event:41ac6884-d939-43d6-b029-969ea4d7e10d"
 ---
 **Importance:** medium
 **Participants:** [[Elara]], [[Crystal of Ages]], [[Thornwall]]

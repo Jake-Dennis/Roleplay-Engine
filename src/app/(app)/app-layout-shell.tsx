@@ -40,8 +40,6 @@ const navItems = [
   { href: "/session", label: "Sessions", icon: MessageSquare },
   { href: "/universe", label: "Universes", icon: Globe },
   { href: "/wiki", label: "Wiki", icon: BookOpen },
-  { href: "/personas", label: "Personas", icon: User },
-  { href: "/npcs", label: "NPCs", icon: UsersIcon },
   { href: "/entities", label: "Entities", icon: UserCheck },
   { href: "/relationships", label: "Relationships", icon: Heart },
   { href: "/narrative-threads", label: "Threads", icon: GitBranch },

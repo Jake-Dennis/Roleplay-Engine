@@ -246,59 +246,6 @@ export interface PersonaContext {
 }
 
 /**
- * Get the active persona context for a user.
- * Returns null if no active persona exists.
- */
-export function getActivePersonaContext(userId: string): PersonaContext | null {
-  try {
-    const db = getDb();
-    const persona = db.prepare(
-      "SELECT entity_id, name, description, personality, scenario, first_mes, mes_example, creator_notes, system_prompt, post_history_instructions, tags, writing_style, llm_model FROM personas WHERE user_id = ? AND is_active = 1"
-    ).get(userId) as {
-      entity_id: string | null;
-      name: string;
-      description: string | null;
-      personality: string | null;
-      scenario: string | null;
-      first_mes: string | null;
-      mes_example: string | null;
-      creator_notes: string | null;
-      system_prompt: string | null;
-      post_history_instructions: string | null;
-      tags: string | null;
-      writing_style: string | null;
-      llm_model: string | null;
-    } | undefined;
-
-    if (!persona) return null;
-
-    let tags: string[] | null = null;
-    if (persona.tags) {
-      tags = safeParseWarn<string[]>(persona.tags, "persona tags");
-    }
-
-    return {
-      entityId: persona.entity_id,
-      name: persona.name,
-      description: persona.description,
-      personality: persona.personality,
-      scenario: persona.scenario,
-      firstMes: persona.first_mes,
-      mesExample: persona.mes_example,
-      creatorNotes: persona.creator_notes,
-      systemPrompt: persona.system_prompt,
-      postHistoryInstructions: persona.post_history_instructions,
-      tags,
-      writingStyle: persona.writing_style,
-      llmModel: persona.llm_model,
-    };
-  } catch (err: unknown) {
-    logger.debug("Failed to get active persona context", { userId, error: String(err) });
-    return null;
-  }
-}
-
-/**
  * Build a SillyTavern-style system prompt from persona context.
  * Follows the standard ST prompt structure:
  *   [Character card] â†’ [Scenario] â†’ [Personality] â†’ [Example dialogue] â†’ [Post-history instructions]

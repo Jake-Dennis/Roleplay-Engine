@@ -47,7 +47,7 @@ export interface EntityFilters {
 // Constants
 // ---------------------------------------------------------------------------
 
-export const VALID_ENTITY_TYPES = ["persona", "npc", "user", "location", "event", "faction"] as const;
+export const VALID_ENTITY_TYPES = ["persona", "npc", "user", "location", "event", "faction", "item"] as const;
 
 export type EntityType = (typeof VALID_ENTITY_TYPES)[number];
 

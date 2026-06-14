@@ -9,6 +9,7 @@ tags:
   - 'type:character'
 created: '2026-05-27T15:43:12.226Z'
 updated: '2026-05-27T15:43:12.226Z'
+entity_id: "npc:5d01c30e-25d1-4fc1-9fa8-5f126895e58b"
 ---
 **Type:** character
 **Traits:** scholar, seeker

@@ -120,7 +120,6 @@ mock.module("@/lib/ollama", () => ({
     llmModel: "test-model",
     embeddingModel: "test-embedding",
   }),
-  getActivePersonaContext: () => null,
   buildPersonaPrompt: (_persona: unknown, baseSystemPrompt: string) => baseSystemPrompt,
   validateLlmOutput: (output: string) => output,
 }));
@@ -314,7 +313,6 @@ function setupTestData(): void {
       post_history_instructions TEXT,
       tags TEXT,
       llm_model TEXT,
-      is_active INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 

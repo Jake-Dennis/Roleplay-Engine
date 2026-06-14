@@ -9,6 +9,7 @@ tags:
   - 'type:character'
 created: '2026-05-27T15:43:12.219Z'
 updated: '2026-05-27T15:43:12.219Z'
+entity_id: "npc:99497229-607d-4e81-a046-1022093e4e19"
 ---
 **Type:** character
 **Traits:** mysterious, scholar, seeker

@@ -9,6 +9,7 @@ tags:
   - 'type:object'
 created: '2026-05-27T15:43:12.221Z'
 updated: '2026-05-27T15:43:12.221Z'
+entity_id: "item:0f4e189f-3082-40ee-9acc-eb2bed6007e5"
 ---
 **Type:** object
 **Traits:** ancient, artifact

@@ -27,7 +27,6 @@ export type JobType =
   | "scene_state_extract"
   | "wiki_auto_extract"
   | "universe_wiki_sync"
-  | "npc_wiki_sync"
   | "wiki_suggest_restructure"
   | "wiki_create_entity"
   | "wiki_curate_page"

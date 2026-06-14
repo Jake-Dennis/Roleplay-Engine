@@ -9,6 +9,7 @@ tags:
   - 'type:location'
 created: '2026-05-27T15:43:12.222Z'
 updated: '2026-05-27T15:43:12.222Z'
+entity_id: "location:653a5c41-4201-4b8d-bedf-ee99a8c87eb7"
 ---
 **Type:** location
 **Traits:** ancient, library

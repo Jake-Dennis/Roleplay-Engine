@@ -8,13 +8,15 @@ const AUTO_GEN_HEADER = '<!-- AUTO-GENERATED, DO NOT EDIT -->\n<!-- This file is
  * Must match SCAN_FOLDERS in file-io.ts.
  * Add new folders here to automatically include them in the index.
  */
-const SCAN_FOLDERS = ["entities", "concepts", "sources", "synthesis", "_review"];
+const SCAN_FOLDERS = ["entities", "concepts", "sources", "synthesis", "events", "relationships", "_review"];
 
 const SECTION_LABELS: Record<string, string> = {
   entities: "Entities",
   concepts: "Concepts",
   sources: "Sources",
   synthesis: "Synthesis",
+  events: "Events",
+  relationships: "Relationships",
   _review: "Under Review",
 };
 

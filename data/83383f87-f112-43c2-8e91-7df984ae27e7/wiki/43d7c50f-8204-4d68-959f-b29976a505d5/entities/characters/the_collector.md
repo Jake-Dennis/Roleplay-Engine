@@ -9,6 +9,7 @@ tags:
   - 'type:character'
 created: '2026-05-27T14:49:41.897Z'
 updated: '2026-05-27T14:49:41.897Z'
+entity_id: "npc:149a701e-3f79-4379-b897-9f1c0920d823"
 ---
 **Type:** character
 **Traits:** mysterious, dangerous, powerful

@@ -10,6 +10,7 @@ tags:
   - 'importance:medium'
 created: '2026-05-27T14:08:46.546Z'
 updated: '2026-05-27T14:08:46.546Z'
+entity_id: "event:675f3c08-9a08-4c94-8eb9-789a3a00b05a"
 ---
 **Importance:** medium
 **Participants:** [[[[The Collector]]]], [[[[Elara]]]]

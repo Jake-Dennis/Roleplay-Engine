@@ -10,6 +10,7 @@ tags:
   - 'importance:high'
 created: '2026-05-27T15:43:12.231Z'
 updated: '2026-05-27T15:43:12.231Z'
+entity_id: "event:e5b2b868-4bcc-408a-a8b0-976eeb8da51c"
 ---
 **Importance:** high
 **Participants:** [[Narrator]], [[Aldric Vane]]

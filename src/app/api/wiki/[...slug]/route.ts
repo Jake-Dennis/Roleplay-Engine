@@ -17,6 +17,7 @@ import { findOrphans } from "@/lib/wiki/orphans";
 import { parseWikilinks, resolveWikilink } from "@/lib/wiki/wikilinks";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
 import { getWikiRoot } from '@/lib/wiki/wiki-root';
+import { getDb } from '@/lib/db';
 import path from "path";
 import fs from "fs";
 import { notFoundError, badRequestError, requireJson } from '@/lib/error-response';
@@ -256,7 +257,7 @@ export async function GET(
   if (!resolved) {
     return notFoundError("Wiki page");
   }
-  let { fullPath, relativePath } = resolved;
+  const { fullPath, relativePath } = resolved;
 
   try {
     const page = readWikiPage(fullPath);
@@ -461,6 +462,23 @@ export async function PUT(
 
     // Regenerate index
     generateIndex(wikiRoot);
+
+    // Sync description/personality to linked personas
+    try {
+      const db = getDb();
+      const linkedPersonas = db.prepare(
+        "SELECT id, description, personality FROM personas WHERE wiki_page = ?"
+      ).all(relativePath) as { id: string; description: string | null; personality: string | null }[];
+      for (const persona of linkedPersonas) {
+        // Extract description and personality from the saved wiki content
+        const description = mergedContent.match(/## Description\n([\s\S]*?)(?=\n##|\n$|$)/)?.[1]?.trim();
+        const personality = mergedContent.match(/## Personality\n([\s\S]*?)(?=\n##|\n$|$)/)?.[1]?.trim() ||
+                           mergedContent.match(/\*\*Traits:\*\*([\s\S]*?)(?=\n##|\n$|\*\*)/)?.[1]?.trim();
+        db.prepare(
+          "UPDATE personas SET description = COALESCE(?, description), personality = COALESCE(?, personality) WHERE id = ?"
+        ).run(description || null, personality || null, persona.id);
+      }
+    } catch { /* non-fatal */ }
 
     return NextResponse.json({
       success: true,

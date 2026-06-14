@@ -69,7 +69,6 @@ import { handleNpcEvolutionJob } from "./jobs/npc-evolution";
 import { handleLoreExtractionJob } from "./jobs/lore-extraction";
 import { handleSessionRecapJob } from "./jobs/session-recap";
 import { handleSceneStateExtract } from "./jobs/scene-handler";
-import { handleNpcWikiSync } from "./jobs/npc-wiki-sync";
 
 // New job handlers (Phase 3A extraction)
 import { handleGenerateEmbeddings } from "./jobs/embedding-handler";
@@ -129,8 +128,6 @@ export async function processJob(job: QueuedJob): Promise<JobResult> {
         return await handleWikiSuggestRestructure(job.id, payload);
       case "npc_evolution":
         return await handleNpcEvolutionJob(job.id, payload);
-      case "npc_wiki_sync":
-        return await handleNpcWikiSync(job.id, payload);
       case "extract_lore_comprehensive":
         return await handleLoreExtractionJob(job.id, payload);
       case "generate_session_recap":

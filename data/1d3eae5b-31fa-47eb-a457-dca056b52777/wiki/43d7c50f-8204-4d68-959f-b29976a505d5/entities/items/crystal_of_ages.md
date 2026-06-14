@@ -9,6 +9,7 @@ tags:
   - 'type:object'
 created: '2026-05-27T15:43:12.224Z'
 updated: '2026-05-27T15:43:12.224Z'
+entity_id: "item:4bcb6d73-5b28-4c89-b19f-9d3ffe503864"
 ---
 **Type:** object
 **Traits:** mysterious, artifact

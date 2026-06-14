@@ -8,8 +8,10 @@
 import { getDb } from "@/lib/db";
 import { generateText, getActiveJobModel } from "@/lib/ollama";
 import { safeParseWarn } from "@/lib/safe-json";
+import { getWikiRoot } from "@/lib/wiki/wiki-root";
+import { listWikiPages, writeWikiPage } from "@/lib/wiki/file-io";
 import type { JobPayload, JobResult } from "@/lib/job-processor";
-import { updateJobProgress, markJobCompleted, queueJob } from "@/lib/job-processor";
+import { updateJobProgress, markJobCompleted } from "@/lib/job-processor";
 
 // ---------------------------------------------------------------------------
 // Job Handler
@@ -26,33 +28,21 @@ export async function handleNpcEvolutionJob(jobId: string, payload: JobPayload):
 
   updateJobProgress(jobId, 10, "Fetching NPC data...");
 
-  // Fetch NPC
-  const npc = db.prepare(
-    "SELECT * FROM npcs WHERE id = ? AND user_id = ?"
-  ).get(npcId, userId) as {
-    id: string;
-    name: string;
-    description: string | null;
-    personality_traits: string | null;
-    behavior_patterns: string | null;
-    is_canon: number;
-    evolution_log: string | null;
-  } | undefined;
+  // Read NPC from wiki page by entity_id
+  const wikiRoot = getWikiRoot(userId as string);
+  const allPages = listWikiPages(wikiRoot);
+  const page = allPages.find(p => p.frontmatter.entity_id === npcId);
 
-  if (!npc) throw new Error("NPC not found");
+  if (!page) throw new Error("NPC not found");
 
-  updateJobProgress(jobId, 20, "Checking canon status...");
-
-  // Skip if canon — canon NPCs are immutable
-  if (npc.is_canon) {
-    markJobCompleted(jobId);
-    return {
-      success: true,
-      jobId,
-      type: "npc_evolution",
-      data: { skipped: true, reason: "canon", npcName: npc.name },
-    };
-  }
+  // Wiki page body serves as the NPC's full description (traits, behavior, etc.)
+  const npc = {
+    name: page.frontmatter.title,
+    description: page.content || null,
+    personality_traits: page.content || "No traits defined",
+    behavior_patterns: null,
+    evolution_log: null,
+  };
 
   updateJobProgress(jobId, 30, "Finding relevant messages...");
 
@@ -134,27 +124,21 @@ export async function handleNpcEvolutionJob(jobId: string, payload: JobPayload):
     behaviorChanges: evolution.behaviorChanges || [],
   };
 
-  const existingLog = npc.evolution_log
-    ? safeParseWarn<Array<Record<string, unknown>>>(npc.evolution_log, "npc evolution_log", []) ?? []
-    : [];
-  existingLog.push(logEntry);
-  const updatedLog = JSON.stringify(existingLog);
-
-  // Update NPC record
-  db.prepare(`
-    UPDATE npcs
-    SET personality_traits = ?, behavior_patterns = ?, evolution_log = ?, updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `).run(newTraits, newBehavior, updatedLog, npcId);
+  // Update wiki page with evolution results
+  try {
+    const page = allPages.find(p => p.frontmatter.entity_id === npcId);
+    if (page) {
+      const evolutionSection = `\n\n## Evolution Log\n\n**Traits:** ${newTraits}\n\n**Behavior:** ${newBehavior}\n\n*Last updated: ${new Date().toISOString()}*`;
+      const newContent = page.content.includes("## Evolution Log")
+        ? page.content.replace(/## Evolution Log[\s\S]*$/, evolutionSection)
+        : page.content + evolutionSection;
+      writeWikiPage(page.path, newContent, page.frontmatter);
+    }
+  } catch {
+    /* non-fatal — wiki update failure does not break evolution */
+  }
 
   markJobCompleted(jobId);
-
-  // Chain: sync updated NPC traits to wiki entity page (best-effort, non-fatal)
-  try {
-    queueJob(userId as string, "npc_wiki_sync", { userId, npcId, universeId }, "low", universeId as string | undefined);
-  } catch {
-    /* non-fatal — wiki sync failure does not break evolution */
-  }
 
   return {
     success: true,

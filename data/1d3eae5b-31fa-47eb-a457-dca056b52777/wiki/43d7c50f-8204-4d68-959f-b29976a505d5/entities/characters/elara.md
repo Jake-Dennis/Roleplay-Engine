@@ -9,6 +9,7 @@ tags:
   - 'type:character'
 created: '2026-05-27T15:43:12.223Z'
 updated: '2026-05-27T15:43:12.223Z'
+entity_id: "npc:0209e56e-5b5f-4790-b08a-5a202a0f4e21"
 ---
 **Type:** character
 **Traits:** wizard, scholar

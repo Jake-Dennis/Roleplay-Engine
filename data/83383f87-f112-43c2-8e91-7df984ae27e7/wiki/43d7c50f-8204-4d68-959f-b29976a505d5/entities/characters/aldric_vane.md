@@ -9,6 +9,7 @@ tags:
   - 'type:character'
 created: '2026-05-27T14:49:41.894Z'
 updated: '2026-05-27T14:49:41.894Z'
+entity_id: "npc:aa972689-60b6-4e06-b296-3a5acf1892ef"
 ---
 **Type:** character
 **Traits:** scholar, determined, mysterious
