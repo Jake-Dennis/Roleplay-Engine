@@ -1,34 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Globe } from "lucide-react";
 import Link from "next/link";
 import { SessionCreator } from "@/components/session/session-creator";
 import { useApp } from "@/contexts/app-context";
 
-interface Universe {
-  id: string;
-  name: string;
-  group_id: string | null;
-}
-
 export default function NewSessionPage() {
   const router = useRouter();
-  const { universes, activeGroup, refreshAll } = useApp();
-  const [universeList, setUniverseList] = useState<Universe[]>([]);
-
-  useEffect(() => {
-    queueMicrotask(() => setUniverseList(universes.length > 0 ? universes : []));
-  }, [universes]);
+  const { activeUniverse, activeGroup, refreshAll } = useApp();
 
   async function handleCreate(data: { name: string; universe_id: string | null; type: string }) {
+    if (!activeUniverse) return;
+
     const res = await fetch("/api/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: data.name,
-        universe_id: data.universe_id,
+        universe_id: activeUniverse.id,
         type: data.type,
         group_id: activeGroup?.id || null,
       }),
@@ -46,6 +36,29 @@ export default function NewSessionPage() {
     router.push(`/session/${result.session.id}`);
   }
 
+  // No active universe — show a prompt instead of the form
+  if (!activeUniverse) {
+    return (
+      <div className="mx-auto max-w-lg space-y-6">
+        <Link
+          href="/session"
+          className="inline-flex items-center gap-1.5 text-xs text-text-muted transition-colors hover:text-text-secondary"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to sessions
+        </Link>
+
+        <div className="rounded-xl border border-border-default bg-bg-elevated p-8 text-center">
+          <Globe className="mx-auto h-8 w-8 text-text-muted" />
+          <h2 className="mt-3 text-sm font-medium text-text-primary">Select a universe first</h2>
+          <p className="mt-1 text-xs text-text-muted">
+            Choose a universe from the sidebar before creating a session.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-lg space-y-6">
       {/* Back */}
@@ -59,7 +72,7 @@ export default function NewSessionPage() {
 
       {/* Form */}
       <SessionCreator
-        universes={universeList}
+        activeUniverseName={activeUniverse.name}
         onCreate={handleCreate}
       />
     </div>

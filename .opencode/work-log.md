@@ -1018,6 +1018,19 @@ In predict-test.ts and combination-test.ts, the binary search phase skips all va
 - `src/app/(app)/universe/[id]/manage/ai-management-client.tsx` — NEW
 - `src/app/(app)/universe/[id]/page.tsx` — AI Management nav link
 
+## 2026-06-15 — Cycle: Simplify session creation (remove universe dropdown)
+
+**Trigger:** User requested reworking the "New Session" flow — instead of picking a universe from a dropdown during creation, auto-link to the active universe from the sidebar.
+
+**Changes:**
+1. `src/components/session/session-creator.tsx` — Removed universe `<select>` dropdown, the `universes` prop, and the `universeId` state. Now shows the active universe name as a read-only display with a globe icon and "Linked to the universe selected in the sidebar" hint. Accepts `activeUniverseName: string | null` instead of `universes: Universe[]`.
+2. `src/app/(app)/session/new/page.tsx` — Removed `universes` fetch/state/effect. Now reads `activeUniverse` from `useApp()`, passes its `id` directly to the API call. If no active universe, shows an informational prompt ("Select a universe first").
+3. `src/app/(app)/app-layout-shell.tsx` — "New session..." link in sidebar now conditionally renders as disabled text ("Select a universe first") when no active universe is set.
+
+**Verification:** `npx tsc --noEmit` — clean.
+
+---
+
 ## 2026-06-15 — Cycle: Fix 'No sessions in this universe' (camelCase/snake_case mismatch)
 
 **Trigger:** User reported the session sidebar showed "No sessions in this universe" despite sessions existing.

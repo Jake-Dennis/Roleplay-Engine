@@ -2,26 +2,19 @@
  * SessionCreator Component
  *
  * Form for creating a new roleplaying session.
- * Extracted from session/new/page.tsx.
+ * Links to the active universe (no universe picker — uses sidebar selection).
  *
  * Usage:
  *   <SessionCreator
- *     universes={universes}
+ *     activeUniverseName="My Universe"
  *     onCreate={(data) => handleCreate(data)}
- *     onCancel={() => navigate('/session')}
  *   />
  */
 
 "use client";
 
 import { useState, FormEvent } from "react";
-import { Sparkles } from "lucide-react";
-
-interface Universe {
-  id: string;
-  name: string;
-  group_id: string | null;
-}
+import { Sparkles, Globe } from "lucide-react";
 
 interface SessionCreateData {
   name: string;
@@ -30,30 +23,19 @@ interface SessionCreateData {
 }
 
 interface SessionCreatorProps {
-  universes: Universe[];
+  activeUniverseName: string | null;
   onCreate: (data: SessionCreateData) => Promise<void>;
-  onCancel?: () => void;
 }
 
-export function SessionCreator({ universes, onCreate }: SessionCreatorProps) {
+export function SessionCreator({ activeUniverseName, onCreate }: SessionCreatorProps) {
   const [name, setName] = useState("");
-  const [universeId, setUniverseId] = useState("");
   const [type, setType] = useState("solo");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Filter universes based on session type
-  const filteredUniverses = type === "solo"
-    ? universes.filter((u) => !u.group_id)
-    : universes.filter((u) => u.group_id);
-
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    if (!universeId) {
-      setError("Please select a universe");
-      return;
-    }
 
     setLoading(true);
     setError("");
@@ -61,7 +43,7 @@ export function SessionCreator({ universes, onCreate }: SessionCreatorProps) {
     try {
       await onCreate({
         name: name.trim(),
-        universe_id: universeId,
+        universe_id: null, // filled in by parent page
         type,
       });
     } catch {
@@ -95,22 +77,14 @@ export function SessionCreator({ universes, onCreate }: SessionCreatorProps) {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs text-text-secondary">
-            Universe <span className="text-error">*</span>
-          </label>
-          <select
-            value={universeId}
-            onChange={(e) => setUniverseId(e.target.value)}
-            className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary transition-colors focus:border-accent"
-            required
-          >
-            <option value="">Select Universe</option>
-            {filteredUniverses.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
+          <label className="mb-1.5 block text-xs text-text-secondary">Universe</label>
+          <div className="flex items-center gap-2 rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-muted">
+            <Globe className="h-4 w-4 text-accent" />
+            <span>{activeUniverseName ?? "No universe selected"}</span>
+          </div>
+          <p className="mt-1 text-xxs text-text-muted">
+            Linked to the universe selected in the sidebar
+          </p>
         </div>
 
         <div>
@@ -149,7 +123,7 @@ export function SessionCreator({ universes, onCreate }: SessionCreatorProps) {
 
         <button
           type="submit"
-          disabled={loading || !name.trim() || !universeId}
+          disabled={loading || !name.trim()}
           className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? (

@@ -231,13 +231,19 @@ const SessionSelector = memo(function SessionSelector() {
             ))
           )}
           <div className="border-t border-border-default mt-1 pt-1">
-            <Link
-              href="/session/new"
-              onClick={() => setOpen(false)}
-              className="block px-3 py-1.5 text-xs text-text-muted hover:text-text-accent"
-            >
-              New session...
-            </Link>
+            {activeUniverse ? (
+              <Link
+                href="/session/new"
+                onClick={() => setOpen(false)}
+                className="block px-3 py-1.5 text-xs text-text-muted hover:text-text-accent"
+              >
+                New session...
+              </Link>
+            ) : (
+              <span className="block px-3 py-1.5 text-xs text-text-muted/50 cursor-not-allowed">
+                Select a universe first
+              </span>
+            )}
           </div>
         </div>
       )}
