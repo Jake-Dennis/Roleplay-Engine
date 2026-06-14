@@ -238,9 +238,8 @@ db.prepare("DELETE FROM relationships WHERE universe_id = ?").run(id);
 db.prepare("DELETE FROM narrative_threads WHERE universe_id = ?").run(id);
 db.prepare("DELETE FROM timeline_layers WHERE universe_id = ?").run(id);
 db.prepare("DELETE FROM timelines WHERE universe_id = ?").run(id);
-db.prepare("DELETE FROM entity_registry WHERE universe_id = ? AND entity_type = 'npc'").run(id);
-db.prepare("DELETE FROM entity_registry WHERE universe_id = ? AND entity_type = 'location'").run(id);
-db.prepare("DELETE FROM entity_registry WHERE universe_id = ? AND entity_type = 'event'").run(id);
+// Delete all entity_registry entries for this universe (aliases cascade via ON DELETE CASCADE)
+db.prepare("DELETE FROM entity_registry WHERE universe_id = ?").run(id);
 db.prepare("DELETE FROM narrative_memories WHERE universe_id = ?").run(id);
 db.prepare("DELETE FROM entity_validations WHERE universe_id = ?").run(id);
 db.prepare("DELETE FROM backlinks WHERE universe_id = ?").run(id);
