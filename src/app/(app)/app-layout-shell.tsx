@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState, useMemo, memo } from "react";
+import { useEffect, useState, memo } from "react";
 import Link from "next/link";
 // Initialize CSRF fetch patching (side-effect import runs once)
 import "@/lib/csrf-client";
@@ -20,21 +20,12 @@ import {
   Clock,
   ListTodo,
   ChevronDown,
-  ChevronRight,
   User,
   Users as UsersIcon,
   FolderOpen,
   Shuffle,
   MessageCircle,
   UserCheck,
-  Ghost,
-  MapPin,
-  Package,
-  Calendar,
-  Flag,
-  Search,
-  Plus,
-  Menu,
 } from "lucide-react";
 import { TIME } from "@/lib/config";
 import { renderLoop } from "@/lib/render-loop";
@@ -297,7 +288,7 @@ const UniverseSelector = memo(function UniverseSelector() {
 export function AppLayoutShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, loading, activeSession, setActiveSession, sessions, activeUniverse } = useApp();
+  const { user, loading, activeSession, setActiveSession, sessions } = useApp();
 
   // Wiki uses its own 3-column full-bleed layout (file tree | content | right panel).
   // Opt out of the shell's max-w-5xl centering for /wiki and /wiki/* routes.
@@ -323,44 +314,6 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   const { idleTime, currentTier, isIdle } = useIdleTracker();
-
-  // Entity browser state
-  const [wikiPages, setWikiPages] = useState<Array<{ path: string; frontmatter: Record<string, unknown> }>>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [collapsedSections, setCollapsedSections] = useState<string[]>([]);
-  const [navOpen, setNavOpen] = useState(false);
-
-  useEffect(() => {
-    fetch(`/api/wiki?universe_id=${activeUniverse?.id || ''}`)
-      .then(r => r.json())
-      .then(d => setWikiPages(d.pages || []))
-      .catch(() => {});
-  }, [activeUniverse]);
-
-  const sidebarSections = useMemo(() => {
-    const typeDefs = [
-      { type: 'persona', label: 'Personas', icon: User, color: 'text-blue-400' },
-      { type: 'npc', label: 'NPCs', icon: Ghost, color: 'text-purple-400' },
-      { type: 'location', label: 'Locations', icon: MapPin, color: 'text-green-400' },
-      { type: 'item', label: 'Items', icon: Package, color: 'text-orange-400' },
-      { type: 'event', label: 'Events', icon: Calendar, color: 'text-amber-400' },
-      { type: 'faction', label: 'Factions', icon: Flag, color: 'text-rose-400' },
-    ];
-    const query = searchQuery.toLowerCase();
-    const filtered = query ? wikiPages.filter(p => (p.frontmatter?.title as string || '').toLowerCase().includes(query)) : wikiPages;
-    return typeDefs.map(def => {
-      const pages = filtered.filter(p => {
-        const eid = (p.frontmatter?.entity_id as string) || '';
-        const subtype = (p.frontmatter?.subtype as string) || '';
-        const type = (p.frontmatter?.type as string) || '';
-        if (def.type === 'persona') return (subtype === 'character' || (!subtype && type === 'entity')) && eid.startsWith('persona:');
-        if (def.type === 'npc') return (subtype === 'character' || (!subtype && type === 'entity')) && (!eid || eid.startsWith('npc:'));
-        return subtype === def.type;
-      }).map(p => ({ path: p.path, title: (p.frontmatter?.title as string) || p.path.split('/').pop()?.replace('.md', '') || p.path }))
-       .sort((a, b) => a.title.localeCompare(b.title));
-      return { ...def, pages };
-    });
-  }, [wikiPages, searchQuery]);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -401,99 +354,29 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
         {/* Session Selector */}
         <SessionSelector />
 
-        {/* Entity Browser */}
-        <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
-          {/* Search + New */}
-          <div className="flex items-center gap-1 mb-2">
-            <div className="relative flex-1">
-              <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted" />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-7 pr-2 py-1.5 rounded border border-border-default bg-bg-raised text-xxs text-text-primary placeholder-text-muted focus:outline-none focus:border-accent"
-              />
+        {/* Navigation */}
+        <nav className="flex-1 space-y-0.5 px-2 py-3">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            return <NavItem key={item.href} item={item} isActive={isActive} />;
+          })}
+        </nav>
+
+        {/* User area */}
+        <div className="border-t border-border-default px-2 py-2.5">
+          <div className="flex items-center justify-between rounded-md px-3 py-2 text-xs text-text-secondary">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-bg-raised text-xxs text-text-muted">
+                {user?.username.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-text-primary">{user?.username}</span>
             </div>
             <button
-              onClick={() => router.push('/wiki')}
-              className="p-1.5 rounded hover:bg-bg-raised text-text-muted hover:text-text-primary"
-              title="New page"
+              onClick={handleLogout}
+              className="rounded p-1 text-text-muted transition-colors hover:bg-bg-raised hover:text-text-secondary"
+              title="Logout"
             >
-              <Plus size={12} />
-            </button>
-          </div>
-
-          {sidebarSections.filter(s => s.pages.length > 0).map(section => (
-            <div key={section.type}>
-              <button
-                onClick={() => setCollapsedSections(prev =>
-                  prev.includes(section.type) ? prev.filter(t => t !== section.type) : [...prev, section.type]
-                )}
-                className="flex items-center gap-1.5 w-full text-left px-1 py-1 rounded hover:bg-bg-raised text-xxs font-medium text-text-secondary"
-              >
-                <ChevronRight size={10} className={`transition-transform ${collapsedSections.includes(section.type) ? '' : 'rotate-90'}`} />
-                <section.icon size={11} className={section.color} />
-                {section.label}
-                <span className="text-xxs text-text-muted ml-auto">{section.pages.length}</span>
-              </button>
-              {!collapsedSections.includes(section.type) && (
-                <div className="ml-3 space-y-0.5">
-                  {section.pages.slice(0, 20).map(p => (
-                    <button
-                      key={p.path}
-                      onClick={() => {
-                        const slug = p.path.replace(/\.md$/, '');
-                        router.push(`/wiki/${slug}`);
-                      }}
-                      className="w-full text-left px-2 py-0.5 rounded text-xxs text-text-muted hover:text-text-primary hover:bg-bg-raised truncate"
-                    >
-                      {p.title}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-          {wikiPages.length === 0 && (
-            <p className="text-xxs text-text-muted text-center py-4">No wiki pages yet</p>
-          )}
-        </div>
-
-        {/* Nav links + User area */}
-        <div className="border-t border-border-default px-2 py-1.5">
-          <button
-            onClick={() => setNavOpen(!navOpen)}
-            className="flex items-center gap-1.5 w-full px-2 py-1.5 rounded text-xxs text-text-muted hover:text-text-primary hover:bg-bg-raised"
-          >
-            <Menu size={11} />
-            Navigation
-            <ChevronDown size={10} className={`ml-auto transition-transform ${navOpen ? 'rotate-180' : ''}`} />
-          </button>
-          {navOpen && (
-            <div className="mt-1 space-y-0.5 px-1">
-              {navItems.map(item => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-2 px-2 py-1 rounded text-xxs transition-colors ${
-                      isActive ? 'bg-accent/10 text-accent' : 'text-text-muted hover:text-text-primary hover:bg-bg-raised'
-                    }`}
-                  >
-                    <Icon size={11} />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-          <div className="flex items-center justify-between px-2 py-1.5 mt-1 rounded text-xxs text-text-muted">
-            <span className="truncate">{user?.username}</span>
-            <button onClick={handleLogout} className="p-0.5 rounded hover:text-text-primary" title="Logout">
-              <LogOut size={11} />
+              <LogOut className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
