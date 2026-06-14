@@ -7,8 +7,6 @@ import { getRetrievedContext, assemblePromptWithBudget, type RetrievedContext } 
 import { eventBus, SessionEvents } from "@/lib/event-bus";
 import { queueJob, processJobsByType, processUserJobs } from "@/lib/job-processor";
 import { checkRateLimit, createRateLimitResponse, cleanupExpiredEntries } from "@/lib/rate-limiter";
-import { getWikiRoot } from '@/lib/wiki/wiki-root';
-import { listWikiPages } from '@/lib/wiki/file-io';
 import { withAuth } from '@/lib/with-auth';
 import { logger } from '@/lib/logger';
 import { getServerConfig } from '@/lib/server-config';
@@ -124,39 +122,35 @@ export async function POST(
   const messageError = validateLength(userMessage, 10000, "userMessage");
   if (messageError) return NextResponse.json({ error: messageError }, { status: 400 });
 
-  // Session-aware persona: read from wiki by entity_id
+  // Session-aware persona: read from entity_registry directly
+  // (personas are universe-scoped playable characters, not wiki pages)
   let persona: PersonaContext | null = null;
   const sessionPersonaId = (session as Record<string, unknown>).persona_id as string | undefined;
   if (sessionPersonaId) {
     try {
-      const universeId = (session as Record<string, unknown>).universe_id as string | undefined;
-      const wikiRoot = getWikiRoot(userId, universeId);
-      const allPages = listWikiPages(wikiRoot);
-      const page = allPages.find(p =>
-        p.frontmatter.type === 'entity' &&
-        p.frontmatter.subtype === 'character' &&
-        p.frontmatter.entity_id === sessionPersonaId
-      );
-      if (page) {
-        const fm = page.frontmatter;
+      const db = getDb();
+      const row = db.prepare(
+        "SELECT display_name, description FROM entity_registry WHERE id = ?"
+      ).get(sessionPersonaId) as { display_name: string; description: string | null } | undefined;
+      if (row) {
         persona = {
-          entityId: (fm.entity_id as string) || null,
-          name: fm.title,
-          description: page.content ? page.content.substring(0, 3000) : null,
-          personality: (fm.personality as string) || null,
-          scenario: (fm.scenario as string) || null,
-          firstMes: (fm.first_mes as string) || null,
+          entityId: sessionPersonaId,
+          name: row.display_name,
+          description: row.description ? row.description.substring(0, 3000) : null,
+          personality: null,
+          scenario: null,
+          firstMes: null,
           mesExample: null,
           creatorNotes: null,
-          systemPrompt: (fm.system_prompt as string) || null,
+          systemPrompt: null,
           postHistoryInstructions: null,
           tags: null,
           writingStyle: null,
-          llmModel: (fm.llm_model as string) || null,
+          llmModel: null,
         };
       }
     } catch {
-      // Wiki not available — continue without persona
+      // Registry not available — continue without persona
     }
   }
   // No fallback to active persona — session must explicitly set one
