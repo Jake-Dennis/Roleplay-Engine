@@ -4,6 +4,7 @@ import { Users, Search, Shield } from "lucide-react";
 
 interface Npc {
   id: string;
+  entityId?: string | null;
   name: string;
   description: string | null;
   personalityTraits: string | null;

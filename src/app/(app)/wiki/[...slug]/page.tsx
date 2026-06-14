@@ -1,8 +1,7 @@
 'use client';
-import { BookOpen, Network, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { BookOpen, Network, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, UserCheck, Sparkles, User, Ghost, MapPin, Calendar, Flag, Package, Search, Plus, Loader2 } from 'lucide-react';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import FileTree, { type FileTreePageItem, type ReorderChange } from '@/components/wiki/file-tree';
 import NewFolderModal from '@/components/wiki/new-folder-modal';
 import BacklinkPanel from '@/components/wiki/backlink-panel';
 import VersionHistory from '@/components/wiki/version-history';
@@ -16,6 +15,7 @@ import TemplateSelector, { type WikiTemplate } from '@/components/wiki/template-
 import CreateFromPromptModal from '@/components/wiki/create-from-prompt-modal';
 import WikiAiHeaderButtons from '@/components/wiki/wiki-ai-header-buttons';
 import SelectionToolbar from '@/components/wiki/selection-toolbar';
+import { MovePageDialog } from '@/components/wiki/move-page-dialog';
 import {
   parseWikiFrontmatter,
   serializeWikiFrontmatter,
@@ -58,12 +58,18 @@ export default function WikiPageView() {
   const [templateOpen, setTemplateOpen] = useState(false);
   // AI create-from-prompt modal
   const [promptModalOpen, setPromptModalOpen] = useState(false);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [creatingPersona, setCreatingPersona] = useState(false);
+  const [personaCreated, setPersonaCreated] = useState(false);
+  const [availableFolders, setAvailableFolders] = useState<string[]>(["entities", "concepts", "sources", "synthesis"]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
 
   // New folder modal
   const [newFolderOpen, setNewFolderOpen] = useState(false);
   const [folderOrder, setFolderOrder] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [collapsedSections, setCollapsedSections] = useState<string[]>([]);
 
   // Sidebar collapse state
   const [leftOpen, setLeftOpen] = useState(true);
@@ -98,6 +104,7 @@ export default function WikiPageView() {
         setBacklinks(data.backlinks || []);
         setEmbeds(data.embeds || {});
         setFolderOrder(config.folderOrder || []);
+        if (config.folderOrder?.length > 0) setAvailableFolders(config.folderOrder);
         setLoading(false);
       })
       .catch(err => {
@@ -230,23 +237,39 @@ export default function WikiPageView() {
     }
   };
 
-  // Memoize the pagesByFolder derivation so the file tree doesn't refilter on every render
-  const pagesByFolder = useMemo<Record<string, FileTreePageItem[]>>(() => {
-    const grouped: Record<string, FileTreePageItem[]> = {};
-    for (const p of allPages) {
-      const folder = p.path.includes('/') ? p.path.split('/')[0] : '';
-      if (!folder) continue;
-      if (!grouped[folder]) grouped[folder] = [];
-      grouped[folder].push({
-        path: p.path,
-        title: (p.frontmatter?.title as string) || p.path.split('/').pop()?.replace('.md', '') || p.path,
-        type: (p.frontmatter?.type as string) || '',
-        order: p.frontmatter?.order as number | undefined,
-        status: p.frontmatter?.status as string | undefined,
-      });
-    }
-    return grouped;
-  }, [allPages]);
+  // Sidebar entity sections — group pages by subtype
+  const sidebarSections = useMemo(() => {
+    const typeDefs: Array<{ type: string; label: string; icon: React.ComponentType<{ size?: number; className?: string }>; color: string }> = [
+      { type: 'character', label: 'Characters', icon: User, color: 'text-blue-400' },
+      { type: 'location', label: 'Locations', icon: MapPin, color: 'text-green-400' },
+      { type: 'item', label: 'Items', icon: Package, color: 'text-orange-400' },
+      { type: 'event', label: 'Events', icon: Calendar, color: 'text-amber-400' },
+      { type: 'faction', label: 'Factions', icon: Flag, color: 'text-rose-400' },
+    ];
+
+    const query = searchQuery.toLowerCase();
+    const filtered = query
+      ? allPages.filter(p => (p.frontmatter?.title as string || '').toLowerCase().includes(query) || p.path.toLowerCase().includes(query))
+      : allPages;
+
+    return typeDefs.map(def => {
+      const pages = filtered
+        .filter(p => {
+          const fm = p.frontmatter;
+          const subtype = (fm?.subtype as string) || '';
+          const type = (fm?.type as string) || '';
+          if (def.type === 'character') return subtype === 'character' || (!subtype && type === 'entity');
+          return subtype === def.type;
+        })
+        .map(p => ({
+          path: p.path,
+          title: (p.frontmatter?.title as string) || p.path.split('/').pop()?.replace('.md', '') || p.path,
+        }))
+        .sort((a, b) => a.title.localeCompare(b.title));
+
+      return { ...def, pages };
+    });
+  }, [allPages, searchQuery]);
 
   const refreshWikiData = useCallback(async () => {
     const pagePath = slug.join('/');
@@ -284,32 +307,6 @@ export default function WikiPageView() {
     router.push(`/wiki/${slug}`);
   }, [router]);
 
-  const handleReorder = useCallback(async (change: ReorderChange) => {
-    const res = await fetch('/api/wiki/reorder', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        moves: change.moves,
-        folderOrder: change.folderOrder,
-        universeId: activeUniverse?.id,
-      }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to reorder');
-    }
-    // Refresh the page data so the file tree reflects the new state
-    await refreshWikiData();
-    // If the current page was moved, navigate to its new URL
-    const moveAffectingCurrent = change.moves.find(
-      (m) => m.oldPath === page?.path || m.newPath === page?.path,
-    );
-    if (moveAffectingCurrent && moveAffectingCurrent.newPath !== page?.path) {
-      // URL matches on-disk filename exactly (no underscore → dash conversion).
-      const slugStr = moveAffectingCurrent.newPath.replace(/\.md$/, '');
-      router.push(`/wiki/${slugStr}`);
-    }
-  }, [activeUniverse?.id, refreshWikiData, page?.path, router]);
  
   if (loading) return <div className="p-8 text-center text-text-muted">Loading...</div>;
   if (error) return <div className="p-8 text-center text-error">{error}</div>;
@@ -318,18 +315,67 @@ export default function WikiPageView() {
   return (
     <>
       <div className="flex h-[calc(100vh-4rem)]">
-        {/* Left sidebar — collapsible */}
+        {/* Left sidebar — collapsible entity browser */}
         {leftOpen && (
-          <div className="w-60 border-r border-border-default p-4 overflow-y-auto shrink-0">
-            <FileTree
-              pagesByFolder={pagesByFolder}
-              folderOrder={folderOrder}
-              currentPage={page.path}
-              orphanPaths={orphanPaths}
-              onCreatePage={() => setTemplateOpen(true)}
-              onCreateFolder={() => setNewFolderOpen(true)}
-              onReorder={handleReorder}
-            />
+          <div className="w-60 border-r border-border-default p-3 overflow-y-auto shrink-0 flex flex-col gap-2">
+            {/* Search + New */}
+            <div className="flex items-center gap-1">
+              <div className="relative flex-1">
+                <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted" />
+                <input
+                  type="text"
+                  placeholder="Search pages..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full pl-7 pr-2 py-1.5 rounded border border-border-default bg-bg-raised text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-accent"
+                />
+              </div>
+              <button
+                onClick={() => setTemplateOpen(true)}
+                className="p-1.5 rounded hover:bg-bg-raised text-text-muted hover:text-text-primary"
+                title="New page"
+              >
+                <Plus size={14} />
+              </button>
+            </div>
+
+            {/* Entity type sections */}
+            {allPages.length === 0 ? (
+              <p className="text-xs text-text-muted text-center py-4">No wiki pages yet</p>
+            ) : sidebarSections.filter(s => s.pages.length > 0).map(section => (
+              <div key={section.type}>
+                <button
+                  onClick={() => setCollapsedSections(prev =>
+                    prev.includes(section.type) ? prev.filter(t => t !== section.type) : [...prev, section.type]
+                  )}
+                  className="flex items-center gap-1.5 w-full text-left px-1 py-1 rounded hover:bg-bg-raised text-xs font-medium text-text-secondary"
+                >
+                  <section.icon size={12} className={section.color} />
+                  {section.label}
+                  <span className="text-xxs text-text-muted ml-auto">{section.pages.length}</span>
+                </button>
+                {!collapsedSections.includes(section.type) && (
+                  <div className="mt-0.5 space-y-0.5">
+                    {section.pages.map(p => (
+                      <button
+                        key={p.path}
+                        onClick={() => {
+                          const slug = p.path.replace(/\.md$/, '');
+                          router.push(`/wiki/${slug}`);
+                        }}
+                        className={`w-full text-left px-2 py-1 rounded text-xs transition-colors ${
+                          page.path === p.path
+                            ? 'bg-accent text-white'
+                            : 'text-text-muted hover:text-text-primary hover:bg-bg-raised'
+                        }`}
+                      >
+                        {p.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
@@ -390,6 +436,44 @@ export default function WikiPageView() {
                 >
                   AI Create
                 </button>
+                <button
+                  onClick={() => setMoveDialogOpen(true)}
+                  className="px-2 py-1 rounded text-xs font-medium bg-bg-raised border border-border-default text-text-muted hover:text-text-primary transition-colors"
+                >
+                  Move
+                </button>
+                {page?.frontmatter?.type === 'entity' && (
+                  <button
+                    onClick={async () => {
+                      if (!page || creatingPersona) return;
+                      setCreatingPersona(true);
+                      try {
+                        const body = {
+                          name: page.frontmatter.title || page.path.split('/').pop()?.replace('.md', '') || 'Unnamed',
+                          description: page.content.match(/## Description\n([\s\S]*?)(?=\n##|\n$|$)/)?.[1]?.trim() || '',
+                          personality: page.content.match(/## Personality\n([\s\S]*?)(?=\n##|\n$|$)/)?.[1]?.trim() || page.content.match(/\*\*Traits:\*\*([\s\S]*?)(?=\n##|\n$|\*\*)/)?.[1]?.trim() || '',
+                          wikiPage: page.path.replace(/^.*?wiki\/([^/]+)\//, '').replace(/\\/g, '/'),
+                        };
+                        const res = await fetch('/api/personas', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(body),
+                        });
+                        if (res.ok) {
+                          setPersonaCreated(true);
+                          setTimeout(() => setPersonaCreated(false), 3000);
+                        }
+                      } catch {} finally {
+                        setCreatingPersona(false);
+                      }
+                    }}
+                    disabled={creatingPersona || personaCreated}
+                    className="px-2 py-1 rounded text-xs font-medium bg-accent/10 text-accent border border-accent/30 hover:bg-accent/20 transition-colors disabled:opacity-50"
+                  >
+                    <UserCheck className="h-3 w-3" />
+                    {personaCreated ? 'Created!' : creatingPersona ? 'Creating...' : 'Create Persona'}
+                  </button>
+                )}
                 <span className="w-px h-4 bg-border-default" />
                 <button
                   onClick={handleEditStart}
@@ -592,6 +676,13 @@ export default function WikiPageView() {
         onClose={() => setPromptModalOpen(false)}
         universeId={activeUniverse?.id}
         onCreated={handleNavigateToPage}
+      />
+      <MovePageDialog
+        open={moveDialogOpen}
+        onClose={() => setMoveDialogOpen(false)}
+        pagePath={page?.path || ''}
+        folders={availableFolders}
+        universeId={activeUniverse?.id}
       />
       <NewFolderModal
         open={newFolderOpen}

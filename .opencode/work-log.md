@@ -1018,3 +1018,22 @@ In predict-test.ts and combination-test.ts, the binary search phase skips all va
 - `src/app/(app)/universe/[id]/manage/ai-management-client.tsx` — NEW
 - `src/app/(app)/universe/[id]/page.tsx` — AI Management nav link
 
+## 2026-06-14 — Cycle 2: Plan 007 finalization
+
+**Trigger:** User asked to work on Plan 007.
+
+**What was done:**
+- Audited Plan 006 + Plan 007 implementation status across 80+ code locations
+- Confirmed both plans were ~90%+ implemented but never archived
+- Added `entity_id: string | null` to the `Persona` interface (`src/components/personas/persona-types.ts`)
+- Added `entityId?: string | null` to the local `Npc` interface (`src/components/npcs/npc-list.tsx`) for consistency with the page-level interface in `npcs/page.tsx`
+- Archived both plans to `.opencode/plans/completed/`
+- Ran knowledge graph setup: 1058 nodes, 1885 edges, HTML visualization, report
+
+**Files changed:**
+- `src/components/personas/persona-types.ts` — added entity_id field
+- `src/components/npcs/npc-list.tsx` — added entityId field
+- `.opencode/todo.md` — logged Plan 006 + 007 as completed
+- `.opencode/plans/completed/plan-006-entity-tracking.md` — archived
+- `.opencode/plans/completed/plan-007-unify-entities.md` — archived
+

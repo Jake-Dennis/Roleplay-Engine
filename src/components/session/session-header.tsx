@@ -28,7 +28,6 @@ import {
 } from "lucide-react";
 import { ChatSearch } from "@/components/chat/chat-search";
 import { ChatExport } from "@/components/chat/chat-export";
-import { NarratorStyleInline } from "@/components/session/narrator-style-inline";
 
 interface SessionHeaderProps {
   sessionId: string;
@@ -289,8 +288,6 @@ export const SessionHeader = memo(function SessionHeader({
             >
               <MessageSquare className="h-3.5 w-3.5" />
             </Link>
-            {/* Narrator Style button */}
-            <NarratorStyleInline sessionId={sessionId} />
             <ChatExport sessionId={sessionId} />
           </div>
           <div className="flex items-center gap-3">

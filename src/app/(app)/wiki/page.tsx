@@ -2,15 +2,32 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import GraphView from '@/components/wiki/graph-view';
-import FileTree, { type FileTreePageItem, type ReorderChange } from '@/components/wiki/file-tree';
 import NewFolderModal from '@/components/wiki/new-folder-modal';
-import Search from '@/components/wiki/search';
 import TemplateSelector from '@/components/wiki/template-selector';
 import type { WikiTemplate } from '@/components/wiki/template-selector';
 import { LoreExtractionTrigger } from '@/components/wiki/lore-extraction-trigger';
+import MarkdownRenderer from '@/components/wiki/markdown-renderer';
+import MarkdownEditor from '@/components/wiki/markdown-editor';
+import FrontmatterPropertiesPanel from '@/components/wiki/frontmatter-properties-panel';
+import WikiAiHeaderButtons from '@/components/wiki/wiki-ai-header-buttons';
+import CreateFromPromptModal from '@/components/wiki/create-from-prompt-modal';
+import BacklinkPanel from '@/components/wiki/backlink-panel';
+import VersionHistory from '@/components/wiki/version-history';
+import OutlinePanel from '@/components/wiki/outline-panel';
+import OutgoingLinksPanel from '@/components/wiki/outgoing-links-panel';
+import { parseWikiFrontmatter, serializeWikiFrontmatter, validateWikiFrontmatter, EMPTY_FRONTMATTER } from '@/lib/wiki/frontmatter';
+import type { WikiFrontmatter } from '@/lib/wiki/types';
 import { useApp } from '@/contexts/app-context';
-import { BookOpen, Network, Plus, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { BookOpen, Network, Plus, PanelLeftClose, PanelLeftOpen, X, ExternalLink, PanelRightClose, PanelRightOpen, Sparkles, User, MapPin, Calendar, Flag, Package, Search, Loader2 } from 'lucide-react';
 import type { WikiPage } from '@/lib/wiki/file-io';
+
+type EditMode = 'view' | 'edit' | 'preview';
+
+interface SelectedPageData {
+  path: string;
+  content: string;
+  frontmatter: Record<string, unknown>;
+}
 
 export default function WikiHomePage() {
   const router = useRouter();
@@ -20,12 +37,27 @@ export default function WikiHomePage() {
   const [orphanPaths, setOrphanPaths] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'browse' | 'graph'>(searchParams.get('view') === 'graph' ? 'graph' : 'browse');
+  const [viewMode, setViewMode] = useState<'browse' | 'graph'>(searchParams.get('view') === 'browse' ? 'browse' : 'graph');
   const [templateOpen, setTemplateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newFolderOpen, setNewFolderOpen] = useState(false);
   const [folderOrder, setFolderOrder] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [collapsedSections, setCollapsedSections] = useState<string[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [selectedPage, setSelectedPage] = useState<string | null>(null);
+  const [selectedPageData, setSelectedPageData] = useState<SelectedPageData | null>(null);
+  const [loadingPage, setLoadingPage] = useState(false);
+  const [graphOpen, setGraphOpen] = useState(true);
+  const [editMode, setEditMode] = useState<EditMode>('view');
+  const [editBody, setEditBody] = useState('');
+  const [editFrontmatter, setEditFrontmatter] = useState<WikiFrontmatter>(EMPTY_FRONTMATTER);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [promptModalOpen, setPromptModalOpen] = useState(false);
+  const [rightOpen, setRightOpen] = useState(true);
+  const [allPagesForPreview, setAllPagesForPreview] = useState<WikiPage[]>([]);
+  const [backlinks, setBacklinks] = useState<Array<{ path: string; title: string; type: string; links: Array<{ name: string; context: string }> }>>([]);
 
   useEffect(() => {
     Promise.all([
@@ -87,22 +119,38 @@ export default function WikiHomePage() {
     }
   };
 
-  const pagesByFolder = useMemo<Record<string, FileTreePageItem[]>>(() => {
-    const grouped: Record<string, FileTreePageItem[]> = {};
-    for (const p of pages) {
-      const folder = p.path.includes('/') ? p.path.split('/')[0] : '';
-      if (!folder) continue;
-      if (!grouped[folder]) grouped[folder] = [];
-      grouped[folder].push({
-        path: p.path,
-        title: (p.frontmatter?.title as string) || p.path.split('/').pop()?.replace('.md', '') || p.path,
-        type: (p.frontmatter?.type as string) || '',
-        order: p.frontmatter?.order as number | undefined,
-        status: p.frontmatter?.status as string | undefined,
-      });
-    }
-    return grouped;
-  }, [pages]);
+  // Sidebar entity sections — group pages by subtype
+  const sidebarSections = useMemo(() => {
+    const typeDefs: Array<{ type: string; label: string; icon: React.ComponentType<{ size?: number; className?: string }>; color: string }> = [
+      { type: 'character', label: 'Characters', icon: User, color: 'text-blue-400' },
+      { type: 'location', label: 'Locations', icon: MapPin, color: 'text-green-400' },
+      { type: 'item', label: 'Items', icon: Package, color: 'text-orange-400' },
+      { type: 'event', label: 'Events', icon: Calendar, color: 'text-amber-400' },
+      { type: 'faction', label: 'Factions', icon: Flag, color: 'text-rose-400' },
+    ];
+
+    const query = searchQuery.toLowerCase();
+    const filtered = query
+      ? pages.filter(p => (p.frontmatter?.title as string || '').toLowerCase().includes(query) || p.path.toLowerCase().includes(query))
+      : pages;
+
+    return typeDefs.map(def => {
+      const matched = filtered
+        .filter(p => {
+          const subtype = (p.frontmatter?.subtype as string) || '';
+          const type = (p.frontmatter?.type as string) || '';
+          if (def.type === 'character') return subtype === 'character' || (!subtype && type === 'entity');
+          return subtype === def.type;
+        })
+        .map(p => ({
+          path: p.path,
+          title: (p.frontmatter?.title as string) || p.path.split('/').pop()?.replace('.md', '') || p.path,
+        }))
+        .sort((a, b) => a.title.localeCompare(b.title));
+
+      return { ...def, pages: matched };
+    });
+  }, [pages, searchQuery]);
 
   const refreshWikiData = useCallback(async () => {
     const [wikiData, config] = await Promise.all([
@@ -130,22 +178,90 @@ export default function WikiHomePage() {
     }
   }, [activeUniverse]);
 
-  const handleReorder = useCallback(async (change: ReorderChange) => {
-    const res = await fetch('/api/wiki/reorder', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        moves: change.moves,
-        folderOrder: change.folderOrder,
-        universeId: activeUniverse?.id,
-      }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to reorder');
+ 
+  // Fetch page content when selected
+  const fetchPageContent = useCallback(async (pagePath: string) => {
+    setLoadingPage(true);
+    setEditMode('view');
+    setSaveError(null);
+    try {
+      const res = await fetch(`/api/wiki/${pagePath}?universe_id=${activeUniverse?.id || ''}`);
+      if (!res.ok) throw new Error('Failed to load page');
+      const data = await res.json();
+      const content = data.page?.content || data.content || '';
+      const fm = data.page?.frontmatter || data.frontmatter || {};
+      setSelectedPageData({ path: pagePath, content, frontmatter: fm });
+      setBacklinks(data.backlinks || []);
+      setAllPagesForPreview(data.allPages || []);
+      setEditBody(content);
+      const parsed = parseWikiFrontmatter(content);
+      setEditFrontmatter(parsed.frontmatter);
+    } catch {
+      setSelectedPageData({ path: pagePath, content: '*Failed to load page content.*', frontmatter: {} });
+      setBacklinks([]);
+      setAllPagesForPreview([]);
+      setEditBody('');
+      setEditFrontmatter(EMPTY_FRONTMATTER);
     }
-    await refreshWikiData();
-  }, [activeUniverse, refreshWikiData]);
+    setLoadingPage(false);
+  }, [activeUniverse]);
+
+  const handlePageSelect = useCallback((pagePath: string) => {
+    setSelectedPage(pagePath);
+    fetchPageContent(pagePath);
+  }, [fetchPageContent]);
+
+  const handleClosePage = useCallback(() => {
+    setSelectedPage(null);
+    setSelectedPageData(null);
+    setEditMode('view');
+    setSaveError(null);
+    setBacklinks([]);
+    setAllPagesForPreview([]);
+    setRightOpen(true);
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    if (!selectedPage || !selectedPageData) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const errors = validateWikiFrontmatter(editFrontmatter);
+      if (errors.length > 0) {
+        setSaveError(errors.join(', '));
+        setSaving(false);
+        return;
+      }
+      const body = serializeWikiFrontmatter(editBody, editFrontmatter);
+      const res = await fetch(`/api/wiki/${selectedPage}?universe_id=${activeUniverse?.id || ''}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: body }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setSaveError(err.error || 'Failed to save');
+        setSaving(false);
+        return;
+      }
+      setSelectedPageData({ ...selectedPageData, content: body, frontmatter: editFrontmatter });
+      setEditMode('view');
+      await refreshWikiData();
+    } catch {
+      setSaveError('Network error while saving');
+    }
+    setSaving(false);
+  }, [selectedPage, selectedPageData, editBody, editFrontmatter, activeUniverse, refreshWikiData]);
+
+  const handleEditCancel = useCallback(() => {
+    if (selectedPageData) {
+      setEditBody(selectedPageData.content);
+      const parsed = parseWikiFrontmatter(selectedPageData.content);
+      setEditFrontmatter(parsed.frontmatter);
+    }
+    setEditMode('view');
+    setSaveError(null);
+  }, [selectedPageData]);
 
   if (loading) {
     return <div className="p-8 text-center text-text-muted">Loading wiki...</div>;
@@ -160,24 +276,63 @@ export default function WikiHomePage() {
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">
-      {/* Left sidebar — collapsible */}
+      {/* Left sidebar — entity browser */}
       {sidebarOpen && (
-        <div className="w-60 border-r border-border-default p-4 overflow-y-auto shrink-0">
-          {viewMode === 'browse' ? (
-            <>
-              <Search pages={pages} />
-              <div className="mt-4">
-                <FileTree
-                  pagesByFolder={pagesByFolder}
-                  folderOrder={folderOrder}
-                  orphanPaths={orphanPaths}
-                  onCreatePage={() => setTemplateOpen(true)}
-                  onCreateFolder={() => setNewFolderOpen(true)}
-                  onReorder={handleReorder}
-                />
-              </div>
-            </>
-          ) : null}
+        <div className="w-60 border-r border-border-default p-3 overflow-y-auto shrink-0 flex flex-col gap-2">
+          <div className="flex items-center gap-1">
+            <div className="relative flex-1">
+              <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted" />
+              <input
+                type="text"
+                placeholder="Search pages..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full pl-7 pr-2 py-1.5 rounded border border-border-default bg-bg-raised text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-accent"
+              />
+            </div>
+            <button
+              onClick={() => setTemplateOpen(true)}
+              className="p-1.5 rounded hover:bg-bg-raised text-text-muted hover:text-text-primary"
+              title="New page"
+            >
+              <Plus size={14} />
+            </button>
+          </div>
+
+          {sidebarSections.filter(s => s.pages.length > 0).map(section => (
+            <div key={section.type}>
+              <button
+                onClick={() => setCollapsedSections(prev =>
+                  prev.includes(section.type) ? prev.filter(t => t !== section.type) : [...prev, section.type]
+                )}
+                className="flex items-center gap-1.5 w-full text-left px-1 py-1 rounded hover:bg-bg-raised text-xs font-medium text-text-secondary"
+              >
+                <section.icon size={12} className={section.color} />
+                {section.label}
+                <span className="text-xxs text-text-muted ml-auto">{section.pages.length}</span>
+              </button>
+              {!collapsedSections.includes(section.type) && (
+                <div className="mt-0.5 space-y-0.5">
+                  {section.pages.map(p => (
+                    <button
+                      key={p.path}
+                      onClick={() => handlePageSelect(p.path)}
+                      className={`w-full text-left px-2 py-1 rounded text-xs transition-colors ${
+                        selectedPage === p.path
+                          ? 'bg-accent text-white'
+                          : 'text-text-muted hover:text-text-primary hover:bg-bg-raised'
+                      }`}
+                    >
+                      {p.title}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+          {pages.length === 0 && (
+            <p className="text-xs text-text-muted text-center py-4">No wiki pages yet</p>
+          )}
         </div>
       )}
 
@@ -272,8 +427,249 @@ export default function WikiHomePage() {
             })()}
           </div>
         ) : (
-          <div className="flex-1 min-h-0">
-            <GraphView pages={pages} isLoading={loading} error={error} onRetry={() => window.location.reload()} focusPage={searchParams.get('focus')} />
+          <div className="flex-1 min-h-0 flex">
+            {/* Page preview panel — left side */}
+            {selectedPage && (
+              <div className="w-[45%] min-w-0 flex flex-col bg-bg-base overflow-hidden border-r border-border-default">
+                {/* Panel header with editor toolbar */}
+                <div className="flex items-center gap-2 px-3 py-2 border-b border-border-default bg-bg-elevated shrink-0">
+                  <span className="text-sm font-medium text-text-primary truncate">
+                    {selectedPageData?.frontmatter?.title as string || selectedPage.split('/').pop()?.replace('.md', '') || selectedPage}
+                  </span>
+
+                  {/* AI buttons — visible in view mode */}
+                  {editMode === 'view' && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setPromptModalOpen(true)}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-bg-base text-text-secondary border border-border-default hover:text-text-primary hover:border-accent/30 transition-colors"
+                        title="Create a new wiki page from a natural language description using AI"
+                      >
+                        <Sparkles size={12} />
+                        AI Create
+                      </button>
+                      <WikiAiHeaderButtons
+                        pagePath={selectedPage}
+                        universeId={activeUniverse?.id}
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex-1" />
+
+                  {/* View/Edit/Preview toggle */}
+                  <div className="flex rounded border border-border-default overflow-hidden">
+                    <button
+                      onClick={() => setEditMode('view')}
+                      className={`px-2 py-1 text-xs font-medium transition-colors ${
+                        editMode === 'view'
+                          ? 'bg-accent text-text-primary'
+                          : 'bg-bg-base text-text-muted hover:text-text-primary'
+                      }`}
+                      title="View the rendered page"
+                    >
+                      View
+                    </button>
+                    <button
+                      onClick={() => { setEditMode('edit'); setEditBody(selectedPageData?.content || ''); const parsed = parseWikiFrontmatter(selectedPageData?.content || ''); setEditFrontmatter(parsed.frontmatter); }}
+                      className={`px-2 py-1 text-xs font-medium transition-colors border-l border-border-default ${
+                        editMode === 'edit'
+                          ? 'bg-accent text-text-primary'
+                          : 'bg-bg-base text-text-muted hover:text-text-primary'
+                      }`}
+                      title="Edit the page content and frontmatter"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => setEditMode('preview')}
+                      className={`px-2 py-1 text-xs font-medium transition-colors border-l border-border-default ${
+                        editMode === 'preview'
+                          ? 'bg-accent text-text-primary'
+                          : 'bg-bg-base text-text-muted hover:text-text-primary'
+                      }`}
+                      title="Preview your edits before saving"
+                    >
+                      Preview
+                    </button>
+                  </div>
+
+                  {/* Save/Cancel in edit mode */}
+                  {editMode === 'edit' && (
+                    <>
+                      <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="px-2 py-1 rounded text-xs font-medium bg-accent text-text-primary hover:bg-accent-hover transition-colors disabled:opacity-50"
+                        title={saving ? 'Saving...' : 'Save your changes'}
+                      >
+                        {saving ? 'Saving...' : 'Save'}
+                      </button>
+                      <button
+                        onClick={handleEditCancel}
+                        className="px-2 py-1 rounded text-xs font-medium bg-bg-base text-text-secondary border border-border-default hover:text-text-primary transition-colors"
+                        title="Discard your edits"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  )}
+
+                  <button
+                    onClick={() => setRightOpen(!rightOpen)}
+                    className="p-1 rounded hover:bg-bg-raised text-text-muted hover:text-text-primary transition-colors"
+                    title={rightOpen ? 'Collapse side panel' : 'Expand side panel'}
+                  >
+                    {rightOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
+                  </button>
+                  <button
+                    onClick={() => router.push(`/wiki/${selectedPage.replace(/\.md$/, '')}`)}
+                    className="p-1 rounded hover:bg-bg-raised text-text-muted hover:text-text-primary transition-colors"
+                    title="Open full page"
+                  >
+                    <ExternalLink size={14} />
+                  </button>
+                  <button
+                    onClick={handleClosePage}
+                    className="p-1 rounded hover:bg-bg-raised text-text-muted hover:text-text-primary transition-colors"
+                    title="Close the page panel"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+
+                {/* Save error */}
+                {saveError && (
+                  <div className="px-3 py-2 bg-error/10 border-b border-error/20 text-error text-xs">
+                    {saveError}
+                  </div>
+                )}
+
+                {/* Page content + right sidebar */}
+                <div className="flex-1 flex overflow-hidden">
+                  {/* Page content */}
+                  <div className="flex-1 overflow-y-auto">
+                    {loadingPage ? (
+                      <div className="text-center text-text-muted py-8">Loading...</div>
+                    ) : selectedPageData ? (
+                      <>
+                        {editMode === 'view' && (
+                          <div className="p-6 prose prose-invert max-w-none">
+                            <MarkdownRenderer
+                              content={selectedPageData.content}
+                              frontmatter={selectedPageData.frontmatter}
+                            />
+                          </div>
+                        )}
+                        {editMode === 'edit' && (
+                          <div className="flex flex-col h-full">
+                            <FrontmatterPropertiesPanel
+                              frontmatter={editFrontmatter}
+                              onChange={setEditFrontmatter}
+                              readOnlyFields={['created', 'updated']}
+                            />
+                            <div className="flex-1 overflow-y-auto p-4 relative">
+                              <MarkdownEditor
+                                value={editBody}
+                                onChange={setEditBody}
+                                onSave={handleSave}
+                                existingPages={pages.map(p => p.path)}
+                              />
+                            </div>
+                          </div>
+                        )}
+                        {editMode === 'preview' && (
+                          <div className="p-6 prose prose-invert max-w-none">
+                            <MarkdownRenderer
+                              content={serializeWikiFrontmatter(editBody, editFrontmatter)}
+                              frontmatter={editFrontmatter}
+                            />
+                          </div>
+                        )}
+                      </>
+                    ) : null}
+                  </div>
+
+                  {/* Right sidebar — collapsible, stacked panels like Obsidian */}
+                  {rightOpen && editMode === 'view' && selectedPageData && (
+                    <div className="w-60 border-l border-border-default p-3 overflow-y-auto shrink-0 flex flex-col gap-4">
+                      {/* Backlinks */}
+                      <div>
+                        <h3 className="text-xxs text-text-muted uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
+                          <span className="w-0.5 h-3 rounded-full bg-accent" />
+                          Backlinks
+                        </h3>
+                        <BacklinkPanel backlinks={backlinks} />
+                      </div>
+
+                      {/* Outline */}
+                      <div>
+                        <h3 className="text-xxs text-text-muted uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
+                          <span className="w-0.5 h-3 rounded-full bg-green-500" />
+                          Outline
+                        </h3>
+                        <OutlinePanel content={selectedPageData.content} />
+                      </div>
+
+                      {/* Outgoing Links */}
+                      <div>
+                        <h3 className="text-xxs text-text-muted uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
+                          <span className="w-0.5 h-3 rounded-full bg-amber-500" />
+                          Outgoing Links
+                        </h3>
+                        <OutgoingLinksPanel
+                          content={selectedPageData.content}
+                          allPages={allPagesForPreview}
+                          basePath="/wiki"
+                          universe={(selectedPageData.frontmatter as any)?.universe}
+                        />
+                      </div>
+
+                      {/* History */}
+                      <div>
+                        <h3 className="text-xxs text-text-muted uppercase tracking-wider font-semibold mb-2 flex items-center gap-1.5">
+                          <span className="w-0.5 h-3 rounded-full bg-purple-500" />
+                          Version History
+                        </h3>
+                        <VersionHistory
+                          slug={selectedPage.split('/')}
+                          onRestore={() => fetchPageContent(selectedPage)}
+                          onEdit={() => { setEditMode('edit'); setEditBody(selectedPageData?.content || ''); const parsed = parseWikiFrontmatter(selectedPageData?.content || ''); setEditFrontmatter(parsed.frontmatter); }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Graph view — right side */}
+            <div className={`flex-1 min-w-0 flex flex-col`}>
+              {/* Graph collapse button */}
+              {selectedPage && (
+                <div className="flex items-center justify-end px-2 py-1 border-b border-border-default bg-bg-elevated shrink-0">
+                  <button
+                    onClick={() => setGraphOpen(!graphOpen)}
+                    className="p-1 rounded hover:bg-bg-raised text-text-muted hover:text-text-primary transition-colors"
+                    title={graphOpen ? 'Collapse graph' : 'Expand graph'}
+                  >
+                    {graphOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
+                  </button>
+                </div>
+              )}
+              {graphOpen && (
+                <div className="flex-1 min-h-0">
+                  <GraphView
+                    pages={pages}
+                    isLoading={loading}
+                    error={error}
+                    onRetry={() => window.location.reload()}
+                    focusPage={searchParams.get('focus')}
+                    onPageSelect={handlePageSelect}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -289,6 +685,16 @@ export default function WikiHomePage() {
         open={newFolderOpen}
         onClose={() => setNewFolderOpen(false)}
         onCreate={handleCreateFolder}
+      />
+      {/* AI Create from prompt modal */}
+      <CreateFromPromptModal
+        open={promptModalOpen}
+        onClose={() => setPromptModalOpen(false)}
+        universeId={activeUniverse?.id}
+        onCreated={(path) => {
+          setPromptModalOpen(false);
+          router.push(`/wiki/${path.replace(/\.md$/, '')}`);
+        }}
       />
     </div>
   );

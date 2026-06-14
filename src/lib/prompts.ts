@@ -312,4 +312,32 @@ AI Response to analyze:
 <user_content>
 ${aiResponse}
 </user_content>`,
+
+  // -----------------------------------------------------------------------
+  // Wiki: Page Curation
+  // -----------------------------------------------------------------------
+
+  /** Analyze a wiki page and suggest tags, wikilinks, and type verification */
+  wikiCuratePage: (title: string, pageType: string, subtype: string | undefined, content: string, existingTitles: string) =>
+    `You are a wiki curator. Analyze this wiki page and suggest improvements.
+
+Page title: "${title}"
+Current type: "${pageType}"
+Current subtype: ${subtype || "none"}
+
+Content:
+<user_content>
+${content}
+</user_content>
+
+Existing wiki pages that can be linked: ${existingTitles || "none"}
+
+Do NOT reason step by step. Output ONLY valid JSON with no other text. Return JSON:
+{
+  "suggestedTags": ["list", "of", "suggested", "tags"],
+  "suggestedWikilinks": ["titles of existing wiki pages to link to"],
+  "typeCorrect": true,
+  "suggestedType": "entity|concept|source|synthesis",
+  "suggestedSubtype": "character|location|item|faction|organization|creature|theme|rule|mechanic|lore|event|tradition|null"
+}`,
 } as const;

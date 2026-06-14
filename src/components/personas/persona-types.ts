@@ -1,5 +1,6 @@
 export interface Persona {
   id: string;
+  entity_id: string | null;
   name: string;
   description: string | null;
   personality: string | null;

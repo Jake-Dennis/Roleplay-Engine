@@ -507,6 +507,7 @@ export default function ServerSettingsPage() {
         numPredict={numPredict} setNumPredict={setNumPredict}
         defaultsSaving={defaultsSaving} defaultsSaved={defaultsSaved} defaultsError={defaultsError}
         onSaveDefaults={handleSaveDefaults}
+        onApplyAutoTune={handleApplyAutoTune}
         // Per-model overrides
         hasModelOverrides={Boolean(selectedLLM && modelDefaults[selectedLLM])}
         onResetModelOverrides={handleResetModelOverrides}
