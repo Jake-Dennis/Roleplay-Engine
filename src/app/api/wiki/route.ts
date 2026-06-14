@@ -112,29 +112,41 @@ if (!isPathWithinRoot(fullPath, wikiRoot)) {
   return badRequestError("Invalid path");
 }
 
-writeWikiPage(fullPath, content, frontmatter as WikiFrontmatter);
+// Auto-register entity before writing the page: creates an entity_registry entry
+// and embeds the entity_id into the page frontmatter so the entities page shows it.
+const SUBTYPE_TO_ENTITY_TYPE: Record<string, string> = {
+  character: "npc", persona: "persona", npc: "npc",
+  location: "location", event: "event", faction: "faction",
+  item: "item", organization: "faction", object: "item",
+};
 
-// Auto-register entity if frontmatter has entity_id but no registry entry exists
 try {
-  const entityId = (frontmatter as Record<string, unknown>).entity_id as string | undefined;
-  if (entityId) {
-    const db = getDb();
-    const existing = getEntity(db, entityId);
+  const fm = frontmatter as Record<string, unknown>;
+  const existingEntityId = fm.entity_id as string | undefined;
+  const db = getDb();
+
+  if (existingEntityId) {
+    // Gap-fill: entity_id is set in frontmatter but entry doesn't exist yet
+    const existing = getEntity(db, existingEntityId);
     if (!existing) {
-      const fm = frontmatter as Record<string, unknown>;
       const subtype = (fm.subtype as string) || "";
       const displayName = (fm.title as string) || path.basename(pagePath, ".md");
-      // Map wiki subtypes to valid entity_registry types
-      const SUBTYPE_TO_ENTITY_TYPE: Record<string, string> = {
-        character: "npc", persona: "persona", npc: "npc",
-        location: "location", event: "event", faction: "faction",
-        item: "item", organization: "faction", object: "item",
-      };
       const entityType = SUBTYPE_TO_ENTITY_TYPE[subtype] || "npc";
       registerEntity(db, userId, entityType, displayName, universeId || undefined);
     }
+  } else {
+    // New page with no entity_id — auto-register if subtype maps to an entity type
+    const subtype = (fm.subtype as string) || "";
+    const entityType = SUBTYPE_TO_ENTITY_TYPE[subtype];
+    if (entityType) {
+      const displayName = (fm.title as string) || path.basename(pagePath, ".md");
+      const entity = registerEntity(db, userId, entityType, displayName, universeId || undefined);
+      (fm as Record<string, unknown>).entity_id = entity.id;
+    }
   }
 } catch { /* non-fatal — entity registration should not block wiki save */ }
+
+writeWikiPage(fullPath, content, frontmatter as WikiFrontmatter);
 
 // Regenerate index
 generateIndex(wikiRoot);

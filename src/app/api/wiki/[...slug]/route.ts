@@ -447,6 +447,39 @@ export async function PUT(
     // Save revision snapshot before overwriting
     saveRevision(wikiRoot, resolvedSlug, existing.content, existing.frontmatter);
 
+    // Auto-register entity before writing: ensures every map-able wiki page
+    // gets an entity_registry entry so it shows up in the entities page.
+    const SUBTYPE_TO_ENTITY_TYPE: Record<string, string> = {
+      character: "npc", persona: "persona", npc: "npc",
+      location: "location", event: "event", faction: "faction",
+      item: "item", organization: "faction", object: "item",
+    };
+
+    try {
+      const existingEntityId = mergedFrontmatter.entity_id;
+      const db = getDb();
+
+      if (existingEntityId) {
+        // Gap-fill: entity_id is set but registry entry doesn't exist yet
+        const existing = getEntity(db, existingEntityId);
+        if (!existing) {
+          const subtype = mergedFrontmatter.subtype || "";
+          const displayName = mergedFrontmatter.title || resolvedSlug;
+          const entityType = SUBTYPE_TO_ENTITY_TYPE[subtype] || "npc";
+          registerEntity(db, userId, entityType, displayName, mergedFrontmatter.universe || undefined);
+        }
+      } else {
+        // No entity_id yet — auto-register if subtype maps to an entity type
+        const subtype = mergedFrontmatter.subtype || "";
+        const entityType = SUBTYPE_TO_ENTITY_TYPE[subtype];
+        if (entityType) {
+          const displayName = mergedFrontmatter.title || resolvedSlug;
+          const entity = registerEntity(db, userId, entityType, displayName, mergedFrontmatter.universe || undefined);
+          (mergedFrontmatter as Record<string, unknown>).entity_id = entity.id;
+        }
+      }
+    } catch { /* non-fatal — entity registration should not block wiki save */ }
+
     writeWikiPage(fullPath, mergedContent, mergedFrontmatter as WikiFrontmatter, {
       expectedLastModified,
       onConflict: "fail",
@@ -464,27 +497,6 @@ export async function PUT(
 
     // Regenerate index
     generateIndex(wikiRoot);
-
-    // Auto-register entity if frontmatter has entity_id but no registry entry exists
-    try {
-      const entityId = mergedFrontmatter.entity_id;
-      if (entityId) {
-        const db = getDb();
-        const existing = getEntity(db, entityId);
-        if (!existing) {
-          const subtype = mergedFrontmatter.subtype || "";
-          const displayName = mergedFrontmatter.title || resolvedSlug;
-          // Map wiki subtypes to valid entity_registry types
-          const SUBTYPE_TO_ENTITY_TYPE: Record<string, string> = {
-            character: "npc", persona: "persona", npc: "npc",
-            location: "location", event: "event", faction: "faction",
-            item: "item", organization: "faction", object: "item",
-          };
-          const entityType = SUBTYPE_TO_ENTITY_TYPE[subtype] || "npc";
-          registerEntity(db, userId, entityType, displayName, mergedFrontmatter.universe || undefined);
-        }
-      }
-    } catch { /* non-fatal — entity registration should not block wiki save */ }
 
     // Sync description/personality to linked personas
     try {
