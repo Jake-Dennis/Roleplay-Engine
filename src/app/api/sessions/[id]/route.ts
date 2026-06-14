@@ -14,6 +14,7 @@ import { checkRateLimit, createRateLimitResponse, getClientIp } from '@/lib/rate
 import { queueJob } from '@/lib/job-processor';
 import { getWikiRoot } from '@/lib/wiki/wiki-root';
 import { listWikiPages, deleteWikiPage } from '@/lib/wiki/file-io';
+import { deleteEntity } from '@/lib/entity-registry';
 import fs from 'fs';
 
 /**
@@ -326,6 +327,11 @@ export async function DELETE(
         for (const page of allPages) {
           if (page.frontmatter.tags?.includes(sessionTag)) {
             try {
+              // Clean up entity registry if this auto-extracted page had a linked entity
+              const entityId = page.frontmatter.entity_id;
+              if (entityId) {
+                deleteEntity(db, entityId);
+              }
               deleteWikiPage(page.path);
             } catch { /* skip locked or failed pages */ }
           }

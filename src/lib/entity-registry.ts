@@ -279,6 +279,32 @@ export function addAlias(
 }
 
 /**
+ * Delete an entity and its aliases from the registry.
+ *
+ * Uses ON DELETE CASCADE on entity_aliases, so aliases are cleaned up automatically.
+ * If the entity is referenced by other tables (relationships, personas, etc.),
+ * the DELETE will fail with a foreign key constraint violation and return false.
+ * This is intentional — entities referenced by other records should not be silently removed.
+ *
+ * @returns true if the entity was deleted, false if it wasn't found or referenced by other tables.
+ */
+export function deleteEntity(db: Database, entityId: string): boolean {
+  const existing = db
+    .prepare("SELECT 1 FROM entity_registry WHERE id = ?")
+    .get(entityId);
+
+  if (!existing) return false;
+
+  try {
+    db.prepare("DELETE FROM entity_registry WHERE id = ?").run(entityId);
+    return true;
+  } catch {
+    // FK constraint — entity is referenced by other tables
+    return false;
+  }
+}
+
+/**
  * List entities for a user, with optional filtering.
  *
  * Supported filters:

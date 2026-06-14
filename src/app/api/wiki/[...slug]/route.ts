@@ -14,7 +14,7 @@ import { saveRevision } from "@/lib/wiki/revisions";
 import { recordVersion, createSnapshotFile, getNextVersionNumber } from "@/lib/wiki/history";
 import { generateIndex } from "@/lib/wiki/index-generator";
 import { getDb } from "@/lib/db";
-import { getEntity, registerEntity } from "@/lib/entity-registry";
+import { getEntity, registerEntity, deleteEntity } from "@/lib/entity-registry";
 import { findOrphans } from "@/lib/wiki/orphans";
 import { parseWikilinks, resolveWikilink } from "@/lib/wiki/wikilinks";
 import { isPathWithinRoot } from "@/lib/wiki/path-guard";
@@ -543,7 +543,29 @@ export async function DELETE(
   }
   const { fullPath } = resolved;
 
+  // Read frontmatter before deletion to clean up entity registry
+  let entityId: string | undefined;
   try {
+    const page = readWikiPage(fullPath);
+    entityId = page.frontmatter.entity_id;
+  } catch {
+    // Non-fatal — if we can't read the page, still attempt deletion
+  }
+
+  try {
+    // Clean up entity registry if this page had a linked entity
+    if (entityId) {
+      const db = getDb();
+      const removed = deleteEntity(db, entityId);
+      if (removed) {
+        logger.info(`Deleted entity ${entityId} from registry (wiki page deleted)`);
+      } else {
+        // Entity still referenced by other tables (relationships, personas, etc.)
+        // This is expected — keep the entity, just delete the page
+        logger.debug(`Entity ${entityId} kept — still referenced elsewhere`);
+      }
+    }
+
     deleteWikiPage(fullPath);
 
     // Regenerate index
