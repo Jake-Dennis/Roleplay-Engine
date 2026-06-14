@@ -6,6 +6,8 @@ import { PROMPTS } from "@/lib/prompts";
 import { getWikiRoot } from "@/lib/wiki/wiki-root";
 import { writeWikiPage } from "@/lib/wiki/file-io";
 import { safeParseWarn } from "@/lib/safe-json";
+import { getDb } from "@/lib/db";
+import { registerEntity } from "@/lib/entity-registry";
 import path from "path";
 import type { WikiFrontmatter } from "@/lib/wiki/types";
 
@@ -64,6 +66,21 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   };
 
   const fullPath = path.join(wikiRoot, pagePath);
+
+  // Auto-register entity for entity-type pages
+  const SUBTYPE_TO_ENTITY_TYPE: Record<string, string> = {
+    character: "npc", persona: "persona", npc: "npc",
+    location: "location", event: "event", faction: "faction",
+    item: "item", organization: "faction", object: "item",
+  };
+  if (resolvedType === "entity") {
+    try {
+      const entityType = SUBTYPE_TO_ENTITY_TYPE[resolvedSubtype] || "npc";
+      const entity = registerEntity(getDb(), userId, entityType, parsed.title, universeId || undefined);
+      (frontmatter as Record<string, unknown>).entity_id = entity.id;
+    } catch { /* non-fatal */ }
+  }
+
   writeWikiPage(fullPath, parsed.content, frontmatter);
 
   return NextResponse.json(
