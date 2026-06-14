@@ -20,12 +20,21 @@ import {
   Clock,
   ListTodo,
   ChevronDown,
+  ChevronRight,
   User,
   Users as UsersIcon,
   FolderOpen,
   Shuffle,
   MessageCircle,
   UserCheck,
+  Ghost,
+  MapPin,
+  Package,
+  Calendar,
+  Flag,
+  Search,
+  Plus,
+  Menu,
 } from "lucide-react";
 import { TIME } from "@/lib/config";
 import { renderLoop } from "@/lib/render-loop";

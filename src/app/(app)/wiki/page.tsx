@@ -122,6 +122,7 @@ export default function WikiHomePage() {
   // Sidebar entity sections — group pages by subtype
   const sidebarSections = useMemo(() => {
     const typeDefs: Array<{ type: string; label: string; icon: React.ComponentType<{ size?: number; className?: string }>; color: string }> = [
+      { type: 'overview', label: 'Universe', icon: BookOpen, color: 'text-cyan-400' },
       { type: 'persona', label: 'Personas', icon: User, color: 'text-blue-400' },
       { type: 'npc', label: 'NPCs', icon: Ghost, color: 'text-purple-400' },
       { type: 'location', label: 'Locations', icon: MapPin, color: 'text-green-400' },
@@ -141,6 +142,7 @@ export default function WikiHomePage() {
           const subtype = (p.frontmatter?.subtype as string) || '';
           const type = (p.frontmatter?.type as string) || '';
           const eid = (p.frontmatter?.entity_id as string) || '';
+          if (def.type === 'overview') return type === 'concept' || type === 'synthesis';
           if (def.type === 'persona') return (subtype === 'character' || (!subtype && type === 'entity')) && eid.startsWith('persona:');
           if (def.type === 'npc') return (subtype === 'character' || (!subtype && type === 'entity')) && (!eid || eid.startsWith('npc:'));
           return subtype === def.type;

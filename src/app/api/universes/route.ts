@@ -152,10 +152,11 @@ const pageContent = [
   boundariesText ? `**Boundaries:**\n${boundariesText}\n` : "",
 ].filter(Boolean).join("\n");
 writeWikiPage(path.join(wikiRoot, "concepts", "about.md"), pageContent, {
-  title: `${name.trim()} — Universe Overview`,
+  title: `${name.trim()}`,
   type: "concept",
   subtype: "lore",
   status: "draft",
+  universe: name.trim(),
   time_period: time_period || null,
   tags: ["auto-generated", "universe-info"],
 });
