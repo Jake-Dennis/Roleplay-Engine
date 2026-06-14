@@ -177,12 +177,18 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
                 updated: new Date().toISOString(),
               };
 
-              // Auto-register entity with its own unique ID
+              // Auto-register entity if this existing page doesn't have one yet
+              // Link to existing persona if one exists, otherwise create new
               if (!updatedFrontmatter.entity_id) {
                 try {
                   const db = getDb();
                   const entityType = SUBTYPE_TO_ENTITY_TYPE[entity.entityType] || "npc";
-                  const regEntity = registerEntity(db, userId, entityType, entityName, universeId);
+                  const existing = db.prepare(
+                    "SELECT id FROM entity_registry WHERE LOWER(display_name) = LOWER(?) AND entity_type = 'persona' AND universe_id = ?"
+                  ).get(entityName, universeId) as { id: string } | undefined;
+                  const regEntity = existing
+                    ? { id: existing.id }
+                    : registerEntity(db, userId, entityType, entityName, universeId);
                   (updatedFrontmatter as Record<string, unknown>).entity_id = regEntity.id;
                 } catch { /* non-fatal */ }
               }
@@ -212,11 +218,18 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
               created: new Date().toISOString(),
             };
 
-            // Auto-register entity in entity_registry with its own unique ID
+            // Auto-register entity in entity_registry
+            // If a persona with this name exists in the universe, link to it
+            // (don't create a duplicate NPC entry for the same character)
             try {
               const db = getDb();
               const entityType = SUBTYPE_TO_ENTITY_TYPE[entity.entityType] || "npc";
-              const regEntity = registerEntity(db, userId, entityType, entityName, universeId);
+              const existing = db.prepare(
+                "SELECT id FROM entity_registry WHERE LOWER(display_name) = LOWER(?) AND entity_type = 'persona' AND universe_id = ?"
+              ).get(entityName, universeId) as { id: string } | undefined;
+              const regEntity = existing
+                ? { id: existing.id }
+                : registerEntity(db, userId, entityType, entityName, universeId);
               (frontmatter as Record<string, unknown>).entity_id = regEntity.id;
             } catch { /* non-fatal */ }
 
