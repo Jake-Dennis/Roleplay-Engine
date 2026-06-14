@@ -19,6 +19,7 @@ interface Session {
   created_at: string;
   updated_at: string | null;
   owner_name: string;
+  universe_id?: string | null;
 }
 
 interface Invitation {
@@ -31,7 +32,7 @@ interface Invitation {
 
 export default function SessionListPage() {
   const router = useRouter();
-  const { refreshAll, activeGroup } = useApp();
+  const { refreshAll, activeGroup, activeUniverse } = useApp();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,14 +47,18 @@ export default function SessionListPage() {
       ]);
       const sessData = await sessRes.json();
       const invData = await invRes.json();
-      setSessions(sessData.sessions || []);
+      let filtered = sessData.sessions || [];
+      if (activeUniverse) {
+        filtered = filtered.filter((s: Session) => s.universe_id === activeUniverse.id);
+      }
+      setSessions(filtered);
       setInvitations(invData.invitations || []);
     } catch {
       // ignore
     } finally {
       setLoading(false);
     }
-  }, [activeGroup]);
+  }, [activeGroup, activeUniverse]);
 
   useEffect(() => {
     queueMicrotask(() => loadSessions());
@@ -81,10 +86,10 @@ export default function SessionListPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-base font-semibold text-text-primary">
-            {activeGroup ? `${activeGroup.name} Sessions` : "Sessions"}
+            {activeGroup ? `${activeGroup.name} Sessions` : activeUniverse ? `${activeUniverse.name} Sessions` : "Sessions"}
           </h1>
           <p className="mt-1 text-xs text-text-muted">
-            {activeGroup ? `Sessions in ${activeGroup.name}` : "All your roleplaying sessions"}
+            {activeGroup ? `Sessions in ${activeGroup.name}` : activeUniverse ? `Sessions in ${activeUniverse.name}` : "All your roleplaying sessions"}
           </p>
         </div>
         <Link
