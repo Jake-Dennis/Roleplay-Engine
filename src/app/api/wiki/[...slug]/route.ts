@@ -467,7 +467,7 @@ export async function PUT(
     try {
       const db = getDb();
       const linkedPersonas = db.prepare(
-        "SELECT id, description, personality FROM personas WHERE wiki_page = ?"
+        "SELECT id, description FROM entity_registry WHERE id = ?"
       ).all(relativePath) as { id: string; description: string | null; personality: string | null }[];
       for (const persona of linkedPersonas) {
         // Extract description and personality from the saved wiki content

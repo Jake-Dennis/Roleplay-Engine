@@ -70,7 +70,7 @@ export async function findSimilarCanonEntries(
     switch (result.entityType) {
       case "locations": {
         const row = db.prepare(
-          "SELECT name, description FROM locations WHERE id = ? AND user_id = ?"
+          "SELECT display_name as name, description FROM entity_registry WHERE id = ? AND user_id = ?"
         ).get(result.entityId, userId) as { name: string; description: string | null } | undefined;
         if (row) {
           title = row.name;
@@ -80,7 +80,7 @@ export async function findSimilarCanonEntries(
       }
       case "npcs": {
         const row = db.prepare(
-          "SELECT name, file_path FROM npcs WHERE id = ? AND user_id = ?"
+          "SELECT display_name as name, description as file_path FROM entity_registry WHERE id = ? AND user_id = ?"
         ).get(result.entityId, userId) as { name: string; file_path: string | null } | undefined;
         if (row) {
           title = row.name;
@@ -99,7 +99,7 @@ export async function findSimilarCanonEntries(
       }
       case "events": {
         const row = db.prepare(
-          "SELECT title, outcome FROM events WHERE id = ? AND user_id = ?"
+          "SELECT display_name as title, description as outcome FROM entity_registry WHERE id = ? AND user_id = ?"
         ).get(result.entityId, userId) as { title: string; outcome: string | null } | undefined;
         if (row) {
           title = row.title;
@@ -271,14 +271,14 @@ export async function scanUnverifiedLoreForContradictions(
     switch (validation.entity_type) {
       case "location": {
         const row = db.prepare(
-          "SELECT description FROM locations WHERE id = ? AND user_id = ?"
+          "SELECT description FROM entity_registry WHERE id = ? AND user_id = ?"
         ).get(validation.entity_id, userId) as { description: string | null } | undefined;
         content = row?.description || "";
         break;
       }
       case "npc": {
         const row = db.prepare(
-          "SELECT file_path FROM npcs WHERE id = ? AND user_id = ?"
+          "SELECT description as file_path FROM entity_registry WHERE id = ? AND user_id = ?"
         ).get(validation.entity_id, userId) as { file_path: string | null } | undefined;
         if (row?.file_path) {
           try {
@@ -293,7 +293,7 @@ export async function scanUnverifiedLoreForContradictions(
       }
       case "event": {
         const row = db.prepare(
-          "SELECT title, outcome FROM events WHERE id = ? AND user_id = ?"
+          "SELECT display_name as title, description as outcome FROM entity_registry WHERE id = ? AND user_id = ?"
         ).get(validation.entity_id, userId) as { title: string; outcome: string | null } | undefined;
         content = `${row?.title || ""}: ${row?.outcome || ""}`;
         break;

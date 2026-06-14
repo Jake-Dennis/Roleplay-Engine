@@ -508,7 +508,7 @@ async function handleWikiExtractEvent(jobId: string, payload: JobPayload): Promi
         return `${speaker}: ${m.content}`;
       }
       if (m.persona_id) {
-        const persona = db.prepare("SELECT name FROM personas WHERE id = ?").get(m.persona_id) as { name: string } | undefined;
+        const persona = db.prepare("SELECT display_name as name FROM entity_registry WHERE id = ?").get(m.persona_id) as { name: string } | undefined;
         if (persona) return `${persona.name}: ${m.content}`;
       }
       return `Player: ${m.content}`;
@@ -830,13 +830,14 @@ async function handleWikiCreateEntity(jobId: string, payload: JobPayload): Promi
     if (entityType === "character") {
       try {
         const existing = getDb().prepare(
-          "SELECT id FROM npcs WHERE user_id = ? AND universe_id = ? AND LOWER(name) = LOWER(?)"
+          "SELECT id FROM entity_registry WHERE user_id = ? AND universe_id = ? AND LOWER(display_name) = LOWER(?)"
         ).get(userId, universeId, name) as { id: string } | undefined;
         if (!existing) {
+          const newId = `npc:${crypto.randomUUID()}`;
           getDb().prepare(
-            `INSERT INTO npcs (id, user_id, universe_id, name, description, is_canon)
-             VALUES (?, ?, ?, ?, ?, 0)`
-          ).run(crypto.randomUUID(), userId, universeId, name, description || null);
+            `INSERT INTO entity_registry (id, entity_type, display_name, description, user_id, universe_id)
+             VALUES (?, 'npc', ?, ?, ?, ?)`
+          ).run(newId, name, description || null, userId, universeId);
         }
       } catch {
         // Non-fatal

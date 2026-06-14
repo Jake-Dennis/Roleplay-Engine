@@ -156,15 +156,15 @@ export function detectContradictions(
   let entity: EntityRow | undefined;
   if (entityType === "npcs" || entityType === "npc") {
     entity = db.prepare(
-      "SELECT * FROM npcs WHERE id = ? AND user_id = ?"
+      "SELECT id, display_name as name, description as file_path FROM entity_registry WHERE id = ? AND user_id = ?"
     ).get(entityId, userId) as EntityRow | undefined;
   } else if (entityType === "events" || entityType === "event") {
     entity = db.prepare(
-      "SELECT * FROM events WHERE id = ? AND user_id = ?"
+      "SELECT id, display_name as title FROM entity_registry WHERE id = ? AND user_id = ?"
     ).get(entityId, userId) as EntityRow | undefined;
   } else if (entityType === "locations" || entityType === "location") {
     entity = db.prepare(
-      "SELECT * FROM locations WHERE id = ? AND user_id = ?"
+      "SELECT id, display_name as name FROM entity_registry WHERE id = ? AND user_id = ?"
     ).get(entityId, userId) as EntityRow | undefined;
   }
 
@@ -177,7 +177,7 @@ export function detectContradictions(
 
   // Also get events for alive/dead checks
   const events = db.prepare(
-    "SELECT * FROM events WHERE user_id = ?"
+    "SELECT id, display_name as title, description as outcome FROM entity_registry WHERE user_id = ? AND entity_type = 'event'"
   ).all(userId) as CanonEntity[];
 
   const allCanon = [...canon, ...events];
@@ -217,7 +217,7 @@ export function detectAllContradictions(userId: string): {
 
   // Check all NPCs
   const npcs = db.prepare(
-    "SELECT id FROM npcs WHERE user_id = ?"
+    "SELECT id FROM entity_registry WHERE user_id = ? AND entity_type = 'npc'"
   ).all(userId) as { id: string }[];
 
   for (const npc of npcs) {
@@ -229,7 +229,7 @@ export function detectAllContradictions(userId: string): {
 
   // Check all events
   const events = db.prepare(
-    "SELECT id FROM events WHERE user_id = ?"
+    "SELECT id FROM entity_registry WHERE user_id = ? AND entity_type = 'event'"
   ).all(userId) as { id: string }[];
 
   for (const event of events) {
@@ -269,7 +269,7 @@ export async function detectAllContradictionsWithSemantic(
     case "npcs":
     case "npc": {
       const row = db.prepare(
-        "SELECT name, file_path FROM npcs WHERE id = ? AND user_id = ?"
+        "SELECT display_name as name, description as file_path FROM entity_registry WHERE id = ? AND user_id = ?"
       ).get(entityId, userId) as { name: string; file_path: string | null } | undefined;
       if (row?.file_path) {
         try {
@@ -286,7 +286,7 @@ export async function detectAllContradictionsWithSemantic(
     case "events":
     case "event": {
       const row = db.prepare(
-        "SELECT title, outcome FROM events WHERE id = ? AND user_id = ?"
+        "SELECT display_name as title, description as outcome FROM entity_registry WHERE id = ? AND user_id = ?"
       ).get(entityId, userId) as { title: string; outcome: string | null } | undefined;
       content = `${row?.title || ""}: ${row?.outcome || ""}`;
       break;
@@ -294,7 +294,7 @@ export async function detectAllContradictionsWithSemantic(
     case "locations":
     case "location": {
       const row = db.prepare(
-        "SELECT name, description FROM locations WHERE id = ? AND user_id = ?"
+        "SELECT display_name as name, description FROM entity_registry WHERE id = ? AND user_id = ?"
       ).get(entityId, userId) as { name: string; description: string | null } | undefined;
       content = `${row?.name || ""}: ${row?.description || ""}`;
       break;

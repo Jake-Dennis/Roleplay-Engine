@@ -141,7 +141,7 @@ db.prepare(
 if (persona_id && universe_id) {
   try {
     const persona = db.prepare(
-      "SELECT * FROM personas WHERE id = ? AND user_id = ?"
+      "SELECT display_name as name FROM entity_registry WHERE id = ? AND user_id = ?"
     ).get(persona_id, userId) as Record<string, unknown> | undefined;
 
     if (persona) {

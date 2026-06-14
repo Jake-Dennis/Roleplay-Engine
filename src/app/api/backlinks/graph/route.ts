@@ -28,16 +28,16 @@ const db = getDb();
 const backlinks = db.prepare(
   `SELECT b.source_type, b.source_id, b.target_type, b.target_id, b.link_type, b.context_snippet,
           CASE b.source_type
-            WHEN 'location' THEN (SELECT name FROM locations WHERE id = b.source_id)
-            WHEN 'npc' THEN (SELECT name FROM npcs WHERE id = b.source_id)
-            WHEN 'event' THEN (SELECT title FROM events WHERE id = b.source_id)
+            WHEN 'location' THEN (SELECT display_name FROM entity_registry WHERE id = b.source_id)
+            WHEN 'npc' THEN (SELECT display_name FROM entity_registry WHERE id = b.source_id)
+            WHEN 'event' THEN (SELECT display_name FROM entity_registry WHERE id = b.source_id)
             WHEN 'thread' THEN (SELECT title FROM narrative_threads WHERE id = b.source_id)
             ELSE 'Unknown'
           END as source_name,
           CASE b.target_type
-            WHEN 'location' THEN (SELECT name FROM locations WHERE id = b.target_id)
-            WHEN 'npc' THEN (SELECT name FROM npcs WHERE id = b.target_id)
-            WHEN 'event' THEN (SELECT title FROM events WHERE id = b.target_id)
+            WHEN 'location' THEN (SELECT display_name FROM entity_registry WHERE id = b.target_id)
+            WHEN 'npc' THEN (SELECT display_name FROM entity_registry WHERE id = b.target_id)
+            WHEN 'event' THEN (SELECT display_name FROM entity_registry WHERE id = b.target_id)
             WHEN 'thread' THEN (SELECT title FROM narrative_threads WHERE id = b.target_id)
             ELSE 'Unknown'
           END as target_name

@@ -115,8 +115,8 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
     let extraction: LoreExtractionResult | null = null;
     try {
       const response = await generateText(prompt, {
-        temperature: 0.1,
-        num_predict: 1024,
+        temperature: 0.3,
+        num_predict: 4096,
         userId: userId as string,
         model: getActiveJobModel(userId as string),
       });

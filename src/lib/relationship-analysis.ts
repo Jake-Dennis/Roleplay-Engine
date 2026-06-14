@@ -41,21 +41,7 @@ function resolveEntityId(db: DbDatabase, userId: string, name: string): string |
 
   if (found) return found.id;
 
-  // 2. Not found in registry — check if it matches a persona by name
-  const persona = db.prepare(
-    "SELECT id FROM personas WHERE user_id = ? AND name = ?"
-  ).get(userId, name) as { id: string } | undefined;
-
-  if (persona) return `persona:${persona.id}`;
-
-  // 3. Check if it matches an NPC by name
-  const npc = db.prepare(
-    "SELECT id FROM npcs WHERE user_id = ? AND name = ?"
-  ).get(userId, name) as { id: string } | undefined;
-
-  if (npc) return `npc:${npc.id}`;
-
-  // 4. Not in any table — create a transient entity in the registry
+  // 2. Not found in registry — create a transient entity in the registry
   const id = `npc:${crypto.randomUUID()}`;
   try {
     db.prepare(

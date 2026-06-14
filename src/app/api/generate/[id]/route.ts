@@ -391,7 +391,7 @@ export async function POST(
         if (session.universe_id) {
           try {
             const npcs = db.prepare(
-              "SELECT id, name FROM npcs WHERE universe_id = ? AND is_canon = 0"
+              "SELECT id, display_name FROM entity_registry WHERE universe_id = ? AND entity_type = 'npc'"
             ).all(session.universe_id) as { id: string; name: string }[];
 
             for (const npc of npcs) {

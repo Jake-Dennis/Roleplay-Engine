@@ -116,21 +116,21 @@ export function resolveWikilinkFromDB(
 
   // Search locations
   const location = db.prepare(
-    "SELECT id FROM locations WHERE user_id = ? AND LOWER(name) = LOWER(?)"
+    "SELECT id FROM entity_registry WHERE user_id = ? AND LOWER(display_name) = LOWER(?)"
   ).get(userId, name) as { id: string } | undefined;
 
   if (location) return { entityType: "location", entityId: location.id };
 
   // Search NPCs
   const npc = db.prepare(
-    "SELECT id FROM npcs WHERE user_id = ? AND LOWER(name) = LOWER(?)"
+    "SELECT id FROM entity_registry WHERE user_id = ? AND LOWER(display_name) = LOWER(?)"
   ).get(userId, name) as { id: string } | undefined;
 
   if (npc) return { entityType: "npc", entityId: npc.id };
 
   // Search events
   const event = db.prepare(
-    "SELECT id FROM events WHERE user_id = ? AND LOWER(title) = LOWER(?)"
+    "SELECT id FROM entity_registry WHERE user_id = ? AND LOWER(display_name) = LOWER(?)"
   ).get(userId, name) as { id: string } | undefined;
 
   if (event) return { entityType: "event", entityId: event.id };
@@ -227,9 +227,9 @@ export function getBacklinks(
   const rows = db.prepare(
     `SELECT b.source_type as sourceType, b.source_id as sourceId, b.link_type as linkType, b.context_snippet as contextSnippet,
             CASE b.source_type
-              WHEN 'location' THEN (SELECT name FROM locations WHERE id = b.source_id)
-              WHEN 'npc' THEN (SELECT name FROM npcs WHERE id = b.source_id)
-              WHEN 'event' THEN (SELECT title FROM events WHERE id = b.source_id)
+              WHEN 'location' THEN (SELECT display_name FROM entity_registry WHERE id = b.source_id)
+              WHEN 'npc' THEN (SELECT display_name FROM entity_registry WHERE id = b.source_id)
+              WHEN 'event' THEN (SELECT display_name FROM entity_registry WHERE id = b.source_id)
               WHEN 'thread' THEN (SELECT title FROM narrative_threads WHERE id = b.source_id)
               ELSE 'Unknown'
             END as sourceName
@@ -254,9 +254,9 @@ export function getOutgoingLinks(
   const rows = db.prepare(
     `SELECT b.target_type as targetType, b.target_id as targetId, b.link_type as linkType, b.context_snippet as contextSnippet,
             CASE b.target_type
-              WHEN 'location' THEN (SELECT name FROM locations WHERE id = b.target_id)
-              WHEN 'npc' THEN (SELECT name FROM npcs WHERE id = b.target_id)
-              WHEN 'event' THEN (SELECT title FROM events WHERE id = b.target_id)
+              WHEN 'location' THEN (SELECT display_name FROM entity_registry WHERE id = b.target_id)
+              WHEN 'npc' THEN (SELECT display_name FROM entity_registry WHERE id = b.target_id)
+              WHEN 'event' THEN (SELECT display_name FROM entity_registry WHERE id = b.target_id)
               WHEN 'thread' THEN (SELECT title FROM narrative_threads WHERE id = b.target_id)
               ELSE 'Unknown'
             END as targetName

@@ -49,7 +49,7 @@ const personaId: string | null = body.persona_id;
 // If persona_id is provided (not null), validate it belongs to the user
 if (personaId !== null && personaId !== undefined) {
   const persona = db.prepare(
-    "SELECT id FROM personas WHERE id = ? AND user_id = ?"
+    "SELECT id FROM entity_registry WHERE id = ? AND user_id = ?"
   ).get(personaId, userId);
 
   if (!persona) {

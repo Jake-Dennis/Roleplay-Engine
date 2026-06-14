@@ -51,25 +51,12 @@ export async function processEmbeddings(
       universeId = row?.universe_id ?? null;
       break;
     }
-    case "location": {
-      const row = db.prepare(
-        "SELECT universe_id FROM locations WHERE id = ?"
+    // All entity types store universe_id in entity_registry
+    default: {
+      const regRow = db.prepare(
+        "SELECT universe_id FROM entity_registry WHERE id = ?"
       ).get(entityId) as { universe_id: string | null } | undefined;
-      universeId = row?.universe_id ?? null;
-      break;
-    }
-    case "npc": {
-      const row = db.prepare(
-        "SELECT universe_id FROM npcs WHERE id = ?"
-      ).get(entityId) as { universe_id: string | null } | undefined;
-      universeId = row?.universe_id ?? null;
-      break;
-    }
-    case "event": {
-      const row = db.prepare(
-        "SELECT universe_id FROM events WHERE id = ?"
-      ).get(entityId) as { universe_id: string | null } | undefined;
-      universeId = row?.universe_id ?? null;
+      universeId = regRow?.universe_id ?? null;
       break;
     }
     case "narrative_memory": {
@@ -111,26 +98,14 @@ function getEntityText(entityType: string, entityId: string): string | null {
       ).get(entityId) as { content: string } | undefined;
       return msg?.content || null;
     }
-    case "location": {
-      const loc = db.prepare(
-        "SELECT name, known_info, hidden_info FROM locations WHERE id = ?"
-      ).get(entityId) as { name: string; known_info: string | null; hidden_info: string | null } | undefined;
-      if (!loc) return null;
-      return `${loc.name} ${loc.known_info || ""} ${loc.hidden_info || ""}`;
-    }
-    case "npc": {
-      const npc = db.prepare(
-        "SELECT name, tags FROM npcs WHERE id = ?"
-      ).get(entityId) as { name: string; tags: string | null } | undefined;
-      if (!npc) return null;
-      return `${npc.name} ${npc.tags || ""}`;
-    }
+    case "location":
+    case "npc":
     case "event": {
-      const evt = db.prepare(
-        "SELECT title, outcome, consequences FROM events WHERE id = ?"
-      ).get(entityId) as { title: string; outcome: string | null; consequences: string | null } | undefined;
-      if (!evt) return null;
-      return `${evt.title} ${evt.outcome || ""} ${evt.consequences || ""}`;
+      const regRow = db.prepare(
+        "SELECT display_name, description FROM entity_registry WHERE id = ?"
+      ).get(entityId) as { display_name: string; description: string | null } | undefined;
+      if (!regRow) return null;
+      return `${regRow.display_name} ${regRow.description || ""}`;
     }
     case "narrative_memory": {
       const mem = db.prepare(

@@ -157,7 +157,7 @@ export async function POST(
     // Verify persona belongs to user if provided
     if (personaId) {
       const persona = db.prepare(
-        "SELECT id FROM personas WHERE id = ? AND user_id = ?"
+        "SELECT id FROM entity_registry WHERE id = ? AND user_id = ?"
       ).get(personaId, userId);
       if (!persona) {
         return notFoundError("Persona");
@@ -194,7 +194,7 @@ export async function POST(
     // Look up persona name if personaId was provided
     let personaName: string | null = null;
     if (personaId) {
-      const persona = db.prepare("SELECT name FROM personas WHERE id = ?").get(personaId) as { name: string } | undefined;
+      const persona = db.prepare("SELECT display_name as name FROM entity_registry WHERE id = ?").get(personaId) as { name: string } | undefined;
       personaName = persona?.name || null;
     }
 
