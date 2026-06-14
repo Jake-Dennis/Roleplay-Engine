@@ -169,19 +169,17 @@ const SessionSelector = memo(function SessionSelector() {
 
   // Remember last session per universe
   const lastSessionRef = useRef<Record<string, string | null>>({});
+
+  // When universe changes, clear session and try to restore
   useEffect(() => {
-    if (activeUniverse) {
-      if (activeSession) {
-        lastSessionRef.current[activeUniverse.id] = activeSession.id;
-      } else {
-        // Try to restore last session for this universe
-        const lastId = lastSessionRef.current[activeUniverse.id];
-        if (lastId && filteredSessions.some(s => s.id === lastId)) {
-          const restored = filteredSessions.find(s => s.id === lastId);
-          if (restored) setActiveSession(restored);
-        }
-      }
+    if (!activeUniverse) return;
+    // Try to restore last session for this universe
+    const lastId = lastSessionRef.current[activeUniverse.id];
+    if (lastId && filteredSessions.some(s => s.id === lastId)) {
+      const restored = filteredSessions.find(s => s.id === lastId);
+      if (restored) { setActiveSession(restored); return; }
     }
+    setActiveSession(null);
   }, [activeUniverse?.id]);
 
   if (loading) {
