@@ -196,7 +196,9 @@ export function useSessionChat(
   useEffect(() => {
     queueMicrotask(() => {
       setPersonasLoading(true);
-      fetch("/api/personas")
+      const universeId = state.session?.universe_id;
+      const url = universeId ? `/api/personas?universe_id=${universeId}` : "/api/personas";
+      fetch(url)
         .then((res) => res.json())
         .then((data) => {
           const list = data.personas || [];
