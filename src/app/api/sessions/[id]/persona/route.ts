@@ -34,26 +34,30 @@ const db = getDb();
 
 // Verify ownership (only owner can change persona)
 const session = db.prepare(
-  "SELECT id FROM sessions WHERE id = ? AND owner_id = ?"
+  "SELECT id, universe_id FROM sessions WHERE id = ? AND owner_id = ?"
 ).get(sessionId, userId);
 
 if (!session) {
   return NextResponse.json({ error: "Session not found or not owner" }, { status: 404 });
 }
 
+const sessionData = session as { id: string; universe_id: string | null };
+
 requireJson(request);
 const body = await request.json();
 
 const personaId: string | null = body.persona_id;
 
-// If persona_id is provided (not null), validate it belongs to the user
+// If persona_id is provided (not null), validate it belongs to the session's universe
 if (personaId !== null && personaId !== undefined) {
   const persona = db.prepare(
-    "SELECT id FROM entity_registry WHERE id = ? AND user_id = ?"
-  ).get(personaId, userId);
+    sessionData.universe_id
+      ? "SELECT id FROM entity_registry WHERE id = ? AND universe_id = ?"
+      : "SELECT id FROM entity_registry WHERE id = ? AND user_id = ?"
+  ).get(personaId, sessionData.universe_id || userId);
 
   if (!persona) {
-    return NextResponse.json({ error: "Persona not found or does not belong to user" }, { status: 400 });
+    return NextResponse.json({ error: "Persona not found or does not belong to this universe" }, { status: 400 });
   }
 }
 
