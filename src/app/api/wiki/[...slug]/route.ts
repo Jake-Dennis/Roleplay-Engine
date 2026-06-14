@@ -459,19 +459,27 @@ export async function PUT(
       const existingEntityId = mergedFrontmatter.entity_id;
       const db = getDb();
 
+      // Helper: determine entity type from wiki frontmatter.
+      // Persona pages have tag "persona" but subtype "character" like NPCs.
+      const resolvedEntityType = (subtype: string, tags?: string | string[]): string | null => {
+        const tagList = Array.isArray(tags) ? tags : typeof tags === "string" ? tags.split(",") : [];
+        if (tagList.includes("persona")) return "persona";
+        return SUBTYPE_TO_ENTITY_TYPE[subtype] || null;
+      };
+
       if (existingEntityId) {
         // Gap-fill: entity_id is set but registry entry doesn't exist yet
         const existing = getEntity(db, existingEntityId);
         if (!existing) {
           const subtype = mergedFrontmatter.subtype || "";
           const displayName = mergedFrontmatter.title || resolvedSlug;
-          const entityType = SUBTYPE_TO_ENTITY_TYPE[subtype] || "npc";
+          const entityType = resolvedEntityType(subtype, mergedFrontmatter.tags) || "npc";
           registerEntity(db, userId, entityType, displayName, mergedFrontmatter.universe || undefined);
         }
       } else {
         // No entity_id yet — auto-register if subtype maps to an entity type
         const subtype = mergedFrontmatter.subtype || "";
-        const entityType = SUBTYPE_TO_ENTITY_TYPE[subtype];
+        const entityType = resolvedEntityType(subtype, mergedFrontmatter.tags);
         if (entityType) {
           const displayName = mergedFrontmatter.title || resolvedSlug;
           const entity = registerEntity(db, userId, entityType, displayName, mergedFrontmatter.universe || undefined);

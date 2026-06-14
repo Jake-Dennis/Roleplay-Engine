@@ -75,7 +75,9 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   };
   if (resolvedType === "entity") {
     try {
-      const entityType = SUBTYPE_TO_ENTITY_TYPE[resolvedSubtype] || "npc";
+      const tags = frontmatter.tags;
+      const tagList = Array.isArray(tags) ? tags : [];
+      const entityType = tagList.includes("persona") ? "persona" : (SUBTYPE_TO_ENTITY_TYPE[resolvedSubtype] || "npc");
       const entity = registerEntity(getDb(), userId, entityType, parsed.title, universeId || undefined);
       (frontmatter as Record<string, unknown>).entity_id = entity.id;
     } catch { /* non-fatal */ }
