@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState, memo } from "react";
+import { useEffect, useState, useRef, memo } from "react";
 import Link from "next/link";
 // Initialize CSRF fetch patching (side-effect import runs once)
 import "@/lib/csrf-client";
@@ -167,6 +167,23 @@ const SessionSelector = memo(function SessionSelector() {
     ? sessions.filter(s => (s as { universeId?: string }).universeId === activeUniverse.id)
     : sessions;
 
+  // Remember last session per universe
+  const lastSessionRef = useRef<Record<string, string | null>>({});
+  useEffect(() => {
+    if (activeUniverse) {
+      if (activeSession) {
+        lastSessionRef.current[activeUniverse.id] = activeSession.id;
+      } else {
+        // Try to restore last session for this universe
+        const lastId = lastSessionRef.current[activeUniverse.id];
+        if (lastId && filteredSessions.some(s => s.id === lastId)) {
+          const restored = filteredSessions.find(s => s.id === lastId);
+          if (restored) setActiveSession(restored);
+        }
+      }
+    }
+  }, [activeUniverse?.id]);
+
   if (loading) {
     return (
       <div className="border-b border-border-default px-3 py-3">
@@ -203,7 +220,7 @@ const SessionSelector = memo(function SessionSelector() {
             filteredSessions.map((s) => (
               <button
                 key={s.id}
-                onClick={() => { setActiveSession(s); setOpen(false); }}
+                onClick={() => { setActiveSession(s); setOpen(false); if (activeUniverse) lastSessionRef.current[activeUniverse.id] = s.id; }}
                 className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors ${
                   activeSession?.id === s.id
                     ? "bg-accent/10 text-text-accent"
