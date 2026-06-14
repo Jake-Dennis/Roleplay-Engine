@@ -6,6 +6,7 @@ import {
   User, Ghost, MapPin, Calendar, Flag, Package, Plus, Search, Loader2, ExternalLink, BookOpen, Merge, X, Globe
 } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
+import { Modal } from "@/components/ui/modal";
 
 interface Entity {
   id: string;
@@ -64,6 +65,10 @@ export function EntityManagerClient() {
   }> | null>(null);
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [mergingId, setMergingId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createType, setCreateType] = useState("persona");
+  const [createName, setCreateName] = useState("");
+  const [createLoading, setCreateLoading] = useState(false);
 
   const loadEntities = useCallback(async () => {
     setLoading(true);
@@ -105,47 +110,55 @@ export function EntityManagerClient() {
       .catch(() => {});
   }, []);
 
-  async function handleNewEntity(type: string) {
-    const name = prompt(`Enter name for new ${type}:`);
-    if (!name || !name.trim()) return;
+  function openCreateDialog(type: string) {
+    setCreateType(type);
+    setCreateName("");
+    setShowCreateModal(true);
+  }
 
+  async function handleCreateEntity() {
+    const name = createName.trim();
+    if (!name) return;
+
+    setCreateLoading(true);
     try {
       // Create entity registry entry
       const regRes = await fetch("/api/entities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          entityType: type,
-          displayName: name.trim(),
+          entityType: createType,
+          displayName: name,
           universeId: activeUniverse?.id || undefined,
         }),
       });
       if (!regRes.ok) {
         alert("Failed to create entity");
+        setCreateLoading(false);
         return;
       }
       const regJson = await regRes.json();
       const entityId = regJson.entity.id;
-      const folder = ENTITY_FOLDER[type] || "entities";
+      const folder = ENTITY_FOLDER[createType] || "entities";
 
       // Create wiki page
-      const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
       const pagePath = `${folder}/${slug}.md`;
       const wikiRes = await fetch("/api/wiki", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           path: pagePath,
-          content: `# ${name.trim()}\n`,
+          content: `# ${name}\n`,
           universeId: activeUniverse?.id,
           frontmatter: {
-            title: name.trim(),
+            title: name,
             type: "entity",
-            subtype: type,
+            subtype: createType,
             status: "draft",
             universe: activeUniverse?.id || undefined,
             entity_id: entityId,
-            tags: [type],
+            tags: [createType],
           },
         }),
       });
@@ -157,6 +170,9 @@ export function EntityManagerClient() {
       await loadEntities();
     } catch {
       alert("Failed to create entity");
+    } finally {
+      setCreateLoading(false);
+      setShowCreateModal(false);
     }
   }
 
@@ -165,6 +181,7 @@ export function EntityManagerClient() {
     : entities;
 
   return (
+    <>
     <div className="p-6 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -179,37 +196,37 @@ export function EntityManagerClient() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => handleNewEntity("persona")}
+            onClick={() => openCreateDialog("persona")}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-accent-hover transition-colors"
           >
             <Plus size={14} /> Persona
           </button>
           <button
-            onClick={() => handleNewEntity("npc")}
+            onClick={() => openCreateDialog("npc")}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default text-text-primary text-sm font-medium hover:bg-bg-raised transition-colors"
           >
             <Plus size={14} /> NPC
           </button>
           <button
-            onClick={() => handleNewEntity("location")}
+            onClick={() => openCreateDialog("location")}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default text-text-primary text-sm font-medium hover:bg-bg-raised transition-colors"
           >
             <Plus size={14} /> Location
           </button>
           <button
-            onClick={() => handleNewEntity("event")}
+            onClick={() => openCreateDialog("event")}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default text-text-primary text-sm font-medium hover:bg-bg-raised transition-colors"
           >
             <Plus size={14} /> Event
           </button>
           <button
-            onClick={() => handleNewEntity("faction")}
+            onClick={() => openCreateDialog("faction")}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default text-text-primary text-sm font-medium hover:bg-bg-raised transition-colors"
           >
             <Plus size={14} /> Faction
           </button>
           <button
-            onClick={() => handleNewEntity("item")}
+            onClick={() => openCreateDialog("item")}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default text-text-primary text-sm font-medium hover:bg-bg-raised transition-colors"
           >
             <Plus size={14} /> Item
@@ -484,5 +501,54 @@ export function EntityManagerClient() {
         </div>
       )}
     </div>
+
+      {/* Create entity modal */}
+      <Modal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title={`Create ${createType.charAt(0).toUpperCase() + createType.slice(1)}`}
+        size="sm"
+      >
+        <form
+          onSubmit={(e) => { e.preventDefault(); handleCreateEntity(); }}
+          className="space-y-4"
+        >
+          <div>
+            <label className="block text-xs font-medium text-text-muted mb-1.5">
+              Name
+            </label>
+            <input
+              type="text"
+              value={createName}
+              onChange={(e) => setCreateName(e.target.value)}
+              placeholder={`Enter ${createType} name...`}
+              autoFocus
+              className="w-full rounded-lg border border-border-default bg-bg-raised px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-accent transition-colors"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setShowCreateModal(false)}
+              className="px-3 py-1.5 rounded-lg text-sm font-medium text-text-muted hover:text-text-primary transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!createName.trim() || createLoading}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-accent-hover disabled:opacity-50 transition-colors"
+            >
+              {createLoading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Plus className="h-3.5 w-3.5" />
+              )}
+              Create
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </>
   );
 }
