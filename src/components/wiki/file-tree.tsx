@@ -41,6 +41,7 @@ import {
   Loader2,
   Check,
 } from 'lucide-react';
+import { useApp } from '@/contexts/app-context';
 
 export interface FileTreePageItem {
   path: string;          // relative path e.g. "entities/characters/foo.md"
@@ -845,6 +846,7 @@ export default function FileTree({
   onPageClick,
 }: FileTreeProps) {
   const router = useRouter();
+  const { activeUniverse } = useApp();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const lastCommittedRef = useRef<ReorderChange | null>(null);
   const [subfolderExpanded, setSubfolderExpanded] = useState<Set<string>>(new Set());
@@ -920,6 +922,7 @@ export default function FileTree({
         path: pagePath,
         content: `# ${title}\n\n`,
         frontmatter,
+        universeId: activeUniverse?.id,
       }),
     });
 
@@ -931,7 +934,7 @@ export default function FileTree({
     // Navigate to the new page
     const slugPath = pagePath.replace(/\.md$/, '');
     router.push(`/wiki/${slugPath}`);
-  }, [router]);
+  }, [router, activeUniverse]);
 
   if (isLoading) {
     return <SkeletonTree />;

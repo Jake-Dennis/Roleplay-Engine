@@ -82,7 +82,9 @@ if (!rateLimit.allowed) return createRateLimitResponse(rateLimit.retryAfter!);
 
   requireJson(request);
   const body = await request.json();
-const { path: pagePath, content, frontmatter, universeId } = body;
+const { path: pagePath, content, frontmatter, universeId: bodyUniverseId } = body;
+const fm = frontmatter as Record<string, unknown> | undefined;
+const universeId = bodyUniverseId || (fm?.universe as string) || "";
 
 if (!pagePath || content === undefined || !frontmatter) {
   return badRequestError("path, content, and frontmatter are required");
