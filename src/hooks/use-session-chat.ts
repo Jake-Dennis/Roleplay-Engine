@@ -205,7 +205,10 @@ export function useSessionChat(
           setPersonas(list);
           if (!state.session?.personaId) {
             const active = list.find((p: { isActive: number }) => p.isActive === 1);
-            if (active) setActivePersonaId(active.id);
+            if (active) {
+              activePersonaIdRef.current = active.id;
+              setActivePersonaId(active.id);
+            }
           }
         })
         .catch((err) => logger.warn("persona list load failed", err))
@@ -217,6 +220,7 @@ export function useSessionChat(
   useEffect(() => {
     queueMicrotask(() => {
       if (state.session?.personaId) {
+        activePersonaIdRef.current = state.session.personaId;
         setActivePersonaId(state.session.personaId);
       }
     });
@@ -391,6 +395,7 @@ export function useSessionChat(
         body: JSON.stringify({ persona_id: personaId }),
       });
       if (res.ok) {
+        activePersonaIdRef.current = personaId;
         setActivePersonaId(personaId);
       } else {
         const err = await res.json().catch(() => ({ error: "Persona change failed" }));
@@ -555,14 +560,14 @@ export function useSessionChat(
     const msgRes = await fetch(`/api/sessions/${sessionId}/messages`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content, personaId: activePersonaId }),
+      body: JSON.stringify({ content, personaId: activePersonaIdRef.current }),
     });
 
     if (!msgRes.ok) return;
     const msgData = await msgRes.json();
 
     await triggerGeneration(content, msgData.message?.id || msgData.id);
-  }, [input, streaming, sessionId, activePersonaId, triggerGeneration]);
+  }, [input, streaming, sessionId, triggerGeneration]);
 
   // Select a narrative choice
   const handleChoiceSelect = useCallback((option: string) => {
