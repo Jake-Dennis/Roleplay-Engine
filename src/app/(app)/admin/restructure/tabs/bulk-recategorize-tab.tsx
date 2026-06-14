@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { useApp } from "@/contexts/app-context";
 
 const DEFAULT_TYPES = ["entity", "concept", "source", "synthesis"];
 const STATUS_OPTIONS = ["", "draft", "reviewed", "locked", "rejected"];
@@ -33,6 +34,9 @@ interface RecategorizeResult {
 }
 
 export function BulkRecategorizeTab() {
+  const { activeUniverse } = useApp();
+  const universeId = activeUniverse?.id;
+
   // Filters
   const [filterType, setFilterType] = useState("");
   const [filterSubtype, setFilterSubtype] = useState("");
@@ -53,7 +57,7 @@ export function BulkRecategorizeTab() {
 
   // Load wiki config for dynamic type/subtype options
   useEffect(() => {
-    fetch("/api/wiki/config")
+    fetch(`/api/wiki/config${universeId ? `?universe_id=${universeId}` : ""}`)
       .then((r) => r.json())
       .then((config) => {
         const types = config.types ? Object.keys(config.types) : DEFAULT_TYPES;
@@ -65,7 +69,7 @@ export function BulkRecategorizeTab() {
         // Fallback to defaults
         setTypeOptions(["", ...DEFAULT_TYPES]);
       });
-  }, []);
+  }, [universeId]);
 
   // State
   const [previewResult, setPreviewResult] = useState<RecategorizeResult | null>(null);
@@ -121,6 +125,7 @@ export function BulkRecategorizeTab() {
         body: JSON.stringify({
           filter: buildFilter(),
           changes,
+          universeId,
           dryRun: true,
         }),
       });
@@ -150,6 +155,7 @@ export function BulkRecategorizeTab() {
           filter: buildFilter(),
           changes,
           dryRun: false,
+          universeId,
         }),
       });
       const json = await res.json();

@@ -12,6 +12,7 @@ import {
 import { LoadingState } from "@/components/ui/loading-state";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { useApp } from "@/contexts/app-context";
 
 const DEFAULT_FOLDERS = ["entities", "concepts", "sources", "synthesis"];
 
@@ -27,6 +28,8 @@ interface BulkMoveResult {
 }
 
 export function BulkMoveTab() {
+  const { activeUniverse } = useApp();
+  const universeId = activeUniverse?.id;
   const [folderOptions, setFolderOptions] = useState<string[]>(DEFAULT_FOLDERS);
   const [fromFolder, setFromFolder] = useState(DEFAULT_FOLDERS[0]);
   const [toFolder, setToFolder] = useState(DEFAULT_FOLDERS[1]);
@@ -35,7 +38,7 @@ export function BulkMoveTab() {
 
   // Load folder options from wiki config (supports custom type folders)
   useEffect(() => {
-    fetch("/api/wiki/config")
+    fetch(`/api/wiki/config${universeId ? `?universe_id=${universeId}` : ""}`)
       .then((r) => r.json())
       .then((config) => {
         const folders = config.folderOrder || DEFAULT_FOLDERS;
@@ -48,7 +51,7 @@ export function BulkMoveTab() {
         // Fallback to defaults
         setFolderOptions(DEFAULT_FOLDERS);
       });
-  }, []);
+  }, [universeId]);
   const [previewResult, setPreviewResult] = useState<BulkMoveResult | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -58,7 +61,7 @@ export function BulkMoveTab() {
   const loadPages = useCallback(async () => {
     setPagesLoading(true);
     try {
-      const res = await fetch("/api/wiki");
+      const res = await fetch(`/api/wiki${universeId ? `?universe_id=${universeId}` : ""}`);
       const json = await res.json();
       setPages(json.pages || []);
     } catch {
@@ -66,7 +69,7 @@ export function BulkMoveTab() {
     } finally {
       setPagesLoading(false);
     }
-  }, []);
+  }, [universeId]);
 
   useEffect(() => {
     queueMicrotask(() => loadPages());
@@ -100,7 +103,7 @@ export function BulkMoveTab() {
       const res = await fetch("/api/wiki/bulk-move", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ moves, dryRun: true }),
+        body: JSON.stringify({ moves, dryRun: true, universeId }),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -124,7 +127,7 @@ export function BulkMoveTab() {
       const res = await fetch("/api/wiki/bulk-move", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ moves, dryRun: false }),
+        body: JSON.stringify({ moves, dryRun: false, universeId }),
       });
       const json = await res.json();
       if (!res.ok) {

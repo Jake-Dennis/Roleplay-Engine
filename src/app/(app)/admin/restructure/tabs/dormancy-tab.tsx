@@ -16,6 +16,7 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { formatRelativeTime } from "@/lib/date-formatter";
+import { useApp } from "@/contexts/app-context";
 
 interface DormantPage {
   path: string;
@@ -32,6 +33,8 @@ interface DormantPage {
 }
 
 export function DormancyTab() {
+  const { activeUniverse } = useApp();
+  const universeId = activeUniverse?.id;
   const [pages, setPages] = useState<DormantPage[]>([]);
   const [allPages, setAllPages] = useState<DormantPage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +50,7 @@ export function DormancyTab() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/wiki");
+      const res = await fetch(`/api/wiki${universeId ? `?universe_id=${universeId}` : ""}`);
       const json = await res.json();
       if (!res.ok) {
         setError(json.error || "Failed to fetch pages");
@@ -65,7 +68,7 @@ export function DormancyTab() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [universeId]);
 
   useEffect(() => {
     queueMicrotask(() => loadPages());
@@ -76,7 +79,8 @@ export function DormancyTab() {
     setActionError(null);
     try {
       const slug = path.replace(/\.md$/i, "").split("/");
-      const res = await fetch(`/api/wiki/${slug.map(encodeURIComponent).join("/")}`, {
+      const url = `/api/wiki/${slug.map(encodeURIComponent).join("/")}${universeId ? `?universe_id=${universeId}` : ""}`;
+      const res = await fetch(url, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -103,7 +107,8 @@ export function DormancyTab() {
     setActionError(null);
     try {
       const slug = path.replace(/\.md$/i, "").split("/");
-      const res = await fetch(`/api/wiki/${slug.map(encodeURIComponent).join("/")}`, {
+      const url = `/api/wiki/${slug.map(encodeURIComponent).join("/")}${universeId ? `?universe_id=${universeId}` : ""}`;
+      const res = await fetch(url, {
         method: "DELETE",
       });
       const json = await res.json();

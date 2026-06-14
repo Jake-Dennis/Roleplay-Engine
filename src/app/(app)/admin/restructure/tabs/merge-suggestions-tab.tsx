@@ -13,6 +13,7 @@ import {
 import { LoadingState } from "@/components/ui/loading-state";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Modal } from "@/components/ui/modal";
+import { useApp } from "@/contexts/app-context";
 
 const STRATEGIES = [
   { value: "A", label: "A — Same title, different paths", desc: "Cheapest — compares page titles across folders" },
@@ -36,6 +37,8 @@ interface MergeResult {
 }
 
 export function MergeSuggestionsTab() {
+  const { activeUniverse } = useApp();
+  const universeId = activeUniverse?.id;
   const [strategy, setStrategy] = useState("A");
   const [candidates, setCandidates] = useState<MergeCandidate[]>([]);
   const [scanLoading, setScanLoading] = useState(false);
@@ -57,6 +60,7 @@ export function MergeSuggestionsTab() {
 
     try {
       const params = new URLSearchParams({ strategy, limit: "20" });
+      if (universeId) params.set("universe_id", universeId);
       const res = await fetch(`/api/wiki/merge-suggestions?${params}`);
       const json = await res.json();
       if (!res.ok) {
@@ -92,6 +96,7 @@ export function MergeSuggestionsTab() {
           keepPath: mergingPair.pageA,
           mergePath: mergingPair.pageB,
           redirect: keepRedirect,
+          universeId,
         }),
       });
       const json = await res.json();

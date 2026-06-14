@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { MessageSquare, ChevronDown, ChevronUp, ArrowRight, MessageCircle } from "lucide-react";
+import { MessageSquare, ChevronDown, ChevronUp, ArrowRight, MessageCircle, Globe } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
 
 interface Exchange {
@@ -23,7 +23,7 @@ interface SessionConv {
 }
 
 export default function ConversationsPage() {
-  const { activeSession } = useApp();
+  const { activeSession, activeUniverse } = useApp();
   const filterSessionId = activeSession?.id || null;
 
   const [sessionConvs, setSessionConvs] = useState<SessionConv[]>([]);
@@ -36,7 +36,12 @@ export default function ConversationsPage() {
       try {
         const sessionsRes = await fetch("/api/sessions?scope=personal");
         const sessionsData = await sessionsRes.json();
-        const sessions: { id: string; name: string }[] = sessionsData.sessions || [];
+        let sessions: { id: string; name: string; universeId?: string | null }[] = sessionsData.sessions || [];
+
+        // Filter by active universe if set
+        if (activeUniverse) {
+          sessions = sessions.filter(s => s.universeId === activeUniverse.id);
+        }
 
         // Filter by sessionId if provided
         const targetSessions = filterSessionId
@@ -98,6 +103,12 @@ export default function ConversationsPage() {
       <div>
         <h1 className="text-base font-semibold text-text-primary">Conversations</h1>
         <p className="text-xs text-text-muted mt-1">Persona ↔ NPC exchanges across all sessions</p>
+        {activeUniverse && (
+          <p className="text-xs text-text-muted flex items-center gap-1 mt-0.5">
+            <Globe className="h-3 w-3" />
+            {activeUniverse.name}
+          </p>
+        )}
       </div>
 
       {loading ? (
