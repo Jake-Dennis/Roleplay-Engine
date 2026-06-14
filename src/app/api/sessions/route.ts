@@ -171,6 +171,7 @@ if (persona_id && universe_id) {
         universe: universe_id,
         tags: [...parsedTags, "persona", "auto-generated"],
         persona_id: persona.id as string,
+        entity_id: persona.id as string,
         source: "persona",
       });
       generateIndex(wikiRoot);
