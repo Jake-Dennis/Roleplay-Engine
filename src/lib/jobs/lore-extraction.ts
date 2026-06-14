@@ -91,11 +91,14 @@ export async function handleLoreExtractionJob(jobId: string, payload: JobPayload
   updateJobProgress(jobId, 10, "Fetching messages...");
 
   // Fetch all messages for universe via sessions join
+  // Use persona name instead of username when a persona is set
   const messages = getDb().prepare(`
-    SELECT m.content, m.timestamp, m.sender_id, u.username as sender
+    SELECT m.content, m.timestamp, m.sender_id,
+      COALESCE(er.display_name, u.username) as sender
     FROM messages m
     JOIN sessions s ON m.session_id = s.id
     LEFT JOIN users u ON m.sender_id = u.id
+    LEFT JOIN entity_registry er ON m.persona_id = er.id
     WHERE s.universe_id = ? AND m.is_deleted = 0
     ORDER BY m.timestamp ASC
   `).all(universeId) as { content: string; timestamp: string; sender_id: string | null; sender: string | null }[];
