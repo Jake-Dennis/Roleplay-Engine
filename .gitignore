@@ -26,6 +26,9 @@ out/
 # paths here cause the opencode file tree to spam ENOENT errors.
 data/
 
+# Timestamped backup directories — same phantom-path issue as data/
+data_backup_*/
+
 # Editor
 .vscode/
 .idea/
