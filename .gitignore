@@ -20,7 +20,11 @@ out/
 *.db-journal
 *.db-wal
 *.db-shm
-data/*.db
+
+# Runtime data — never commit (per AGENTS.md)
+# data/ holds SQLite + per-user wiki folders; phantom git-tracked
+# paths here cause the opencode file tree to spam ENOENT errors.
+data/
 
 # Editor
 .vscode/
