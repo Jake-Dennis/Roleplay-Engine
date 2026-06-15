@@ -261,9 +261,11 @@ export default function WikiPageView() {
           const subtype = (fm?.subtype as string) || '';
           const type = (fm?.type as string) || '';
           const eid = (fm?.entity_id as string) || '';
+          const tags = (fm?.tags as string[]) || [];
+          const hasPersonaTag = tags.includes('persona');
           if (def.type === 'overview') return type === 'concept' || type === 'synthesis';
-          if (def.type === 'persona') return (subtype === 'character' || (!subtype && type === 'entity')) && eid.startsWith('persona:');
-          if (def.type === 'npc') return (subtype === 'character' || (!subtype && type === 'entity')) && (!eid || eid.startsWith('npc:'));
+          if (def.type === 'persona') return hasPersonaTag || ((subtype === 'character' || (!subtype && type === 'entity')) && eid.startsWith('persona:'));
+          if (def.type === 'npc') return !hasPersonaTag && (subtype === 'character' || (!subtype && type === 'entity')) && (!eid || eid.startsWith('npc:'));
           return subtype === def.type;
         })
         .map(p => ({
