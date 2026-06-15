@@ -124,6 +124,14 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   const nameErr = validateLength(displayName, 200, "displayName");
   if (nameErr) return badRequestError(nameErr);
 
+  // Validate universe exists if provided
+  if (universeId) {
+    const exists = getDb().prepare("SELECT 1 FROM universes WHERE id = ?").get(universeId);
+    if (!exists) {
+      return badRequestError("Universe not found");
+    }
+  }
+
   // ── Check alias conflicts ─────────────────────────────────────────────
   if (aliases && Array.isArray(aliases) && aliases.length > 0) {
     const conflict = findAliasConflict(getDb(), aliases);

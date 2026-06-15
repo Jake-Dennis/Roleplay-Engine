@@ -160,7 +160,7 @@ export function registerEntity(
   );
 
   const transaction = db.transaction(() => {
-    insertEntity.run(id, entityType, trimmedName, userId, universeId ?? null);
+    insertEntity.run(id, entityType, trimmedName, userId, universeId || null);
 
     if (aliases && aliases.length > 0) {
       for (const alias of aliases) {
